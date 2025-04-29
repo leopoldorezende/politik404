@@ -3,7 +3,6 @@
  */
 
 const { initializeGameState, cleanupDisconnectedUser } = require('../utils/gameStateUtils');
-const { socketMiddleware: baseSocketMiddleware } = require('./socketServerMiddleware');
 
 /**
  * Middleware para registro, monitoramento e processamento de eventos do Socket.io
