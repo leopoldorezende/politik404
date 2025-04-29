@@ -8,12 +8,12 @@ export const loadCountriesData = async () => {
   try {
     // Adicionando timestamp para evitar cache
     const timestamp = new Date().getTime();
-    const response = await fetch(`http://localhost:3001/data/countriesData.json?t=${timestamp}`);
+    const response = await fetch(`/data/countriesData.json?t=${timestamp}`);
     
     if (!response.ok) {
       console.error(`Erro ao carregar countriesData: ${response.status} ${response.statusText}`);
       // Tenta um caminho alternativo se o primeiro falhar
-      const altResponse = await fetch(`http://localhost:3001/countriesData.json?t=${timestamp}`);
+      const altResponse = await fetch(`/countriesData.json?t=${timestamp}`);
       if (!altResponse.ok) {
         throw new Error(`Não foi possível carregar os dados dos países de nenhum caminho`);
       }
@@ -42,12 +42,12 @@ export const loadCountriesData = async () => {
 export const loadCountriesCoordinates = async () => {
   try {
     const timestamp = new Date().getTime();
-    const response = await fetch(`http://localhost:3001/data/countriesCoordinates.json?t=${timestamp}`);
+    const response = await fetch(`/data/countriesCoordinates.json?t=${timestamp}`);
     
     if (!response.ok) {
       console.error(`Erro ao carregar coordenadas: ${response.status} ${response.statusText}`);
       // Tenta um caminho alternativo
-      const altResponse = await fetch(`http://localhost:3001/countriesCoordinates.json?t=${timestamp}`);
+      const altResponse = await fetch(`/countriesCoordinates.json?t=${timestamp}`);
       if (!altResponse.ok) {
         throw new Error(`Não foi possível carregar as coordenadas de nenhum caminho`);
       }
