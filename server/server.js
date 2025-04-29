@@ -21,15 +21,9 @@ app.use(express.json());
 // Servir arquivos públicos estáticos do front-end
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/dist')));
-  if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../client/dist')));
-    app.get('*', (req, res, next) => {
-      if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/socket.io')) {
-        return next();
-      }
-      res.sendFile(path.join(__dirname, '../client/dist/index.html'));
-    });
-  }
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
 } else {
   app.use(express.static(path.join(__dirname, '../public')));
 }
