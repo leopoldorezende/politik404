@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 let socket;
 
 export const initializeSocketConnection = (dispatch) => {
-  socket = io('http://localhost:3001');
+  socket = io('http://localhost:3000');
 
   socket.on('connect', () => {
     console.log('Connected to server');
