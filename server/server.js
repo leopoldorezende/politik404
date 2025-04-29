@@ -19,7 +19,14 @@ app.use(cors());
 app.use(express.json());
 
 // Servir arquivos públicos estáticos do front-end
-app.use(express.static(path.join(__dirname, '../public')));
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
+} else {
+  app.use(express.static(path.join(__dirname, '../public')));
+}
 
 // Servir apenas countriesData.json e countriesCoordinates.json
 app.get('/data/countriesData.json', (req, res) => {
