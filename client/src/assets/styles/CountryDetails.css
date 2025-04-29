@@ -1,0 +1,158 @@
+/* CountryDetails.css */
+
+.country-details {
+    padding: 5px;
+  }
+  
+  .country-details h3 {
+    display: block;
+    margin: 0 0 5px 0;
+    font-size: 18px;
+    color: #fff;
+    text-align: center;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .player-name {
+    font-size: 14px;
+    color: rgb(68, 170, 105);
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-style: italic;
+    text-align: center;
+  }
+  
+  .country-not-selected {
+    display: flex;
+    height: calc(100vh - 150px);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #aaa;
+    font-style: italic;
+  }
+  
+  .country-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .country-stats {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .country-stats p {
+    margin: 5px 0;
+    font-size: 14px;
+  }
+  
+  .military-section,
+  .borders-section,
+  .economy-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .military-section h4,
+  .borders-section h4,
+  .economy-section h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: rgb(104, 155, 209);
+    font-size: 16px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .economy-section p {
+    margin: 5px 0;
+    font-size: 14px;
+  }
+  
+  .military-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .military-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 5px;
+    font-size: 14px;
+  }
+  
+  .military-stat span:first-child {
+    width: 80px;
+  }
+  
+  .progress-bar {
+    height: 8px;
+    flex-grow: 1;
+    background-color: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: #4caf50;
+    border-radius: 4px;
+  }
+  
+  .nuclear-status {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  
+  .status-yes {
+    color: #f44336;
+    font-weight: bold;
+    margin-left: 5px;
+  }
+  
+  .status-no {
+    color: #4caf50;
+    margin-left: 5px;
+  }
+  
+  .borders-list {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0;
+  }
+  
+  .borders-list li {
+    padding: 5px 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .borders-list li:last-child {
+    border-bottom: none;
+  }
+  
+  .borders-list li.enabled .border-status {
+    color: #4caf50;
+  }
+  
+  .borders-list li.disabled .border-status {
+    color: #f44336;
+  }
+  
+  .border-type {
+    color: #aaa;
+    font-style: italic;
+    margin: 0 5px;
+  }

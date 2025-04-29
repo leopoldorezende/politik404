@@ -1,0 +1,222 @@
+/* Sideview.css */
+
+#sideview {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: rgba(20, 30, 40, 0.8);
+  padding: 20px;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 500;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+  backdrop-filter: blur(10px);
+  transform: translateX(100%);
+}
+
+#sideview.active {
+  transform: translateX(0);
+}
+
+/* Botão de fechar */
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 2;
+  padding: 5px;
+}
+
+.close-button:hover {
+  color: #ccc;
+}
+
+/* Estilo das abas */
+.tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.tab:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.tab.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  font-weight: bold;
+}
+
+/* Badge para indicar chat privado ativo */
+.chat-badge {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  color: #ff9800;
+  font-size: 24px;
+  line-height: 0;
+}
+
+/* Conteúdo das abas */
+.tab-content {
+  display: none;
+  height: calc(100% - 50px);
+  overflow-y: auto;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Estilo da aba de informações */
+#info h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #fff;
+  font-size: 18px;
+}
+
+#room-details {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+#room-details p {
+  margin: 8px 0;
+}
+
+#room-details strong {
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.room-info {
+  margin: 16px 0;
+}
+
+#exit-room-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#exit-room-button:hover {
+  background-color: #c82333;
+}
+
+
+/* Responsividade */
+@media screen and (max-width: 768px) {
+  #sideview {
+    width: 280px;
+  }
+}
+
+
+
+/* Add these CSS styles to Sideview.css */
+
+/* Styling for tab container */
+.tabs {
+  display: flex;
+  width: 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Individual tab styling */
+.tab {
+  flex: 1;
+  padding: 4px 4px 2px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.5);
+  position: relative;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Active tab styling */
+.tab.active {
+  background: rgba(255, 255, 255, 0.3);
+  font-weight: bold;
+}
+
+/* Tab content container styling */
+.tab-content {
+  display: none;
+  height: calc(100% - 92px);
+  overflow-y: auto;
+}
+
+/* Active tab content styling */
+.tab-content.active {
+  display: block;
+}
+
+/* For badge positioning */
+.player-message-badge {
+  margin-left: 5px;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ff3860;
+  color: transparent;
+  animation: pulse 2s infinite;
+}
+
+.chat-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ff3860;
+  color: transparent;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 56, 96, 0.7);
+  }
+  
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(255, 56, 96, 0);
+  }
+  
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 56, 96, 0);
+  }
+}

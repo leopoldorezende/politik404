@@ -1,0 +1,266 @@
+/* Sidetools.css */
+
+/* Container principal */
+#sidetools {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background: rgba(190, 208, 224, 0.8);
+  color: #000;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 500;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+  backdrop-filter: blur(10px);
+  transform: translateX(-100%);
+}
+
+#sidetools.active {
+  transform: translateX(0);
+}
+
+/* Título e cabeçalhos */
+#sidetools h2 {
+  margin-top: 0;
+  font-size: 20px;
+  text-align: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+#sidetools h3 {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  text-align: center;
+  color: #333;
+}
+
+#sidetools h4 {
+  margin: 15px 0 10px 0;
+  font-size: 16px;
+  color: #444;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 5px;
+}
+
+/* Botão de fechar */
+#sidetools .close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  z-index: 10;
+  transition: background-color 0.2s;
+}
+
+#sidetools .close-button:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Abas de navegação */
+#sidetools .tabs {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+#sidetools .tab {
+  flex: 1;
+  padding: 8px 4px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  transition: background-color 0.2s;
+}
+
+#sidetools .tab:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+#sidetools .tab.active {
+  background: rgba(0, 0, 0, 0.2);
+  font-weight: bold;
+}
+
+#sidetools .material-icons {
+  font-size: 20px;
+}
+
+/* Conteúdo das abas */
+#sidetools .tab-content {
+  display: none;
+  padding: 0 5px;
+}
+
+#sidetools .tab-content.active {
+  display: block;
+}
+
+/* Seções de economia */
+#sidetools .economy-stats,
+#sidetools .economy-resources,
+#sidetools .economy-parameters,
+#sidetools .military-stats,
+#sidetools .politics-stats,
+#sidetools .opposition-info,
+#sidetools .alliances-info,
+#sidetools .ships-info {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+
+#sidetools .economy-stats p,
+#sidetools .economy-resources p,
+#sidetools .economy-parameters p,
+#sidetools .military-stats p {
+  margin: 5px 0;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+
+#sidetools .economy-stats p span,
+#sidetools .economy-resources p span,
+#sidetools .economy-parameters p span,
+#sidetools .military-stats p span {
+  font-weight: bold;
+  color: #333;
+}
+
+/* Barra de progresso */
+.progress-bar {
+  height: 10px;
+  flex-grow: 1;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+  margin: 0 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #4caf50;
+  border-radius: 5px;
+}
+
+/* Itens de suporte na aba Política */
+.support-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.support-item span:first-child {
+  width: 90px;
+  display: inline-block;
+}
+
+/* Status nuclear */
+.status-yes {
+  color: #f44336;
+  font-weight: bold;
+}
+
+.status-no {
+  color: #4caf50;
+}
+
+/* Ações de guerra */
+.war-actions select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 8px 0;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #007bff;
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.action-btn:hover {
+  background-color: #0056b3;
+}
+
+.action-btn.danger {
+  background-color: #dc3545;
+}
+
+.action-btn.danger:hover {
+  background-color: #c82333;
+}
+
+/* Listas */
+#sidetools ul {
+  margin: 5px 0;
+  padding-left: 20px;
+}
+
+#sidetools li {
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+#sidetools .ship-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+#sidetools .ship-buttons button {
+  flex: 1;
+}
+
+#sidetools .ship-instructions ul {
+  list-style-type: disc;
+}
+
+#sidetools .ship-instructions li {
+  margin-left: 5px;
+}
+
+/* Seção de navios */
+#ships-list, #enemy-ships-list {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 10px;
+  min-height: 60px;
+}
+
+/* Responsividade */
+@media screen and (max-width: 768px) {
+  #sidetools {
+    width: 85%;
+    max-width: 280px;
+  }
+  
+  .support-item span:first-child {
+    width: 70px;
+  }
+}

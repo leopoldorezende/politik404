@@ -1,0 +1,85 @@
+/* GameScreen styles */
+#game-screen {
+  position: absolute;
+  width: 100%;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  color: #eee;
+  background-color: #1F262F;
+}
+
+#map-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+}
+
+#map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Botões de controle nas laterais - agora sempre fixos */
+.map-control {
+  position: fixed;
+  z-index: 400;
+  background: #333;
+  color: #fff;
+  border: none;
+  padding: 7px 8px 4px;
+  cursor: pointer;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.2s;
+}
+
+.map-control:hover {
+  background: #444;
+}
+
+/* Botões de controle nas laterais */
+#btn-open-sidetools, 
+#btn-open-sideview {
+  position: fixed;
+  z-index: 400;
+  background: #333;
+  color: #fff;
+  border: none;
+  padding: 7px 8px 4px;
+  cursor: pointer;
+  font-size: 20px;
+  box-sizing: border-box;
+  display: block; /* Sempre visível */
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  transition: background-color 0.2s; /* Apenas transição de cor */
+}
+
+
+/* Posições fixas para os botões */
+#btn-open-sideview  {
+  top: 16px;
+  right: 16px;
+}
+
+#btn-open-sidetools {
+  top: 16px;
+  left: 16px;
+}
