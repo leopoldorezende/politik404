@@ -65,11 +65,6 @@ function createSocketMiddleware(io) {
       socket.emit('error', 'Erro interno no servidor');
     });
     
-    // Aplica o middleware base
-    if (baseSocketMiddleware) {
-      baseSocketMiddleware(io, socket, gameState);
-    }
-    
     // Captura eventos de desconexão para limpeza
     socket.on('disconnect', () => {
       console.log(`Socket desconectado: ${socket.id}`);
