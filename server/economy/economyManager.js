@@ -8,8 +8,8 @@ const economyIntervals = new Map();
 
 // Configurações do sistema econômico
 const ECONOMY_CONFIG = {
-  updateInterval: 5000,  // Alterado de 1000 para 5000ms (5 segundos) para reduzir a frequência de atualizações
-  gdpBaseGrowth: 1000000000,     // Crescimento base do PIB por ciclo
+  updateInterval: 1000,  // Alterado de 1000 para 5000ms (5 segundos) para reduzir a frequência de atualizações
+  gdpBaseGrowth: 1,     // Crescimento base do PIB por ciclo
   inflationBaseChange: 0.05, // Alteração base da inflação por ciclo
   taxIncomePercent: 0.1,  // Porcentagem do PIB que vai para o tesouro como impostos
   randomVariation: 0.2,   // Variação aleatória (±20%) aplicada às mudanças
