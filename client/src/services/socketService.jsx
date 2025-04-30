@@ -4,7 +4,16 @@ import { io } from 'socket.io-client';
 let socket;
 
 export const initializeSocketConnection = (dispatch) => {
-  socket = io(import.meta.env.VITE_SOCKET_URL || window.location.origin);
+  const isProduction = import.meta.env.MODE === 'production';
+  const baseUrl = isProduction
+    ? 'http://191.252.60.26:3000'
+    : import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+  
+  socket = io(baseUrl, {
+    withCredentials: true,
+    transports: ['websocket', 'polling'],
+  });
+  
   window.socket = socket;
 
   socket.on('connect', () => {

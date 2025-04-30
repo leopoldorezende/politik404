@@ -76,8 +76,9 @@ app.get('/check-data-files', (req, res) => {
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://191.252.60.26'],
-    methods: ["GET", "POST"],
+    origin: (origin, callback) => {
+      callback(null, true); // aceita qualquer origem
+    },
     credentials: true
   }
 });
