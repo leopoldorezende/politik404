@@ -1,7 +1,4 @@
-/**
- * Utilitários para cálculos e manipulações econômicas
- * Funções auxiliares para o sistema econômico
- */
+const redis = require('../infra/redisClient');
 
 /**
  * Verifica se os indicadores econômicos estão em uma faixa saudável
@@ -497,11 +494,34 @@ function assessEconomicHealth(economyData) {
       details
     };
   }
-  
-  module.exports = {
-    assessEconomicHealth,
-    projectEconomicTrends,
-    calculateInvestmentImpact,
-    compareEconomies,
-    calculateEconomicPower
-  };
+
+  // Carrega dados econômicos persistidos no Redis
+  async function loadEconomyFromRedis() {
+    try {
+      const data = await redis.get('economy_state');
+      if (!data) return {};
+      return JSON.parse(data);
+    } catch (err) {
+      console.error('[ECONOMY] Erro ao carregar economia do Redis:', err.message);
+      return {};
+    }
+  }
+
+    // Salva dados econômicos no Redis
+  async function saveEconomyToRedis(economyState) {
+    try {
+      await redis.set('economy_state', JSON.stringify(economyState));
+    } catch (err) {
+      console.error('[ECONOMY] Erro ao salvar economia no Redis:', err.message);
+    }
+  }
+
+module.exports = {
+  assessEconomicHealth,
+  projectEconomicTrends,
+  calculateInvestmentImpact,
+  compareEconomies,
+  calculateEconomicPower,
+  loadEconomyFromRedis,
+  saveEconomyToRedis
+};

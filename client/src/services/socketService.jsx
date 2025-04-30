@@ -5,6 +5,7 @@ let socket;
 
 export const initializeSocketConnection = (dispatch) => {
   socket = io(import.meta.env.VITE_SOCKET_URL || window.location.origin);
+  window.socket = socket;
 
   socket.on('connect', () => {
     console.log('Connected to server');

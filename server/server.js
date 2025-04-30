@@ -1,3 +1,4 @@
+const redis = require('./infra/redisClient');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -14,6 +15,7 @@ const { createSocketMiddleware } = require('./middlewares/socketServerMiddleware
 // Importa o sistema econômico
 const { initializeEconomySystem } = require('./economy/economyManager');
 
+redis.set('debug_check', new Date().toISOString());
 dotenv.config();
 
 const app = express();
@@ -137,6 +139,34 @@ const gameState = {
   }
 };
 
+async function restoreRoomsFromRedis() {
+  try {
+    const stored = await redis.get('rooms');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      for (const [name, room] of Object.entries(parsed)) {
+        gameState.rooms.set(name, room);
+      }
+      console.log(`[REDIS] Salas restauradas: ${gameState.rooms.size}`);
+    }
+  } catch (err) {
+    console.error('[REDIS] Erro ao restaurar salas:', err.message);
+  }
+}
+
+const PORT = process.env.PORT || 3000;
+
+// Iniciar servidor só depois que Redis restaurar
+restoreRoomsFromRedis().then(() => {
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);
+
+    // Inicializar o sistema econômico
+    initializeEconomySystem(io, gameState);
+  });
+});
+
 io.use(createSocketMiddleware(io));
 
 io.on('connection', (socket) => {
@@ -172,13 +202,4 @@ io.on('connection', (socket) => {
       io.emit('playerOnlineStatus', { username, isOnline: false });
     }
   });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);
-  
-  // Inicializar o sistema econômico após o servidor estar em execução
-  initializeEconomySystem(io, gameState);
 });

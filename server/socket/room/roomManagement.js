@@ -2,6 +2,7 @@
  * Gerenciamento de salas
  */
 
+const redis = require('../../infra/redisClient');
 const { 
   sendUpdatedRoomsList, 
   sendUpdatedPlayersList 
@@ -49,6 +50,9 @@ function setupRoomManagement(io, socket, gameState) {
     gameState.rooms.set(roomName, newRoom);
     console.log(`Sala "${roomName}" criada por ${username}`);
     
+    // Salvar no Redis
+    redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
+
     // Notificar o cliente que criou a sala
     socket.emit('roomCreated', { name: roomName, success: true });
     
@@ -56,6 +60,8 @@ function setupRoomManagement(io, socket, gameState) {
     sendUpdatedRoomsList(io, gameState);
   });
   
+  
+
   // Excluir sala (apenas o dono pode excluir)
   socket.on('deleteRoom', (roomName) => {
     const username = socket.username;
@@ -104,6 +110,9 @@ function setupRoomManagement(io, socket, gameState) {
     
     console.log(`Sala "${roomName}" excluída por ${username}`);
     
+    // Salvar no Redis
+    redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
+
     // Atualizar lista de salas para todos
     sendUpdatedRoomsList(io, gameState);
   });
@@ -153,7 +162,10 @@ function setupRoomManagement(io, socket, gameState) {
     });
     
     console.log(`Propriedade da sala "${roomName}" transferida de ${username} para ${newOwner}`);
-    
+
+    // Salvar no Redis
+    redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
+
     // Atualizar lista de salas para todos
     sendUpdatedRoomsList(io, gameState);
   });
@@ -225,6 +237,10 @@ function setupRoomManagement(io, socket, gameState) {
       settings: room.settings
     });
     
+
+    // Salvar no Redis
+    redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
+
     console.log(`Configurações da sala "${roomName}" atualizadas por ${username}`);
     
     // Atualizar lista de salas para todos (para refletir mudanças como privacidade)
@@ -347,7 +363,10 @@ function setupRoomManagement(io, socket, gameState) {
       bannedPlayer: playerUsername,
       bannedBy: username
     });
-    
+  
+    // Salvar no Redis
+    redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
+
     // Atualiza lista de jogadores para todos na sala
     sendUpdatedPlayersList(io, roomName, gameState);
     
