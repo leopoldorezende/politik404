@@ -8,7 +8,8 @@ export const loadCountriesData = async () => {
   try {
     // Adicionando timestamp para evitar cache
     const timestamp = new Date().getTime();
-    const response = await fetch(`http://localhost:3000/data/countriesData.json?t=${timestamp}`);
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/data/countriesData.json?t=${timestamp}`);
     
     if (!response.ok) {
       console.error(`Erro ao carregar countriesData: ${response.status} ${response.statusText}`);
@@ -42,7 +43,8 @@ export const loadCountriesData = async () => {
 export const loadCountriesCoordinates = async () => {
   try {
     const timestamp = new Date().getTime();
-    const response = await fetch(`http://localhost:3000/data/countriesCoordinates.json?t=${timestamp}`);
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/data/countriesCoordinates.json?t=${timestamp}`);
     
     if (!response.ok) {
       console.error(`Erro ao carregar coordenadas: ${response.status} ${response.statusText}`);
