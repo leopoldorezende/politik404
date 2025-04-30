@@ -14,7 +14,7 @@ const socketReduxMiddleware = store => {
       if (socket) socket.disconnect();
       
       // Connect to server
-      socket = io('http://localhost:3000');
+      socket = io(import.meta.env.VITE_SOCKET_URL || window.location.origin);
       
       socket.on('connect', () => {
         console.log('Connected to socket server with ID:', socket.id);
