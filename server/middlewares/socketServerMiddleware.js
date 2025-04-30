@@ -129,6 +129,5 @@ function createSocketMiddleware(io) {
 }
 
 module.exports = { 
-  createSocketMiddleware,
-  socketMiddleware: baseSocketMiddleware 
+  createSocketMiddleware
 };

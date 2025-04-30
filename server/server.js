@@ -9,6 +9,8 @@ const path = require('path');
 // Importa o inicializador de socket da pasta socket/index.js
 const { initializeSocketHandlers } = require('./socket');
 
+const { createSocketMiddleware } = require('./middlewares/socketServerMiddleware');
+
 // Importa o sistema econômico
 const { initializeEconomySystem } = require('./economy/economyManager');
 
@@ -133,6 +135,8 @@ const gameState = {
     return [user1, user2].sort().join(':');
   }
 };
+
+io.use(createSocketMiddleware(io));
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
