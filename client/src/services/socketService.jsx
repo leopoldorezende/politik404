@@ -1,7 +1,7 @@
 // src/services/socketService.js
 import { io } from 'socket.io-client';
 
-let socket;
+const socket = io(import.meta.env.VITE_SOCKET_URL || window.location.origin);
 
 export const initializeSocketConnection = (dispatch) => {
   const isProduction = import.meta.env.MODE === 'production';
