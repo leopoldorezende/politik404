@@ -11,7 +11,7 @@ export const loadCountriesData = async () => {
   try {
     // Adicionando timestamp para evitar cache
     const timestamp = new Date().getTime();
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
     const response = await fetch(`${baseUrl}/data/countriesData.json?t=${timestamp}`);
     
     if (!response.ok) {
@@ -46,7 +46,7 @@ export const loadCountriesData = async () => {
 export const loadCountriesCoordinates = async () => {
   try {
     const timestamp = new Date().getTime();
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
     const response = await fetch(`${baseUrl}/data/countriesCoordinates.json?t=${timestamp}`);
     
     if (!response.ok) {
