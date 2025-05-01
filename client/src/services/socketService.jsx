@@ -5,9 +5,7 @@ let socket;
 
 export const initializeSocketConnection = (dispatch) => {
   const isProduction = import.meta.env.MODE === 'production';
-  const baseUrl = isProduction
-    ? 'http://191.252.60.26:3000'
-    : import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+  const baseUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
   
   socket = io(baseUrl, {
     withCredentials: true,
