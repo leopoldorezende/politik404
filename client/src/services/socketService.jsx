@@ -3,7 +3,14 @@ import { io } from 'socket.io-client';
 let socket;
 
 export const initializeSocketConnection = (dispatch) => {
-  const baseUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
+  const baseUrl = import.meta.env.VITE_SOCKET_URL ?? window.location.origin;
+
+  if (!baseUrl) {
+    console.error('❌ VITE_SOCKET_URL não está definido. Verifique seu .env');
+    return;
+  }
+
+  console.log(`🔌 Conectando socket em: ${baseUrl}`);
 
   socket = io(baseUrl, {
     withCredentials: true,
@@ -13,7 +20,11 @@ export const initializeSocketConnection = (dispatch) => {
   window.socket = socket;
 
   socket.on('connect', () => {
-    console.log(`✅ Socket conectado em: ${baseUrl}`);
+    console.log('✅ Socket conectado com sucesso');
+  });
+
+  socket.on('connect_error', (err) => {
+    console.error('❌ Erro de conexão com o socket:', err.message);
   });
 
   socket.on('roomsList', (rooms) => {
@@ -32,13 +43,21 @@ export const initializeSocketConnection = (dispatch) => {
 };
 
 export const authenticate = (username) => {
-  socket.emit('authenticate', username);
+  if (socket?.connected) {
+    socket.emit('authenticate', username);
+  } else {
+    console.warn('⚠️ Socket não conectado. Tentativa de autenticação ignorada.');
+  }
 };
 
 export const joinRoom = (roomName) => {
-  socket.emit('joinRoom', roomName);
+  if (socket?.connected) {
+    socket.emit('joinRoom', roomName);
+  }
 };
 
 export const sendChatMessage = (message) => {
-  socket.emit('chatMessage', message);
+  if (socket?.connected) {
+    socket.emit('chatMessage', message);
+  }
 };
