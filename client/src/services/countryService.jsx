@@ -1,5 +1,8 @@
 // src/services/countryService.js
 
+console.log('[ENV] VITE_API_URL =', import.meta.env.VITE_API_URL);
+console.log('[ENV] VITE_SOCKET_URL =', import.meta.env.VITE_SOCKET_URL);
+
 import { store } from '../store';
 import { setCountriesData } from '../store/slices/gameSlice';
 
