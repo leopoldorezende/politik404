@@ -1,24 +1,21 @@
-// src/services/socketService.js
 import { io } from 'socket.io-client';
 
 let socket;
 
 export const initializeSocketConnection = (dispatch) => {
-  const isProduction = import.meta.env.MODE === 'production';
   const baseUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
-  
+
   socket = io(baseUrl, {
     withCredentials: true,
     transports: ['websocket', 'polling'],
   });
-  
+
   window.socket = socket;
 
   socket.on('connect', () => {
-    console.log('Connected to server');
+    console.log(`✅ Socket conectado em: ${baseUrl}`);
   });
 
-  // Configurar event listeners para diferentes tipos de eventos
   socket.on('roomsList', (rooms) => {
     dispatch({ type: 'rooms/setRooms', payload: rooms });
   });
@@ -31,10 +28,9 @@ export const initializeSocketConnection = (dispatch) => {
     dispatch({ type: 'chat/addMessage', payload: message });
   });
 
-  // ... outros listeners
+  // Outros listeners...
 };
 
-// Funções para emitir eventos
 export const authenticate = (username) => {
   socket.emit('authenticate', username);
 };
