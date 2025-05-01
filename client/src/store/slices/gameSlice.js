@@ -121,7 +121,7 @@ export const gameSlice = createSlice({
       state.economyUpdates[update.room].push(update);
       
       // Atualiza os dados econômicos de cada país
-      if (state.countriesData) {
+      if (state.countriesData && update.countries && typeof update.countries === 'object') {
         Object.entries(update.countries).forEach(([country, economyData]) => {
           if (state.countriesData[country] && state.countriesData[country].economy) {
             // Atualiza cada propriedade individual
