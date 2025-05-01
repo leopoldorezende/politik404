@@ -4,13 +4,12 @@ let socket;
 
 export const initializeSocketConnection = (dispatch) => {
   const baseUrl = import.meta.env.VITE_SOCKET_URL ?? window.location.origin;
+  console.log(`🔌 Conectando socket em: ${baseUrl}`);
 
   if (!baseUrl) {
     console.error('❌ VITE_SOCKET_URL não está definido. Verifique seu .env');
     return;
   }
-
-  console.log(`🔌 Conectando socket em: ${baseUrl}`);
 
   socket = io(baseUrl, {
     withCredentials: true,
