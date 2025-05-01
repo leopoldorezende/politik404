@@ -1,2 +1,12 @@
+# Dependências
 node_modules/
-.envnode_modules/
+client/node_modules/
+server/node_modules/
+
+# Builds e artefatos
+# dist/
+# build/
+
+# Arquivos de ambiente
+.env
+.env.*

@@ -16,13 +16,13 @@ Folder structure of the AI project with brief descriptions.
   │   │   ├── /components                  # Componentes React reutilizáveis
   │   │   │   ├── /layout                  # Componentes de layout
   │   │   │   │   ├── Sideview.jsx         # Barra lateral de informações/chat
-  │   │   │   │   └── Sidetools.jsx        # Ferramentas laterais
+  │   │   │   │   ├── Sidetools.jsx        # Ferramentas laterais
   │   │   │   │   └── EconomyChart.jsx     # Ferramentas de economia
   │   │   │   │
   │   │   │   ├── /chat                    # Componentes de chat
-  │   │   │   │   ├── ChatContainer.jsx    # Container do chat
+  │   │   │   │   └── ChatContainer.jsx    # Container do chat
   │   │   │   │
-  │   │   │   └─── /map                    # Componentes relacionados ao mapa
+  │   │   │   └── /map                    # Componentes relacionados ao mapa
   │   │   │       ├── GameMap.jsx          # Componente do mapa principal
   │   │   │       ├── CountryDetails.jsx   # Detalhes do país selecionado
   │   │   │       └── MaritimeChockpoints.jsx # Controles do mapa
@@ -51,14 +51,19 @@ Folder structure of the AI project with brief descriptions.
   │   │   │
   │   │   └── /assets                      # Recursos estáticos
   │   │       └── /styles                  # Arquivos CSS/SCSS
-  │   │
-  │   └── package.json                     # Dependências do cliente
-  │
+  │   │  
+  │   ├── .env.local                       # Variáveis de ambiente local
+  │   ├── .env.production                  # Variáveis de ambiente produção
+  │   ├── .gitignore                       # Arquivos ignorados pelo Git
+  │   ├── vite.config.js                   # Configuração do VITE
+  │   ├── package.json                     # Dependências do cliente
+  │   └── README.md                            # Documentação do projeto
+  │    
   ├── /server                              # Código back-end (Node.js)
   │   ├── server.js                        # Arquivo principal do servidor
   │   │
   │   ├── /middlewares    
-  │   │   └── /socketServerMiddleware.js   # Handlers para autenticação
+  │   │   └── socketServerMiddleware.js   # Handlers para autenticação
   │   │
   │   ├── /economy    
   │   │   └── economyHandlers.js           # Handlers para economia
@@ -77,13 +82,13 @@ Folder structure of the AI project with brief descriptions.
   │   │   │   └── countryUtils.js          # Utilitários para países
   │   │   │    
   │   │   ├── /player   
-  │   │   │   └── playerHandlers.js        # Handlers para jogadores
+  │   │   │   ├── playerHandlers.js        # Handlers para jogadores
   │   │   │   ├── playerRoomHandlers.js    # Handlers para jogadores na sala
   │   │   │   ├── playerStateManager.js    # Gerencia estado dos jogadores
   │   │   │   └── playerUtils.js           # Funções utilitárias 
   │   │   │    
   │   │   ├── /room   
-  │   │   │   └── roomHandlers.js          # Handlers para sala
+  │   │   │   ├── roomHandlers.js          # Handlers para sala
   │   │   │   ├── roomManagement.js        # Gerenciamento de sala
   │   │   │   ├── roomNotifications.js     # Notificações da Sala
   │   │   │   └── roomUtils.js             # Utilitários da sala
@@ -92,22 +97,20 @@ Folder structure of the AI project with brief descriptions.
   │   │   │   └── shipHandlers.js          # Handlers para ship
   │   │   │    
   │   │   └── index.js
-  │   │
+  │   │ 
   │   ├── /utils                           # Utilitários do servidor
   │   │   └── gameStateUtils.js            # Utilitários de estado para o jogo
+  │   │    
+  │   ├── /infra   
+  │   │   └── redisClient.js               # Salvar no redis
   │   │
-  │   └── package.json                     # Dependências do servidor
-  │
-  ├── /public                              # Arquivos estáticos compartilhados
-  │   ├── /data                            # Dados estáticos do jogo
-  │   │   ├── countriesData.json           # Dados dos países
-  │   │   ├── coordinates.json             # Coordenadas dos países
-  │   │   └── routes.json                  # Rotas comerciais
+  │   ├─── /public                         # Arquivos estáticos compartilhados
+  │   │    └── /data                       # Dados estáticos do jogo
+  │   │        ├── countriesData.json      # Dados dos países
+  │   │        └── coordinates.json        # Coordenadas dos países
   │   │
-  │   └── /assets                          # Outros recursos estáticos
-  │       └── /images                      # Imagens do jogo
+  │   ├─── .env                            # Variáveis de ambiente
+  │   └─── package.json                    # Dependências do servidor
   │
   ├── package.json                         # Dependências e scripts principais
-  ├── .env                                 # Variáveis de ambiente
-  ├── .gitignore                           # Arquivos ignorados pelo Git
-  └── README.md                            # Documentação do projeto
+  └── .gitignore                           # Arquivos ignorados pelo Git
