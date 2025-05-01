@@ -2,7 +2,7 @@
  * Middleware para manipulação e processamento de eventos do Socket.io
  */
 
-const { initializeGameState, cleanupDisconnectedUser } = require('../utils/gameStateUtils');
+const { initializeGameState, cleanupDisconnectedUser } = require('../shared/gameStateUtils');
 
 /**
  * Middleware para registro, monitoramento e processamento de eventos do Socket.io

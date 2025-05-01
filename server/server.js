@@ -1,4 +1,4 @@
-const redis = require('./infra/redisClient');
+const redis = require('./shared/redisClient');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -8,12 +8,12 @@ const fs = require('fs');
 const path = require('path');
 
 // Importa o inicializador de socket da pasta socket/index.js
-const { initializeSocketHandlers } = require('./socket');
+const { initializeSocketHandlers } = require('./modules');
 
 const { createSocketMiddleware } = require('./middlewares/socketServerMiddleware');
 
 // Importa o sistema econômico
-const { initializeEconomySystem } = require('./economy/economyManager');
+const { initializeEconomySystem } = require('./modules/economy/economyManager');
 
 redis.set('debug_check', new Date().toISOString());
 dotenv.config();

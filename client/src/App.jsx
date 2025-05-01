@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import LoginScreen from './screens/LoginScreen';
-import RoomSelectionScreen from './screens/RoomSelectionScreen';
-import GameScreen from './screens/GameScreen';
-import './assets/styles/App.css';
-import { initializeSocketConnection } from './services/socketService';
+import AuthPage from './pages/AuthPage';
+import RoomPage from './pages/RoomPage';
+import GamePage from './pages/GamePage';
+import './shared/styles/App.css';
+import { initializeSocketConnection } from './modules/network/socketClient';
 
 
 function App() {
@@ -19,11 +19,11 @@ function App() {
   // Função para determinar qual tela mostrar
   const renderScreen = () => {
     if (!isAuthenticated) {
-      return <LoginScreen />;
+      return <AuthPage />;
     } else if (!currentRoom) {
-      return <RoomSelectionScreen />;
+      return <RoomPage />;
     } else {
-      return <GameScreen />;
+      return <GamePage />;
     }
   };
 

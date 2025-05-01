@@ -1,116 +1,121 @@
 # FOLDER-MAP.md
-Folder structure of the AI project with brief descriptions.
 
   /project-root
-  │ 
-  ├── /client                              # Código front-end em React
-  │   ├── index.html                       # HTML principal
-  │   │
-  │   ├── /public                          # Arquivos estáticos públicos
-  │   │   └── favicon.ico                  # Ícone do site
-  │   │
-  │   ├── /src                             # Código fonte React
-  │   │   ├── main.jsx                     # Ponto de entrada do React (Vite usa main.jsx)
-  │   │   ├── App.jsx                      # Componente principal
-  │   │   │
-  │   │   ├── /components                  # Componentes React reutilizáveis
-  │   │   │   ├── /layout                  # Componentes de layout
-  │   │   │   │   ├── Sideview.jsx         # Barra lateral de informações/chat
-  │   │   │   │   ├── Sidetools.jsx        # Ferramentas laterais
-  │   │   │   │   └── EconomyChart.jsx     # Ferramentas de economia
-  │   │   │   │
-  │   │   │   ├── /chat                    # Componentes de chat
-  │   │   │   │   └── ChatContainer.jsx    # Container do chat
-  │   │   │   │
-  │   │   │   └── /map                    # Componentes relacionados ao mapa
-  │   │   │       ├── GameMap.jsx          # Componente do mapa principal
-  │   │   │       ├── CountryDetails.jsx   # Detalhes do país selecionado
-  │   │   │       └── MaritimeChockpoints.jsx # Controles do mapa
-  │   │   │    
-  │   │   ├── /store                       # Redux Toolkit store
-  │   │   │   ├── index.js                 # Configuração da store
-  │   │   │   ├── /slices                  # Slices do Redux Toolkit
-  │   │   │   │   ├── authSlice.js         # Estado de autenticação
-  │   │   │   │   ├── roomsSlice.js        # Estado das salas
-  │   │   │   │   ├── gameSlice.js         # Estado do jogo
-  │   │   │   │   ├── shipsSlice.js        # Estado dos navios
-  │   │   │   │   └── chatSlice.js         # Estado do chat
-  │   │   │   │
-  │   │   │   └── /middleware              # Middleware personalizado
-  │   │   │       └── socketReduxMiddleware.js # Middleware para Socket.io
-  │   │   │
-  │   │   ├── /services                    # Serviços da aplicação
-  │   │   │   ├── countryService.js        # Identificar os dados de cada país
-  │   │   │   ├── socketService.js         # Comunicação via Socket.io
-  │   │   │   └── mapboxService.js         # Integração com Mapbox
-  │   │   │
-  │   │   ├── /screens                     # Telas principais da aplicação
-  │   │   │   ├── LoginScreen.jsx          # Tela de login
-  │   │   │   ├── RoomSelectionScreen.jsx  # Tela de seleção de salas
-  │   │   │   └── GameScreen.jsx           # Tela principal do jogo
-  │   │   │
-  │   │   └── /assets                      # Recursos estáticos
-  │   │       └── /styles                  # Arquivos CSS/SCSS
-  │   │  
-  │   ├── .env.local                       # Variáveis de ambiente local
-  │   ├── .env.production                  # Variáveis de ambiente produção
-  │   ├── .gitignore                       # Arquivos ignorados pelo Git
-  │   ├── vite.config.js                   # Configuração do VITE
-  │   ├── package.json                     # Dependências do cliente
-  │   └── README.md                            # Documentação do projeto
-  │    
-  ├── /server                              # Código back-end (Node.js)
-  │   ├── server.js                        # Arquivo principal do servidor
-  │   │
-  │   ├── /middlewares    
-  │   │   └── socketServerMiddleware.js   # Handlers para autenticação
-  │   │
-  │   ├── /economy    
-  │   │   └── economyHandlers.js           # Handlers para economia
-  │   │   └── economyManager.js            # Gerenciamento para economia
-  │   │   └── economyUtils.js              # cálculos para economia
-  │   │
-  │   ├── /socket         
-  │   │   ├── /auth             
-  │   │   │   └── authHandlers.js          # Handlers para autenticação
-  │   │   │    
-  │   │   ├── /chat   
-  │   │   │   └── chatHandlers.js          # Handlers para chat
-  │   │   │    
-  │   │   ├── /country   
-  │   │   │   ├── countryAssignment.js     # Atribuições de países
-  │   │   │   └── countryUtils.js          # Utilitários para países
-  │   │   │    
-  │   │   ├── /player   
-  │   │   │   ├── playerHandlers.js        # Handlers para jogadores
-  │   │   │   ├── playerRoomHandlers.js    # Handlers para jogadores na sala
-  │   │   │   ├── playerStateManager.js    # Gerencia estado dos jogadores
-  │   │   │   └── playerUtils.js           # Funções utilitárias 
-  │   │   │    
-  │   │   ├── /room   
-  │   │   │   ├── roomHandlers.js          # Handlers para sala
-  │   │   │   ├── roomManagement.js        # Gerenciamento de sala
-  │   │   │   ├── roomNotifications.js     # Notificações da Sala
-  │   │   │   └── roomUtils.js             # Utilitários da sala
-  │   │   │    
-  │   │   ├── /ship   
-  │   │   │   └── shipHandlers.js          # Handlers para ship
-  │   │   │    
-  │   │   └── index.js
-  │   │ 
-  │   ├── /utils                           # Utilitários do servidor
-  │   │   └── gameStateUtils.js            # Utilitários de estado para o jogo
-  │   │    
-  │   ├── /infra   
-  │   │   └── redisClient.js               # Salvar no redis
-  │   │
-  │   ├─── /public                         # Arquivos estáticos compartilhados
-  │   │    └── /data                       # Dados estáticos do jogo
-  │   │        ├── countriesData.json      # Dados dos países
-  │   │        └── coordinates.json        # Coordenadas dos países
-  │   │
-  │   ├─── .env                            # Variáveis de ambiente
-  │   └─── package.json                    # Dependências do servidor
+  ├── README.md                                  # Documentação do front-end
+  ├── eslint.config.js                           # Configuração do lint para os dois ambientes client e server
+  ├── package.json                               # Dependências e scripts principais (monorepo)
+  ├── .gitignore                                 # Não subir pro git
   │
-  ├── package.json                         # Dependências e scripts principais
-  └── .gitignore                           # Arquivos ignorados pelo Git
+  ├── /client                                    
+  │   ├── index.html                             # HTML principal
+  │   ├── vite.config.js                         # Configuração do Vite
+  │   ├── package.json                           # Dependências do front-end
+  │   ├── .env.local                             # Variáveis de ambiente local (React)
+  │   ├── .env.production                        # Variáveis de ambiente produção (React)
+  │   │
+  │   ├── /public                                
+  │   │   └── favicon.ico
+  │   │
+  │   └── /src                                   
+  │       ├── App.jsx                            # Componente raiz
+  │       ├── main.jsx                           # Entry point (Vite)
+  │       │
+  │       ├── /modules                          
+  │       │   ├── /auth
+  │       │   │   └── authState.js               # Estado de autenticação
+  │       │   │
+  │       │   ├── /chat
+  │       │   │   ├── ChatPanel.jsx              # Componente de chat
+  │       │   │   └── chatState.js               # Estado do chat
+  │       │   │
+  │       │   ├── /country
+  │       │   │   ├── countryService.js          # Identificação dos países
+  │       │   │   └── CountryDetails.jsx         # Componente de detalhes
+  │       │   │
+  │       │   ├── /game
+  │       │   │   └── gameState.js               # Estado do jogo
+  │       │   │
+  │       │   ├── /map
+  │       │   │   ├── MapView.jsx                # Mapa principal
+  │       │   │   ├── SeaRoutes.jsx              # Rotas marítimas
+  │       │   │   └── mapboxUtils.js             # Integração com Mapbox
+  │       │   │
+  │       │   ├── /military
+  │       │   │   └── shipsState.js              # Estado dos navios
+  │       │   │
+  │       │   ├── /network
+  │       │   │   └── socketService.js           # Comunicação via Socket.io
+  │       │   │
+  │       │   └── /room
+  │       │       └── roomState.js               # Estado das salas
+  │       │ 
+  │       ├── /pages                            
+  │       │   ├── AuthPage.jsx                   # Tela de autenticação/login
+  │       │   ├── GamePage.jsx                   # Tela principal do jogo
+  │       │   └── RoomPage.jsx                   # Tela de seleção de sala
+  │       │ 
+  │       ├── /store                            
+  │       │   ├── index.js                       # Criação e combinação dos reducers
+  │       │   └── /middleware                    
+  │       │       └── socketReduxMiddleware.js   # Middleware para Socket.io
+  │       │   
+  │       └── /shared                           
+  │           ├── /layout                        
+  │           │   ├── Sideview.jsx               # Layout da sidebar direita Sideview
+  │           │   └── Sidetools.jsx              # Layout da sidebar esquerda Sidetools
+  │           │
+  │           ├── /styles                        
+  │           │   └── (arquivos css)             # Todos os arquivos css
+  │           │
+  │           └── /ui                            
+  │               └── empty
+  │
+  └── /server                                   
+      ├── server.js                              # Entry point do servidor
+      ├── package.json                               
+      ├── .env         
+      │
+      ├── /middlewares       
+      │   └── socketServerMiddleware.js          # Handlers para autenticação  
+      │
+      ├── /modules
+      │   ├── index.js
+      │   │
+      │   ├── /auth
+      │   │   └── authHandlers.js                # Handlers de autenticação        
+      │   │
+      │   ├── /chat
+      │   │   └── chatHandlers.js                # Handlers do chat
+      │   │
+      │   ├── /country
+      │   │   ├── countryAssignment.js           # Atribuições de países
+      │   │   └── countryUtils.js                # Utilitários para países
+      │   │
+      │   ├── /economy
+      │   │   ├── economyHandlers.js             # Handlers para economia
+      │   │   ├── economyManager.js              # Gerenciamento para economia
+      │   │   └── economyUtils.js                # Cálculos para economia
+      │   │
+      │   ├── /player
+      │   │   ├── playerHandlers.js              # Handlers para jogadores
+      │   │   ├── playerRoomHandlers.js          # Handlers para jogadores na sala
+      │   │   ├── playerStateManager.js          # Gerencia estado dos jogadores
+      │   │   └── playerUtils.js                 # Funções utilitárias 
+      │   │
+      │   ├── /room
+      │   │   ├── roomHandlers.js                # Handlers para sala
+      │   │   ├── roomManagement.js              # Gerenciamento de sala
+      │   │   ├── roomNotifications.js           # Notificações da Sala
+      │   │   └── roomUtils.js                   # Utilitários da sala
+      │   │
+      │   └── /ship
+      │       └── shipHandlers.js                # Handlers para ship
+      │
+      ├── /shared                                
+      │   ├── redisClient.js                     # Infraestrutura do Redis
+      │   └── gameStateUtils.js                  # Utilitários de estado para o jogo
+      │
+      └── /public                               
+          └── /data                              
+              ├── countriesData.json             # Dados JSON dos países
+              └── countriesCoordinates.json      # Dados JSON de coordenadas

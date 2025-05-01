@@ -1,10 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './slices/authSlice';
-import roomsReducer from './slices/roomsSlice';
-import gameReducer from './slices/gameSlice';
-import shipsReducer from './slices/shipsSlice';
-import chatReducer from './slices/chatSlice';
-import socketReduxMiddleware from './middleware/socketReduxMiddleware';
+import authReducer from '../modules/auth/authState';
+import roomsReducer from '../modules/room/roomState';
+import gameReducer from '../modules/game/gameState';
+import shipsReducer from '../modules/military/shipsState';
+import chatReducer from '../modules/chat/chatState';
+import socketMiddleware from './middleware/socketMiddleware';
 
 export const store = configureStore({
   reducer: {
@@ -15,5 +15,5 @@ export const store = configureStore({
     chat: chatReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(socketReduxMiddleware),
+    getDefaultMiddleware().concat(socketMiddleware),
 });
