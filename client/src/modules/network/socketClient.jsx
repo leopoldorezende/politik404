@@ -45,7 +45,7 @@ export const initializeSocketConnection = (dispatch) => {
   // Incluindo o ID de sessão nos parâmetros de consulta
   socket = io(baseUrl, {
     withCredentials: true,
-    transports: ['websocket', 'polling'],
+    transports: ['polling'],
     reconnection: true,
     reconnectionAttempts: 10,
     reconnectionDelay: 1000,
