@@ -6,14 +6,11 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-
-// Importa o inicializador de socket da pasta socket/index.js
 const { initializeSocketHandlers } = require('./modules');
-
 const { createSocketMiddleware } = require('./middlewares/socketServerMiddleware');
-
-// Importa o sistema econômico
 const { initializeEconomySystem } = require('./modules/economy/economyManager');
+const { cleanupInactiveUsers, registerSocketUserMapping } = require('./shared/gameStateUtils');
+const googleAuthRoutes = require('./modules/auth/google')
 
 redis.set('debug_check', new Date().toISOString());
 dotenv.config();
@@ -21,6 +18,9 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Rota de autenticação
+app.use('/auth', googleAuthRoutes);
 
 // Servir arquivos públicos estáticos do front-end
 if (process.env.NODE_ENV === 'production') {
@@ -73,6 +73,23 @@ app.get('/check-data-files', (req, res) => {
   });
 });
 
+// Rota para obter estatísticas do servidor para monitoramento
+app.get('/api/stats', (req, res) => {
+  const stats = {
+    uptime: process.uptime(),
+    timestamp: Date.now(),
+    connections: {
+      socketCount: io.engine.clientsCount,
+      socketsById: Array.from(io.sockets.sockets.keys()),
+      roomCount: gameState.rooms.size,
+      onlineUsersCount: gameState.onlinePlayers.size,
+      onlineUsers: Array.from(gameState.onlinePlayers)
+    },
+    memory: process.memoryUsage()
+  };
+  res.json(stats);
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -118,11 +135,14 @@ try {
 const gameState = {
   rooms: new Map(),
   socketIdToUsername: new Map(),
+  usernameToSocketId: new Map(), // Mapeamento bidirecional
   userToRoom: new Map(),
   userRoomCountries: new Map(),
   playerStates: new Map(),
   ships: new Map(),
   onlinePlayers: new Set(),
+  lastActivityTimestamp: new Map(), // Para verificação de inatividade
+  pendingSocketsRemoval: new Set(), // Sockets a serem removidos
   countriesData: countriesData,
   MAX_CHAT_HISTORY: 100,
   createRoom: function(name, owner) {
@@ -138,6 +158,39 @@ const gameState = {
   getPrivateChatKey: function(user1, user2) {
     return [user1, user2].sort().join(':');
   }
+};
+
+// Função para limpar periodicamente sockets e usuários inativos
+const setupCleanupSchedule = () => {
+  // Executa limpeza a cada 15 minutos
+  const CLEANUP_INTERVAL = 15 * 60 * 1000; // 15 minutos
+  
+  // Inicia o intervalo para limpeza
+  const cleanupInterval = setInterval(() => {
+    const now = new Date();
+    console.log(`[${now.toISOString()}] Iniciando limpeza programada...`);
+    
+    const removedCount = cleanupInactiveUsers(io, gameState);
+    
+    console.log(`[${now.toISOString()}] Limpeza concluída: ${removedCount} itens removidos`);
+  }, CLEANUP_INTERVAL);
+  
+  // Também executa limpeza a cada 2 horas para remover sessões muito antigas
+  const DEEP_CLEANUP_INTERVAL = 2 * 60 * 60 * 1000; // 2 horas
+  
+  // Inicia o intervalo para limpeza profunda (sessões antigas)
+  const deepCleanupInterval = setInterval(() => {
+    const now = new Date();
+    console.log(`[${now.toISOString()}] Iniciando limpeza profunda...`);
+    
+    // Limpar usuários com mais de 8 horas de inatividade
+    const removedCount = cleanupInactiveUsers(io, gameState, 8 * 60 * 60 * 1000);
+    
+    console.log(`[${now.toISOString()}] Limpeza profunda concluída: ${removedCount} itens removidos`);
+  }, DEEP_CLEANUP_INTERVAL);
+  
+  // Retorna os intervalos para possível cancelamento futuro
+  return { cleanupInterval, deepCleanupInterval };
 };
 
 async function restoreRoomsFromRedis() {
@@ -165,6 +218,12 @@ restoreRoomsFromRedis().then(() => {
 
     // Inicializar o sistema econômico
     initializeEconomySystem(io, gameState);
+    
+    // Configurar limpeza programada
+    const cleanupSchedules = setupCleanupSchedule();
+    
+    // Salvar as referências no objeto global para possível acesso futuro
+    global.cleanupSchedules = cleanupSchedules;
   });
 });
 
@@ -172,35 +231,76 @@ io.use(createSocketMiddleware(io));
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
+  
+  // Registrar o evento para monitorar quando o cliente confirma a conexão
+  socket.on('pong', (data) => {
+    // Atualizar timestamp de atividade para o usuário associado a este socket
+    const username = gameState.socketIdToUsername.get(socket.id);
+    if (username && gameState.lastActivityTimestamp) {
+      gameState.lastActivityTimestamp.set(username, Date.now());
+    }
+  });
+  
+  // Registrar o evento de autenticação para mapeamento bidirecional
+  socket.on('authenticate', (username) => {
+    if (username) {
+      // Registrar mapeamento bidirecional
+      registerSocketUserMapping(gameState, socket.id, username);
+      
+      // Atualizar o timestamp de última atividade
+      if (gameState.lastActivityTimestamp) {
+        gameState.lastActivityTimestamp.set(username, Date.now());
+      }
+    }
+  });
+  
+  // Inicializar os handlers do socket
   initializeSocketHandlers(io, socket, gameState);
+  
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     const username = gameState.socketIdToUsername.get(socket.id);
+    
     if (username) {
       const roomName = gameState.userToRoom.get(username);
       if (roomName) {
         const room = gameState.rooms.get(roomName);
         if (room && room.players) {
-          room.players = room.players.filter(p => 
-            typeof p === 'object' ? p.username !== username : !p.startsWith(username)
+          // Encontra o jogador na lista
+          const playerIndex = room.players.findIndex(p => 
+            typeof p === 'object' ? p.username === username : !p.startsWith(username)
           );
-          io.to(roomName).emit('playersList', room.players);
-          if (room.players.length === 0) {
-            gameState.rooms.delete(roomName);
-            const roomsList = Array.from(gameState.rooms.entries()).map(([name, rm]) => ({
-              name,
-              owner: rm.owner,
-              playerCount: rm.players.length,
-              createdAt: rm.createdAt
-            }));
-            io.emit('roomsList', roomsList);
+          
+          if (playerIndex !== -1) {
+            // Marca como offline em vez de remover
+            if (typeof room.players[playerIndex] === 'object') {
+              room.players[playerIndex].isOnline = false;
+            }
+            
+            // Notifica outros jogadores na sala
+            io.to(roomName).emit('playerOnlineStatus', { 
+              username, 
+              isOnline: false 
+            });
+            
+            // Atualiza lista de jogadores na sala
+            io.to(roomName).emit('playersList', room.players);
           }
         }
-        gameState.userToRoom.delete(username);
+        
+        // Não remove a associação de usuário para sala para permitir reconexão
+        // gameState.userToRoom.delete(username);
       }
-      gameState.socketIdToUsername.delete(socket.id);
+      
+      // Marca o usuário como offline
       gameState.onlinePlayers.delete(username);
+      
+      // Notifica todos os clientes sobre o status offline
       io.emit('playerOnlineStatus', { username, isOnline: false });
+      
+      // Limpa os dados relacionados ao socket
+      // Nota: Não removemos completamente aqui para permitir reconexão
+      // Isto será feito durante a limpeza programada
     }
   });
 });

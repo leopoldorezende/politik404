@@ -12,6 +12,11 @@ function initializeGameState(gameState) {
     gameState.socketIdToUsername = new Map();
   }
   
+  // Inicializa mapa de username para socketId para facilitar busca
+  if (!gameState.usernameToSocketId) {
+    gameState.usernameToSocketId = new Map();
+  }
+  
   // Inicializa mapa de usuário para sala
   if (!gameState.userToRoom) {
     gameState.userToRoom = new Map();
@@ -30,6 +35,11 @@ function initializeGameState(gameState) {
   // Inicializa conjunto de jogadores online
   if (!gameState.onlinePlayers) {
     gameState.onlinePlayers = new Set();
+  }
+  
+  // Inicializa timestamp de última atividade por usuário
+  if (!gameState.lastActivityTimestamp) {
+    gameState.lastActivityTimestamp = new Map();
   }
   
   // Inicializa mapa de salas
@@ -71,6 +81,11 @@ function initializeGameState(gameState) {
     };
   }
   
+  // Inicializa lista de sockets pendentes de remoção
+  if (!gameState.pendingSocketsRemoval) {
+    gameState.pendingSocketsRemoval = new Set();
+  }
+  
   console.log('Estruturas de dados do gameState inicializadas');
 }
 
@@ -82,6 +97,39 @@ function initializeGameState(gameState) {
  */
 function getUsernameFromSocketId(gameState, socketId) {
   return gameState.socketIdToUsername.get(socketId) || null;
+}
+
+/**
+ * Obtém o ID do socket a partir do nome de usuário
+ * @param {Object} gameState - Estado global do jogo
+ * @param {string} username - Nome do usuário
+ * @returns {string|null} - ID do socket ou null se não encontrado
+ */
+function getSocketIdFromUsername(gameState, username) {
+  return gameState.usernameToSocketId?.get(username) || null;
+}
+
+/**
+ * Registra o mapeamento bidirecional entre socketId e username
+ * @param {Object} gameState - Estado global do jogo
+ * @param {string} socketId - ID do socket
+ * @param {string} username - Nome do usuário
+ */
+function registerSocketUserMapping(gameState, socketId, username) {
+  if (!socketId || !username) return;
+  
+  // Registra o mapeamento de socketId para username
+  gameState.socketIdToUsername.set(socketId, username);
+  
+  // Registra o mapeamento inverso se existir o Map
+  if (gameState.usernameToSocketId) {
+    gameState.usernameToSocketId.set(username, socketId);
+  }
+  
+  // Atualiza o timestamp de última atividade
+  if (gameState.lastActivityTimestamp) {
+    gameState.lastActivityTimestamp.set(username, Date.now());
+  }
 }
 
 /**
@@ -112,6 +160,83 @@ function getCurrentRoom(socket, gameState) {
 }
 
 /**
+ * Verifica se um socket está realmente conectado
+ * @param {Object} io - Instância do Socket.io
+ * @param {string} socketId - ID do socket a verificar
+ * @returns {boolean} - Verdadeiro se o socket estiver conectado
+ */
+function isSocketConnected(io, socketId) {
+  if (!socketId) return false;
+  
+  const socket = io.sockets.sockets.get(socketId);
+  return socket && socket.connected;
+}
+
+/**
+ * Limpa sockets desconectados do gameState
+ * @param {Object} io - Instância do Socket.io
+ * @param {Object} gameState - Estado global do jogo
+ */
+function cleanupDisconnectedSockets(io, gameState) {
+  let socketsRemoved = 0;
+  
+  // Verificar cada socketId registrado
+  for (const [socketId, username] of gameState.socketIdToUsername.entries()) {
+    // Verificar se o socket realmente existe e está conectado
+    if (!isSocketConnected(io, socketId)) {
+      // Marcar para remoção se não estiver conectado
+      gameState.pendingSocketsRemoval.add(socketId);
+      
+      // Registrar no log
+      console.log(`Socket ${socketId} para usuário ${username} marcado para remoção (desconectado)`);
+    }
+  }
+  
+  // Remover sockets marcados para remoção
+  for (const socketId of gameState.pendingSocketsRemoval) {
+    const username = gameState.socketIdToUsername.get(socketId);
+    
+    if (username) {
+      // Verificar se este é o socket mais recente para o usuário
+      const currentSocketId = gameState.usernameToSocketId?.get(username);
+      
+      if (currentSocketId !== socketId) {
+        // Se não for o socket mais recente, pode remover
+        gameState.socketIdToUsername.delete(socketId);
+        socketsRemoved++;
+        
+        console.log(`Socket antigo ${socketId} para usuário ${username} removido`);
+      } else if (!isSocketConnected(io, socketId)) {
+        // Se for o socket mais recente, mas estiver desconectado
+        gameState.socketIdToUsername.delete(socketId);
+        gameState.usernameToSocketId?.delete(username);
+        socketsRemoved++;
+        
+        console.log(`Socket atual ${socketId} para usuário ${username} removido (desconectado)`);
+        
+        // Marcar usuário como offline
+        gameState.onlinePlayers.delete(username);
+      }
+    } else {
+      // Se não houver usuário associado, pode remover
+      gameState.socketIdToUsername.delete(socketId);
+      socketsRemoved++;
+      
+      console.log(`Socket órfão ${socketId} removido (sem usuário associado)`);
+    }
+  }
+  
+  // Limpar lista de pendentes
+  gameState.pendingSocketsRemoval.clear();
+  
+  if (socketsRemoved > 0) {
+    console.log(`Limpeza concluída: ${socketsRemoved} sockets removidos`);
+  }
+  
+  return socketsRemoved;
+}
+
+/**
  * Limpa todos os dados relacionados a um usuário quando ele se desconecta
  * @param {Object} gameState - Estado global do jogo
  * @param {string} socketId - ID do socket
@@ -120,13 +245,27 @@ function cleanupDisconnectedUser(gameState, socketId) {
   const username = getUsernameFromSocketId(gameState, socketId);
   if (!username) return;
   
-  console.log(`Limpando dados para usuário desconectado: ${username}`);
+  console.log(`Limpando dados para usuário desconectado: ${username} (Socket ID: ${socketId})`);
+  
+  // Remove o usuário da lista de online
+  gameState.onlinePlayers.delete(username);
+  
+  // Verificar se este é o socket mais recente do usuário
+  const currentSocketId = gameState.usernameToSocketId?.get(username);
+  if (currentSocketId === socketId) {
+    // Se for o socket atual, remover do mapeamento username -> socketId
+    gameState.usernameToSocketId?.delete(username);
+  } else {
+    console.log(`Mantendo o usuário ${username} mapeado para o socketId mais recente: ${currentSocketId}`);
+    // Se não for o socket atual, não remover do mapeamento para evitar perder a sessão ativa
+    
+    // Apenas remover este socketId específico
+    gameState.socketIdToUsername.delete(socketId);
+    return;
+  }
   
   // Remove do mapeamento de socketId para username
   gameState.socketIdToUsername.delete(socketId);
-  
-  // Remove do conjunto de jogadores online
-  gameState.onlinePlayers.delete(username);
   
   // Obtém a sala atual (se houver)
   const roomName = gameState.userToRoom.get(username);
@@ -204,7 +343,8 @@ function cleanupDisconnectedUser(gameState, socketId) {
     }
     
     // Remove do mapeamento de usuário para sala
-    gameState.userToRoom.delete(username);
+    // Não remover para manter o usuário na sala quando reconectar
+    // gameState.userToRoom.delete(username);
   }
   
   // Remove todos os navios do jogador
@@ -215,9 +355,58 @@ function cleanupDisconnectedUser(gameState, socketId) {
   }
 }
 
+/**
+ * Limpeza periódica de usuários inativos e reconexões pendentes
+ * @param {Object} io - Instância do Socket.io
+ * @param {Object} gameState - Estado global do jogo
+ * @param {number} inactivityTimeout - Tempo máximo de inatividade em ms (padrão: 2 horas)
+ * @returns {number} - Número de usuários removidos
+ */
+function cleanupInactiveUsers(io, gameState, inactivityTimeout = 2 * 60 * 60 * 1000) {
+  if (!gameState.lastActivityTimestamp) return 0;
+  
+  const now = Date.now();
+  let removedCount = 0;
+  
+  // Processar cada usuário com timestamp de atividade
+  for (const [username, lastActivity] of gameState.lastActivityTimestamp.entries()) {
+    // Verificar se o tempo de inatividade excede o limite
+    if (now - lastActivity > inactivityTimeout) {
+      console.log(`Removendo usuário inativo: ${username} (inativo por ${Math.floor((now - lastActivity) / 60000)} minutos)`);
+      
+      // Remover do mapeamento de socketId para username
+      const socketId = gameState.usernameToSocketId?.get(username);
+      if (socketId) {
+        gameState.socketIdToUsername.delete(socketId);
+      }
+      
+      // Remover do mapeamento de username para socketId
+      gameState.usernameToSocketId?.delete(username);
+      
+      // Remover da lista de online
+      gameState.onlinePlayers.delete(username);
+      
+      // Remover o timestamp de atividade
+      gameState.lastActivityTimestamp.delete(username);
+      
+      removedCount++;
+    }
+  }
+  
+  // Também limpar sockets desconectados
+  removedCount += cleanupDisconnectedSockets(io, gameState);
+  
+  return removedCount;
+}
+
 module.exports = {
   initializeGameState,
   getUsernameFromSocketId,
+  getSocketIdFromUsername,
+  registerSocketUserMapping,
   getCurrentRoom,
-  cleanupDisconnectedUser
+  cleanupDisconnectedUser,
+  cleanupDisconnectedSockets,
+  cleanupInactiveUsers,
+  isSocketConnected
 };

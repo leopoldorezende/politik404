@@ -1,7 +1,20 @@
 import { io } from 'socket.io-client';
 import { setMyCountry, setPlayers, setPlayerOnlineStatus, setOnlinePlayers, 
          updateEconomyData, addEconomicEvent, setEconomyConfig, applyPolicyChange } from '../../modules/game/gameState';
-import { addMessage, setChatHistory } from '../../modules/chat/chatState';
+import { addMessage, setChatHistory, clearChat } from '../../modules/chat/chatState';
+import { leaveRoom } from '../../modules/room/roomState';
+
+// Gera um ID de sessão único para este cliente/navegador
+const generateSessionId = () => {
+  if (!window.localStorage.getItem('socketSessionId')) {
+    const randomId = Math.random().toString(36).substring(2, 15);
+    window.localStorage.setItem('socketSessionId', randomId);
+  }
+  return window.localStorage.getItem('socketSessionId');
+};
+
+// ID único de sessão para este cliente
+const sessionId = generateSessionId();
 
 const socketMiddleware = store => {
   let socket = null;
@@ -11,13 +24,62 @@ const socketMiddleware = store => {
 
     if (action.type === 'socket/connect') {
       // Avoid multiple connections
-      if (socket) socket.disconnect();
+      if (socket && socket.connected) {
+        console.log('Socket já está conectado, reutilizando conexão existente');
+        return next(action);
+      }
+      
+      if (socket) {
+        console.log('Desconectando socket antigo antes de criar nova conexão');
+        socket.disconnect();
+      }
       
       // Connect to server
-      socket = io(import.meta.env.VITE_SOCKET_URL || window.location.origin);
+      console.log('Conectando ao servidor socket...');
+      
+      // Incluir o ID de sessão nos parâmetros de consulta
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
+      socket = io(socketUrl, {
+        query: {
+          clientSessionId: sessionId
+        }
+      });
+      
+      // Adicionar handler para reconexão
+      socket.io.on("reconnect_attempt", (attempt) => {
+        console.log(`Tentativa de reconexão #${attempt}`);
+      });
+      
+      socket.io.on("reconnect", (attempt) => {
+        console.log(`Reconectado após ${attempt} tentativas`);
+        
+        // Re-autenticar após reconexão
+        const username = sessionStorage.getItem('username');
+        if (username) {
+          console.log('Re-autenticando após reconexão:', username);
+          socket.emit('authenticate', username, { clientSessionId: sessionId });
+        }
+      });
       
       socket.on('connect', () => {
         console.log('Connected to socket server with ID:', socket.id);
+      });
+      
+      socket.on('forcedDisconnect', (data) => {
+        console.log('Desconexão forçada:', data);
+        
+        // Só exibir alerta se não for do mesmo dispositivo (mesma sessão)
+        if (!data.sameBrowser && data.reason) {
+          alert(`Você foi desconectado: ${data.reason}`);
+        }
+        
+        // Se for para reconectar automaticamente
+        if (data.reconnect) {
+          setTimeout(() => {
+            console.log('Tentando reconectar automaticamente...');
+            dispatch({ type: 'socket/connect' });
+          }, 2000);
+        }
       });
       
       socket.on('roomsList', (rooms) => {
@@ -28,6 +90,20 @@ const socketMiddleware = store => {
       socket.on('roomJoined', (room) => {
         console.log('Joined room:', room);
         dispatch({ type: 'rooms/setCurrentRoom', payload: room });
+      });
+      
+      socket.on('roomLeft', () => {
+        console.log('Left room - received confirmation from server');
+        
+        // Garantir que o cliente considera que saiu da sala e limpa corretamente o estado
+        dispatch(leaveRoom());
+        dispatch(clearChat());
+        dispatch(setMyCountry(null));
+        
+        // Limpar armazenamento local
+        sessionStorage.removeItem('myCountry');
+        
+        console.log('Estado da sala limpo no cliente');
       });
       
       socket.on('roomCreated', (data) => {
@@ -129,13 +205,32 @@ const socketMiddleware = store => {
       
       socket.on('error', (message) => {
         console.error('Socket error:', message);
-        alert(`Error: ${message}`);
+        // Apenas exibe o erro no console sem mostrar alert para evitar spam
+        // Se for um erro crítico que precisa de atenção do usuário, usar um sistema de notificação mais elegante
+      });
+      
+      // Adicionar handler para erro de conexão
+      socket.on('connect_error', (err) => {
+        console.error('Socket connection error:', err.message);
+      });
+      
+      // Adicionar handler para desconexão
+      socket.on('disconnect', (reason) => {
+        console.log('Socket disconnected:', reason);
+        
+        // Reconectar automaticamente se a desconexão não foi intencional
+        if (reason === 'io server disconnect' || reason === 'transport close') {
+          console.log('Tentando reconectar automaticamente...');
+          setTimeout(() => {
+            socket.connect();
+          }, 1000);
+        }
       });
     }
     
     if (action.type === 'socket/authenticate' && socket) {
       console.log('Authenticating with username:', action.payload);
-      socket.emit('authenticate', action.payload);
+      socket.emit('authenticate', action.payload, { clientSessionId: sessionId });
       
       // Salvar o nome de usuário no sessionStorage para persistência
       sessionStorage.setItem('username', action.payload);
@@ -153,14 +248,17 @@ const socketMiddleware = store => {
     
     if (action.type === 'socket/joinRoom' && socket) {
       console.log('Joining room:', action.payload);
-      socket.emit('joinRoom', action.payload);
+      socket.emit('joinRoom', action.payload, { clientSessionId: sessionId });
     }
     
     if (action.type === 'socket/leaveRoom' && socket) {
-      console.log('Leaving room');
-      socket.emit('leaveRoom');
+      console.log('Leaving room - sending request to server');
       
-      // Limpar o país do jogador quando sair da sala
+      // Adicionar flag para indicar saída intencional
+      socket.emit('leaveRoom', { intentional: true });
+      
+      // Limpar o país do jogador e outros estados quando sair da sala
+      // Nota: O restante da limpeza será feito quando recebermos a confirmação 'roomLeft' do servidor
       dispatch(setMyCountry(null));
       sessionStorage.removeItem('myCountry');
     }
@@ -187,7 +285,8 @@ const socketMiddleware = store => {
         username, 
         message: content, 
         isPrivate, 
-        recipient
+        recipient,
+        clientSessionId: sessionId // Adicionar ID de sessão para identificar o dispositivo
       });
     }
     

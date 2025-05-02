@@ -15,5 +15,12 @@ export const store = configureStore({
     chat: chatReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(socketMiddleware),
+    getDefaultMiddleware({
+      serializableCheck: {
+        // Ignorar ações não serializáveis do socket.io que podem causar warnings
+        ignoredActions: ['socket/connect', 'socket/authenticate'],
+        // Ignorar caminhos no estado que podem conter valores não serializáveis
+        ignoredPaths: ['socket']
+      }
+    }).concat(socketMiddleware),
 });

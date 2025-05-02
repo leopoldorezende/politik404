@@ -14,12 +14,17 @@ function createSocketMiddleware(io) {
   const gameState = {
     rooms: new Map(),
     socketIdToUsername: new Map(),
+    usernameToSocketId: new Map(), // Mapeamento bidirecional
     userToRoom: new Map(),
     userRoomCountries: new Map(),
     playerStates: new Map(),
     ships: new Map(),
     onlinePlayers: new Set(),
     displayNames: new Map(),
+    lastActivityTimestamp: new Map(),
+    pendingSocketsRemoval: new Set(),
+    socketToSessionId: new Map(), // Mapear socketId para ID de sessão do cliente
+    sessionIdToUsername: new Map(), // Mapear ID de sessão para username
     MAX_CHAT_HISTORY: 100,
     
     // Função auxiliar para criar uma sala
@@ -50,6 +55,19 @@ function createSocketMiddleware(io) {
   return function(socket, next) {
     console.log(`Socket conectado: ${socket.id}`);
     
+    // Obter e registrar o ID de sessão do cliente
+    const clientSessionId = socket.handshake.query.clientSessionId;
+    if (clientSessionId) {
+      console.log(`Socket ${socket.id} associado à sessão do cliente: ${clientSessionId}`);
+      gameState.socketToSessionId.set(socket.id, clientSessionId);
+      
+      // Verificar se já existe um usuário associado a esta sessão
+      const existingUsername = gameState.sessionIdToUsername.get(clientSessionId);
+      if (existingUsername) {
+        console.log(`Sessão ${clientSessionId} já está associada ao usuário ${existingUsername}`);
+      }
+    }
+    
     // Monitoramento e registro de eventos
     const originalEmit = socket.emit;
     socket.emit = function(event, ...args) {
@@ -68,6 +86,15 @@ function createSocketMiddleware(io) {
     // Captura eventos de desconexão para limpeza
     socket.on('disconnect', () => {
       console.log(`Socket desconectado: ${socket.id}`);
+      
+      // Obter o ID de sessão do cliente
+      const clientSessionId = gameState.socketToSessionId.get(socket.id);
+      
+      // Remover o mapeamento de socketId para sessionId
+      gameState.socketToSessionId.delete(socket.id);
+      
+      // Adicionar à lista de pendentes para remoção
+      gameState.pendingSocketsRemoval.add(socket.id);
       
       // Limpa dados relacionados ao usuário desconectado
       cleanupDisconnectedUser(gameState, socket.id);
@@ -102,6 +129,13 @@ function createSocketMiddleware(io) {
     // Redefine o temporizador em cada evento recebido
     socket.use((packet, next) => {
       resetInactivityTimer();
+      
+      // Atualizar o timestamp de atividade para o usuário
+      const username = socket.username;
+      if (username && gameState.lastActivityTimestamp) {
+        gameState.lastActivityTimestamp.set(username, Date.now());
+      }
+      
       next();
     });
     
@@ -117,6 +151,67 @@ function createSocketMiddleware(io) {
         socket.emit('pong', { latency });
       }
     });
+    
+    // Customizar o evento de autenticação para aceitar o ID de sessão
+    const originalOn = socket.on;
+    socket.on = function(event, handler) {
+      if (event === 'authenticate') {
+        // Substituir o handler de autenticação para incluir verificação de sessão
+        return originalOn.call(socket, event, function(username, options = {}) {
+          // Obter o ID de sessão do payload ou da query
+          const clientSessionId = (options && options.clientSessionId) || 
+                                  gameState.socketToSessionId.get(socket.id);
+          
+          if (clientSessionId) {
+            // Associar o ID de sessão ao username para futuras verificações
+            gameState.sessionIdToUsername.set(clientSessionId, username);
+            
+            // Verificar se já existe um socket para este usuário e é do mesmo ID de sessão
+            let existingSocketId = null;
+            let isSameSession = false;
+            
+            for (const [socketId, existingUsername] of gameState.socketIdToUsername.entries()) {
+              if (existingUsername === username && socketId !== socket.id) {
+                existingSocketId = socketId;
+                
+                // Verificar se é a mesma sessão
+                const existingSessionId = gameState.socketToSessionId.get(socketId);
+                if (existingSessionId && existingSessionId === clientSessionId) {
+                  isSameSession = true;
+                  console.log(`Detectada reconexão do mesmo dispositivo para ${username}`);
+                }
+                break;
+              }
+            }
+            
+            // Se existir um socket para este usuário e for do mesmo dispositivo,
+            // desconectar o socket antigo sem mostrar erro para o cliente
+            if (existingSocketId && isSameSession) {
+              const existingSocket = io.sockets.sockets.get(existingSocketId);
+              if (existingSocket) {
+                console.log(`Desconectando socket antigo ${existingSocketId} do mesmo dispositivo`);
+                
+                // Notificar o socket antigo que será desconectado (sem mostrar alerta)
+                existingSocket.emit('forcedDisconnect', { 
+                  reason: 'Nova sessão iniciada em outro local',
+                  reconnect: false,
+                  sameBrowser: true // Indicar que é do mesmo navegador
+                });
+                
+                // Marca para remoção na próxima limpeza
+                gameState.pendingSocketsRemoval.add(existingSocketId);
+              }
+            }
+          }
+          
+          // Chamar o handler original com os argumentos originais
+          handler.apply(socket, [username]);
+        });
+      }
+      
+      // Para outros eventos, manter comportamento padrão
+      return originalOn.apply(socket, arguments);
+    };
     
     // Continua para o próximo middleware
     next();

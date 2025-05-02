@@ -18,7 +18,7 @@ function setupPlayerRoomHandlers(io, socket, gameState) {
   console.log('Player room handlers inicializados');
   
   // Sair da sala - MODIFICADO para manter o jogador na lista de jogadores mas marcá-lo como offline
-  socket.on('leaveRoom', () => {
+  socket.on('leaveRoom', (options = {}) => {
     const username = socket.username;
     if (!username) {
       socket.emit('error', 'Usuário não autenticado');
@@ -60,7 +60,29 @@ function setupPlayerRoomHandlers(io, socket, gameState) {
     // Sai da sala do socket.io
     socket.leave(roomName);
     
-    console.log(`${username} saiu da sala ${roomName} mas permanece na lista de jogadores como offline`);
+    // *** CORREÇÃO IMPORTANTE: Remover a associação do usuário com a sala ***
+    // Esta linha é crucial para evitar a reconexão automática
+    gameState.userToRoom.delete(username);
+    
+    // Marcar no estado do jogador que a saída foi intencional
+    const userRoomKey = `${username}:${roomName}`;
+    
+    // Obter ou criar o estado do jogador
+    let playerState = gameState.playerStates.get(userRoomKey);
+    if (!playerState) {
+      playerState = {
+        country: gameState.userRoomCountries.get(userRoomKey),
+        customData: {}
+      };
+    }
+    
+    // Verificar se a saída foi intencional a partir do parâmetro recebido
+    playerState.intentionalLeave = !!options.intentional;
+    
+    // Salvar o estado atualizado
+    gameState.playerStates.set(userRoomKey, playerState);
+    
+    console.log(`${username} saiu da sala ${roomName} - Saída intencional: ${playerState.intentionalLeave}`);
     
     // Se o jogador era dono da sala e há outros jogadores, transfere a propriedade
     if (room.owner === username && room.players.length > 1) {
@@ -149,6 +171,9 @@ function setupPlayerRoomHandlers(io, socket, gameState) {
     
     // Remove o estado do jogador para esta sala
     gameState.playerStates.delete(userRoomKey);
+    
+    // *** CORREÇÃO IMPORTANTE: Remover a associação do usuário com a sala ***
+    gameState.userToRoom.delete(username);
     
     console.log(`${username} removido completamente da sala ${roomName}`);
     
