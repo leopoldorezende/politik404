@@ -57,7 +57,7 @@
   │       ├── /store                            
   │       │   ├── index.js                       # Criação e combinação dos reducers
   │       │   └── /middleware                    
-  │       │       └── socketReduxMiddleware.js   # Middleware para Socket.io
+  │       │       └── socketMiddleware.js        # Middleware para Socket.io
   │       │   
   │       └── /shared                           
   │           ├── /layout                        

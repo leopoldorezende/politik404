@@ -1,20 +1,23 @@
 import { io } from 'socket.io-client';
 import { setMyCountry, setPlayers, setPlayerOnlineStatus, setOnlinePlayers, 
          updateEconomyData, addEconomicEvent, setEconomyConfig, applyPolicyChange } from '../../modules/game/gameState';
-import { addMessage, setChatHistory, clearChat } from '../../modules/chat/chatState';
-import { leaveRoom } from '../../modules/room/roomState';
+import { addMessage, setChatHistory } from '../../modules/chat/chatState';
 
-// Gera um ID de sessão único para este cliente/navegador
+// Mantém uma instância singleton do socket
+let socketInstance = null;
+
+// Contador de tentativas de reconexão
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+
+// Função para criar um id de sessão único
 const generateSessionId = () => {
-  if (!window.localStorage.getItem('socketSessionId')) {
-    const randomId = Math.random().toString(36).substring(2, 15);
-    window.localStorage.setItem('socketSessionId', randomId);
+  if (!localStorage.getItem('clientSessionId')) {
+    const sessionId = Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('clientSessionId', sessionId);
   }
-  return window.localStorage.getItem('socketSessionId');
+  return localStorage.getItem('clientSessionId');
 };
-
-// ID único de sessão para este cliente
-const sessionId = generateSessionId();
 
 const socketMiddleware = store => {
   let socket = null;
@@ -23,112 +26,118 @@ const socketMiddleware = store => {
     const { dispatch } = store;
 
     if (action.type === 'socket/connect') {
-      // Avoid multiple connections
-      if (socket && socket.connected) {
-        console.log('Socket já está conectado, reutilizando conexão existente');
+      // Evitar múltiplas conexões - usar instância existente se possível
+      if (socketInstance && socketInstance.connected) {
+        console.log('Reutilizando conexão de socket existente:', socketInstance.id);
+        socket = socketInstance;
         return next(action);
       }
       
-      if (socket) {
-        console.log('Desconectando socket antigo antes de criar nova conexão');
-        socket.disconnect();
+      // Se há uma instância desconectada, desconectar explicitamente
+      if (socketInstance) {
+        console.log('Descartando instância de socket desconectada');
+        socketInstance.disconnect();
+        socketInstance = null;
       }
       
-      // Connect to server
-      console.log('Conectando ao servidor socket...');
-      
-      // Incluir o ID de sessão nos parâmetros de consulta
+      // Obter a URL do socket do ambiente ou usar a origem da página
       const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
-      socket = io(socketUrl, {
+      console.log('Conectando ao servidor socket:', socketUrl);
+      
+      // Configurações de conexão
+      const sessionId = generateSessionId();
+      const connectionOptions = {
+        withCredentials: true,
+        transports: ['polling'], // IMPORTANTE: Usar apenas polling para evitar problemas com WebSocket
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
         query: {
           clientSessionId: sessionId
         }
+      };
+      
+      // Iniciar a conexão
+      socket = io(socketUrl, connectionOptions);
+      socketInstance = socket; // Guardar a instância para reutilização
+      
+      // Para fácil acesso via console para debugging
+      window.socket = socket;
+      
+      socket.on('connect', () => {
+        console.log('Conectado ao servidor socket com ID:', socket.id, 'via', socket.io.engine.transport.name);
+        reconnectAttempts = 0; // Resetar contador de tentativas
+        
+        // Se o usuário já estiver autenticado, reautenticar
+        const username = sessionStorage.getItem('username');
+        if (username) {
+          console.log('Reautenticando usuário após conexão:', username);
+          socket.emit('authenticate', username);
+        }
       });
       
-      // Adicionar handler para reconexão
+      // Eventos de reconexão
       socket.io.on("reconnect_attempt", (attempt) => {
         console.log(`Tentativa de reconexão #${attempt}`);
+        reconnectAttempts = attempt;
       });
       
       socket.io.on("reconnect", (attempt) => {
-        console.log(`Reconectado após ${attempt} tentativas`);
+        console.log(`Reconectado com sucesso após ${attempt} tentativas`);
         
         // Re-autenticar após reconexão
         const username = sessionStorage.getItem('username');
         if (username) {
-          console.log('Re-autenticando após reconexão:', username);
-          socket.emit('authenticate', username, { clientSessionId: sessionId });
+          console.log('Reautenticando após reconexão:', username);
+          socket.emit('authenticate', username);
         }
       });
       
-      socket.on('connect', () => {
-        console.log('Connected to socket server with ID:', socket.id);
-      });
-      
-      socket.on('forcedDisconnect', (data) => {
-        console.log('Desconexão forçada:', data);
+      socket.on('connect_error', (error) => {
+        console.error('Erro de conexão ao socket:', error.message);
+        reconnectAttempts++;
         
-        // Só exibir alerta se não for do mesmo dispositivo (mesma sessão)
-        if (!data.sameBrowser && data.reason) {
-          alert(`Você foi desconectado: ${data.reason}`);
-        }
-        
-        // Se for para reconectar automaticamente
-        if (data.reconnect) {
-          setTimeout(() => {
-            console.log('Tentando reconectar automaticamente...');
-            dispatch({ type: 'socket/connect' });
-          }, 2000);
+        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+          console.error(`Falha após ${MAX_RECONNECT_ATTEMPTS} tentativas. Desistindo.`);
+          alert('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
         }
       });
       
       socket.on('roomsList', (rooms) => {
-        console.log('Received rooms list:', rooms);
+        console.log('Recebida lista de salas:', rooms);
         dispatch({ type: 'rooms/setRooms', payload: rooms });
       });
       
       socket.on('roomJoined', (room) => {
-        console.log('Joined room:', room);
+        console.log('Entrou na sala:', room);
         dispatch({ type: 'rooms/setCurrentRoom', payload: room });
       });
       
-      socket.on('roomLeft', () => {
-        console.log('Left room - received confirmation from server');
-        
-        // Garantir que o cliente considera que saiu da sala e limpa corretamente o estado
-        dispatch(leaveRoom());
-        dispatch(clearChat());
-        dispatch(setMyCountry(null));
-        
-        // Limpar armazenamento local
-        sessionStorage.removeItem('myCountry');
-        
-        console.log('Estado da sala limpo no cliente');
-      });
-      
       socket.on('roomCreated', (data) => {
-        console.log('Room created:', data);
+        console.log('Sala criada:', data);
         if (data.success) {
-          // Update room list
+          // Atualizar lista de salas
           socket.emit('getRooms');
         }
       });
       
       socket.on('chatMessage', (message) => {
-        console.log('Received chat message:', message);
+        console.log('Mensagem de chat recebida:', message);
         dispatch(addMessage(message));
       });
       
       socket.on('chatHistory', (data) => {
-        console.log('Received chat history:', data);
+        console.log('Histórico de chat recebido:', data);
         dispatch(setChatHistory(data));
       });
       
       socket.on('playersList', (players) => {
-        console.log('Received players list:', players);
+        console.log('Lista de jogadores recebida:', players);
         dispatch(setPlayers(players));
         
-        // Extract usernames for online players list
+        // Extrair usernames para lista de jogadores online
         const onlinePlayers = players.map(player => {
           if (typeof player === 'object' && player.username) {
             return player.username;
@@ -146,15 +155,15 @@ const socketMiddleware = store => {
         dispatch(setOnlinePlayers(onlinePlayers));
       });
       
-      // Listen for online status updates
+      // Ouvir atualizações de status online
       socket.on('playerOnlineStatus', ({ username, isOnline }) => {
-        console.log(`Player ${username} is now ${isOnline ? 'online' : 'offline'}`);
+        console.log(`Jogador ${username} agora está ${isOnline ? 'online' : 'offline'}`);
         dispatch(setPlayerOnlineStatus({ username, isOnline }));
       });
       
-      // Novo evento para receber o país atribuído
+      // Evento para receber o país atribuído
       socket.on('countryAssigned', (country) => {
-        console.log('Country assigned:', country);
+        console.log('País atribuído:', country);
         dispatch(setMyCountry(country));
         
         // Salvar o país no sessionStorage para persistência
@@ -163,24 +172,21 @@ const socketMiddleware = store => {
       
       // Evento para restaurar o estado do jogador
       socket.on('stateRestored', (state) => {
-        console.log('State restored:', state);
+        console.log('Estado restaurado:', state);
         if (state && state.country) {
           dispatch(setMyCountry(state.country));
           sessionStorage.setItem('myCountry', state.country);
         }
       });
       
-      // Novos eventos relacionados à economia
-      
-      // Recebe atualizações econômicas periódicas
+      // Eventos relacionados à economia
       socket.on('economyUpdated', (economyData) => {
-        console.log('Economy updated:', economyData);
+        console.log('Economia atualizada:', economyData);
         dispatch(updateEconomyData(economyData));
       });
       
-      // Recebe dados econômicos completos
       socket.on('economyData', (data) => {
-        console.log('Received economy data:', data);
+        console.log('Dados econômicos recebidos:', data);
         
         // Armazena os dados completos
         dispatch(updateEconomyData(data));
@@ -191,146 +197,139 @@ const socketMiddleware = store => {
         }
       });
       
-      // Recebe evento econômico especial
       socket.on('economicEvent', (eventData) => {
-        console.log('Economic event received:', eventData);
+        console.log('Evento econômico recebido:', eventData);
         dispatch(addEconomicEvent(eventData));
       });
       
-      // Recebe notificação de mudança de política
       socket.on('policyChange', (policyData) => {
-        console.log('Policy change received:', policyData);
+        console.log('Mudança de política recebida:', policyData);
         dispatch(applyPolicyChange(policyData));
       });
       
+      // Tratar erros e avisar o usuário
       socket.on('error', (message) => {
-        console.error('Socket error:', message);
-        // Apenas exibe o erro no console sem mostrar alert para evitar spam
-        // Se for um erro crítico que precisa de atenção do usuário, usar um sistema de notificação mais elegante
-      });
-      
-      // Adicionar handler para erro de conexão
-      socket.on('connect_error', (err) => {
-        console.error('Socket connection error:', err.message);
-      });
-      
-      // Adicionar handler para desconexão
-      socket.on('disconnect', (reason) => {
-        console.log('Socket disconnected:', reason);
+        console.error('Erro do socket:', message);
         
-        // Reconectar automaticamente se a desconexão não foi intencional
+        // Não mostrar alguns tipos de erros comuns para não irritar o usuário
+        if (message.includes('já está em uso') || 
+            message.includes('autenticação') || 
+            message.includes('desconectado')) {
+          // Log apenas, sem alerta
+          console.warn('Erro sem alerta:', message);
+        } else {
+          // Erros importantes merecem um alerta
+          alert(`Erro: ${message}`);
+        }
+      });
+      
+      // Tratar desconexão
+      socket.on('disconnect', (reason) => {
+        console.log('Desconectado do servidor. Motivo:', reason);
+        
+        // Se a desconexão foi iniciada pelo servidor, tentar reconectar
         if (reason === 'io server disconnect' || reason === 'transport close') {
-          console.log('Tentando reconectar automaticamente...');
           setTimeout(() => {
+            console.log('Tentando reconectar após desconexão do servidor...');
             socket.connect();
-          }, 1000);
+          }, 2000);
         }
       });
     }
     
     if (action.type === 'socket/authenticate' && socket) {
-      console.log('Authenticating with username:', action.payload);
-      socket.emit('authenticate', action.payload, { clientSessionId: sessionId });
+      console.log('Autenticando com username:', action.payload);
+      socket.emit('authenticate', action.payload);
       
       // Salvar o nome de usuário no sessionStorage para persistência
       sessionStorage.setItem('username', action.payload);
     }
     
     if (action.type === 'socket/getRooms' && socket) {
-      console.log('Requesting rooms list');
+      console.log('Solicitando lista de salas');
       socket.emit('getRooms');
     }
     
     if (action.type === 'socket/createRoom' && socket) {
-      console.log('Creating room:', action.payload);
+      console.log('Criando sala:', action.payload);
       socket.emit('createRoom', action.payload);
     }
     
     if (action.type === 'socket/joinRoom' && socket) {
-      console.log('Joining room:', action.payload);
-      socket.emit('joinRoom', action.payload, { clientSessionId: sessionId });
+      console.log('Entrando na sala:', action.payload);
+      socket.emit('joinRoom', action.payload);
     }
     
     if (action.type === 'socket/leaveRoom' && socket) {
-      console.log('Leaving room - sending request to server');
+      console.log('Saindo da sala');
+      socket.emit('leaveRoom');
       
-      // Adicionar flag para indicar saída intencional
-      socket.emit('leaveRoom', { intentional: true });
-      
-      // Limpar o país do jogador e outros estados quando sair da sala
-      // Nota: O restante da limpeza será feito quando recebermos a confirmação 'roomLeft' do servidor
+      // Limpar o país do jogador quando sair da sala
       dispatch(setMyCountry(null));
       sessionStorage.removeItem('myCountry');
     }
     
-    // Updated to correctly handle chat message sending
+    // Lida com o envio de mensagens de chat
     if (action.type === 'socket/sendChatMessage' && socket) {
       const { content, isPrivate, recipient } = action.payload;
       const username = sessionStorage.getItem('username');
       
       if (!username) {
-        console.error('Cannot send message: Username not found');
+        console.error('Não é possível enviar mensagem: Username não encontrado');
         return next(action);
       }
       
-      console.log('Sending chat message:', { 
+      console.log('Enviando mensagem de chat:', { 
         username, 
         message: content, 
         isPrivate, 
         recipient 
       });
       
-      // Send message with the right format expected by the server
+      // Envia a mensagem no formato esperado pelo servidor
       socket.emit('chatMessage', { 
         username, 
         message: content, 
         isPrivate, 
-        recipient,
-        clientSessionId: sessionId // Adicionar ID de sessão para identificar o dispositivo
+        recipient
       });
     }
     
-    // Novo action type para solicitar histórico de chat privado
+    // Solicitar histórico de chat privado
     if (action.type === 'socket/requestPrivateHistory' && socket) {
-      console.log('Requesting private chat history with:', action.payload);
+      console.log('Solicitando histórico de chat privado com:', action.payload);
       socket.emit('requestPrivateHistory', action.payload);
     }
     
-    // Novo action type para solicitar um país específico
+    // Solicitar um país específico
     if (action.type === 'socket/requestCountry' && socket) {
-      console.log('Requesting specific country:', action.payload);
+      console.log('Solicitando país específico:', action.payload);
       socket.emit('requestCountry', action.payload);
     }
     
-    // Novos action types para a economia
-    
-    // Solicita dados econômicos atualizados
+    // Action types para a economia
     if (action.type === 'socket/getEconomyData' && socket) {
-      console.log('Requesting updated economy data');
+      console.log('Solicitando dados econômicos atualizados');
       socket.emit('getEconomyData');
     }
     
-    // Ajusta a taxa de juros
     if (action.type === 'socket/adjustInterestRate' && socket) {
-      console.log('Adjusting interest rate:', action.payload);
+      console.log('Ajustando taxa de juros:', action.payload);
       socket.emit('adjustInterestRate', action.payload);
     }
     
-    // Ajusta a carga tributária
     if (action.type === 'socket/adjustTaxBurden' && socket) {
-      console.log('Adjusting tax burden:', action.payload);
+      console.log('Ajustando carga tributária:', action.payload);
       socket.emit('adjustTaxBurden', action.payload);
     }
     
-    // Ajusta os serviços públicos
     if (action.type === 'socket/adjustPublicServices' && socket) {
-      console.log('Adjusting public services:', action.payload);
+      console.log('Ajustando serviços públicos:', action.payload);
       socket.emit('adjustPublicServices', action.payload);
     }
     
-    // Cria um evento econômico (apenas para admins ou testes)
     if (action.type === 'socket/createEconomicEvent' && socket) {
-      console.log('Creating economic event:', action.payload);
+      console.log('Criando evento econômico:', action.payload);
       socket.emit('createEconomicEvent', action.payload);
     }
     

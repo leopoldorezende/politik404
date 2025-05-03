@@ -91,14 +91,24 @@ app.get('/api/stats', (req, res) => {
 });
 
 const server = http.createServer(app);
+// Configuração do Socket.io - Adicionando configurações para melhor lidar com conexões
 const io = new Server(server, {
   cors: {
     origin: (origin, callback) => {
       callback(null, true); // aceita qualquer origem
     },
     credentials: true
-  }
+  },
+  // Configurações adicionais para melhorar a compatibilidade com proxies e firewalls
+  transports: ['polling', 'websocket'], // Tenta primeiro polling e depois websocket
+  allowUpgrades: true, // Permite upgrade de polling para websocket, se disponível
+  pingTimeout: 30000, // Aumentar timeout para detecção de desconexão
+  pingInterval: 10000, // Intervalo para verificar conexão
+  cookie: false, // Desativa cookies para evitar problemas com CORS
+  maxHttpBufferSize: 1e8, // 100MB - para lidar com mensagens maiores se necessário
+  path: '/socket.io/', // Caminho padrão para o socket.io
 });
+
 
 // Rota para obter o token Mapbox
 app.get('/api/mapbox', (req, res) => {
@@ -136,7 +146,7 @@ const gameState = {
   rooms: new Map(),
   socketIdToUsername: new Map(),
   usernameToSocketId: new Map(), // Mapeamento bidirecional
-  userToRoom: new Map(),
+  userToRoom: new Map(),  
   userRoomCountries: new Map(),
   playerStates: new Map(),
   ships: new Map(),
@@ -253,6 +263,11 @@ io.on('connection', (socket) => {
       }
     }
   });
+    
+  // Log quando o transporte mudar (de polling para websocket, por exemplo)
+  socket.conn.on('upgrade', () => {
+    console.log('Socket transport upgraded to:', socket.conn.transport.name);
+  });
   
   // Inicializar os handlers do socket
   initializeSocketHandlers(io, socket, gameState);
@@ -260,47 +275,31 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     const username = gameState.socketIdToUsername.get(socket.id);
-    
     if (username) {
       const roomName = gameState.userToRoom.get(username);
       if (roomName) {
         const room = gameState.rooms.get(roomName);
         if (room && room.players) {
-          // Encontra o jogador na lista
-          const playerIndex = room.players.findIndex(p => 
-            typeof p === 'object' ? p.username === username : !p.startsWith(username)
+          room.players = room.players.filter(p => 
+            typeof p === 'object' ? p.username !== username : !p.startsWith(username)
           );
-          
-          if (playerIndex !== -1) {
-            // Marca como offline em vez de remover
-            if (typeof room.players[playerIndex] === 'object') {
-              room.players[playerIndex].isOnline = false;
-            }
-            
-            // Notifica outros jogadores na sala
-            io.to(roomName).emit('playerOnlineStatus', { 
-              username, 
-              isOnline: false 
-            });
-            
-            // Atualiza lista de jogadores na sala
-            io.to(roomName).emit('playersList', room.players);
+          io.to(roomName).emit('playersList', room.players);
+          if (room.players.length === 0) {
+            gameState.rooms.delete(roomName);
+            const roomsList = Array.from(gameState.rooms.entries()).map(([name, rm]) => ({
+              name,
+              owner: rm.owner,
+              playerCount: rm.players.length,
+              createdAt: rm.createdAt
+            }));
+            io.emit('roomsList', roomsList);
           }
         }
-        
-        // Não remove a associação de usuário para sala para permitir reconexão
-        // gameState.userToRoom.delete(username);
+        gameState.userToRoom.delete(username);
       }
-      
-      // Marca o usuário como offline
+      gameState.socketIdToUsername.delete(socket.id);
       gameState.onlinePlayers.delete(username);
-      
-      // Notifica todos os clientes sobre o status offline
       io.emit('playerOnlineStatus', { username, isOnline: false });
-      
-      // Limpa os dados relacionados ao socket
-      // Nota: Não removemos completamente aqui para permitir reconexão
-      // Isto será feito durante a limpeza programada
     }
   });
 });

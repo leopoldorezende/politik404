@@ -42,10 +42,10 @@ export const initializeSocketConnection = (dispatch) => {
   }
 
   // Configurando o socket com opções adequadas para reconexão
-  // Incluindo o ID de sessão nos parâmetros de consulta
+  // Forçando apenas polling para evitar erros de WebSocket em ambientes restritos
   socket = io(baseUrl, {
     withCredentials: true,
-    transports: ['polling'],
+    transports: ['polling'],  // IMPORTANTE: Usar apenas polling, sem WebSocket
     reconnection: true,
     reconnectionAttempts: 10,
     reconnectionDelay: 1000,
@@ -53,7 +53,7 @@ export const initializeSocketConnection = (dispatch) => {
     timeout: 20000,
     autoConnect: true,
     query: {
-      clientSessionId: sessionId // Incluir ID de sessão para identificar o cliente
+      clientSessionId: sessionId
     }
   });
 

@@ -53,7 +53,15 @@ function createSocketMiddleware(io) {
   
   // Função de middleware
   return function(socket, next) {
-    console.log(`Socket conectado: ${socket.id}`);
+    const transport = socket.conn?.transport?.name;
+    console.log(`Socket conectado: ${socket.id} via ${transport || 'unknown transport'}`);
+    
+      
+    // Registra mudança de transporte (polling -> websocket)
+    socket.conn.on('upgrade', () => {
+      console.log(`Socket ${socket.id} atualizou transporte para ${socket.conn.transport.name}`);
+    });
+    
     
     // Obter e registrar o ID de sessão do cliente
     const clientSessionId = socket.handshake.query.clientSessionId;
@@ -77,7 +85,7 @@ function createSocketMiddleware(io) {
       return originalEmit.apply(socket, [event, ...args]);
     };
     
-    // Interceptação de erros
+  // Interceptação de erros
     socket.on('error', (error) => {
       console.error(`Erro no socket ${socket.id}:`, error);
       socket.emit('error', 'Erro interno no servidor');
