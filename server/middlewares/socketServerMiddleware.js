@@ -85,7 +85,7 @@ function createSocketMiddleware(io) {
       return originalEmit.apply(socket, [event, ...args]);
     };
     
-  // Interceptação de erros
+    // Interceptação de erros
     socket.on('error', (error) => {
       console.error(`Erro no socket ${socket.id}:`, error);
       socket.emit('error', 'Erro interno no servidor');
