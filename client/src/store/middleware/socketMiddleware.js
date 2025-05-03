@@ -238,11 +238,14 @@ const socketMiddleware = store => {
     }
     
     if (action.type === 'socket/authenticate' && socket) {
-      console.log('Autenticando com username:', action.payload);
-      socket.emit('authenticate', action.payload);
-      
+      const username = action.payload;
+      const sessionId = sessionStorage.getItem('clientSessionId');
+    
+      console.log('Autenticando com username:', username, 'e sessionId:', sessionId);
+      socket.emit('authenticate', username, { clientSessionId: sessionId });
+    
       // Salvar o nome de usuário no sessionStorage para persistência
-      sessionStorage.setItem('username', action.payload);
+      sessionStorage.setItem('username', username);
     }
     
     if (action.type === 'socket/getRooms' && socket) {
