@@ -220,6 +220,10 @@ async function restoreRoomsFromRedis() {
 
 const PORT = process.env.PORT || 3000;
 
+app.get('/check-connection', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // Iniciar servidor só depois que Redis restaurar
 restoreRoomsFromRedis().then(() => {
   server.listen(PORT, () => {
