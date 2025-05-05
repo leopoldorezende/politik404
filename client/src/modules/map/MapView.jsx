@@ -5,12 +5,11 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import '../../shared/styles/MapView.css';
 import SeaRoutes from './SeaRoutes';
 import * as turf from '@turf/turf';
+import { socketApi } from '../network/socketService';
 
 import {
   loadCountriesData,
   loadCountriesCoordinates,
-  // europeanUnionCountries,
-  // africanUnionCountries,
   getCountryCenter
 } from '../country/countryService';
 
@@ -99,6 +98,9 @@ const MapView = () => {
       document.dispatchEvent(new CustomEvent('countrySelected', {
         detail: { country: myCountry }
       }));
+      
+      // Solicita os navios na sala usando o serviço de socket
+      socketApi.getShipsInRoom();
     }
   }, [loaded, myCountry, countriesData, dispatch]);
 
@@ -336,6 +338,19 @@ const MapView = () => {
           document.dispatchEvent(new CustomEvent('countrySelected', {
             detail: { country: clickedCountry }
           }));
+          
+          // Se o usuário clicar em um país disponível, pode solicitar este país específico
+          const availableCountries = Object.keys(countriesData || {}).filter(country => {
+            const otherPlayersCountries = getOtherPlayersCountries();
+            return country !== myCountry && !otherPlayersCountries.includes(country);
+          });
+          
+          if (availableCountries.includes(clickedCountry) && clickedCountry !== myCountry) {
+            // Aqui poderia mostrar uma confirmação antes de solicitar o país
+            console.log(`País ${clickedCountry} disponível, o jogador pode solicitar a troca`);
+            
+            // Podemos adicionar aqui um popup de confirmação se necessário
+          }
         } 
       }
     });

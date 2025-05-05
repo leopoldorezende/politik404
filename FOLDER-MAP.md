@@ -6,6 +6,8 @@
   ├── package.json                               # Dependências e scripts principais (monorepo)
   ├── .gitignore                                 # Não subir pro git
   │
+  ├── /node_modules                              # Node Modules
+  │
   ├── /client                                    
   │   ├── index.html                             # HTML principal
   │   ├── vite.config.js                         # Configuração do Vite
@@ -39,9 +41,6 @@
   │       │   │   ├── MapView.jsx                # Mapa principal
   │       │   │   ├── SeaRoutes.jsx              # Rotas marítimas
   │       │   │   └── mapboxUtils.js             # Integração com Mapbox
-  │       │   │
-  │       │   ├── /military
-  │       │   │   └── shipsState.js              # Estado dos navios
   │       │   │
   │       │   ├── /network
   │       │   │   └── socketService.js           # Comunicação via Socket.io
@@ -91,25 +90,17 @@
       │   │   ├── countryAssignment.js           # Atribuições de países
       │   │   └── countryUtils.js                # Utilitários para países
       │   │
-      │   ├── /economy
-      │   │   ├── economyHandlers.js             # Handlers para economia
-      │   │   ├── economyManager.js              # Gerenciamento para economia
-      │   │   └── economyUtils.js                # Cálculos para economia
-      │   │
       │   ├── /player
       │   │   ├── playerHandlers.js              # Handlers para jogadores
       │   │   ├── playerRoomHandlers.js          # Handlers para jogadores na sala
       │   │   ├── playerStateManager.js          # Gerencia estado dos jogadores
       │   │   └── playerUtils.js                 # Funções utilitárias 
       │   │
-      │   ├── /room
-      │   │   ├── roomHandlers.js                # Handlers para sala
-      │   │   ├── roomManagement.js              # Gerenciamento de sala
-      │   │   ├── roomNotifications.js           # Notificações da Sala
-      │   │   └── roomUtils.js                   # Utilitários da sala
-      │   │
-      │   └── /ship
-      │       └── shipHandlers.js                # Handlers para ship
+      │   └── /room
+      │       ├── roomHandlers.js                # Handlers para sala
+      │       ├── roomManagement.js              # Gerenciamento de sala
+      │       ├── roomNotifications.js           # Notificações da Sala
+      │       └── roomUtils.js                   # Utilitários da sala
       │
       ├── /shared                                
       │   ├── redisClient.js                     # Infraestrutura do Redis

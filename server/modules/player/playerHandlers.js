@@ -2,10 +2,10 @@
  * Handlers centralizados para gerenciamento de jogadores
  */
 
-const { getCurrentRoom } = require('../../shared/gameStateUtils');
-const { setupPlayerRoomHandlers } = require('./playerRoomHandlers');
-const { setupPlayerStateManager } = require('./playerStateManager');
-const { findPlayerByUsername, standardizePlayer, getOnlinePlayers } = require('./playerUtils');
+import { getCurrentRoom } from '../../shared/gameStateUtils.js';
+import { setupPlayerRoomHandlers } from './playerRoomHandlers.js';
+import { setupPlayerStateManager } from './playerStateManager.js';
+import { findPlayerByUsername, standardizePlayer, getOnlinePlayers } from './playerUtils.js';
 
 /**
  * Configura todos os handlers relacionados a jogadores
@@ -236,4 +236,4 @@ function setupPlayerHandlers(io, socket, gameState) {
   });
 }
 
-module.exports = { setupPlayerHandlers };
+export { setupPlayerHandlers };

@@ -86,7 +86,7 @@ function isPlayerOnline(gameState, username) {
   return gameState.onlinePlayers.has(username);
 }
 
-module.exports = {
+export {
   findPlayerByUsername,
   standardizePlayer,
   getOnlinePlayers,

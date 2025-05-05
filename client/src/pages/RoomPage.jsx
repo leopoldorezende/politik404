@@ -1,30 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { socketApi } from '../modules/network/socketService';
 import '../shared/styles/RoomPage.css';
 
 const RoomPage = () => {
   const [roomName, setRoomName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [connectionRetries, setConnectionRetries] = useState(0);
+  const [joiningRoomName, setJoiningRoomName] = useState('');
+  const [joinAttemptTime, setJoinAttemptTime] = useState(null);
+  
   const dispatch = useDispatch();
   const rooms = useSelector(state => state.rooms.rooms);
   const username = useSelector(state => state.auth.username);
 
-  // Função para garantir conexão e autenticação
-  const ensureConnection = () => {
+  // Função para garantir conexão e atualizar lista de salas
+  const ensureConnectionAndUpdateRooms = () => {
     if (!username) {
       console.warn('Usuário não está autenticado na tela de salas');
       return false;
     }
 
-    // Garantir que o socket está conectado
-    dispatch({ type: 'socket/connect' });
-
-    // Garantir que o socket está autenticado com delay para dar tempo de conectar
+    console.log('Garantindo conexão e atualizando lista de salas...');
+    
+    // Conectar socket se necessário
+    socketApi.connect();
+    
+    // Garantir autenticação
+    socketApi.authenticate(username);
+    
+    // Solicitar lista de salas
     setTimeout(() => {
-      dispatch({ type: 'socket/authenticate', payload: username });
+      socketApi.getRooms();
     }, 500);
-
+    
     return true;
   };
 
@@ -38,44 +47,60 @@ const RoomPage = () => {
     console.log('Inicializando RoomPage para usuário:', username);
     setIsLoading(true);
 
-    // Iniciar conexão com o socket
-    ensureConnection();
-
-    // Requisitar a lista de salas com delay para dar tempo de conectar e autenticar
-    const timer = setTimeout(() => {
-      dispatch({ type: 'socket/getRooms' });
+    // Iniciar conexão e carregar salas
+    ensureConnectionAndUpdateRooms();
+    
+    // Finalizar carregamento após um tempo
+    setTimeout(() => {
       setIsLoading(false);
-    }, 1000);
+    }, 2000);
 
-    // Configurar intervalo para atualizar a lista de salas a cada 30 segundos
+    // Definir intervalo para atualização periódica de salas
     const interval = setInterval(() => {
-      if (ensureConnection()) {
-        dispatch({ type: 'socket/getRooms' });
+      // Não atualizar se estiver tentando entrar em uma sala
+      if (!joiningRoomName) {
+        socketApi.getRooms();
       }
-    }, 30000);
+    }, 30000); // A cada 30 segundos
 
-    return () => {
-      clearTimeout(timer);
-      clearInterval(interval);
-    };
+    // Limpar o intervalo ao desmontar
+    return () => clearInterval(interval);
   }, [dispatch, username]);
+
+  // Efeito para verificar se já passou tempo suficiente desde a última tentativa de entrar na sala
+  useEffect(() => {
+    if (joiningRoomName && joinAttemptTime) {
+      const now = Date.now();
+      const elapsed = now - joinAttemptTime;
+      
+      // Se passou mais de 10 segundos e ainda estamos tentando entrar na mesma sala,
+      // podemos considerar que houve um problema
+      if (elapsed > 10000) {
+        console.log(`Tempo limite para entrar na sala ${joiningRoomName} atingido.`);
+        setIsLoading(false);
+        setJoiningRoomName('');
+        setJoinAttemptTime(null);
+        
+        // Mostrar mensagem para o usuário
+        alert(`Não foi possível entrar na sala ${joiningRoomName}. Por favor, tente novamente.`);
+      }
+    }
+  }, [joiningRoomName, joinAttemptTime]);
 
   // Efeito adicional para reconectar se não receber salas após um tempo
   useEffect(() => {
-    if (!username || rooms.length > 0 || connectionRetries >= 3) return;
+    if (!username || rooms.length > 0 || connectionRetries >= 3 || joiningRoomName) return;
 
     const timer = setTimeout(() => {
       console.log('Tentando reconectar por não ter recebido salas...');
       setConnectionRetries(prev => prev + 1);
-      ensureConnection();
       
-      setTimeout(() => {
-        dispatch({ type: 'socket/getRooms' });
-      }, 1000);
+      // Tentar novamente
+      ensureConnectionAndUpdateRooms();
     }, 5000); // Tentar novamente após 5 segundos
 
     return () => clearTimeout(timer);
-  }, [rooms, username, connectionRetries, dispatch]);
+  }, [rooms, username, connectionRetries, joiningRoomName]);
 
   const handleCreateRoom = () => {
     if (!roomName.trim()) {
@@ -86,73 +111,62 @@ const RoomPage = () => {
     setIsLoading(true);
     console.log(`Iniciando criação da sala: ${roomName}`);
     
-    // Garantir conexão e autenticação
-    if (!ensureConnection()) {
-      setIsLoading(false);
-      return;
-    }
+    // Criar a sala
+    socketApi.createRoom(roomName);
     
-    // Criar sala com delay para garantir autenticação
+    // Limpar o campo de entrada
+    setRoomName('');
+    
+    // Atualizar lista de salas após um delay
     setTimeout(() => {
-      dispatch({ type: 'socket/createRoom', payload: roomName });
-      
-      // Limpar o campo de entrada
-      setRoomName('');
-      
-      // Atualiza lista de salas após criar
-      setTimeout(() => {
-        dispatch({ type: 'socket/getRooms' });
-        setIsLoading(false);
-      }, 1000);
-    }, 500);
+      socketApi.getRooms();
+      setIsLoading(false);
+    }, 2000);
   };
 
   const handleJoinRoom = (roomName) => {
-    console.log(`Tentando entrar na sala: ${roomName}`);
-    setIsLoading(true);
-    
-    // Garantir conexão e autenticação
-    if (!ensureConnection()) {
-      setIsLoading(false);
+    // Evitar duplo clique ou múltiplas tentativas
+    if (isLoading || joiningRoomName) {
+      console.log('Ignorando clique enquanto já está processando...');
       return;
     }
     
-    // Entrar na sala com delay para garantir autenticação
-    setTimeout(() => {
-      dispatch({ type: 'socket/joinRoom', payload: roomName });
-      
-      // Resetar estado de carregamento
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 2000);
-    }, 500);
+    console.log(`Tentando entrar na sala: ${roomName}`);
+    setIsLoading(true);
+    setJoiningRoomName(roomName);
+    setJoinAttemptTime(Date.now());
+    
+    // Entrar na sala
+    socketApi.joinRoom(roomName);
+    
+    // Se não conseguir entrar na sala depois de 10 segundos, isso será tratado pelo useEffect acima
   };
 
   const handleRefreshRooms = () => {
+    // Não atualizar se estiver tentando entrar em uma sala
+    if (joiningRoomName) return;
+    
     console.log('Atualizando lista de salas');
     setIsLoading(true);
     
-    // Garantir conexão e autenticação
-    if (!ensureConnection()) {
-      setIsLoading(false);
-      return;
-    }
+    // Atualizar lista de salas
+    socketApi.getRooms();
     
-    // Solicitar lista de salas com delay para garantir autenticação
     setTimeout(() => {
-      dispatch({ type: 'socket/getRooms' });
-      
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
-    }, 500);
+      setIsLoading(false);
+    }, 1500);
   };
 
   // Handle Enter key press
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !isLoading) {
       handleCreateRoom();
     }
+  };
+
+  // Função para verificar se uma sala específica está sendo tentada
+  const isJoiningThisRoom = (roomName) => {
+    return joiningRoomName === roomName;
   };
 
   if (!username) {
@@ -178,29 +192,33 @@ const RoomPage = () => {
           onChange={(e) => setRoomName(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Nome da sala"
-          disabled={isLoading}
+          disabled={isLoading || joiningRoomName}
         />
         <button 
           id="create-room-button" 
           onClick={handleCreateRoom}
-          disabled={isLoading || !roomName.trim()}
+          disabled={isLoading || joiningRoomName || !roomName.trim()}
         >
-          {isLoading ? 'Criando...' : 'Criar Sala'}
+          {isLoading && !joiningRoomName ? 'Criando...' : 'Criar Sala'}
         </button>
         <button 
           id="refresh-rooms-button" 
           onClick={handleRefreshRooms}
-          disabled={isLoading}
+          disabled={isLoading || joiningRoomName}
         >
-          {isLoading ? 'Atualizando...' : 'Atualizar Lista'}
+          {isLoading && !joiningRoomName ? 'Atualizando...' : 'Atualizar Lista'}
         </button>
       </div>
       <div className="room-list-container">
-        <h3>Salas Disponíveis {isLoading && '(Carregando...)'}</h3>
+        <h3>
+          Salas Disponíveis 
+          {isLoading && !joiningRoomName && ' (Carregando...)'}
+          {joiningRoomName && ` (Entrando em ${joiningRoomName}...)`}
+        </h3>
         <ul id="room-list">
           {rooms.length === 0 ? (
             <li className="no-rooms">
-              {isLoading 
+              {isLoading && !joiningRoomName 
                 ? 'Carregando salas...' 
                 : connectionRetries > 0
                   ? 'Tentando reconectar... Por favor, aguarde.'
@@ -218,19 +236,38 @@ const RoomPage = () => {
                 <button 
                   className="join-room-btn" 
                   onClick={() => handleJoinRoom(room.name)}
-                  disabled={isLoading}
+                  disabled={isLoading || joiningRoomName}
                 >
-                  {isLoading ? 'Entrando...' : 'Entrar'}
+                  {isJoiningThisRoom(room.name) ? 'Entrando...' : 'Entrar'}
                 </button>
               </li>
             ))
           )}
         </ul>
       </div>
+      
+      {/* Status de conexão e debugging */}
+      {(connectionRetries > 0 || joiningRoomName) && (
+        <div className="connection-status">
+          {connectionRetries > 0 && (
+            <p>Tentativa de reconexão: {connectionRetries}/3</p>
+          )}
+          {joiningRoomName && (
+            <p>Tentando entrar em: {joiningRoomName}</p>
+          )}
+        </div>
+      )}
+      
       {/* Adicionar logs para depuração */}
       <div className="debug-info" style={{display: 'none'}}>
         <pre>
-          {JSON.stringify({username, roomsCount: rooms.length, connectionRetries}, null, 2)}
+          {JSON.stringify({
+            username, 
+            roomsCount: rooms.length, 
+            connectionRetries,
+            joiningRoom: joiningRoomName,
+            loading: isLoading
+          }, null, 2)}
         </pre>
       </div>
     </div>

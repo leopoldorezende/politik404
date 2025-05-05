@@ -86,7 +86,7 @@ function getAvailableEligibleCountries(gameState, room) {
   return room.eligibleCountries.filter(country => availableCountries.includes(country));
 }
 
-module.exports = {
+export {
   isValidCountry,
   getBorderingCountries,
   areCountriesNeighbors,

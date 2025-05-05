@@ -75,7 +75,7 @@ function sendUpdatedRoomsList(io, gameState) {
   io.emit('roomsList', roomsList);
 }
 
-module.exports = { 
+export { 
   setupRoomNotifications,
   sendUpdatedPlayersList,
   sendUpdatedRoomsList

@@ -3,8 +3,8 @@
  * Eventos de entrada e saída de salas
  */
 
-const redis = require('../../infra/redisClient');
-const { sendUpdatedPlayersList, sendUpdatedRoomsList } = require('./roomNotifications');
+import redis from '../../infra/redisClient.js';
+import { sendUpdatedPlayersList, sendUpdatedRoomsList } from './roomNotifications.js';
 
 /**
  * Lida com eventos de entrada/saída de salas
@@ -77,4 +77,4 @@ function setupRoomHandlers(io, socket, gameState) {
   });
 }
 
-module.exports = { setupRoomHandlers };
+export { setupRoomHandlers };

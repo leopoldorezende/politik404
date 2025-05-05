@@ -3,10 +3,59 @@
  */
 
 /**
+ * Cria um objeto gameState padrão com todas as propriedades necessárias
+ * @returns {Object} - Um novo objeto gameState inicializado
+ */
+function createDefaultGameState() {
+  return {
+    rooms: new Map(),
+    socketIdToUsername: new Map(),
+    usernameToSocketId: new Map(),
+    userToRoom: new Map(),
+    userRoomCountries: new Map(),
+    playerStates: new Map(),
+    ships: new Map(),
+    onlinePlayers: new Set(),
+    lastActivityTimestamp: new Map(),
+    pendingSocketsRemoval: new Set(),
+    displayNames: new Map(), 
+    socketToSessionId: new Map(),
+    sessionIdToUsername: new Map(),
+    countriesData: {},
+    MAX_CHAT_HISTORY: 100,
+    
+    // Função auxiliar para criar uma sala
+    createRoom: function(name, owner) {
+      return {
+        name,
+        owner,
+        players: [],
+        eligibleCountries: [],
+        chatHistory: {
+          public: [],
+          private: new Map()
+        },
+        createdAt: new Date().toISOString()
+      };
+    },
+    
+    // Função auxiliar para gerar chave para chat privado
+    getPrivateChatKey: function(user1, user2) {
+      return [user1, user2].sort().join(':');
+    }
+  };
+}
+
+/**
  * Inicializa as estruturas de dados necessárias no gameState
  * @param {Object} gameState - Estado global do jogo
  */
 function initializeGameState(gameState) {
+  // Se o gameState não for fornecido, retorna um novo
+  if (!gameState) {
+    return createDefaultGameState();
+  }
+  
   // Inicializa mapa de socketId para username
   if (!gameState.socketIdToUsername) {
     gameState.socketIdToUsername = new Map();
@@ -52,6 +101,20 @@ function initializeGameState(gameState) {
     gameState.ships = new Map();
   }
   
+  // Inicializa mapa de nomes de exibição
+  if (!gameState.displayNames) {
+    gameState.displayNames = new Map();
+  }
+  
+  // Inicializa mapas de sessão
+  if (!gameState.socketToSessionId) {
+    gameState.socketToSessionId = new Map();
+  }
+  
+  if (!gameState.sessionIdToUsername) {
+    gameState.sessionIdToUsername = new Map();
+  }
+  
   // Inicializa constante de histórico máximo de chat
   if (!gameState.MAX_CHAT_HISTORY) {
     gameState.MAX_CHAT_HISTORY = 100;
@@ -74,7 +137,7 @@ function initializeGameState(gameState) {
         eligibleCountries: [],
         chatHistory: {
           public: [],
-          private: new Map() // Mapa para mensagens privadas
+          private: new Map()
         },
         createdAt: new Date().toISOString()
       };
@@ -87,6 +150,8 @@ function initializeGameState(gameState) {
   }
   
   console.log('Estruturas de dados do gameState inicializadas');
+  
+  return gameState;
 }
 
 /**
@@ -399,7 +464,8 @@ function cleanupInactiveUsers(io, gameState, inactivityTimeout = 2 * 60 * 60 * 1
   return removedCount;
 }
 
-module.exports = {
+export {
+  createDefaultGameState,
   initializeGameState,
   getUsernameFromSocketId,
   getSocketIdFromUsername,

@@ -2,7 +2,11 @@
  * Middleware para manipulação e processamento de eventos do Socket.io
  */
 
-const { initializeGameState, cleanupDisconnectedUser } = require('../shared/gameStateUtils');
+import { 
+  createDefaultGameState, 
+  initializeGameState, 
+  cleanupDisconnectedUser 
+} from '../shared/gameStateUtils.js';
 
 /**
  * Middleware para registro, monitoramento e processamento de eventos do Socket.io
@@ -10,43 +14,8 @@ const { initializeGameState, cleanupDisconnectedUser } = require('../shared/game
  * @returns {Function} Middleware para uso com o Socket.io
  */
 function createSocketMiddleware(io) {
-  // Inicializa o estado global do jogo
-  const gameState = {
-    rooms: new Map(),
-    socketIdToUsername: new Map(),
-    usernameToSocketId: new Map(), // Mapeamento bidirecional
-    userToRoom: new Map(),
-    userRoomCountries: new Map(),
-    playerStates: new Map(),
-    ships: new Map(),
-    onlinePlayers: new Set(),
-    displayNames: new Map(),
-    lastActivityTimestamp: new Map(),
-    pendingSocketsRemoval: new Set(),
-    socketToSessionId: new Map(), // Mapear socketId para ID de sessão do cliente
-    sessionIdToUsername: new Map(), // Mapear ID de sessão para username
-    MAX_CHAT_HISTORY: 100,
-    
-    // Função auxiliar para criar uma sala
-    createRoom: function(name, owner) {
-      return {
-        name,
-        owner,
-        players: [],
-        eligibleCountries: [],
-        chatHistory: {
-          public: [],
-          private: new Map() // Mapa para mensagens privadas
-        },
-        createdAt: new Date().toISOString()
-      };
-    },
-    
-    // Função auxiliar para gerar chave para chat privado
-    getPrivateChatKey: function(user1, user2) {
-      return [user1, user2].sort().join(':');
-    }
-  };
+  // Obtém o estado global do jogo da função centralizada
+  const gameState = createDefaultGameState();
   
   // Inicializa as estruturas de dados
   initializeGameState(gameState);
@@ -226,6 +195,6 @@ function createSocketMiddleware(io) {
   };
 }
 
-module.exports = { 
-  createSocketMiddleware
+export { 
+  createSocketMiddleware 
 };

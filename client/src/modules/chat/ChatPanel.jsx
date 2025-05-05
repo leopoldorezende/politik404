@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMessage, setChatMode, markAsRead } from './chatState';
+import { socketApi } from '../../modules/network/socketService';
 import '../../shared/styles/ChatPanel.css';
 
 const ChatPanel = ({ hasUnreadMessagesFrom }) => {
@@ -38,15 +39,12 @@ const ChatPanel = ({ hasUnreadMessagesFrom }) => {
   
   const handleSendMessage = () => {
     if (message.trim()) {
-      // Emit message via socket middleware
-      dispatch({ 
-        type: 'socket/sendChatMessage', 
-        payload: { 
-          content: message, 
-          isPrivate: currentChatMode !== 'public',
-          recipient: currentChatMode !== 'public' ? currentChatMode : null
-        }
-      });
+      // Enviar mensagem usando o socketApi centralizado
+      socketApi.sendMessage(
+        message, 
+        currentChatMode !== 'public',
+        currentChatMode !== 'public' ? currentChatMode : null
+      );
       
       // Clear input field
       setMessage('');
@@ -73,7 +71,7 @@ const ChatPanel = ({ hasUnreadMessagesFrom }) => {
     
     // If switching to private chat and there's no history, request it
     if (mode !== 'public' && (!privateMessages[mode] || privateMessages[mode].length === 0)) {
-      dispatch({ type: 'socket/requestPrivateHistory', payload: mode });
+      socketApi.requestPrivateHistory(mode);
     }
   };
 

@@ -2,7 +2,7 @@
  * Handlers relacionados à autenticação de usuários
  */
 
-const { getUsernameFromSocketId } = require('../../shared/gameStateUtils');
+import { getUsernameFromSocketId } from '../../shared/gameStateUtils.js';
 
 /**
  * Configura os eventos relacionados à autenticação
@@ -446,4 +446,4 @@ function setupAuthHandlers(io, socket, gameState) {
   });
 }
 
-module.exports = { setupAuthHandlers };
+export { setupAuthHandlers };

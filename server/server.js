@@ -1,16 +1,29 @@
-const redis = require('./shared/redisClient');
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
-const { initializeSocketHandlers } = require('./modules');
-const { createSocketMiddleware } = require('./middlewares/socketServerMiddleware');
-const { initializeEconomySystem } = require('./modules/economy/economyManager');
-const { cleanupInactiveUsers, registerSocketUserMapping } = require('./shared/gameStateUtils');
-const googleAuthRoutes = require('./modules/auth/google')
+import redis from './shared/redisClient.js';
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { 
+  initializeSocketHandlers 
+} from './modules/index.js';
+import { 
+  createSocketMiddleware 
+} from './middlewares/socketServerMiddleware.js';
+import { 
+  createDefaultGameState,
+  cleanupInactiveUsers, 
+  registerSocketUserMapping 
+} from './shared/gameStateUtils.js';
+import googleAuthRoutes from './modules/auth/google.js';
+
+// Adicionar isso para lidar com __dirname e __filename no ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 redis.set('debug_check', new Date().toISOString());
 dotenv.config();
@@ -73,23 +86,6 @@ app.get('/check-data-files', (req, res) => {
   });
 });
 
-// Rota para obter estatísticas do servidor para monitoramento
-app.get('/api/stats', (req, res) => {
-  const stats = {
-    uptime: process.uptime(),
-    timestamp: Date.now(),
-    connections: {
-      socketCount: io.engine.clientsCount,
-      socketsById: Array.from(io.sockets.sockets.keys()),
-      roomCount: gameState.rooms.size,
-      onlineUsersCount: gameState.onlinePlayers.size,
-      onlineUsers: Array.from(gameState.onlinePlayers)
-    },
-    memory: process.memoryUsage()
-  };
-  res.json(stats);
-});
-
 const server = http.createServer(app);
 // Configuração do Socket.io - Adicionando configurações para melhor lidar com conexões
 const io = new Server(server, {
@@ -109,6 +105,29 @@ const io = new Server(server, {
   path: '/socket.io/', // Caminho padrão para o socket.io
 });
 
+// Rota para obter estatísticas do servidor para monitoramento
+app.get('/api/stats', (req, res) => {
+  // Usamos o gameState já definido pelo middleware do socket
+  const gameState = global.gameState;
+  
+  if (!gameState) {
+    return res.status(500).json({ error: 'Estado do jogo não inicializado' });
+  }
+  
+  const stats = {
+    uptime: process.uptime(),
+    timestamp: Date.now(),
+    connections: {
+      socketCount: io.engine.clientsCount,
+      socketsById: Array.from(io.sockets.sockets.keys()),
+      roomCount: gameState.rooms.size,
+      onlineUsersCount: gameState.onlinePlayers.size,
+      onlineUsers: Array.from(gameState.onlinePlayers)
+    },
+    memory: process.memoryUsage()
+  };
+  res.json(stats);
+});
 
 // Rota para obter o token Mapbox
 app.get('/api/mapbox', (req, res) => {
@@ -141,34 +160,12 @@ try {
   countriesData = {};
 }
 
-// Estado global do jogo
-const gameState = {
-  rooms: new Map(),
-  socketIdToUsername: new Map(),
-  usernameToSocketId: new Map(), // Mapeamento bidirecional
-  userToRoom: new Map(),  
-  userRoomCountries: new Map(),
-  playerStates: new Map(),
-  ships: new Map(),
-  onlinePlayers: new Set(),
-  lastActivityTimestamp: new Map(), // Para verificação de inatividade
-  pendingSocketsRemoval: new Set(), // Sockets a serem removidos
-  countriesData: countriesData,
-  MAX_CHAT_HISTORY: 100,
-  createRoom: function(name, owner) {
-    return {
-      name,
-      owner,
-      players: [],
-      eligibleCountries: [],
-      chatHistory: { public: [], private: new Map() },
-      createdAt: new Date().toISOString()
-    };
-  },
-  getPrivateChatKey: function(user1, user2) {
-    return [user1, user2].sort().join(':');
-  }
-};
+// Criamos o estado global do jogo usando a função centralizada
+const gameState = createDefaultGameState();
+// Adicionamos os dados dos países carregados
+gameState.countriesData = countriesData;
+// Disponibilizamos o gameState globalmente para acesso em outros módulos
+global.gameState = gameState;
 
 // Função para limpar periodicamente sockets e usuários inativos
 const setupCleanupSchedule = () => {
@@ -230,9 +227,6 @@ restoreRoomsFromRedis().then(() => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);
 
-    // Inicializar o sistema econômico
-    initializeEconomySystem(io, gameState);
-    
     // Configurar limpeza programada
     const cleanupSchedules = setupCleanupSchedule();
     

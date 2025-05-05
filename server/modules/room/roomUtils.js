@@ -37,7 +37,7 @@ function isUserRoomOwner(gameState, roomName, username) {
   return room && room.owner === username;
 }
 
-module.exports = {
+export {
   createRoom,
   formatRoomList,
   isRoomNameValid,

@@ -1,4 +1,5 @@
-const Redis = require('ioredis');
+import Redis from 'ioredis';
+
 const redis = new Redis(); // localhost por padrão
 
-module.exports = redis;
+export default redis;

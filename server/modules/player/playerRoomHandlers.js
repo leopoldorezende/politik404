@@ -2,11 +2,11 @@
  * Gerencia entrada e saída de jogadores das salas
  */
 
-const { 
+import { 
   sendUpdatedPlayersList, 
   sendUpdatedRoomsList 
-} = require('../room/roomNotifications');
-const { getCurrentRoom } = require('../../shared/gameStateUtils');
+} from '../room/roomNotifications.js';
+import { getCurrentRoom } from '../../shared/gameStateUtils.js';
 
 /**
  * Configura os handlers relacionados a entrada e saída de jogadores das salas
@@ -216,4 +216,4 @@ function setupPlayerRoomHandlers(io, socket, gameState) {
   });
 }
 
-module.exports = { setupPlayerRoomHandlers };
+export { setupPlayerRoomHandlers };

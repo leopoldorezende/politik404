@@ -2,11 +2,11 @@
  * Gerenciamento de salas
  */
 
-const redis = require('../../shared/redisClient');
-const { 
+import redis from '../../shared/redisClient.js';
+import { 
   sendUpdatedRoomsList, 
   sendUpdatedPlayersList 
-} = require('./roomNotifications');
+} from './roomNotifications.js';
 
 /**
  * Configura os handlers relacionados ao gerenciamento de salas
@@ -405,7 +405,7 @@ function cleanupRoomData(gameState, roomName) {
   }
 }
 
-module.exports = { 
+export { 
   setupRoomManagement,
   cleanupRoomData
 };

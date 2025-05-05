@@ -2,7 +2,7 @@
  * Handlers relacionados ao chat
  */
 
-const { getCurrentRoom } = require('../../shared/gameStateUtils');
+import { getCurrentRoom } from '../../shared/gameStateUtils.js';
 
 /**
  * Configura os handlers relacionados ao chat
@@ -34,13 +34,22 @@ function setupChatHandlers(io, socket, gameState) {
       return;
     }
     
-    // Criar uma chave única para o histórico de chat privado usando a função do gameState
-    const chatKey = gameState.getPrivateChatKey(username, targetUsername);
+    // Verificar e inicializar o histórico de chat se necessário
+    if (!room.chatHistory) {
+      room.chatHistory = {
+        public: [],
+        private: new Map()
+      };
+    }
     
-    // Garantir que o map de histórico privado existe
-    if (!room.chatHistory.private) {
+    // Garantir que o mapa de histórico privado seja um Map
+    if (!room.chatHistory.private || !(room.chatHistory.private instanceof Map)) {
+      console.log(`Corrigindo estrutura de chat privado para sala ${roomName}`);
       room.chatHistory.private = new Map();
     }
+    
+    // Criar uma chave única para o histórico de chat privado usando a função do gameState
+    const chatKey = gameState.getPrivateChatKey(username, targetUsername);
     
     // Obter o histórico (ou array vazio se não existir)
     const history = room.chatHistory.private.get(chatKey) || [];
@@ -73,6 +82,24 @@ function setupChatHandlers(io, socket, gameState) {
     }
     
     const room = gameState.rooms.get(roomName);
+    if (!room) {
+      socket.emit('error', 'Sala não encontrada');
+      return;
+    }
+    
+    // Verificar e inicializar o histórico de chat se necessário
+    if (!room.chatHistory) {
+      room.chatHistory = {
+        public: [],
+        private: new Map()
+      };
+    }
+    
+    // Garantir que o mapa de histórico privado seja um Map
+    if (!room.chatHistory.private || !(room.chatHistory.private instanceof Map)) {
+      console.log(`Corrigindo estrutura de chat privado para sala ${roomName}`);
+      room.chatHistory.private = new Map();
+    }
     
     // Validar dados da mensagem
     if (!data || typeof data.message !== 'string' || data.message.trim() === '') {
@@ -147,13 +174,23 @@ function setupChatHandlers(io, socket, gameState) {
     }
     
     const room = gameState.rooms.get(roomName);
+    if (!room) {
+      socket.emit('error', 'Sala não encontrada');
+      return;
+    }
     
-    // Garantir que o histórico de chat público existe
-    if (!room.chatHistory || !room.chatHistory.public) {
+    // Verificar e inicializar o histórico de chat se necessário
+    if (!room.chatHistory) {
       room.chatHistory = {
         public: [],
         private: new Map()
       };
+    }
+    
+    // Garantir que o mapa de histórico privado seja um Map
+    if (!room.chatHistory.private || !(room.chatHistory.private instanceof Map)) {
+      console.log(`Corrigindo estrutura de chat privado para sala ${roomName}`);
+      room.chatHistory.private = new Map();
     }
     
     // Enviar histórico público para o cliente
@@ -177,13 +214,22 @@ function setupChatHandlers(io, socket, gameState) {
 function processPrivateMessage(io, socket, gameState, room, roomName, username, message) {
   const recipientUsername = message.recipient;
   
-  // Criar chave única para histórico de chat privado
-  const chatKey = gameState.getPrivateChatKey(username, recipientUsername);
+  // Verificar e inicializar o histórico de chat se necessário
+  if (!room.chatHistory) {
+    room.chatHistory = {
+      public: [],
+      private: new Map()
+    };
+  }
   
-  // Garantir que o histórico de chat privado existe
-  if (!room.chatHistory.private) {
+  // Garantir que o mapa de histórico privado seja um Map
+  if (!room.chatHistory.private || !(room.chatHistory.private instanceof Map)) {
+    console.log(`Corrigindo estrutura de chat privado para mensagem privada na sala ${roomName}`);
     room.chatHistory.private = new Map();
   }
+  
+  // Criar chave única para histórico de chat privado
+  const chatKey = gameState.getPrivateChatKey(username, recipientUsername);
   
   // Inicializar histórico para este par de chat se não existir
   if (!room.chatHistory.private.has(chatKey)) {
@@ -229,7 +275,15 @@ function processPrivateMessage(io, socket, gameState, room, roomName, username, 
  * @param {Object} message - Objeto da mensagem
  */
 function processPublicMessage(io, room, roomName, message) {
-  // Garantir que o histórico de chat público existe
+  // Verificar e inicializar o histórico de chat se necessário
+  if (!room.chatHistory) {
+    room.chatHistory = {
+      public: [],
+      private: new Map()
+    };
+  }
+  
+  // Garantir que o histórico de chat público exista
   if (!room.chatHistory.public) {
     room.chatHistory.public = [];
   }
@@ -246,4 +300,4 @@ function processPublicMessage(io, room, roomName, message) {
   io.to(roomName).emit('chatMessage', message);
 }
 
-module.exports = { setupChatHandlers };
+export { setupChatHandlers };

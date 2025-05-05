@@ -2,19 +2,19 @@
  * Gerenciamento da atribuição de países para jogadores
  */
 
-const { 
+import { 
   sendUpdatedPlayersList 
-} = require('../room/roomNotifications');
-const { 
+} from '../room/roomNotifications.js';
+import { 
   getCurrentRoom, 
   getUsernameFromSocketId 
-} = require('../../shared/gameStateUtils');
-const {
+} from '../../shared/gameStateUtils.js';
+import {
   isValidCountry,
   getBorderingCountries,
   getAvailableCountries,
   getAvailableEligibleCountries
-} = require('./countryUtils');
+} from './countryUtils.js';
 
 /**
  * Configura os handlers relacionados à atribuição de países
@@ -503,7 +503,7 @@ function updateEligibleCountries(country, room, gameState, allAvailableCountries
   }
 }
 
-module.exports = { 
+export { 
   setupCountryAssignment,
   selectCountryForPlayer,
   selectNewCountryForPlayer,

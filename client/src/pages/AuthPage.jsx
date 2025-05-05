@@ -1,33 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux'
-import { login } from '../modules/auth/authState'
-import { loginWithGoogle } from '../modules/auth/firebaseClient'
+import { useDispatch } from 'react-redux';
+import { login } from '../modules/auth/authState';
+import { loginWithGoogle } from '../modules/auth/firebaseClient';
+import { socketApi, SOCKET_EVENTS } from '../modules/network/socketService';
 import '../shared/styles/AuthPage.css';
 
 const AuthPage = () => {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [authAttempt, setAuthAttempt] = useState(0);
 
-  // Função para conectar e autenticar o socket
-  const connectAndAuthenticate = (username) => {
-    console.log('Conectando e autenticando socket para:', username);
+  // Função para autenticar o usuário
+  const authenticateUser = (username) => {
+    console.log('Autenticando usuário:', username);
     
-    // Primeiramente, garantir que o Redux está atualizado
+    // Primeiro, atualize o Redux state
     dispatch(login(username));
     
-    // 1. Conectar o socket
-    dispatch({ type: 'socket/connect' });
+    // Em seguida, utilize o socketApi para autenticar
+    socketApi.authenticate(username);
     
-    // 2. Autenticar o socket com o username (com delay para garantir conexão)
+    // Também solicite a lista de salas após a autenticação
     setTimeout(() => {
-      dispatch({ type: 'socket/authenticate', payload: username });
-    
-      // 3. Solicitar lista de salas após autenticação
-      setTimeout(() => {
-        dispatch({ type: 'socket/getRooms' });
-      }, 500);
+      socketApi.getRooms();
     }, 500);
   };
 
@@ -39,7 +35,7 @@ const AuthPage = () => {
       setIsLoading(true);
       
       // Se existir um usuário no sessionStorage, fazer login automaticamente
-      connectAndAuthenticate(storedUsername);
+      authenticateUser(storedUsername);
       
       // Definir um timeout para finalizar o carregamento mesmo se algo falhar
       setTimeout(() => {
@@ -57,7 +53,7 @@ const AuthPage = () => {
           console.log(`Tentativa ${authAttempt + 1} de reconexão para:`, username);
           setAuthAttempt(prev => prev + 1);
           setError(null);
-          connectAndAuthenticate(username);
+          authenticateUser(username);
         }, 2000);
         
         return () => clearTimeout(retryTimer);
@@ -70,26 +66,26 @@ const AuthPage = () => {
       setIsLoading(true);
       setError(null);
       
-      const result = await loginWithGoogle()
-      const token = await result.user.getIdToken()
+      const result = await loginWithGoogle();
+      const token = await result.user.getIdToken();
 
       const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/auth/google`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`
         }
-      })
+      });
 
-      if (!res.ok) throw new Error('Falha ao autenticar com o servidor')
+      if (!res.ok) throw new Error('Falha ao autenticar com o servidor');
 
-      const user = await res.json()
+      const user = await res.json();
       const username = user.email;
       
       // Salvar o username no sessionStorage para persistência
       sessionStorage.setItem('username', username);
       
-      // Conectar e autenticar
-      connectAndAuthenticate(username);
+      // Autenticar o usuário
+      authenticateUser(username);
       
       // Definir um timeout para finalizar o carregamento mesmo se algo falhar
       setTimeout(() => {
@@ -101,7 +97,7 @@ const AuthPage = () => {
       setError('Erro no login com Google. Tente novamente.');
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div id="login-screen">
@@ -121,7 +117,7 @@ const AuthPage = () => {
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AuthPage
+export default AuthPage;

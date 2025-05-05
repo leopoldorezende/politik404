@@ -2,7 +2,7 @@
  * Gerenciamento do estado dos jogadores
  */
 
-const { getCurrentRoom } = require('../../shared/gameStateUtils');
+import { getCurrentRoom } from '../../shared/gameStateUtils.js';
 
 /**
  * Configura os handlers relacionados ao gerenciamento de estado dos jogadores
@@ -177,4 +177,4 @@ function setupPlayerStateManager(io, socket, gameState) {
   });
 }
 
-module.exports = { setupPlayerStateManager };
+export { setupPlayerStateManager };

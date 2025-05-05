@@ -1,10 +1,15 @@
-const admin = require('firebase-admin');
-const fs = require('fs');
+import admin from 'firebase-admin';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
 const isProd = process.env.NODE_ENV === 'production';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const keyPath = isProd 
   ? '/root/keys/politik404-41c47-firebase-adminsdk-fbsvc-2c5ed453f9.json'
-  : require('path').join(__dirname, '../keys/firebase-admin.json');
+  : join(__dirname, '../keys/firebase-admin.json');
 
 let serviceAccount;
 
@@ -20,5 +25,4 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-module.exports = admin;
-
+export default admin;
