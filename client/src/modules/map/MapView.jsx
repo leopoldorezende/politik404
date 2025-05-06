@@ -5,7 +5,6 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import '../../shared/styles/MapView.css';
 import SeaRoutes from './SeaRoutes';
 import * as turf from '@turf/turf';
-import { socketApi } from '../network/socketService';
 
 import {
   loadCountriesData,
@@ -98,9 +97,6 @@ const MapView = () => {
       document.dispatchEvent(new CustomEvent('countrySelected', {
         detail: { country: myCountry }
       }));
-      
-      // Solicita os navios na sala usando o serviço de socket
-      socketApi.getShipsInRoom();
     }
   }, [loaded, myCountry, countriesData, dispatch]);
 

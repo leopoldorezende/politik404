@@ -1,5 +1,5 @@
 /**
- * Gerenciamento de salas
+ * Room management functionality
  */
 
 import redis from '../../shared/redisClient.js';
@@ -9,94 +9,125 @@ import {
 } from './roomNotifications.js';
 
 /**
- * Configura os handlers relacionados ao gerenciamento de salas
- * @param {Object} io - Instância do Socket.io
- * @param {Object} socket - Socket do cliente
- * @param {Object} gameState - Estado global do jogo
+ * Configures event handlers related to room management
+ * @param {Object} io - Socket.io instance
+ * @param {Object} socket - Client socket
+ * @param {Object} gameState - Global game state
  */
 function setupRoomManagement(io, socket, gameState) {
-  console.log('Room management inicializado');
+  console.log('Room management initialized');
   
-  // Obter lista de salas
+  // Centralized function to verify user authentication
+  const verifyAuth = () => {
+    const username = socket.username;
+    if (!username) {
+      socket.emit('error', 'User not authenticated');
+      return null;
+    }
+    return username;
+  };
+  
+  // Centralized function to verify room existence
+  const verifyRoom = (roomName) => {
+    if (!roomName) {
+      socket.emit('error', 'Invalid room name');
+      return null;
+    }
+    
+    const room = gameState.rooms.get(roomName);
+    if (!room) {
+      socket.emit('error', 'Room does not exist');
+      return null;
+    }
+    
+    return room;
+  };
+  
+  // Centralized function to verify room ownership
+  const verifyRoomOwnership = (roomName) => {
+    const username = verifyAuth();
+    if (!username) return null;
+    
+    const room = verifyRoom(roomName);
+    if (!room) return null;
+    
+    if (room.owner !== username) {
+      socket.emit('error', 'Only the room owner can perform this action');
+      return null;
+    }
+    
+    return { username, room };
+  };
+  
+  // Function to save rooms state to Redis
+  const saveRoomsToRedis = async () => {
+    try {
+      await redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
+    } catch (error) {
+      console.error('Error saving rooms to Redis:', error);
+    }
+  };
+
+  // Get room list
   socket.on('getRooms', () => {
-    console.log('Enviando lista de salas');
+    console.log('Sending room list');
     sendUpdatedRoomsList(io, gameState);
   });
   
-  // Criar sala
+  // Create room
   socket.on('createRoom', (roomName) => {
-    console.log(`Requisição para criar sala: ${roomName}`);
-    const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'Usuário não autenticado');
-      return;
-    }
+    console.log(`Request to create room: ${roomName}`);
+    const username = verifyAuth();
+    if (!username) return;
     
     if (!roomName || typeof roomName !== 'string' || roomName.trim() === '') {
-      socket.emit('error', 'Nome de sala inválido');
+      socket.emit('error', 'Invalid room name');
       return;
     }
     
     if (gameState.rooms.has(roomName)) {
-      socket.emit('error', 'Sala com este nome já existe');
+      socket.emit('error', 'Room with this name already exists');
       return;
     }
     
-    // Criar sala com estrutura padronizada usando a função auxiliar
+    // Create room with standardized structure using helper function
     const newRoom = gameState.createRoom(roomName, username);
     
-    // Armazena a sala no mapa de salas
+    // Store room in the map
     gameState.rooms.set(roomName, newRoom);
-    console.log(`Sala "${roomName}" criada por ${username}`);
+    console.log(`Room "${roomName}" created by ${username}`);
     
-    // Salvar no Redis
-    redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
+    // Save to Redis
+    saveRoomsToRedis();
 
-    // Notificar o cliente que criou a sala
+    // Notify client that created the room
     socket.emit('roomCreated', { name: roomName, success: true });
     
-    // Atualizar lista de salas para todos os clientes conectados
+    // Update room list for all connected clients
     sendUpdatedRoomsList(io, gameState);
   });
   
-  
-
-  // Excluir sala (apenas o dono pode excluir)
+  // Delete room (owner only)
   socket.on('deleteRoom', (roomName) => {
-    const username = socket.username;
+    const result = verifyRoomOwnership(roomName);
+    if (!result) return;
     
-    if (!username) {
-      socket.emit('error', 'Usuário não autenticado');
-      return;
-    }
+    const { username, room } = result;
     
-    const room = gameState.rooms.get(roomName);
-    
-    if (!room) {
-      socket.emit('error', 'Sala não existe');
-      return;
-    }
-    
-    if (room.owner !== username) {
-      socket.emit('error', 'Apenas o dono da sala pode excluí-la');
-      return;
-    }
-    
-    // Notificar todos os jogadores na sala
+    // Notify all players in the room
     io.to(roomName).emit('roomDeleted', { 
       name: roomName, 
-      message: 'Esta sala foi removida pelo dono' 
+      message: 'This room has been removed by the owner' 
     });
     
-    // Remover todos os jogadores da sala
+    // Remove all players from the room
     const socketsInRoom = io.sockets.adapter.rooms.get(roomName);
     if (socketsInRoom) {
       for (const socketId of socketsInRoom) {
         const clientSocket = io.sockets.sockets.get(socketId);
         if (clientSocket) {
           clientSocket.leave(roomName);
-          // Remove a associação do usuário com a sala
+          // Remove user-room association
           const clientUsername = clientSocket.username;
           if (clientUsername) {
             gameState.userToRoom.delete(clientUsername);
@@ -105,40 +136,26 @@ function setupRoomManagement(io, socket, gameState) {
       }
     }
     
-    // Limpar dados relacionados à sala
+    // Clean up room-related data
     cleanupRoomData(gameState, roomName);
     
-    console.log(`Sala "${roomName}" excluída por ${username}`);
+    console.log(`Room "${roomName}" deleted by ${username}`);
     
-    // Salvar no Redis
-    redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
+    // Save to Redis
+    saveRoomsToRedis();
 
-    // Atualizar lista de salas para todos
+    // Update room list for everyone
     sendUpdatedRoomsList(io, gameState);
   });
   
-  // Transferir propriedade da sala
+  // Transfer room ownership
   socket.on('transferOwnership', ({ roomName, newOwner }) => {
-    const username = socket.username;
+    const result = verifyRoomOwnership(roomName);
+    if (!result) return;
     
-    if (!username) {
-      socket.emit('error', 'Usuário não autenticado');
-      return;
-    }
+    const { username, room } = result;
     
-    const room = gameState.rooms.get(roomName);
-    
-    if (!room) {
-      socket.emit('error', 'Sala não existe');
-      return;
-    }
-    
-    if (room.owner !== username) {
-      socket.emit('error', 'Apenas o dono da sala pode transferir a propriedade');
-      return;
-    }
-    
-    // Verificar se o novo dono está na sala
+    // Check if new owner is in the room
     const newOwnerExists = room.players.some(player => {
       if (typeof player === 'object') {
         return player.username === newOwner;
@@ -147,71 +164,57 @@ function setupRoomManagement(io, socket, gameState) {
     });
     
     if (!newOwnerExists) {
-      socket.emit('error', 'Usuário especificado não está na sala');
+      socket.emit('error', 'Specified user is not in the room');
       return;
     }
     
-    // Transferir propriedade
+    // Transfer ownership
     room.owner = newOwner;
     
-    // Notificar todos na sala
+    // Notify everyone in the room
     io.to(roomName).emit('ownershipTransferred', {
       roomName,
       newOwner,
       previousOwner: username
     });
     
-    console.log(`Propriedade da sala "${roomName}" transferida de ${username} para ${newOwner}`);
+    console.log(`Room "${roomName}" ownership transferred from ${username} to ${newOwner}`);
 
-    // Salvar no Redis
-    redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
+    // Save to Redis
+    saveRoomsToRedis();
 
-    // Atualizar lista de salas para todos
+    // Update room list for everyone
     sendUpdatedRoomsList(io, gameState);
   });
   
-  // Configurar sala
+  // Configure room
   socket.on('configureRoom', ({ roomName, settings }) => {
-    const username = socket.username;
+    const result = verifyRoomOwnership(roomName);
+    if (!result) return;
     
-    if (!username) {
-      socket.emit('error', 'Usuário não autenticado');
-      return;
-    }
+    const { username, room } = result;
     
-    const room = gameState.rooms.get(roomName);
-    
-    if (!room) {
-      socket.emit('error', 'Sala não existe');
-      return;
-    }
-    
-    if (room.owner !== username) {
-      socket.emit('error', 'Apenas o dono da sala pode configurá-la');
-      return;
-    }
-    
-    // Validar as configurações
+    // Validate settings
     if (!settings || typeof settings !== 'object') {
-      socket.emit('error', 'Configurações inválidas');
+      socket.emit('error', 'Invalid settings');
       return;
     }
     
-    // Aplicar configurações permitidas
+    // List of allowed settings
     const allowedSettings = [
       'maxPlayers', 'isPrivate', 'password', 'description', 
       'gameMode', 'turnTime', 'visibleCountries'
     ];
     
-    // Inicializa o objeto de configurações se não existir
+    // Initialize settings object if it doesn't exist
     if (!room.settings) {
       room.settings = {};
     }
     
-    // Aplica as configurações permitidas
+    // Apply allowed settings with validation
     for (const setting of allowedSettings) {
       if (settings[setting] !== undefined) {
-        // Valida configurações específicas
+        // Validate specific settings
         if (setting === 'maxPlayers' && (
             !Number.isInteger(settings.maxPlayers) || 
             settings.maxPlayers < 2 || 
@@ -226,70 +229,51 @@ function setupRoomManagement(io, socket, gameState) {
           continue;
         }
         
-        // Aplica a configuração
+        // Apply the setting
         room.settings[setting] = settings[setting];
       }
     }
     
-    // Notificar todos na sala sobre as novas configurações
+    // Notify everyone in the room about the new settings
     io.to(roomName).emit('roomConfigurationUpdated', {
       roomName,
       settings: room.settings
     });
     
+    // Save to Redis
+    saveRoomsToRedis();
 
-    // Salvar no Redis
-    redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
-
-    console.log(`Configurações da sala "${roomName}" atualizadas por ${username}`);
+    console.log(`Room "${roomName}" settings updated by ${username}`);
     
-    // Atualizar lista de salas para todos (para refletir mudanças como privacidade)
+    // Update room list for everyone (to reflect changes like privacy)
     sendUpdatedRoomsList(io, gameState);
   });
   
-  // Obter configurações da sala
+  // Get room settings
   socket.on('getRoomSettings', (roomName) => {
-    const room = gameState.rooms.get(roomName);
+    const room = verifyRoom(roomName);
+    if (!room) return;
     
-    if (!room) {
-      socket.emit('error', 'Sala não existe');
-      return;
-    }
-    
-    // Retorna as configurações da sala (ou objeto vazio se não existirem)
+    // Return room settings (or empty object if none exist)
     socket.emit('roomSettings', {
       roomName,
       settings: room.settings || {}
     });
   });
   
-  // Banir jogador (apenas dono da sala)
+  // Ban player (owner only)
   socket.on('banPlayer', ({ roomName, playerUsername }) => {
-    const username = socket.username;
+    const result = verifyRoomOwnership(roomName);
+    if (!result) return;
     
-    if (!username) {
-      socket.emit('error', 'Usuário não autenticado');
-      return;
-    }
-    
-    const room = gameState.rooms.get(roomName);
-    
-    if (!room) {
-      socket.emit('error', 'Sala não existe');
-      return;
-    }
-    
-    if (room.owner !== username) {
-      socket.emit('error', 'Apenas o dono da sala pode banir jogadores');
-      return;
-    }
+    const { username, room } = result;
     
     if (playerUsername === username) {
-      socket.emit('error', 'Não é possível banir-se a si mesmo');
+      socket.emit('error', 'You cannot ban yourself');
       return;
     }
     
-    // Verificar se o jogador está na sala
+    // Check if player is in the room
     const playerIndex = room.players.findIndex(player => {
       if (typeof player === 'object') {
         return player.username === playerUsername;
@@ -298,24 +282,24 @@ function setupRoomManagement(io, socket, gameState) {
     });
     
     if (playerIndex === -1) {
-      socket.emit('error', 'Jogador não encontrado na sala');
+      socket.emit('error', 'Player not found in room');
       return;
     }
     
-    // Remove o jogador da lista
+    // Remove player from list
     room.players.splice(playerIndex, 1);
     
-    // Inicializa lista de banidos se não existir
+    // Initialize banned players list if it doesn't exist
     if (!room.bannedPlayers) {
       room.bannedPlayers = [];
     }
     
-    // Adiciona o jogador à lista de banidos
+    // Add player to banned list
     if (!room.bannedPlayers.includes(playerUsername)) {
       room.bannedPlayers.push(playerUsername);
     }
     
-    // Encontra o socket do jogador banido
+    // Find banned player's socket
     let bannedPlayerSocketId = null;
     for (const [socketId, name] of gameState.socketIdToUsername.entries()) {
       if (name === playerUsername) {
@@ -324,80 +308,80 @@ function setupRoomManagement(io, socket, gameState) {
       }
     }
     
-    // Se o jogador estiver online, remove-o da sala
+    // If player is online, remove them from the room
     if (bannedPlayerSocketId) {
       const bannedPlayerSocket = io.sockets.sockets.get(bannedPlayerSocketId);
       if (bannedPlayerSocket) {
-        // Remove associação com a sala
+        // Remove room association
         gameState.userToRoom.delete(playerUsername);
         
-        // Remove da sala
+        // Remove from room
         bannedPlayerSocket.leave(roomName);
         
-        // Notifica o jogador
+        // Notify player
         bannedPlayerSocket.emit('banned', { 
           roomName, 
-          message: `Você foi banido da sala ${roomName} pelo dono` 
+          message: `You have been banned from room ${roomName} by the owner` 
         });
         
-        // Emite evento de saída da sala
+        // Emit room leave event
         bannedPlayerSocket.emit('roomLeft');
       }
     }
     
-    // Limpa dados do jogador nessa sala
+    // Clear player data for this room
     const userRoomKey = `${playerUsername}:${roomName}`;
     gameState.userRoomCountries.delete(userRoomKey);
     gameState.playerStates.delete(userRoomKey);
     
-    // Remove os navios do jogador nessa sala
+    // Remove player's ships in this room
     for (const [shipId, ship] of gameState.ships.entries()) {
       if (ship.owner === playerUsername && ship.roomName === roomName) {
         gameState.ships.delete(shipId);
       }
     }
     
-    // Notifica todos na sala
+    // Notify everyone in the room
     io.to(roomName).emit('playerBanned', {
       roomName,
       bannedPlayer: playerUsername,
       bannedBy: username
     });
   
-    // Salvar no Redis
-    redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
+    // Save to Redis
+    saveRoomsToRedis();
 
-    // Atualiza lista de jogadores para todos na sala
+    // Update player list for everyone in the room
     sendUpdatedPlayersList(io, roomName, gameState);
     
-    console.log(`Jogador ${playerUsername} banido da sala "${roomName}" por ${username}`);
+    console.log(`Player ${playerUsername} banned from room "${roomName}" by ${username}`);
   });
 }
 
 /**
- * Limpa todos os dados relacionados a uma sala
- * @param {Object} gameState - Estado global do jogo
- * @param {string} roomName - Nome da sala a ser limpa
+ * Cleans up all data related to a room
+ * @param {Object} gameState - Global game state
+ * @param {string} roomName - Name of the room to clean up
  */
 function cleanupRoomData(gameState, roomName) {
-  // Remove a sala
+  // Remove the room
   gameState.rooms.delete(roomName);
   
-  // Remove países atribuídos para esta sala
+  // Remove country assignments for this room
   for (const [key, value] of gameState.userRoomCountries.entries()) {
     if (key.includes(`:${roomName}`)) {
       gameState.userRoomCountries.delete(key);
     }
   }
   
-  // Remove estados de jogadores para esta sala
+  // Remove player states for this room
   for (const [key, value] of gameState.playerStates.entries()) {
     if (key.includes(`:${roomName}`)) {
       gameState.playerStates.delete(key);
     }
   }
   
-  // Remove navios nesta sala
+  // Remove ships in this room
   for (const [shipId, ship] of gameState.ships.entries()) {
     if (ship.roomName === roomName) {
       gameState.ships.delete(shipId);

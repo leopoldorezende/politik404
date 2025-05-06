@@ -42,6 +42,22 @@
   │       │   │   ├── SeaRoutes.jsx              # Rotas marítimas
   │       │   │   └── mapboxUtils.js             # Integração com Mapbox
   │       │   │
+  │       │   ├── /economy
+  │       │   │   ├── EconomyPanel.jsx           # Componente Painel de Economia
+  │       │   │   └── economyState.js            # Estado de economia
+  │       │   │
+  │       │   ├── /military
+  │       │   │   ├── MilitaryPanel.jsx          # Componente Painel Militar
+  │       │   │   └── militaryState.js           # Estado militar
+  │       │   │
+  │       │   ├── /politics
+  │       │   │   ├── PoliticsPanel.jsx          # Componente Painel de Política
+  │       │   │   └── politicsState.js           # Estado político
+  │       │   │
+  │       │   ├── /trade
+  │       │   │   ├── TradePanel.jsx             # Componente Painel de Comercio
+  │       │   │   └── tradeState.js              # Estado do comércio
+  │       │   │
   │       │   ├── /network
   │       │   │   └── socketService.js           # Comunicação via Socket.io
   │       │   │

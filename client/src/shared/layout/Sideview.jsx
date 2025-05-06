@@ -68,10 +68,10 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
       
       <div className="tabs">
         <div 
-          className={`tab ${activeTab === 'country' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('country')}
+          className={`tab ${activeTab === 'ranking' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('ranking')}
         >
-          <span className="material-icons">map</span>
+          <span className="material-icons">leaderboard</span>
         </div>
         <div 
           className={`tab ${activeTab === 'chat' ? 'active' : ''}`} 
@@ -84,6 +84,12 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
           )}
         </div>
         <div 
+          className={`tab ${activeTab === 'country' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('country')}
+        >
+          <span className="material-icons">map</span>
+        </div>
+        <div 
           className={`tab ${activeTab === 'info' ? 'active' : ''}`} 
           onClick={() => setActiveTab('info')}
         >
@@ -94,6 +100,19 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
       {/* Conteúdo das abas - cada um só aparece quando sua aba está ativa */}
       <div id="country" className={`tab-content ${activeTab === 'country' ? 'active' : ''}`}>
         <CountryDetails />
+      </div>
+
+
+      <div id="ranking" className={`tab-content ${activeTab === 'ranking' ? 'active' : ''}`}>
+        <h4>Líderes:</h4>
+        <ul>
+        <li>1. Brasil <br /> usuário: email@gmail.com</li>
+        <li>2. Indonésia <br /> usuário:  email@gmail.com</li>
+        <li>3. Canadá <br /> usuário:  email@gmail.com</li>
+        <li>4. Japão <br /> usuário:  email@gmail.com</li>
+        <li>5. Nigéria <br /> usuário:  email@gmail.com</li>
+        <li>6. França <br /> usuário:  email@gmail.com</li>
+        </ul>
       </div>
 
       {activeTab === 'chat' && (

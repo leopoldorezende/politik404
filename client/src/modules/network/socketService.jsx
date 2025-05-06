@@ -2,10 +2,45 @@ import { io } from 'socket.io-client';
 import { store } from '../../store';
 import { login } from '../auth/authState';
 import { setRooms, setCurrentRoom, leaveRoom } from '../room/roomState';
-import { setMyCountry, setPlayers, setPlayerOnlineStatus, setOnlinePlayers, 
-         updateEconomyData, addEconomicEvent, setEconomyConfig, applyPolicyChange } from '../game/gameState';
+import { setMyCountry, setPlayers, setPlayerOnlineStatus, setOnlinePlayers } from '../game/gameState';
 import { addMessage, setChatHistory } from '../chat/chatState';
-import { setShips, updateShipPosition, addShip, removeShip } from '../military/shipsState';
+         
+// Importações para o módulo de economia
+import { 
+  updateEconomyData, 
+  addEconomicEvent, 
+  setEconomyConfig, 
+  applyPolicyChange,
+  resetEconomyState
+} from '../economy/economyState';
+
+// Importações para o módulo de política
+import { 
+  updateApproval, 
+  updateInstability, 
+  addPoliticalEvent, 
+  recordPoliticalSpending,
+  increaseParlamentaryApproval 
+} from '../politics/politicsState';
+
+// Importações para o módulo militar
+import { 
+  updateMilitaryForces, 
+  recordInvestment,
+  recordWarAction,
+  updateWarActionStatus,
+  updateNuclearStatus,
+  resetMilitaryState
+} from '../military/militaryState';
+
+// Importações para o módulo de comércio
+import {
+  addTradeAgreement,
+  removeTradeAgreement,
+  addTradeRoute,
+  removeTradeRoute,
+  resetTradeState
+} from '../trade/tradeState';
 
 // Configurações
 const MAX_RECONNECT_ATTEMPTS = 5;
@@ -35,11 +70,6 @@ export const SOCKET_EVENTS = {
   SEND_CHAT: 'socket/sendChatMessage',
   REQUEST_CHAT_HISTORY: 'socket/requestPrivateHistory',
   REQUEST_COUNTRY: 'socket/requestCountry',
-  GET_ECONOMY: 'socket/getEconomyData',
-  ADJUST_INTEREST: 'socket/adjustInterestRate',
-  ADJUST_TAX: 'socket/adjustTaxBurden',
-  ADJUST_SERVICES: 'socket/adjustPublicServices',
-  CREATE_ECONOMIC_EVENT: 'socket/createEconomicEvent',
 };
 
 // Inicializa a conexão do socket e define handlers
@@ -98,6 +128,10 @@ const setupSocketEvents = (socket) => {
   
   // Remover listeners anteriores se existirem para evitar duplicação
   socket.removeAllListeners();
+  
+  // ======================================================================
+  // EVENTOS BASE DO SOCKET
+  // ======================================================================
   
   // Evento de conexão
   socket.on('connect', () => {
@@ -173,6 +207,10 @@ const setupSocketEvents = (socket) => {
     }
   });
   
+  // ======================================================================
+  // EVENTOS DE AUTENTICAÇÃO E SALAS
+  // ======================================================================
+  
   // Evento de autenticação bem-sucedida
   socket.on('authenticated', (data) => {
     console.log('Autenticação bem-sucedida:', data);
@@ -203,12 +241,24 @@ const setupSocketEvents = (socket) => {
     isJoiningRoom = false; // Resetar flag após sucesso
     sessionStorage.removeItem('pendingRoom'); // Limpar sala pendente
     store.dispatch(setCurrentRoom(room));
+    
+    // Solicitar dados específicos para cada domínio
+    setTimeout(() => {
+      socket.emit('getEconomyData');
+      socket.emit('getAlliances');
+      socket.emit('getMilitaryData');
+    }, 1000);
   });
   
   socket.on('roomLeft', () => {
     console.log('Saiu da sala');
     isJoiningRoom = false; // Resetar flag após sair
     store.dispatch(leaveRoom());
+    
+    // Limpar estados de domínio específicos
+    store.dispatch(resetEconomyState());
+    store.dispatch(resetTradeState());
+    store.dispatch(resetMilitaryState());
   });
   
   socket.on('roomCreated', (data) => {
@@ -219,7 +269,10 @@ const setupSocketEvents = (socket) => {
     }
   });
   
-  // Chat
+  // ======================================================================
+  // EVENTOS DE CHAT
+  // ======================================================================
+  
   socket.on('chatMessage', (message) => {
     console.log('Mensagem de chat recebida:', message);
     store.dispatch(addMessage(message));
@@ -230,7 +283,10 @@ const setupSocketEvents = (socket) => {
     store.dispatch(setChatHistory(data));
   });
   
-  // Jogadores
+  // ======================================================================
+  // EVENTOS DE JOGADORES
+  // ======================================================================
+  
   socket.on('playersList', (players) => {
     console.log('Lista de jogadores recebida:', players);
     store.dispatch(setPlayers(players));
@@ -276,7 +332,58 @@ const setupSocketEvents = (socket) => {
     }
   });
   
-  // Economia
+  // ======================================================================
+  // EVENTOS DE COMÉRCIO SIMPLIFICADOS
+  // ======================================================================
+  
+  socket.on('tradeAgreementCreated', (agreementData) => {
+    console.log('Acordo comercial criado:', agreementData);
+    store.dispatch(addTradeAgreement(agreementData));
+  });
+  
+  socket.on('tradeAgreementRemoved', (agreementData) => {
+    console.log('Acordo comercial removido:', agreementData);
+    store.dispatch(removeTradeAgreement(agreementData));
+  });
+  
+  socket.on('tradeRouteCreated', (routeData) => {
+    console.log('Rota comercial criada:', routeData);
+    store.dispatch(addTradeRoute(routeData));
+  });
+  
+  socket.on('tradeRouteRemoved', (routeData) => {
+    console.log('Rota comercial removida:', routeData);
+    store.dispatch(removeTradeRoute(routeData));
+  });
+  
+  // ======================================================================
+  // EVENTOS MILITARES SIMPLIFICADOS
+  // ======================================================================
+  
+  socket.on('militaryForcesUpdated', (forcesData) => {
+    console.log('Forças militares atualizadas:', forcesData);
+    store.dispatch(updateMilitaryForces(forcesData));
+  });
+  
+  socket.on('militaryInvestmentRecorded', (investmentData) => {
+    console.log('Investimento militar registrado:', investmentData);
+    store.dispatch(recordInvestment(investmentData));
+  });
+  
+  socket.on('warActionRecorded', (warActionData) => {
+    console.log('Ação de guerra registrada:', warActionData);
+    store.dispatch(recordWarAction(warActionData));
+  });
+  
+  socket.on('warActionStatusUpdated', (statusData) => {
+    console.log('Status de guerra atualizado:', statusData);
+    store.dispatch(updateWarActionStatus(statusData));
+  });
+  
+  // ======================================================================
+  // EVENTOS DE ECONOMIA
+  // ======================================================================
+  
   socket.on('economyUpdated', (economyData) => {
     console.log('Economia atualizada:', economyData);
     store.dispatch(updateEconomyData(economyData));
@@ -301,28 +408,34 @@ const setupSocketEvents = (socket) => {
     store.dispatch(applyPolicyChange(policyData));
   });
   
-  // Navios
-  socket.on('shipsInRoom', (ships) => {
-    console.log('Lista de navios recebida:', ships);
-    store.dispatch(setShips(ships));
+  // ======================================================================
+  // EVENTOS DE POLÍTICA
+  // ======================================================================
+  
+  socket.on('alliancesUpdated', (alliancesData) => {
+    console.log('Alianças atualizadas:', alliancesData);
+    store.dispatch(updateAlliances(alliancesData));
   });
   
-  socket.on('shipMoved', (data) => {
-    console.log('Navio movido:', data);
-    store.dispatch(updateShipPosition(data));
+  socket.on('approvalUpdated', (approvalData) => {
+    console.log('Níveis de aprovação atualizados:', approvalData);
+    store.dispatch(updateApproval(approvalData));
   });
   
-  socket.on('shipCreated', (ship) => {
-    console.log('Navio criado:', ship);
-    store.dispatch(addShip(ship));
+  socket.on('instabilityUpdated', (instabilityData) => {
+    console.log('Níveis de instabilidade atualizados:', instabilityData);
+    store.dispatch(updateInstability(instabilityData));
   });
   
-  socket.on('shipRemoved', (shipId) => {
-    console.log('Navio removido:', shipId);
-    store.dispatch(removeShip(shipId));
+  socket.on('politicalEvent', (eventData) => {
+    console.log('Evento político recebido:', eventData);
+    store.dispatch(addPoliticalEvent(eventData));
   });
   
-  // Erros
+  // ======================================================================
+  // ERROS E OUTROS EVENTOS
+  // ======================================================================
+  
   socket.on('error', (message) => {
     console.error('Erro do socket:', message);
     
@@ -344,12 +457,37 @@ const setupSocketEvents = (socket) => {
       });
     }
   });
+  
+  // Força ping a cada 30 segundos para manter a conexão ativa
+  setInterval(() => {
+    if (socket.connected) {
+      socket.emit('ping', Date.now());
+    }
+  }, 30000);
+  
+  // Monitor de ping para estimar latência
+  socket.on('pong', (data) => {
+    const latency = Date.now() - data;
+    console.debug(`Latência atual: ${latency}ms`);
+    // Atualizar um estado de aplicação com latência, se necessário
+  });
 };
 
 // API pública para enviar eventos ao servidor
 export const socketApi = {
+  // ======================================================================
+  // MÉTODOS BÁSICOS DE CONEXÃO E AUTENTICAÇÃO
+  // ======================================================================
+  
   connect: () => {
     return initializeSocket();
+  },
+  
+  disconnect: () => {
+    if (socketInstance) {
+      socketInstance.disconnect();
+      socketInstance = null;
+    }
   },
   
   authenticate: (username) => {
@@ -372,6 +510,10 @@ export const socketApi = {
       socket.emit('authenticate', username, { clientSessionId: getSessionId() });
     }, 100);
   },
+  
+  // ======================================================================
+  // MÉTODOS DE GERENCIAMENTO DE SALAS
+  // ======================================================================
   
   getRooms: () => {
     const socket = initializeSocket();
@@ -441,18 +583,27 @@ export const socketApi = {
     }, 10000);
   },
   
-  leaveRoom: () => {
+  leaveRoom: (intentional = true) => {
     // Limpar flags e dados pendentes
     isJoiningRoom = false;
     sessionStorage.removeItem('pendingRoom');
     
     const socket = initializeSocket();
-    socket.emit('leaveRoom');
+    socket.emit('leaveRoom', { intentional });
     
     // Limpar o país do usuário no state
     store.dispatch(setMyCountry(null));
     sessionStorage.removeItem('myCountry');
+    
+    // Limpar estados específicos dos domínios
+    store.dispatch(resetEconomyState());
+    store.dispatch(resetTradeState());
+    store.dispatch(resetMilitaryState());
   },
+  
+  // ======================================================================
+  // MÉTODOS DE CHAT
+  // ======================================================================
   
   sendMessage: (content, isPrivate = false, recipient = null) => {
     const socket = initializeSocket();
@@ -478,8 +629,55 @@ export const socketApi = {
   
   requestCountry: (countryName) => {
     const socket = initializeSocket();
-    socket.emit('requestCountry', countryName);
+    socket.emit('requestSpecificCountry', countryName);
   },
+  
+  // ======================================================================
+  // MÉTODOS DE COMÉRCIO SIMPLIFICADOS
+  // ======================================================================
+  
+  createTradeAgreement: (agreementData) => {
+    const socket = initializeSocket();
+    socket.emit('createTradeAgreement', agreementData);
+  },
+  
+  cancelTradeAgreement: (agreementId) => {
+    const socket = initializeSocket();
+    socket.emit('cancelTradeAgreement', agreementId);
+  },
+  
+  // ======================================================================
+  // MÉTODOS MILITARES SIMPLIFICADOS
+  // ======================================================================
+  
+  getMilitaryData: () => {
+    const socket = initializeSocket();
+    socket.emit('getMilitaryData');
+  },
+  
+  investMilitary: (investmentData) => {
+    const socket = initializeSocket();
+    socket.emit('investMilitary', investmentData);
+  },
+  
+  attackCountry: (attackData) => {
+    const socket = initializeSocket();
+    socket.emit('attackCountry', attackData);
+  },
+  
+  getWarActions: () => {
+    const socket = initializeSocket();
+    socket.emit('getWarActions');
+  },
+  
+  updateWarStatus: (statusData) => {
+    const socket = initializeSocket();
+    socket.emit('updateWarStatus', statusData);
+  },
+  
+  // ======================================================================
+  // MÉTODOS DE ECONOMIA
+  // ======================================================================
   
   getEconomyData: () => {
     const socket = initializeSocket();
@@ -501,29 +699,34 @@ export const socketApi = {
     socket.emit('adjustPublicServices', value);
   },
   
-  createEconomicEvent: (event) => {
+  // ======================================================================
+  // MÉTODOS DE POLÍTICA
+  // ======================================================================
+  
+  getAlliances: () => {
     const socket = initializeSocket();
-    socket.emit('createEconomicEvent', event);
+    socket.emit('getAlliances');
   },
   
-  getShipsInRoom: () => {
+  // ======================================================================
+  // MÉTODOS DE UTILIDADE
+  // ======================================================================
+  
+  ping: (callback) => {
     const socket = initializeSocket();
-    socket.emit('getShipsInRoom');
+    const startTime = Date.now();
+    
+    socket.emit('ping', startTime, () => {
+      const latency = Date.now() - startTime;
+      if (typeof callback === 'function') {
+        callback(latency);
+      }
+    });
   },
   
-  createShip: (shipData) => {
+  checkConnection: () => {
     const socket = initializeSocket();
-    socket.emit('createShip', shipData);
-  },
-  
-  moveShip: (shipId, coordinates) => {
-    const socket = initializeSocket();
-    socket.emit('moveShip', { shipId, coordinates });
-  },
-  
-  removeShip: (shipId) => {
-    const socket = initializeSocket();
-    socket.emit('removeShip', shipId);
+    return socket.connected;
   }
 };
 

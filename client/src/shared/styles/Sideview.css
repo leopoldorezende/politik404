@@ -16,6 +16,7 @@
   transition: transform 0.3s ease;
   backdrop-filter: blur(10px);
   transform: translateX(100%);
+  box-sizing: border-box;
 }
 
 #sideview.active {
@@ -43,7 +44,6 @@
 /* Estilo das abas */
 .tabs {
   display: flex;
-  margin-bottom: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -78,14 +78,18 @@
   line-height: 0;
 }
 
+#sideview .tab-contents {
+  height: calc(100% - 50px)!important;
+}
+
 /* Conteúdo das abas */
-.tab-content {
+#sideview .tab-content {
   display: none;
-  height: calc(100% - 50px);
+  height: calc(100% - 50px)!important;
   overflow-y: auto;
 }
 
-.tab-content.active {
+#sideview .tab-content.active {
   display: block;
 }
 
@@ -144,14 +148,14 @@
 /* Add these CSS styles to Sideview.css */
 
 /* Styling for tab container */
-.tabs {
+#sideview .tabs {
   display: flex;
   width: 100%;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Individual tab styling */
-.tab {
+#sideview .tab {
   flex: 1;
   padding: 4px 4px 2px;
   text-align: center;
@@ -162,25 +166,25 @@
 }
 
 /* Active tab styling */
-.tab.active {
+#sideview .tab.active {
   background: rgba(255, 255, 255, 0.3);
   font-weight: bold;
 }
 
 /* Tab content container styling */
-.tab-content {
+#sideview .tab-content {
   display: none;
   height: calc(100% - 92px);
   overflow-y: auto;
 }
 
 /* Active tab content styling */
-.tab-content.active {
+#sideview .tab-content.active {
   display: block;
 }
 
 /* For badge positioning */
-.player-message-badge {
+#sideview .player-message-badge {
   margin-left: 5px;
   display: inline-block;
   width: 8px;
@@ -191,7 +195,7 @@
   animation: pulse 2s infinite;
 }
 
-.chat-badge {
+#sideview .chat-badge {
   position: absolute;
   top: 4px;
   right: 4px;

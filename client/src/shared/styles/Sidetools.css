@@ -7,7 +7,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 250px;
+  width: 300px;
   height: 100%;
   background: rgba(190, 208, 224, 0.8);
   color: #000;
@@ -18,6 +18,7 @@
   transition: transform 0.3s ease;
   backdrop-filter: blur(10px);
   transform: translateX(-100%);
+  box-sizing: border-box;
 }
 
 #sidetools.active {
@@ -42,7 +43,7 @@
 }
 
 #sidetools h4 {
-  margin: 15px 0 10px 0;
+  margin: 0 0 10px 0;
   font-size: 16px;
   color: #444;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
@@ -76,7 +77,6 @@
 /* Abas de navegação */
 #sidetools .tabs {
   display: flex;
-  margin-bottom: 15px;
 }
 
 #sidetools .tab {
@@ -100,6 +100,10 @@
 
 #sidetools .material-icons {
   font-size: 20px;
+}
+
+#sidetools .tab-contents {
+  height: calc(100% - 20px);
 }
 
 /* Conteúdo das abas */
