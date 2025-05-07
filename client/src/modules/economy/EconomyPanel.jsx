@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   ECONOMY_EVENTS 
-} from '../../store/middleware/socketMiddleware';
-import '../../shared/styles/EconomyPanel.css';
+} from '../../store/socketReduxMiddleware';
+import './EconomyPanel.css';
 
 const EconomyPanel = () => {
   const dispatch = useDispatch();
@@ -11,14 +11,12 @@ const EconomyPanel = () => {
   // Seletores para obter dados de vários reducers
   const myCountry = useSelector(state => state.game.myCountry);
   const countriesData = useSelector(state => state.game.countriesData);
-  const latestEconomyUpdate = useSelector(state => state.economy.latestUpdate);
   const economicEvents = useSelector(state => state.economy.events);
   
   // Estado local para mudanças nos controles deslizantes
   const [interestRate, setInterestRate] = useState(5.0);
   const [taxRate, setTaxRate] = useState(25);
   const [publicServices, setPublicServices] = useState(30);
-  const [lastAdjusted, setLastAdjusted] = useState(null);
   
   // Dados econômicos do país do jogador
   useEffect(() => {
@@ -121,24 +119,6 @@ const EconomyPanel = () => {
             </span>
           </div>
         ))}
-      </div>
-    );
-  };
-  
-  // Exibe feedback após uma ação
-  const renderActionFeedback = () => {
-    if (!lastAdjusted) return null;
-    
-    const messages = {
-      interest: 'Taxa de juros ajustada. Isso afetará a inflação, crescimento e custo da dívida.',
-      tax: 'Carga tributária ajustada. Isso afetará a receita, crescimento e popularidade.',
-      services: 'Nível de serviços públicos ajustado. Isso afetará a popularidade e as finanças.'
-    };
-    
-    return (
-      <div className="action-feedback">
-        <p>{messages[lastAdjusted]}</p>
-        <button onClick={() => setLastAdjusted(null)}>OK</button>
       </div>
     );
   };
@@ -300,9 +280,7 @@ const EconomyPanel = () => {
         </div>
       </div>
       
-      
-      
-      {renderActionFeedback()}
+    
       
     </div>
   );

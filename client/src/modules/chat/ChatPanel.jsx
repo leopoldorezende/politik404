@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addMessage, setChatMode, markAsRead } from './chatState';
-import { socketApi } from '../../modules/network/socketService';
-import '../../shared/styles/ChatPanel.css';
+import { socketApi } from '../../services/socketClient';
+import './ChatPanel.css';
 
 const ChatPanel = ({ hasUnreadMessagesFrom }) => {
   const [message, setMessage] = useState('');

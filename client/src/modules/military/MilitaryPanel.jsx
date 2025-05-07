@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { MILITARY_EVENTS } from '../../store/middleware/socketMiddleware';
-import '../../shared/styles/MilitaryPanel.css';
+import { MILITARY_EVENTS } from '../../store/socketReduxMiddleware';
+import './MilitaryPanel.css';
 
 const MilitaryPanel = () => {
   const dispatch = useDispatch();
@@ -10,7 +10,6 @@ const MilitaryPanel = () => {
   const myCountry = useSelector(state => state.game.myCountry);
   const countriesData = useSelector(state => state.game.countriesData);
   const militaryForces = useSelector(state => state.military.forces);
-  const players = useSelector(state => state.game.players);
   
   // Estados locais
   const [activeTab, setActiveTab] = useState('investment');
@@ -18,8 +17,6 @@ const MilitaryPanel = () => {
   const [investmentType, setInvestmentType] = useState('army');
   const [investmentAmount, setInvestmentAmount] = useState(10);
   const [warStrategy, setWarStrategy] = useState('attack');
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [confirmationMessage, setConfirmationMessage] = useState('');
 
   // Solicitar dados militares ao montar componente
   useEffect(() => {
@@ -65,40 +62,6 @@ const MilitaryPanel = () => {
     );
   };
 
-  // Preparar confirmação de ação
-  const prepareAction = () => {
-    if (activeTab === 'investment') {
-      let investmentLabel = '';
-      switch(investmentType) {
-        case 'army': investmentLabel = 'Exército'; break;
-        case 'navy': investmentLabel = 'Marinha'; break;
-        case 'airforce': investmentLabel = 'Aeronáutica'; break;
-        default: investmentLabel = 'Militar';
-      }
-      
-      setConfirmationMessage(`Investir ${investmentAmount}% no ${investmentLabel}?`);
-      setShowConfirmation(true);
-    } 
-    else if (activeTab === 'war') {
-      if (!targetCountry) {
-        alert('Selecione um país alvo primeiro.');
-        return;
-      }
-      
-      let strategyLabel = '';
-      switch(warStrategy) {
-        case 'attack': strategyLabel = 'Ataque Bélico'; break;
-        case 'sabotage': strategyLabel = 'Sabotagem Comercial'; break;
-        case 'regime': strategyLabel = 'Mudança de Regime'; break;
-        case 'disinformation': strategyLabel = 'Desinformação'; break;
-        default: strategyLabel = 'Ataque';
-      }
-      
-      setConfirmationMessage(`Iniciar ${strategyLabel} contra ${targetCountry}? Esta ação terá sérias consequências.`);
-      setShowConfirmation(true);
-    }
-  };
-
   // Executar ação militar
   const executeAction = () => {
     if (activeTab === 'investment') {
@@ -126,17 +89,10 @@ const MilitaryPanel = () => {
       });
     }
     
-    setShowConfirmation(false);
-    
     // Atualizar dados após a ação
     setTimeout(() => {
       dispatch({ type: MILITARY_EVENTS.GET_MILITARY_DATA });
     }, 1000);
-  };
-
-  // Cancelar ação
-  const cancelAction = () => {
-    setShowConfirmation(false);
   };
 
   // Renderizar painel militar
@@ -154,7 +110,7 @@ const MilitaryPanel = () => {
   return (
     <div className="military-panel">
       <div className="forces-section">
-        <h4>Forças Armadas de {myCountry}</h4>
+        <h4>Forças Armadas</h4>
         
         <div className="military-bars">
           <div className="military-stat">
@@ -229,7 +185,6 @@ const MilitaryPanel = () => {
         
         <button 
           className="action-btn" 
-          onClick={prepareAction}
         >
           Investir
         </button>
@@ -267,7 +222,6 @@ const MilitaryPanel = () => {
         
         <button 
           className="action-btn danger" 
-          onClick={prepareAction}
           disabled={!targetCountry}
         >
           Iniciar Ação
@@ -275,32 +229,6 @@ const MilitaryPanel = () => {
       </div>
    
       
-      {/* Diálogo de confirmação */}
-      {showConfirmation && (
-        <div className="confirmation-dialog">
-          <div className="confirmation-content">
-            <h4>Confirmar Ação Militar</h4>
-            <p>{confirmationMessage}</p>
-            {activeTab === 'war' && (
-              <div className="warning-box">
-                <p>⚠️ ATENÇÃO: Ações de guerra têm graves consequências!</p>
-                <p>• Sanções internacionais</p>
-                <p>• Perdas econômicas</p>
-                <p>• Impacto na estabilidade política</p>
-              </div>
-            )}
-            <div className="confirmation-buttons">
-              <button className="btn cancel" onClick={cancelAction}>Cancelar</button>
-              <button 
-                className={`btn confirm ${activeTab === 'war' ? 'danger' : ''}`} 
-                onClick={executeAction}
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

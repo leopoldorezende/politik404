@@ -1,0 +1,141 @@
+
+/* EconomyPanel.css - Updated version with improved structure */
+
+.economy-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: Arial, sans-serif;
+}
+
+.economy-panel.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+/* Control section */
+.economy-controls {
+  margin-bottom: 20px;
+}
+
+.control-group {
+  margin-bottom: 15px;
+}
+
+.control-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.current-value {
+  font-weight: normal;
+  color: #0066cc;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-container input[type="range"] {
+  flex: 1;
+  height: 5px;
+}
+
+.slider-container button {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* Economy overview */
+.economy-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stat-group {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.stat-label {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  margin-top: 4px;
+}
+
+.stat-value.positive {
+  color: #28a745;
+}
+
+.stat-value.negative {
+  color: #dc3545;
+}
+
+/* Events section */
+.economy-events {
+  margin-top: 20px;
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  border-radius: 0 2px 2px 0;
+}
+
+.event-type {
+  font-weight: bold;
+}
+
+.event-impact {
+  margin-top: 4px;
+  font-weight: bold;
+}
+
+.event-time {
+  margin-top: 4px;
+  font-size: 0.8rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .stat-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .slider-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .slider-container button {
+    align-self: flex-end;
+  }
+}

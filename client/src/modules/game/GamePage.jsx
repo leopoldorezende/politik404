@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import Sideview from '../shared/layout/Sideview';
-import Sidetools from '../shared/layout/Sidetools';
-import MapView from '../modules/map/MapView';
-import { loadCountriesData, loadCountriesCoordinates } from '../modules/country/countryService';
-import { setCountriesCoordinates } from '../modules/game/gameState'; 
-import '../shared/styles/Sideview.css';
-import '../shared/styles/GamePage.css';
+import Sideview from '../sideview/Sideview';
+import Sidetools from '../sidetools/Sidetools';
+import MapView from '../map/MapView';
+import { loadCountriesData, loadCountriesCoordinates } from '../country/countryService';
+import { setCountriesCoordinates } from './gameState'; 
+import './GamePage.css';
 
 const GamePage = () => {
   const dispatch = useDispatch();
-  const currentRoom = useSelector(state => state.rooms.currentRoom);
+  // const currentRoom = useSelector(state => state.rooms.currentRoom);
   const myCountry = useSelector(state => state.game.myCountry);
   
   const [sideviewActive, setSideviewActive] = useState(true);
@@ -89,6 +88,39 @@ const GamePage = () => {
     if (sidetools) {
       sidetools.classList.toggle('active', sidetoolsActive);
     }
+
+    const handleClickOutside = (event) => {
+      // Verifica se está em modo mobile
+      if (window.innerWidth <= 1200) {
+        const sideview = document.getElementById('sideview');
+        const sidetools = document.getElementById('sidetools');
+        const btnOpenSideview = document.getElementById('btn-open-sideview');
+        const btnOpenSidetools = document.getElementById('btn-open-sidetools');
+        
+        // Verifica se clicou fora da sideview e não no botão de abrir
+        if (sideviewActive && 
+            sideview && 
+            !sideview.contains(event.target) && 
+            btnOpenSideview && 
+            !btnOpenSideview.contains(event.target)) {
+          setSideviewActive(false);
+        }
+        
+        // Verifica se clicou fora da sidetools e não no botão de abrir
+        if (sidetoolsActive && 
+            sidetools && 
+            !sidetools.contains(event.target) && 
+            btnOpenSidetools && 
+            !btnOpenSidetools.contains(event.target)) {
+          setSidetoolsActive(false);
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [sideviewActive, sidetoolsActive]);
 
   useEffect(() => {

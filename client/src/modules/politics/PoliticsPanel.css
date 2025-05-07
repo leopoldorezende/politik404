@@ -1,0 +1,161 @@
+
+/* PoliticsPanel.css - Updated version with improved structure */
+
+.politics-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: Arial, sans-serif;
+}
+
+.politics-panel.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.politics-panel h4 {
+  margin: 12px 0 8px 0;
+  font-size: 16px;
+}
+
+/* Domestic actions section */
+.domestic-actions {
+  margin-bottom: 20px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Approval section */
+.approval-section {
+  margin-bottom: 20px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.approval-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.approval-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.approval-item span:first-child {
+  width: 110px;
+  text-align: right;
+  font-weight: bold;
+}
+
+.approval-item span:last-child {
+  width: 40px;
+  text-align: right;
+}
+
+/* Instability section */
+.instability-section {
+  margin-bottom: 20px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.instability-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.instability-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.instability-item span:first-child {
+  width: 110px;
+  text-align: right;
+  font-weight: bold;
+}
+
+.instability-item span:last-child {
+  width: auto;
+}
+
+/* Alliances and Treaties */
+.alliances-section, 
+.treaties-section {
+  margin-bottom: 20px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.alliance-list,
+.treaty-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.alliance-item,
+.treaty-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.alliance-country,
+.treaty-name {
+  font-weight: bold;
+}
+
+/* No data message */
+.no-data {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .approval-item,
+  .instability-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .approval-item span:first-child,
+  .instability-item span:first-child {
+    width: auto;
+    text-align: left;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    width: 100%;
+  }
+}

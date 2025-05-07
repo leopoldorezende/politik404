@@ -6,7 +6,7 @@ import chatReducer from '../modules/chat/chatState';
 import economyReducer from '../modules/economy/economyState';
 import politicsReducer from '../modules/politics/politicsState';
 import militaryReducer from '../modules/military/militaryState';
-import socketMiddleware from './middleware/socketMiddleware';
+import socketMiddleware from './socketReduxMiddleware';
 
 export const store = configureStore({
   reducer: {

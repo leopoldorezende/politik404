@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import AuthPage from './pages/AuthPage';
-import RoomPage from './pages/RoomPage';
-import GamePage from './pages/GamePage';
-import './shared/styles/App.css';
-import { socketApi, SOCKET_EVENTS } from './modules/network/socketService';
+import AuthPage from './modules/auth/AuthPage';
+import RoomPage from './modules/room/RoomPage';
+import GamePage from './modules/game/GamePage';
+import './App.css';
+import { socketApi, SOCKET_EVENTS } from './services/socketClient';
 
 function App() {
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);

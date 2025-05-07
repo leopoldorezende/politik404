@@ -1,6 +1,6 @@
-/* Sidetools.css */
 
-/* Container principal */
+/* Sidetools.css - Updated version with improved structure */
+
 #sidetools {
   display: flex;
   flex-direction: column;
@@ -18,14 +18,13 @@
   transition: transform 0.3s ease;
   backdrop-filter: blur(10px);
   transform: translateX(-100%);
-  box-sizing: border-box;
 }
 
 #sidetools.active {
   transform: translateX(0);
 }
 
-/* Título e cabeçalhos */
+/* Headers */
 #sidetools h2 {
   margin-top: 0;
   font-size: 20px;
@@ -43,18 +42,18 @@
 }
 
 #sidetools h4 {
-  margin: 0 0 10px 0;
+  margin: 10px 0;
   font-size: 16px;
   color: #444;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   padding-bottom: 5px;
 }
 
-/* Botão de fechar */
+/* Close button */
 #sidetools .close-button {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 16px;
+  right: 16px;
   background: rgba(0, 0, 0, 0.3);
   color: #fff;
   border: none;
@@ -74,7 +73,7 @@
   background: rgba(0, 0, 0, 0.5);
 }
 
-/* Abas de navegação */
+/* Tab navigation */
 #sidetools .tabs {
   display: flex;
 }
@@ -86,7 +85,6 @@
   cursor: pointer;
   background: rgba(0, 0, 0, 0.1);
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-  transition: background-color 0.2s;
 }
 
 #sidetools .tab:hover {
@@ -103,20 +101,15 @@
 }
 
 #sidetools .tab-contents {
-  height: calc(100% - 20px);
+  height: calc(100% - 80px);
+  overflow-y: auto;
 }
 
-/* Conteúdo das abas */
 #sidetools .tab-content {
-  display: none;
-  padding: 0 5px;
+  padding: 5px;
 }
 
-#sidetools .tab-content.active {
-  display: block;
-}
-
-/* Seções de economia */
+/* Panel sections */
 #sidetools .economy-stats,
 #sidetools .economy-resources,
 #sidetools .economy-parameters,
@@ -149,23 +142,7 @@
   color: #333;
 }
 
-/* Barra de progresso */
-.progress-bar {
-  height: 10px;
-  flex-grow: 1;
-  background-color: #e0e0e0;
-  border-radius: 5px;
-  overflow: hidden;
-  margin: 0 10px;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: #4caf50;
-  border-radius: 5px;
-}
-
-/* Itens de suporte na aba Política */
+/* Support item in Politics */
 .support-item {
   display: flex;
   align-items: center;
@@ -177,79 +154,7 @@
   display: inline-block;
 }
 
-/* Status nuclear */
-.status-yes {
-  color: #f44336;
-  font-weight: bold;
-}
-
-.status-no {
-  color: #4caf50;
-}
-
-/* Ações de guerra */
-.war-actions select {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-.action-btn {
-  width: 100%;
-  padding: 8px 0;
-  font-size: 14px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  background-color: #007bff;
-  color: white;
-  transition: background-color 0.2s;
-}
-
-.action-btn:hover {
-  background-color: #0056b3;
-}
-
-.action-btn.danger {
-  background-color: #dc3545;
-}
-
-.action-btn.danger:hover {
-  background-color: #c82333;
-}
-
-/* Listas */
-#sidetools ul {
-  margin: 5px 0;
-  padding-left: 20px;
-}
-
-#sidetools li {
-  margin-bottom: 5px;
-  font-size: 14px;
-}
-
-#sidetools .ship-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-#sidetools .ship-buttons button {
-  flex: 1;
-}
-
-#sidetools .ship-instructions ul {
-  list-style-type: disc;
-}
-
-#sidetools .ship-instructions li {
-  margin-left: 5px;
-}
-
-/* Seção de navios */
+/* Ship sections */
 #ships-list, #enemy-ships-list {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
@@ -257,14 +162,16 @@
   min-height: 60px;
 }
 
-/* Responsividade */
-@media screen and (max-width: 768px) {
-  #sidetools {
-    width: 85%;
-    max-width: 280px;
-  }
-  
-  .support-item span:first-child {
-    width: 70px;
+/* Button styles */
+#sidetools .action-btn {
+  width: 100%;
+  padding: 8px 0;
+  margin-top: 8px;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 1200px) {
+  #sidetools .close-button {
+    display: none;
   }
 }

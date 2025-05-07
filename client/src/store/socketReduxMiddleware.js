@@ -1,4 +1,4 @@
-import socketApi, { SOCKET_EVENTS } from '../../modules/network/socketService';
+import socketApi, { SOCKET_EVENTS } from '../services/socketClient';
 
 // Definições adicionais para os novos eventos do socket
 const ECONOMY_EVENTS = {

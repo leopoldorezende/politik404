@@ -1,9 +1,9 @@
 import { io } from 'socket.io-client';
-import { store } from '../../store';
-import { login } from '../auth/authState';
-import { setRooms, setCurrentRoom, leaveRoom } from '../room/roomState';
-import { setMyCountry, setPlayers, setPlayerOnlineStatus, setOnlinePlayers } from '../game/gameState';
-import { addMessage, setChatHistory } from '../chat/chatState';
+import { store } from '../store';
+import { login } from '../modules/auth/authState';
+import { setRooms, setCurrentRoom, leaveRoom } from '../modules/room/roomState';
+import { setMyCountry, setPlayers, setPlayerOnlineStatus, setOnlinePlayers } from '../modules/game/gameState';
+import { addMessage, setChatHistory } from '../modules/chat/chatState';
          
 // Importações para o módulo de economia
 import { 
@@ -12,16 +12,14 @@ import {
   setEconomyConfig, 
   applyPolicyChange,
   resetEconomyState
-} from '../economy/economyState';
+} from '../modules/economy/economyState';
 
 // Importações para o módulo de política
 import { 
   updateApproval, 
   updateInstability, 
-  addPoliticalEvent, 
-  recordPoliticalSpending,
-  increaseParlamentaryApproval 
-} from '../politics/politicsState';
+  addPoliticalEvent
+} from '../modules/politics/politicsState';
 
 // Importações para o módulo militar
 import { 
@@ -29,9 +27,8 @@ import {
   recordInvestment,
   recordWarAction,
   updateWarActionStatus,
-  updateNuclearStatus,
   resetMilitaryState
-} from '../military/militaryState';
+} from '../modules/military/militaryState';
 
 // Importações para o módulo de comércio
 import {
@@ -40,7 +37,7 @@ import {
   addTradeRoute,
   removeTradeRoute,
   resetTradeState
-} from '../trade/tradeState';
+} from '../modules/trade/tradeState';
 
 // Configurações
 const MAX_RECONNECT_ATTEMPTS = 5;
@@ -331,6 +328,7 @@ const setupSocketEvents = (socket) => {
       sessionStorage.setItem('myCountry', state.country);
     }
   });
+  
   
   // ======================================================================
   // EVENTOS DE COMÉRCIO SIMPLIFICADOS

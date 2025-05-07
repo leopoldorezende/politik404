@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import '../../shared/styles/TradePanel.css';
+import './TradePanel.css';
 
 // Garante que as importações de ações estão seguras, com fallbacks se necessário
 let tradeActions = {};
@@ -30,7 +30,6 @@ const TradePanel = () => {
   
   // Estados Redux com fallbacks seguros
   const myCountry = useSelector(state => state.game?.myCountry || 'Seu País');
-  const countriesData = useSelector(state => state.game?.countriesData || {});
   const players = useSelector(state => state.game?.players || []);
   
   // Estados de comércio com fallbacks seguros
@@ -41,18 +40,8 @@ const TradePanel = () => {
   const [activeTab, setActiveTab] = useState('import');
   const [targetCountry, setTargetCountry] = useState('');
   
-  // Lista de países para testes quando não há dados reais disponíveis
-  const testCountries = [
-    'United States', 'Russia', 'China', 'Germany', 'Japan', 'Brazil', 'India', 'France'
-  ];
-  
   // Obter países controlados por outros jogadores
   const getOtherPlayerCountries = () => {
-    // Se não houver jogadores disponíveis, use a lista de teste
-    if (!players || players.length === 0) {
-      return testCountries;
-    }
-    
     return players
       .filter(player => {
         if (typeof player === 'object') {

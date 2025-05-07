@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import '../../shared/styles/CountryDetails.css';
+import './CountryDetails.css';
 
 const CountryDetails = () => {
   const selectedCountry = useSelector(state => state.game.selectedCountry);

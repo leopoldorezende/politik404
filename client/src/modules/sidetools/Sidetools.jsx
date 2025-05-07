@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import EconomyPanel from '../../modules/economy/EconomyPanel';
-import PoliticsPanel from '../../modules/politics/PoliticsPanel';
-import TradePanel from '../../modules/trade/TradePanel';
-import MilitaryPanel from '../../modules/military/MilitaryPanel';
-import '../../shared/styles/Sidetools.css';
+import EconomyPanel from '../economy/EconomyPanel';
+import PoliticsPanel from '../politics/PoliticsPanel';
+import TradePanel from '../trade/TradePanel';
+import MilitaryPanel from '../military/MilitaryPanel';
+import './Sidetools.css';
 
 const Sidetools = ({ onClose, isActive, myCountry }) => {
   const [activeTab, setActiveTab] = useState('economy');
@@ -29,7 +29,7 @@ const Sidetools = ({ onClose, isActive, myCountry }) => {
         <span className="material-icons">chevron_left</span>
       </button>
       
-      <h2 id="player-country-display" className="player-country-display">
+      <h2 id="player-country-display" className="sidebar-title">
         {myCountry || 'País não selecionado'}
       </h2>
       

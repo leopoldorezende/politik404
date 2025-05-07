@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { socketApi } from '../modules/network/socketService';
-import '../shared/styles/RoomPage.css';
+import { socketApi } from '../../services/socketClient';
+import './RoomPage.css';
 
 const RoomPage = () => {
   const [roomName, setRoomName] = useState('');

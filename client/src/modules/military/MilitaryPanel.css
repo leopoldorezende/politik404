@@ -1,0 +1,145 @@
+
+/* MilitaryPanel.css - Updated version with improved structure */
+
+.military-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: Arial, sans-serif;
+}
+
+.military-panel.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+/* Forces section */
+.forces-section {
+  margin-bottom: 20px;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.forces-section h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.military-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.military-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.military-stat span:first-child {
+  width: 100px;
+  text-align: right;
+  font-weight: bold;
+}
+
+.military-stat span:last-child {
+  width: 40px;
+  text-align: right;
+}
+
+.nuclear-status {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+/* Investment section */
+.investment-section {
+  margin-bottom: 20px;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.form-group input[type="range"] {
+  width: 100%;
+  margin-top: 5px;
+}
+
+/* War section */
+.war-section {
+  margin-bottom: 20px;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.war-section h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+/* Conflict items */
+.conflict-item {
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.conflict-sides {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.aggressor {
+  color: #dc3545;
+}
+
+.defender {
+  color: #0066cc;
+}
+
+.conflict-date {
+  font-size: 12px;
+  color: #888;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .military-stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .military-stat span:first-child {
+    width: auto;
+    text-align: left;
+  }
+  
+  .military-stat span:last-child {
+    width: auto;
+  }
+}

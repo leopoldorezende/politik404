@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import ChatPanel from '../../modules/chat/ChatPanel';
 import CountryDetails from '../../modules/country/CountryDetails';
 import { setChatMode, markAsRead } from '../../modules/chat/chatState';
-import '../../shared/styles/Sideview.css';
+import './Sideview.css';
 
 const Sideview = ({ onExitRoom, onClose, isActive }) => {
   const [activeTab, setActiveTab] = useState('chat');
@@ -65,6 +65,10 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
       <button className="close-button" onClick={onClose}>
         <span className="material-icons">chevron_right</span>
       </button>
+      
+      <h2 className="sidebar-title">
+        Politik404
+      </h2>
       
       <div className="tabs">
         <div 

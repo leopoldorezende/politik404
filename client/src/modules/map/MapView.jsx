@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import '../../shared/styles/MapView.css';
+import './MapView.css';
 import SeaRoutes from './SeaRoutes';
 import * as turf from '@turf/turf';
 
@@ -51,7 +51,10 @@ const MapView = () => {
       zoom: 1.5,
       maxZoom: 5.5,
       minZoom: 1.2,
-      projection: 'globe'
+      projection: 'globe',
+      attributionControl: false, 
+      logoPosition: 'top-left', 
+      logo: false 
     });
 
     map.current.on('style.load', () => {

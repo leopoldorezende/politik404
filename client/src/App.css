@@ -1,0 +1,305 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+
+/* shared.css - Common styles across components */
+
+/* Reset and base styles */
+* {
+  outline: none !important;
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  color: #eee;
+  background-color: #1F262F;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+/* Common layout elements */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Progress bars used in multiple components */
+.progress-bar {
+  height: 10px;
+  flex-grow: 1;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+  margin: 0 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 5px;
+}
+
+.progress-fill.high {
+  background-color: #28a745;
+}
+
+.progress-fill.medium {
+  background-color: #ffc107;
+}
+
+.progress-fill.low {
+  background-color: #dc3545;
+}
+
+/* Common button styles */
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.action-btn {
+  background-color: #0066cc;
+  color: white;
+}
+
+.action-btn:hover {
+  background-color: #0055aa;
+}
+
+.action-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.action-btn.danger {
+  background-color: #dc3545;
+}
+
+.action-btn.danger:hover {
+  background-color: #c82333;
+}
+
+/* Status indicators */
+.status-yes {
+  color: #f44336;
+  font-weight: bold;
+}
+
+.status-no {
+  color: #4caf50;
+}
+
+/* Sidebar layouts */
+.sidetools {
+  background: rgba(190, 208, 224, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.sideview {
+  background: rgba(20, 30, 40, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+/* Tab navigation common styles */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 8px 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.tab:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.tab.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  font-weight: bold;
+}
+
+.tab-content {
+  display: none;
+  overflow-y: auto;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Notification badges */
+.badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ff3860;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 56, 96, 0.7);
+  }
+  
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(255, 56, 96, 0);
+  }
+  
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 56, 96, 0);
+  }
+}
+
+/* Empty state messages */
+.no-data {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 15px 0;
+}
+
+
+/* App.css */
+
+* {
+  outline: none !important;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  color: #eee;
+  background-color: #1F262F;
+  font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+ul { 
+  margin: 0;
+  padding: 0 0 16px 0;
+}
+
+ul li { 
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+input {
+  padding: 10px;
+  margin: 0;
+  font-size: 16px;
+  border-radius: 4px;
+  border: 0;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+#game-screen {
+  position: absolute;
+  width: 100%;
+  height: 100vh;
+}
+
+.mapboxgl-ctrl-logo { 
+  display: none !important; 
+} 

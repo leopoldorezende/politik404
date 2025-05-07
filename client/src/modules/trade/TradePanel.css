@@ -1,0 +1,149 @@
+
+/* TradePanel.css - Updated version with improved structure */
+
+.trade-panel {
+  display: flex;
+  flex-direction: column;
+  color: #333;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.trade-panel h4 {
+  margin: 15px 0 10px;
+  color: #34495e;
+  font-size: 16px;
+}
+
+/* Form styling */
+.form-section {
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 15px;
+}
+
+.form-row {
+  margin-bottom: 12px;
+}
+
+.form-row label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-row select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+}
+
+.form-actions {
+  margin-top: 12px;
+}
+
+.form-actions button {
+  padding: 8px 16px;
+  background-color: #3498db;
+  color: white;
+  width: 100%;
+}
+
+.form-actions button:hover {
+  background-color: #2980b9;
+}
+
+.form-actions button:disabled {
+  background-color: #bdc3c7;
+}
+
+/* Cards for agreements */
+.agreements-list {
+  margin-top: 15px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.trade-card {
+  border-radius: 4px;
+  padding: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.trade-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.trade-card h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #34495e;
+  font-size: 15px;
+}
+
+.trade-card p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.trade-card button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #e74c3c;
+  font-size: 13px;
+}
+
+.trade-card button:hover {
+  background-color: #c0392b;
+}
+
+/* Card colors for import/export */
+.trade-card.import {
+  border-left: 4px solid #3498db;
+}
+
+.trade-card.export {
+  border-left: 4px solid #2ecc71;
+}
+
+/* Trade benefits section */
+.trade-benefits {
+  border-radius: 4px;
+  margin-top: 20px;
+  padding: 12px;
+}
+
+.trade-benefits h4 {
+  margin-top: 0;
+  color: #34495e;
+}
+
+.trade-benefits p {
+  margin: 8px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    margin-top: 8px;
+    width: 100%;
+  }
+}

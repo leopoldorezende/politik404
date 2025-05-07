@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { login } from '../modules/auth/authState';
-import { loginWithGoogle } from '../modules/auth/firebaseClient';
-import { socketApi, SOCKET_EVENTS } from '../modules/network/socketService';
-import '../shared/styles/AuthPage.css';
+import { login } from './authState';
+import { loginWithGoogle } from './firebaseClient';
+import { socketApi, SOCKET_EVENTS } from '../../services/socketClient';
+import './AuthPage.css';
 
 const AuthPage = () => {
   const dispatch = useDispatch();
