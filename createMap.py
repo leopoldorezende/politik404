@@ -1,8 +1,10 @@
-import os
-import argparse
+
 
 # CHAMA ASSIM: python3 createMap.py -o FOLDER-MAP.md 
 # DEFININDO LOCAL: python3 createMap.py [coloque o diretorio] -o FOLDER-MAP.md 
+
+import os
+import argparse
 
 def generate_tree(path, prefix="", is_last=True, ignore_hidden=True, name_comments=None):
     if name_comments is None:
@@ -11,9 +13,7 @@ def generate_tree(path, prefix="", is_last=True, ignore_hidden=True, name_commen
     # filtros iniciais
     if ignore_hidden and basename.startswith('.'):
         return []
-    if basename == 'node_modules':
-        return []
-    if basename == 'createMap.py':
+    if basename in ('node_modules', 'dist', 'package-lock.json', 'createMap.py'):
         return []
     # comentário associado
     comment = name_comments.get(basename, '')
@@ -27,7 +27,8 @@ def generate_tree(path, prefix="", is_last=True, ignore_hidden=True, name_commen
         entries = sorted(os.listdir(path))
         if ignore_hidden:
             entries = [e for e in entries if not e.startswith('.')]
-        entries = [e for e in entries if e not in ('node_modules', 'createMap.py')]
+        # ignora pastas/arquivos indesejados
+        entries = [e for e in entries if e not in ('node_modules', 'dist', 'package-lock.json', 'createMap.py')]
         entries_paths = [os.path.join(path, e) for e in entries]
         count = len(entries_paths)
         for idx, entry_path in enumerate(entries_paths):
@@ -133,7 +134,7 @@ def main():
     entries = sorted(os.listdir(root))
     if args.ignore_hidden:
         entries = [e for e in entries if not e.startswith('.')]
-    entries = [e for e in entries if e not in ('node_modules', 'createMap.py')]
+    entries = [e for e in entries if e not in ('node_modules', 'dist', 'createMap.py')]
     entries_paths = [os.path.join(root, e) for e in entries]
     count = len(entries_paths)
     for idx, entry_path in enumerate(entries_paths):

@@ -4,16 +4,7 @@
   ├── FOLDER-MAP.md
   ├── README.md  # Documentação do front-end
   ├── client
-  │   ├── dist
-  │   │   ├── assets
-  │   │   │   ├── index-CzKhD5Fv.css
-  │   │   │   └── index-D_hTw9CZ.js
-  │   │   ├── ico.png
-  │   │   ├── index.html  # HTML principal
-  │   │   ├── logo.png
-  │   │   └── vite2.svg
   │   ├── index.html  # HTML principal
-  │   ├── package-lock.json
   │   ├── package.json  # Dependências e scripts principais (monorepo)
   │   ├── public
   │   │   ├── ico.png
@@ -79,7 +70,6 @@
   │   │       └── socketReduxMiddleware.js
   │   └── vite.config.js  # Configuração do Vite
   ├── eslint.config.js  # Configuração do lint para os dois ambientes client e server
-  ├── package-lock.json
   ├── package.json  # Dependências e scripts principais (monorepo)
   └── server
       ├── keys
@@ -106,7 +96,6 @@
       │       ├── roomManagement.js  # Gerenciamento de sala
       │       ├── roomNotifications.js  # Notificações da Sala
       │       └── roomUtils.js  # Utilitários da sala
-      ├── package-lock.json
       ├── package.json  # Dependências e scripts principais (monorepo)
       ├── public
       │   └── data
