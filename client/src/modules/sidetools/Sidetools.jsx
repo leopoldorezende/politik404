@@ -1,26 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import EconomyPanel from '../economy/EconomyPanel';
 import PoliticsPanel from '../politics/PoliticsPanel';
 import TradePanel from '../trade/TradePanel';
-import MilitaryPanel from '../military/MilitaryPanel';
+import DefensePanel from '../defense/DefensePanel';
 import './Sidetools.css';
 
 const Sidetools = ({ onClose, isActive, myCountry }) => {
   const [activeTab, setActiveTab] = useState('economy');
-  const dispatch = useDispatch();
-  
-  // Dados do Redux
-  const countriesData = useSelector(state => state.game.countriesData);
-  
-  // Resolver problema de scroll quando mudar de tabs
-  useEffect(() => {
-    // Quando mudar de tab, scroll para o topo
-    const tabContent = document.querySelector('.tab-content.active');
-    if (tabContent) {
-      tabContent.scrollTop = 0;
-    }
-  }, [activeTab]);
 
   return (
     <div id="sidetools" className={isActive ? 'active' : ''}>
@@ -56,8 +43,8 @@ const Sidetools = ({ onClose, isActive, myCountry }) => {
           <span className="material-icons">directions_boat</span>
         </div>
         <div 
-          className={`tab ${activeTab === 'military' ? 'active' : ''}`}
-          onClick={() => setActiveTab('military')}
+          className={`tab ${activeTab === 'defense' ? 'active' : ''}`}
+          onClick={() => setActiveTab('defense')}
           title="Militar"
         >
           <span className="material-icons">military_tech</span>
@@ -81,8 +68,8 @@ const Sidetools = ({ onClose, isActive, myCountry }) => {
         </div>
         
         {/* Painel Militar - Usando nosso novo componente */}
-        <div className={`tab-content ${activeTab === 'military' ? 'active' : ''}`}>
-          <MilitaryPanel />
+        <div className={`tab-content ${activeTab === 'defense' ? 'active' : ''}`}>
+          <DefensePanel />
         </div>
         
       </div>

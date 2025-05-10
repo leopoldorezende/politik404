@@ -13,57 +13,6 @@ import { getCurrentRoom } from '../../shared/gameStateUtils.js';
 function setupChatHandlers(io, socket, gameState) {
   console.log('Chat handlers inicializados');
   
-  // Solicitação de histórico de chat privado
-  socket.on('requestPrivateHistory', (targetUsername) => {
-    const username = socket.username;
-    if (!username || !targetUsername) {
-      socket.emit('error', 'Usuário não autenticado ou alvo inválido');
-      return;
-    }
-    
-    // Encontra a sala atual do usuário
-    const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Não está em uma sala');
-      return;
-    }
-    
-    const room = gameState.rooms.get(roomName);
-    if (!room) {
-      socket.emit('error', 'Sala não encontrada');
-      return;
-    }
-    
-    // Verificar e inicializar o histórico de chat se necessário
-    if (!room.chatHistory) {
-      room.chatHistory = {
-        public: [],
-        private: new Map()
-      };
-    }
-    
-    // Garantir que o mapa de histórico privado seja um Map
-    if (!room.chatHistory.private || !(room.chatHistory.private instanceof Map)) {
-      console.log(`Corrigindo estrutura de chat privado para sala ${roomName}`);
-      room.chatHistory.private = new Map();
-    }
-    
-    // Criar uma chave única para o histórico de chat privado usando a função do gameState
-    const chatKey = gameState.getPrivateChatKey(username, targetUsername);
-    
-    // Obter o histórico (ou array vazio se não existir)
-    const history = room.chatHistory.private.get(chatKey) || [];
-    
-    // Enviar o histórico ao cliente
-    socket.emit('chatHistory', { 
-      type: 'private', 
-      target: targetUsername,
-      messages: history 
-    });
-    
-    console.log(`Enviado histórico de chat privado para ${username} com ${targetUsername}, ${history.length} mensagens`);
-  });
-  
   // Manipular mensagem de chat
   socket.on('chatMessage', (data) => {
     const username = socket.username;
@@ -160,7 +109,16 @@ function setupChatHandlers(io, socket, gameState) {
     if (message.isPrivate && message.recipient) {
       processPrivateMessage(io, socket, gameState, room, roomName, username, message);
     } else {
-      processPublicMessage(io, room, roomName, message);
+      // Adicionar mensagem ao histórico público
+      room.chatHistory.public.push(message);
+      
+      // Limitar tamanho do histórico
+      if (room.chatHistory.public.length > gameState.MAX_CHAT_HISTORY) {
+        room.chatHistory.public.shift();
+      }
+      
+      // Enviar para todos na sala
+      io.to(roomName).emit('chatMessage', message);
     }
   });
   
@@ -198,6 +156,57 @@ function setupChatHandlers(io, socket, gameState) {
       type: 'public',
       messages: room.chatHistory.public || []
     });
+  });
+  
+  // Solicitação de histórico de chat privado
+  socket.on('requestPrivateHistory', (targetUsername) => {
+    const username = socket.username;
+    if (!username || !targetUsername) {
+      socket.emit('error', 'Usuário não autenticado ou alvo inválido');
+      return;
+    }
+    
+    // Encontra a sala atual do usuário
+    const roomName = getCurrentRoom(socket, gameState);
+    if (!roomName) {
+      socket.emit('error', 'Não está em uma sala');
+      return;
+    }
+    
+    const room = gameState.rooms.get(roomName);
+    if (!room) {
+      socket.emit('error', 'Sala não encontrada');
+      return;
+    }
+    
+    // Verificar e inicializar o histórico de chat se necessário
+    if (!room.chatHistory) {
+      room.chatHistory = {
+        public: [],
+        private: new Map()
+      };
+    }
+    
+    // Garantir que o mapa de histórico privado seja um Map
+    if (!room.chatHistory.private || !(room.chatHistory.private instanceof Map)) {
+      console.log(`Corrigindo estrutura de chat privado para sala ${roomName}`);
+      room.chatHistory.private = new Map();
+    }
+    
+    // Criar uma chave única para o histórico de chat privado usando a função do gameState
+    const chatKey = gameState.getPrivateChatKey(username, targetUsername);
+    
+    // Obter o histórico (ou array vazio se não existir)
+    const history = room.chatHistory.private.get(chatKey) || [];
+    
+    // Enviar o histórico ao cliente
+    socket.emit('chatHistory', { 
+      type: 'private', 
+      target: targetUsername,
+      messages: history 
+    });
+    
+    console.log(`Enviado histórico de chat privado para ${username} com ${targetUsername}, ${history.length} mensagens`);
   });
 }
 
@@ -265,39 +274,6 @@ function processPrivateMessage(io, socket, gameState, room, roomName, username, 
     console.log(`Destinatário ${recipientUsername} não encontrado ou offline`);
     socket.emit('error', 'Destinatário não encontrado ou offline');
   }
-}
-
-/**
- * Processa uma mensagem pública
- * @param {Object} io - Instância do Socket.io
- * @param {Object} room - Sala atual
- * @param {string} roomName - Nome da sala
- * @param {Object} message - Objeto da mensagem
- */
-function processPublicMessage(io, room, roomName, message) {
-  // Verificar e inicializar o histórico de chat se necessário
-  if (!room.chatHistory) {
-    room.chatHistory = {
-      public: [],
-      private: new Map()
-    };
-  }
-  
-  // Garantir que o histórico de chat público exista
-  if (!room.chatHistory.public) {
-    room.chatHistory.public = [];
-  }
-  
-  // Adicionar mensagem ao histórico
-  room.chatHistory.public.push(message);
-  
-  // Limitar tamanho do histórico
-  if (room.chatHistory.public.length > 100) { // Usar constante do gameState
-    room.chatHistory.public.shift();
-  }
-  
-  // Enviar para todos na sala
-  io.to(roomName).emit('chatMessage', message);
 }
 
 export { setupChatHandlers };

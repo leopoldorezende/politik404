@@ -3,9 +3,7 @@
  */
 
 import { 
-  createDefaultGameState, 
   initializeGameState, 
-  cleanupDisconnectedUser,
   cleanupInactiveUsers
 } from '../shared/gameStateUtils.js';
 
@@ -16,11 +14,8 @@ import {
  */
 function createSocketMiddleware(io) {
   // Use the existing global gameState to avoid creating duplicate state
-  const gameState = global.gameState || createDefaultGameState();
+  const gameState = global.gameState || initializeGameState();
   
-  // Make sure all required data structures are initialized
-  initializeGameState(gameState);
-
   // Set up a periodic cleanup to prevent resource leaks
   const setupCleanupInterval = () => {
     // Time in ms between cleanup operations
@@ -51,13 +46,7 @@ function createSocketMiddleware(io) {
   
   // The actual middleware function
   return function(socket, next) {
-    const transport = socket.conn?.transport?.name;
-    console.log(`Socket connected: ${socket.id} via ${transport || 'unknown transport'}`);
-    
-    // Register transport upgrade
-    socket.conn.on('upgrade', () => {
-      console.log(`Socket ${socket.id} upgraded transport to ${socket.conn.transport.name}`);
-    });
+    console.log(`Socket connected: ${socket.id}`);
     
     // Track client session ID
     const clientSessionId = socket.handshake.query.clientSessionId;
@@ -84,49 +73,10 @@ function createSocketMiddleware(io) {
       }
     }
     
-    // Monitor and log socket events (excluding frequent ping/pong)
-    const originalEmit = socket.emit;
-    socket.emit = function(event, ...args) {
-      if (event !== 'ping' && event !== 'pong') {
-        console.log(`[EMIT to ${socket.id}] ${event}`);
-      }
-      return originalEmit.apply(socket, [event, ...args]);
-    };
-    
     // Error handling
     socket.on('error', (error) => {
       console.error(`Error on socket ${socket.id}:`, error);
       socket.emit('error', 'Internal server error');
-    });
-    
-    // Handle disconnection with proper cleanup
-    socket.on('disconnect', (reason) => {
-      console.log(`Socket disconnected: ${socket.id}, reason: ${reason}`);
-      
-      // Get client session ID
-      const clientSessionId = gameState.socketToSessionId.get(socket.id);
-      
-      // Perform immediate cleanup for critical resources
-      gameState.socketToSessionId.delete(socket.id);
-      
-      // Mark for cleanup in the next cycle
-      if (!gameState.pendingSocketsRemoval) {
-        gameState.pendingSocketsRemoval = new Set();
-      }
-      gameState.pendingSocketsRemoval.add(socket.id);
-      
-      // Clean up user-related data
-      cleanupDisconnectedUser(gameState, socket.id);
-      
-      // Update room list for all clients
-      const roomsList = Array.from(gameState.rooms.entries()).map(([name, room]) => ({
-        name,
-        owner: room.owner,
-        playerCount: room.players ? room.players.length : 0,
-        createdAt: room.createdAt
-      }));
-      
-      io.emit('roomsList', roomsList);
     });
     
     // Inactivity detection
@@ -162,16 +112,6 @@ function createSocketMiddleware(io) {
     
     // Initial timer
     resetInactivityTimer();
-    
-    // Latency tracking
-    socket.on('ping', (callback) => {
-      const startTime = Date.now();
-      if (typeof callback === 'function') {
-        callback();
-        const latency = Date.now() - startTime;
-        socket.emit('pong', { latency });
-      }
-    });
     
     // Custom authentication handler
     const originalOn = socket.on;

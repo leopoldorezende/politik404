@@ -9,7 +9,6 @@ import './GamePage.css';
 
 const GamePage = () => {
   const dispatch = useDispatch();
-  // const currentRoom = useSelector(state => state.rooms.currentRoom);
   const myCountry = useSelector(state => state.game.myCountry);
   
   const [sideviewActive, setSideviewActive] = useState(true);
@@ -35,35 +34,6 @@ const GamePage = () => {
     loadAllData();
   }, [dispatch]);
   
-  useEffect(() => {
-    const handleCountrySelected = (event) => {
-      const country = event.detail.country;
-      
-      if (window.innerWidth <= 1200) {
-        setSideviewActive(true);
-      }
-      
-      const countryTab = document.querySelector('#sidebar .tab[data-target="country"]');
-      const countryContent = document.getElementById('country');
-      
-      if (countryTab && countryContent) {
-        const sidebarTabs = document.querySelectorAll('#sidebar .tab');
-        const sidebarContents = document.querySelectorAll('#sidebar .tab-content');
-        
-        sidebarTabs.forEach(t => t.classList.remove('active'));
-        sidebarContents.forEach(c => c.classList.remove('active'));
-        
-        countryTab.classList.add('active');
-        countryContent.classList.add('active');
-      }
-    };
-    
-    document.addEventListener('countrySelected', handleCountrySelected);
-    return () => {
-      document.removeEventListener('countrySelected', handleCountrySelected);
-    };
-  }, []);
-
   const handleExitRoom = () => {
     dispatch({ type: 'socket/leaveRoom' });
     dispatch({ type: 'rooms/leaveRoom' });

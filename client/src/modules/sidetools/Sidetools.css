@@ -113,7 +113,7 @@
 #sidetools .economy-stats,
 #sidetools .economy-resources,
 #sidetools .economy-parameters,
-#sidetools .military-stats,
+#sidetools .defense-stats,
 #sidetools .politics-stats,
 #sidetools .opposition-info,
 #sidetools .alliances-info,
@@ -127,7 +127,7 @@
 #sidetools .economy-stats p,
 #sidetools .economy-resources p,
 #sidetools .economy-parameters p,
-#sidetools .military-stats p {
+#sidetools .defense-stats p {
   margin: 5px 0;
   font-size: 14px;
   display: flex;
@@ -137,7 +137,7 @@
 #sidetools .economy-stats p span,
 #sidetools .economy-resources p span,
 #sidetools .economy-parameters p span,
-#sidetools .military-stats p span {
+#sidetools .defense-stats p span {
   font-weight: bold;
   color: #333;
 }

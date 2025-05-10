@@ -1,0 +1,99 @@
+/* Estilos para o componente CountryState */
+
+
+.country-state-display.loading,
+.country-state-display.no-data {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 200px;
+}
+
+.last-updated {
+  font-size: 12px;
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+.state-section {
+  margin-bottom: 20px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.state-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.indicator {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.indicator-label {
+  width: 100px;
+  font-weight: bold;
+}
+
+.indicator-value {
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Barra de progresso */
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  margin: 0 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #4caf50;
+  border-radius: 4px;
+}
+
+/* Estilos específicos por seção */
+.economy-section h3 {
+  color: #2196f3;
+}
+
+.defense-section h3 {
+  color: #f44336;
+}
+
+.commerce-section h3 {
+  color: #4caf50;
+}
+
+.politics-section h3 {
+  color: #ff9800;
+}
+
+/* Estilos para o modo escuro */
+@media (prefers-color-scheme: dark) {
+  .country-state-display {
+    color: #ddd;
+  }
+  
+  .state-section {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .state-section h3 {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .progress-bar {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}

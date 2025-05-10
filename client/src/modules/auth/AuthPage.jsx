@@ -9,7 +9,6 @@ const AuthPage = () => {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [authAttempt, setAuthAttempt] = useState(0);
 
   // Função para autenticar o usuário
   const authenticateUser = (username) => {
@@ -43,23 +42,6 @@ const AuthPage = () => {
       }, 3000);
     }
   }, [dispatch]);
-
-  // Efeito para tentar novamente se houver erro
-  useEffect(() => {
-    if (error && authAttempt < 3) {
-      const username = sessionStorage.getItem('username');
-      if (username) {
-        const retryTimer = setTimeout(() => {
-          console.log(`Tentativa ${authAttempt + 1} de reconexão para:`, username);
-          setAuthAttempt(prev => prev + 1);
-          setError(null);
-          authenticateUser(username);
-        }, 2000);
-        
-        return () => clearTimeout(retryTimer);
-      }
-    }
-  }, [error, authAttempt, dispatch]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -103,11 +85,6 @@ const AuthPage = () => {
     <div id="login-screen">
       <h2>Politik404</h2>
       {error && <div className="error-message">{error}</div>}
-      {authAttempt > 0 && (
-        <div className="retry-message">
-          Tentando reconectar ({authAttempt}/3)...
-        </div>
-      )}
       <div>
         <button 
           onClick={handleGoogleLogin} 

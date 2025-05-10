@@ -8,7 +8,6 @@ const RoomPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [connectionRetries, setConnectionRetries] = useState(0);
   const [joiningRoomName, setJoiningRoomName] = useState('');
-  const [joinAttemptTime, setJoinAttemptTime] = useState(null);
   
   const dispatch = useDispatch();
   const rooms = useSelector(state => state.rooms.rooms);
@@ -69,38 +68,19 @@ const RoomPage = () => {
 
   // Efeito para verificar se já passou tempo suficiente desde a última tentativa de entrar na sala
   useEffect(() => {
-    if (joiningRoomName && joinAttemptTime) {
-      const now = Date.now();
-      const elapsed = now - joinAttemptTime;
-      
-      // Se passou mais de 10 segundos e ainda estamos tentando entrar na mesma sala,
-      // podemos considerar que houve um problema
-      if (elapsed > 10000) {
+    if (joiningRoomName) {
+      const timer = setTimeout(() => {
         console.log(`Tempo limite para entrar na sala ${joiningRoomName} atingido.`);
         setIsLoading(false);
         setJoiningRoomName('');
-        setJoinAttemptTime(null);
         
         // Mostrar mensagem para o usuário
         alert(`Não foi possível entrar na sala ${joiningRoomName}. Por favor, tente novamente.`);
-      }
+      }, 10000);
+
+      return () => clearTimeout(timer);
     }
-  }, [joiningRoomName, joinAttemptTime]);
-
-  // Efeito adicional para reconectar se não receber salas após um tempo
-  useEffect(() => {
-    if (!username || rooms.length > 0 || connectionRetries >= 3 || joiningRoomName) return;
-
-    const timer = setTimeout(() => {
-      console.log('Tentando reconectar por não ter recebido salas...');
-      setConnectionRetries(prev => prev + 1);
-      
-      // Tentar novamente
-      ensureConnectionAndUpdateRooms();
-    }, 5000); // Tentar novamente após 5 segundos
-
-    return () => clearTimeout(timer);
-  }, [rooms, username, connectionRetries, joiningRoomName]);
+  }, [joiningRoomName]);
 
   const handleCreateRoom = () => {
     if (!roomName.trim()) {
@@ -134,12 +114,9 @@ const RoomPage = () => {
     console.log(`Tentando entrar na sala: ${roomName}`);
     setIsLoading(true);
     setJoiningRoomName(roomName);
-    setJoinAttemptTime(Date.now());
     
     // Entrar na sala
     socketApi.joinRoom(roomName);
-    
-    // Se não conseguir entrar na sala depois de 10 segundos, isso será tratado pelo useEffect acima
   };
 
   const handleRefreshRooms = () => {
@@ -257,19 +234,6 @@ const RoomPage = () => {
           )}
         </div>
       )}
-      
-      {/* Adicionar logs para depuração */}
-      <div className="debug-info" style={{display: 'none'}}>
-        <pre>
-          {JSON.stringify({
-            username, 
-            roomsCount: rooms.length, 
-            connectionRetries,
-            joiningRoom: joiningRoomName,
-            loading: isLoading
-          }, null, 2)}
-        </pre>
-      </div>
     </div>
   );
 };

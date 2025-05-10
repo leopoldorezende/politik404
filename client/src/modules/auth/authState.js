@@ -3,9 +3,7 @@
  * Centralizes all authentication logic and maintains consistent state
  * between Redux and browser storage
  */
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-// Remove the direct socketApi import to avoid circular dependency
-// import socketApi from '../network/socketService';
+import { createSlice } from '@reduxjs/toolkit';
 
 // Constants
 const AUTH_STORAGE_KEY = 'politik404_auth';
@@ -54,67 +52,6 @@ const initialState = {
   lastLogin: storedAuth.lastLogin || null
 };
 
-// Async thunks for authentication operations
-export const loginWithCredentials = createAsyncThunk(
-  'auth/loginWithCredentials',
-  async (username, { rejectWithValue }) => {
-    try {
-      if (!username || typeof username !== 'string' || username.trim() === '') {
-        return rejectWithValue('Username is required');
-      }
-      
-      // Note: The actual socket authentication will be handled by the middleware
-      return { username };
-    } catch (error) {
-      return rejectWithValue(error.message || 'Authentication failed');
-    }
-  }
-);
-
-export const loginWithGoogleAsync = createAsyncThunk(
-  'auth/loginWithGoogle',
-  async (_, { rejectWithValue }) => {
-    try {
-      // Import dynamically to avoid circular dependency
-      const { loginWithGoogle } = await import('./firebaseClient');
-      
-      // Login with Firebase Google auth
-      const result = await loginWithGoogle();
-      const token = await result.user.getIdToken();
-      
-      // Authenticate with backend
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/auth/google`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Server authentication failed: ${response.status}`);
-      }
-      
-      const userData = await response.json();
-      const username = userData.email;
-      
-      // Note: The actual socket authentication will be handled by the middleware
-      return { username };
-    } catch (error) {
-      return rejectWithValue(error.message || 'Google authentication failed');
-    }
-  }
-);
-
-export const logoutAsync = createAsyncThunk(
-  'auth/logout',
-  async (_, { dispatch }) => {
-    // Clear local authentication data
-    clearStoredAuth();
-    
-    return null;
-  }
-);
-
 // Auth slice
 export const authSlice = createSlice({
   name: 'auth',
@@ -143,61 +80,6 @@ export const authSlice = createSlice({
     clearAuthError: (state) => {
       state.error = null;
     }
-  },
-  extraReducers: (builder) => {
-    // Handle credential login
-    builder
-      .addCase(loginWithCredentials.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(loginWithCredentials.fulfilled, (state, action) => {
-        state.isAuthenticated = true;
-        state.username = action.payload.username;
-        state.loading = false;
-        state.lastLogin = Date.now();
-        
-        // Update local storage
-        setStoredAuth({
-          isAuthenticated: true,
-          username: action.payload.username,
-          lastLogin: state.lastLogin
-        });
-      })
-      .addCase(loginWithCredentials.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Authentication failed';
-      })
-      
-      // Handle Google login
-      .addCase(loginWithGoogleAsync.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(loginWithGoogleAsync.fulfilled, (state, action) => {
-        state.isAuthenticated = true;
-        state.username = action.payload.username;
-        state.loading = false;
-        state.lastLogin = Date.now();
-        
-        // Update local storage
-        setStoredAuth({
-          isAuthenticated: true,
-          username: action.payload.username,
-          lastLogin: state.lastLogin
-        });
-      })
-      .addCase(loginWithGoogleAsync.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Google authentication failed';
-      })
-      
-      // Handle logout
-      .addCase(logoutAsync.fulfilled, (state) => {
-        state.isAuthenticated = false;
-        state.username = null;
-        state.lastLogin = null;
-      });
   }
 });
 

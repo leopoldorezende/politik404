@@ -27,7 +27,14 @@
   │   │   │   ├── country
   │   │   │   │   ├── CountryDetails.css
   │   │   │   │   ├── CountryDetails.jsx  # Componente de detalhes
-  │   │   │   │   └── countryService.jsx
+  │   │   │   │   ├── CountryState.css
+  │   │   │   │   ├── CountryState.jsx
+  │   │   │   │   ├── countryService.jsx
+  │   │   │   │   └── countryStateSlice.js
+  │   │   │   ├── defense
+  │   │   │   │   ├── DefensePanel.jsx  # Componente Painel Militar
+  │   │   │   │   ├── defensePanel.css
+  │   │   │   │   └── defenseState.js  # Estado militar
   │   │   │   ├── economy
   │   │   │   │   ├── EconomyPanel.css
   │   │   │   │   ├── EconomyPanel.jsx  # Componente Painel de Economia
@@ -39,12 +46,7 @@
   │   │   │   ├── map
   │   │   │   │   ├── MapView.css
   │   │   │   │   ├── MapView.jsx  # Mapa principal
-  │   │   │   │   ├── SeaRoutes.jsx  # Rotas marítimas
-  │   │   │   │   └── mapboxUtils.js  # Integração com Mapbox
-  │   │   │   ├── military
-  │   │   │   │   ├── MilitaryPanel.css
-  │   │   │   │   ├── MilitaryPanel.jsx  # Componente Painel Militar
-  │   │   │   │   └── militaryState.js  # Estado militar
+  │   │   │   │   └── SeaRoutes.jsx  # Rotas marítimas
   │   │   │   ├── politics
   │   │   │   │   ├── PoliticsPanel.css
   │   │   │   │   ├── PoliticsPanel.jsx  # Componente Painel de Política
@@ -64,7 +66,9 @@
   │   │   │       ├── TradePanel.jsx  # Componente Painel de Comercio
   │   │   │       └── tradeState.js  # Estado do comércio
   │   │   ├── services
-  │   │   │   └── socketClient.js
+  │   │   │   ├── socketClient.js
+  │   │   │   ├── socketConnection.js
+  │   │   │   └── socketEventHandlers.js
   │   │   └── store
   │   │       ├── index.js  # Criação e combinação dos reducers
   │   │       └── socketReduxMiddleware.js
@@ -84,6 +88,7 @@
       │   │   └── chatHandlers.js  # Handlers do chat
       │   ├── country
       │   │   ├── countryAssignment.js  # Atribuições de países
+      │   │   ├── countryStateHandlers.js
       │   │   └── countryUtils.js  # Utilitários para países
       │   ├── index.js  # Criação e combinação dos reducers
       │   ├── player
@@ -92,10 +97,8 @@
       │   │   ├── playerStateManager.js  # Gerencia estado dos jogadores
       │   │   └── playerUtils.js  # Funções utilitárias
       │   └── room
-      │       ├── roomHandlers.js  # Handlers para sala
       │       ├── roomManagement.js  # Gerenciamento de sala
-      │       ├── roomNotifications.js  # Notificações da Sala
-      │       └── roomUtils.js  # Utilitários da sala
+      │       └── roomNotifications.js  # Notificações da Sala
       ├── package.json  # Dependências e scripts principais (monorepo)
       ├── public
       │   └── data
@@ -103,6 +106,7 @@
       │       └── countriesData.json
       ├── server.js  # Entry point do servidor
       └── shared
+          ├── countryStateManager.js
           ├── firebaseAdmin.js
           ├── gameStateUtils.js  # Utilitários de estado para o jogo
           └── redisClient.js  # Infraestrutura do Redis

@@ -63,23 +63,18 @@ export const gameState = createSlice({
     },
     setPlayerOnlineStatus: (state, action) => {
       const { username, isOnline } = action.payload;
-      if (isOnline) {
-        if (!state.onlinePlayers.includes(username)) {
-          state.onlinePlayers.push(username);
-        }
-      } else {
+      
+      // Atualizar lista de jogadores online
+      if (isOnline && !state.onlinePlayers.includes(username)) {
+        state.onlinePlayers.push(username);
+      } else if (!isOnline) {
         state.onlinePlayers = state.onlinePlayers.filter(name => name !== username);
       }
+      
+      // Atualizar status do jogador na lista de players
       state.players = state.players.map(player => {
-        if (typeof player !== 'object') {
-          const match = player.match(/^(.*?)\s*\((.*)\)$/);
-          if (match && match[1] === username) {
-            return { username: match[1], country: match[2], isOnline };
-          }
-          return player;
-        }
-        if (player.username === username) {
-          return { ...player, isOnline: player.isOnline !== false && isOnline };
+        if (typeof player === 'object' && player.username === username) {
+          return { ...player, isOnline };
         }
         return player;
       });

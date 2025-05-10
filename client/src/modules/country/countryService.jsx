@@ -41,12 +41,12 @@ const isCacheValid = (dataType) => {
 };
 
 /**
- * Attempt to fetch from different paths if the primary path fails
+ * Fetch data from the server
  * @param {string} filename - Name of the file to fetch
  * @param {boolean} forceRefresh - Whether to bypass the cache
  * @returns {Promise<Object>} The fetched data
  */
-const fetchWithFallback = async (filename, forceRefresh = false) => {
+const fetchData = async (filename, forceRefresh = false) => {
   const dataType = filename.replace('.json', '');
   
   // Return cached data if valid and refresh not forced
@@ -60,47 +60,27 @@ const fetchWithFallback = async (filename, forceRefresh = false) => {
   const baseUrl = getBaseUrl();
   
   try {
-    // Try the primary path first
+    // Try to fetch the data
     const response = await fetch(`${baseUrl}/data/${filename}?t=${timestamp}`);
     
     if (!response.ok) {
-      throw new Error(`Primary path failed: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to fetch ${filename}: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
-    console.log(`${dataType} loaded from primary path:`, Object.keys(data).length, 'items');
+    console.log(`${dataType} loaded:`, Object.keys(data).length, 'items');
     
     // Update cache
     dataCache[dataType] = data;
     dataCache.lastFetched[dataType] = Date.now();
     
     return data;
-  } catch (primaryError) {
-    console.warn(`Error on primary path: ${primaryError.message}. Trying alternate path...`);
+  } catch (error) {
+    console.error(`Error fetching ${filename}:`, error);
     
-    try {
-      // Try the alternative path
-      const altResponse = await fetch(`/${filename}?t=${timestamp}`);
-      
-      if (!altResponse.ok) {
-        throw new Error(`Alternative path failed: ${altResponse.status}`);
-      }
-      
-      const data = await altResponse.json();
-      console.log(`${dataType} loaded from alternate path:`, Object.keys(data).length, 'items');
-      
-      // Update cache
-      dataCache[dataType] = data;
-      dataCache.lastFetched[dataType] = Date.now();
-      
-      return data;
-    } catch (altError) {
-      console.error(`All paths failed for ${filename}:`, altError);
-      
-      // Return empty data or cached data as fallback
-      return dataCache[dataType] || (dataType === 'countriesCoordinates' ? 
-        { customZoomLevels: {}, countries: {} } : {});
-    }
+    // Return empty data or cached data as fallback
+    return dataCache[dataType] || (dataType === 'countriesCoordinates' ? 
+      { customZoomLevels: {}, countries: {} } : {});
   }
 };
 
@@ -111,7 +91,7 @@ const fetchWithFallback = async (filename, forceRefresh = false) => {
  */
 export const loadCountriesData = async (forceRefresh = false) => {
   try {
-    const data = await fetchWithFallback('countriesData.json', forceRefresh);
+    const data = await fetchData('countriesData.json', forceRefresh);
     
     // Store in Redux
     store.dispatch(setCountriesData(data));
@@ -129,7 +109,7 @@ export const loadCountriesData = async (forceRefresh = false) => {
  */
 export const loadCountriesCoordinates = async (forceRefresh = false) => {
   try {
-    const data = await fetchWithFallback('countriesCoordinates.json', forceRefresh);
+    const data = await fetchData('countriesCoordinates.json', forceRefresh);
     
     // Store in Redux
     store.dispatch(setCountriesCoordinates(data));
@@ -137,28 +117,6 @@ export const loadCountriesCoordinates = async (forceRefresh = false) => {
   } catch (error) {
     console.error('Failed to load countries coordinates:', error);
     return { customZoomLevels: {}, countries: {} };
-  }
-};
-
-/**
- * Load all country data (countries and coordinates) at once
- * @param {boolean} forceRefresh - Whether to bypass the cache
- * @returns {Promise<Object>} Object containing both data sets
- */
-export const loadAllCountryData = async (forceRefresh = false) => {
-  try {
-    const [countriesData, countriesCoordinates] = await Promise.all([
-      loadCountriesData(forceRefresh),
-      loadCountriesCoordinates(forceRefresh)
-    ]);
-    
-    return { countriesData, countriesCoordinates };
-  } catch (error) {
-    console.error('Failed to load all country data:', error);
-    return { 
-      countriesData: {}, 
-      countriesCoordinates: { customZoomLevels: {}, countries: {} } 
-    };
   }
 };
 
@@ -216,7 +174,6 @@ export const getBorderingCountries = (country, countriesData) => {
 export default {
   loadCountriesData,
   loadCountriesCoordinates,
-  loadAllCountryData,
   getCountryCenter,
   getCountryZoomLevel,
   getBorderingCountries

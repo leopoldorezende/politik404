@@ -6,14 +6,11 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import countryStateManager from './shared/countryStateManager.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { 
-  initializeSocketHandlers 
-} from './modules/index.js';
-import { 
-  createSocketMiddleware 
-} from './middlewares/socketServerMiddleware.js';
+import { initializeSocketHandlers } from './modules/index.js';
+import { createSocketMiddleware } from './middlewares/socketServerMiddleware.js';
 import { 
   createDefaultGameState,
   cleanupInactiveUsers, 
@@ -105,30 +102,6 @@ const io = new Server(server, {
   path: '/socket.io/', // Caminho padrão para o socket.io
 });
 
-// Rota para obter estatísticas do servidor para monitoramento
-app.get('/api/stats', (req, res) => {
-  // Usamos o gameState já definido pelo middleware do socket
-  const gameState = global.gameState;
-  
-  if (!gameState) {
-    return res.status(500).json({ error: 'Estado do jogo não inicializado' });
-  }
-  
-  const stats = {
-    uptime: process.uptime(),
-    timestamp: Date.now(),
-    connections: {
-      socketCount: io.engine.clientsCount,
-      socketsById: Array.from(io.sockets.sockets.keys()),
-      roomCount: gameState.rooms.size,
-      onlineUsersCount: gameState.onlinePlayers.size,
-      onlineUsers: Array.from(gameState.onlinePlayers)
-    },
-    memory: process.memoryUsage()
-  };
-  res.json(stats);
-});
-
 // Rota para obter o token Mapbox
 app.get('/api/mapbox', (req, res) => {
   const authHeader = req.headers.authorization;
@@ -182,22 +155,11 @@ const setupCleanupSchedule = () => {
     console.log(`[${now.toISOString()}] Limpeza concluída: ${removedCount} itens removidos`);
   }, CLEANUP_INTERVAL);
   
-  // Também executa limpeza a cada 2 horas para remover sessões muito antigas
-  const DEEP_CLEANUP_INTERVAL = 2 * 60 * 60 * 1000; // 2 horas
-  
-  // Inicia o intervalo para limpeza profunda (sessões antigas)
-  const deepCleanupInterval = setInterval(() => {
-    const now = new Date();
-    console.log(`[${now.toISOString()}] Iniciando limpeza profunda...`);
-    
-    // Limpar usuários com mais de 8 horas de inatividade
-    const removedCount = cleanupInactiveUsers(io, gameState, 8 * 60 * 60 * 1000);
-    
-    console.log(`[${now.toISOString()}] Limpeza profunda concluída: ${removedCount} itens removidos`);
-  }, DEEP_CLEANUP_INTERVAL);
-  
+  // Disponibiliza o countryStateManager globalmente para acesso em outros módulos
+  global.countryStateManager = countryStateManager;
+
   // Retorna os intervalos para possível cancelamento futuro
-  return { cleanupInterval, deepCleanupInterval };
+  return { cleanupInterval };
 };
 
 async function restoreRoomsFromRedis() {
@@ -236,6 +198,29 @@ restoreRoomsFromRedis().then(() => {
 });
 
 io.use(createSocketMiddleware(io));
+
+// Configurar limpeza do countryStateManager ao encerrar o servidor
+process.on('SIGINT', () => {
+  console.log('Servidor está sendo encerrado. Limpando recursos...');
+  
+  // Limpar o countryStateManager
+  if (global.countryStateManager) {
+    global.countryStateManager.cleanup();
+  }
+  
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('Servidor está sendo encerrado. Limpando recursos...');
+  
+  // Limpar o countryStateManager
+  if (global.countryStateManager) {
+    global.countryStateManager.cleanup();
+  }
+  
+  process.exit(0);
+});
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);

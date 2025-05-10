@@ -112,20 +112,6 @@ export const chatState = createSlice({
         state.lastReadTimestamps.public = Date.now();
       }
     },
-    setPrivateRecipient: (state, action) => {
-      state.currentPrivateRecipient = action.payload;
-      if (action.payload) {
-        state.currentChatMode = action.payload; // Alterna para o modo privado
-        
-        // Reset unread count for this user
-        if (state.unreadCount.private[action.payload]) {
-          state.unreadCount.private[action.payload] = 0;
-        }
-        
-        // Update last read timestamp
-        state.lastReadTimestamps.private[action.payload] = Date.now();
-      }
-    },
     setChatHistory: (state, action) => {
       const { type, target, messages } = action.payload;
       const currentTimestamp = Date.now();
@@ -207,7 +193,6 @@ export const chatState = createSlice({
 export const { 
   addMessage, 
   setChatMode, 
-  setPrivateRecipient, 
   setChatHistory, 
   markAsRead,
   clearChat 

@@ -7,19 +7,16 @@ const initialState = {
   // Histórico de investimentos
   investments: {}, // { countryName: [{ type: string, amount: number, timestamp: number }] }
   
-  // Histórico de ações de guerra
-  warActions: [], // Lista de ações de guerra
-  
   // Capacidade nuclear
   nuclearStatus: {}, // { countryName: boolean }
 };
 
-export const militaryState = createSlice({
-  name: 'military',
+export const defenseState = createSlice({
+  name: 'defense',
   initialState,
   reducers: {
     // Atualiza forças militares de um país
-    updateMilitaryForces: (state, action) => {
+    updateDefenseForces: (state, action) => {
       const { country, army, navy, airforce, missiles, nuclear } = action.payload;
       
       if (!state.forces[country]) {
@@ -87,62 +84,6 @@ export const militaryState = createSlice({
       }
     },
     
-    // Registra uma ação de guerra
-    recordWarAction: (state, action) => {
-      const { country, target, strategy, timestamp } = action.payload;
-      
-      const warAction = {
-        id: `war-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        aggressor: country,
-        target,
-        strategy,
-        timestamp: timestamp || Date.now(),
-        status: 'initiated'
-      };
-      
-      state.warActions.push(warAction);
-      
-      // Efeitos da ação de guerra nas forças militares (redução)
-      if (state.forces[country]) {
-        switch (strategy) {
-          case 'attack':
-            // Ataque bélico consome forças militares do agressor
-            state.forces[country].army = Math.max(0, state.forces[country].army - 10);
-            state.forces[country].navy = Math.max(0, state.forces[country].navy - 5);
-            state.forces[country].airforce = Math.max(0, state.forces[country].airforce - 8);
-            break;
-          case 'sabotage':
-            // Sabotagem consome menos recursos
-            state.forces[country].army = Math.max(0, state.forces[country].army - 5);
-            break;
-          case 'regime':
-            // Mudança de regime é custosa
-            state.forces[country].army = Math.max(0, state.forces[country].army - 15);
-            state.forces[country].airforce = Math.max(0, state.forces[country].airforce - 10);
-            break;
-          case 'disinformation':
-            // Desinformação tem baixo custo militar
-            state.forces[country].army = Math.max(0, state.forces[country].army - 2);
-            break;
-        }
-      }
-    },
-    
-    // Atualiza o status de uma ação de guerra
-    updateWarActionStatus: (state, action) => {
-      const { warId, status, outcome } = action.payload;
-      
-      const warIndex = state.warActions.findIndex(w => w.id === warId);
-      if (warIndex !== -1) {
-        state.warActions[warIndex].status = status;
-        
-        if (outcome) {
-          state.warActions[warIndex].outcome = outcome;
-          state.warActions[warIndex].resolvedAt = Date.now();
-        }
-      }
-    },
-    
     // Atualiza o status nuclear de um país
     updateNuclearStatus: (state, action) => {
       const { country, hasNuclear } = action.payload;
@@ -164,22 +105,19 @@ export const militaryState = createSlice({
     },
     
     // Reseta o estado militar
-    resetMilitaryState: (state) => {
+    resetDefenseState: (state) => {
       state.forces = {};
       state.investments = {};
-      state.warActions = [];
       state.nuclearStatus = {};
     }
   },
 });
 
 export const {
-  updateMilitaryForces,
+  updateDefenseForces,
   recordInvestment,
-  recordWarAction,
-  updateWarActionStatus,
   updateNuclearStatus,
-  resetMilitaryState
-} = militaryState.actions;
+  resetDefenseState
+} = defenseState.actions;
 
-export default militaryState.reducer;
+export default defenseState.reducer;

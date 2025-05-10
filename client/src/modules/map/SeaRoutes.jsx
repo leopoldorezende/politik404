@@ -123,8 +123,6 @@ const MaritimeChokepoints = ({ map }) => {
       if (addChokepointsToMap()) {
         console.log('Chokepoints inicializados com sucesso');
         setInitialized(true);
-      } else {
-        console.log('Falha ao inicializar chokepoints');
       }
     };
 
@@ -172,4 +170,4 @@ const MaritimeChokepoints = ({ map }) => {
   return null; // Este componente não renderiza nada visualmente
 };
 
-export default MaritimeChokepoints; 
+export default MaritimeChokepoints;

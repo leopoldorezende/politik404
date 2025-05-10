@@ -8,6 +8,7 @@ import { setupRoomNotifications } from './room/roomNotifications.js';
 import { setupPlayerRoomHandlers } from './player/playerRoomHandlers.js';
 import { setupPlayerStateManager } from './player/playerStateManager.js';
 import { setupCountryAssignment } from './country/countryAssignment.js';
+import { setupCountryStateHandlers } from './country/countryStateHandlers.js';
 import { setupChatHandlers } from './chat/chatHandlers.js';
 
 /**
@@ -19,25 +20,15 @@ import { setupChatHandlers } from './chat/chatHandlers.js';
 function initializeSocketHandlers(io, socket, gameState) {
   console.log('Inicializando todos os handlers de socket');
   
-  // Não é mais necessário inicializar o gameState aqui, pois já é inicializado 
-  // em server.js e disponibilizado como global.gameState
-  
-  // Se gameState não for fornecido como parâmetro, usa o global
-  const state = gameState || global.gameState;
-  
-  if (!state) {
-    console.error('ERRO: gameState não encontrado em initializeSocketHandlers');
-    return;
-  }
-  
   // Configura os vários handlers
-  setupAuthHandlers(io, socket, state);
-  setupRoomManagement(io, socket, state);
-  setupRoomNotifications(io, socket, state);
-  setupPlayerRoomHandlers(io, socket, state);
-  setupPlayerStateManager(io, socket, state);
-  setupCountryAssignment(io, socket, state);
-  setupChatHandlers(io, socket, state);
+  setupAuthHandlers(io, socket, gameState);
+  setupRoomManagement(io, socket, gameState);
+  setupRoomNotifications(io, socket, gameState);
+  setupPlayerRoomHandlers(io, socket, gameState);
+  setupPlayerStateManager(io, socket, gameState);
+  setupCountryAssignment(io, socket, gameState);
+  setupCountryStateHandlers(io, socket, gameState); 
+  setupChatHandlers(io, socket, gameState);
   
   console.log('Todos os handlers inicializados com sucesso');
 }

@@ -13,7 +13,6 @@ export const roomState = createSlice({
       state.rooms = action.payload;
     },
     setCurrentRoom: (state, action) => {
-      console.log('Setting current room:', action.payload);
       state.currentRoom = action.payload;
     },
     leaveRoom: (state) => {

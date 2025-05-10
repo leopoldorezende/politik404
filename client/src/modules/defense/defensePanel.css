@@ -1,14 +1,14 @@
 
-/* MilitaryPanel.css - Updated version with improved structure */
+/* DefensePanel.css - Updated version with improved structure */
 
-.military-panel {
+.defense-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
   font-family: Arial, sans-serif;
 }
 
-.military-panel.loading {
+.defense-panel.loading {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -28,26 +28,26 @@
   font-size: 16px;
 }
 
-.military-bars {
+.defense-bars {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-bottom: 12px;
 }
 
-.military-stat {
+.defense-stat {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.military-stat span:first-child {
+.defense-stat span:first-child {
   width: 100px;
   text-align: right;
   font-weight: bold;
 }
 
-.military-stat span:last-child {
+.defense-stat span:last-child {
   width: 40px;
   text-align: right;
 }
@@ -128,18 +128,18 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .military-stat {
+  .defense-stat {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
   }
   
-  .military-stat span:first-child {
+  .defense-stat span:first-child {
     width: auto;
     text-align: left;
   }
   
-  .military-stat span:last-child {
+  .defense-stat span:last-child {
     width: auto;
   }
 }

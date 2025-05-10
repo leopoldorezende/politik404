@@ -1,45 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { MILITARY_EVENTS } from '../../store/socketReduxMiddleware';
-import './MilitaryPanel.css';
+import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
+import './DefensePanel.css';
 
-const MilitaryPanel = () => {
-  const dispatch = useDispatch();
-  
+const DefensePanel = () => {
   // Selecionar dados do Redux
   const myCountry = useSelector(state => state.game.myCountry);
   const countriesData = useSelector(state => state.game.countriesData);
-  const militaryForces = useSelector(state => state.military.forces);
   
   // Estados locais
-  const [activeTab, setActiveTab] = useState('investment');
   const [targetCountry, setTargetCountry] = useState('');
   const [investmentType, setInvestmentType] = useState('army');
   const [investmentAmount, setInvestmentAmount] = useState(10);
   const [warStrategy, setWarStrategy] = useState('attack');
 
-  // Solicitar dados militares ao montar componente
-  useEffect(() => {
-    if (myCountry) {
-      dispatch({ type: MILITARY_EVENTS.GET_MILITARY_DATA });
-    }
-  }, [myCountry, dispatch]);
-
   // Obter forças militares do país
   const getCountryForces = () => {
-    // Primeiro tentar do estado military.forces
-    if (militaryForces && militaryForces[myCountry]) {
-      return militaryForces[myCountry];
-    }
-    
     // Fallback para os dados do país
-    if (countriesData && countriesData[myCountry] && countriesData[myCountry].military) {
+    if (countriesData && countriesData[myCountry] && countriesData[myCountry].defense) {
       return {
-        army: countriesData[myCountry].military.army || 0,
-        navy: countriesData[myCountry].military.navy || 0,
-        airforce: countriesData[myCountry].military.airforce || 0,
-        missiles: countriesData[myCountry].military.missiles || 0,
-        nuclear: countriesData[myCountry].military.nuclearCapability || false
+        army: countriesData[myCountry].defense.army || 0,
+        navy: countriesData[myCountry].defense.navy || 0,
+        airforce: countriesData[myCountry].defense.airforce || 0,
+        missiles: countriesData[myCountry].defense.missiles || 0,
+        nuclear: countriesData[myCountry].defense.nuclearCapability || false
       };
     }
     
@@ -62,45 +45,12 @@ const MilitaryPanel = () => {
     );
   };
 
-  // Executar ação militar
-  const executeAction = () => {
-    if (activeTab === 'investment') {
-      // Enviar ação de investimento militar
-      dispatch({
-        type: MILITARY_EVENTS.INVEST_MILITARY,
-        payload: {
-          country: myCountry,
-          type: investmentType,
-          amount: investmentAmount,
-          timestamp: Date.now()
-        }
-      });
-    } 
-    else if (activeTab === 'war') {
-      // Enviar ação de guerra baseada na estratégia selecionada
-      dispatch({
-        type: MILITARY_EVENTS.ATTACK_COUNTRY,
-        payload: {
-          country: myCountry,
-          target: targetCountry,
-          strategy: warStrategy,
-          timestamp: Date.now()
-        }
-      });
-    }
-    
-    // Atualizar dados após a ação
-    setTimeout(() => {
-      dispatch({ type: MILITARY_EVENTS.GET_MILITARY_DATA });
-    }, 1000);
-  };
-
   // Renderizar painel militar
   const forces = getCountryForces();
   
   if (!myCountry) {
     return (
-      <div className="military-panel loading">
+      <div className="defense-panel loading">
         <h3>Militar</h3>
         <p>Selecione um país para ver informações militares</p>
       </div>
@@ -108,12 +58,12 @@ const MilitaryPanel = () => {
   }
 
   return (
-    <div className="military-panel">
+    <div className="defense-panel">
       <div className="forces-section">
         <h4>Forças Armadas</h4>
         
-        <div className="military-bars">
-          <div className="military-stat">
+        <div className="defense-bars">
+          <div className="defense-stat">
             <span>Exército:</span>
             <div className="progress-bar">
               <div 
@@ -124,7 +74,7 @@ const MilitaryPanel = () => {
             <span>{forces.army}%</span>
           </div>
           
-          <div className="military-stat">
+          <div className="defense-stat">
             <span>Marinha:</span>
             <div className="progress-bar">
               <div 
@@ -135,7 +85,7 @@ const MilitaryPanel = () => {
             <span>{forces.navy}%</span>
           </div>
           
-          <div className="military-stat">
+          <div className="defense-stat">
             <span>Força Aérea:</span>
             <div className="progress-bar">
               <div 
@@ -178,14 +128,13 @@ const MilitaryPanel = () => {
             type="range" 
             min="5" 
             max="50" 
+            step="1" 
             value={investmentAmount} 
             onChange={(e) => setInvestmentAmount(parseInt(e.target.value))}
           />
         </div>
         
-        <button 
-          className="action-btn" 
-        >
+        <button className="action-btn">
           Investir
         </button>
       </div>
@@ -227,10 +176,8 @@ const MilitaryPanel = () => {
           Iniciar Ação
         </button>
       </div>
-   
-      
     </div>
   );
 };
 
-export default MilitaryPanel;
+export default DefensePanel;

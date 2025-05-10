@@ -34,31 +34,8 @@ export const economyState = createSlice({
       state.updates[update.room].push(update);
     },
     
-    addEconomicEvent: (state, action) => {
-      // action.payload contém { room, country, event, currentEconomy }
-      const eventData = action.payload;
-      
-      // Adiciona o evento à lista, limitando a 20 eventos
-      if (state.events.length >= 20) {
-        state.events.shift();
-      }
-      
-      state.events.push(eventData);
-    },
-    
-    setEconomyConfig: (state, action) => {
-      // Armazena as configurações do sistema econômico
-      state.config = action.payload;
-    },
-    
-    applyPolicyChange: (state, action) => {
-      // Este reducer não atualiza diretamente o estado de economia,
-      // mas é usado para notificar sobre mudanças de política que afetam a economia
-      // Os efeitos reais são aplicados quando o servidor envia uma atualização econômica
-    },
-    
+    // Reseta todo o estado econômico
     resetEconomyState: (state) => {
-      // Reseta todo o estado econômico
       state.updates = {};
       state.latestUpdate = null;
       state.events = [];
@@ -69,9 +46,6 @@ export const economyState = createSlice({
 
 export const {
   updateEconomyData,
-  addEconomicEvent,
-  setEconomyConfig,
-  applyPolicyChange,
   resetEconomyState
 } = economyState.actions;
 

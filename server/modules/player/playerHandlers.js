@@ -2,10 +2,8 @@
  * Handlers centralizados para gerenciamento de jogadores
  */
 
-import { getCurrentRoom } from '../../shared/gameStateUtils.js';
 import { setupPlayerRoomHandlers } from './playerRoomHandlers.js';
 import { setupPlayerStateManager } from './playerStateManager.js';
-import { findPlayerByUsername, standardizePlayer, getOnlinePlayers } from './playerUtils.js';
 
 /**
  * Configura todos os handlers relacionados a jogadores
@@ -33,143 +31,6 @@ function setupPlayerHandlers(io, socket, gameState) {
       // Não marca como online aqui, apenas quando entra em uma sala
       // A marcação online acontece no evento 'joinRoom'
     }
-  });
-  
-  // Obter lista de jogadores online em toda a aplicação
-  socket.on('getOnlinePlayers', () => {
-    const onlinePlayersList = Array.from(gameState.onlinePlayers);
-    socket.emit('onlinePlayersList', onlinePlayersList);
-    console.log('Enviando lista de jogadores online:', onlinePlayersList);
-  });
-  
-  // Obter lista de jogadores na sala atual
-  socket.on('getPlayersInRoom', () => {
-    const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Não está em uma sala');
-      return;
-    }
-    
-    const room = gameState.rooms.get(roomName);
-    if (!room || !room.players) {
-      socket.emit('error', 'Sala não encontrada ou sem jogadores');
-      return;
-    }
-    
-    // Padroniza os objetos de jogadores 
-    const standardizedPlayers = room.players.map(player => standardizePlayer(player));
-    
-    socket.emit('playersInRoom', standardizedPlayers);
-    console.log(`Enviando lista de ${standardizedPlayers.length} jogadores na sala ${roomName}`);
-  });
-  
-  // Solicitar detalhes de um jogador específico
-  socket.on('getPlayerDetails', (targetUsername) => {
-    const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Não está em uma sala');
-      return;
-    }
-    
-    const room = gameState.rooms.get(roomName);
-    if (!room || !room.players) {
-      socket.emit('error', 'Sala não encontrada ou sem jogadores');
-      return;
-    }
-    
-    // Encontra o jogador alvo
-    const targetPlayer = findPlayerByUsername(room.players, targetUsername);
-    if (!targetPlayer) {
-      socket.emit('error', 'Jogador não encontrado');
-      return;
-    }
-    
-    // Obtém país do jogador
-    const userRoomKey = `${targetUsername}:${roomName}`;
-    const playerCountry = gameState.userRoomCountries.get(userRoomKey);
-    
-    // Obtém estado do jogador
-    const playerState = gameState.playerStates.get(userRoomKey);
-    
-    // Navios do jogador
-    const playerShips = Array.from(gameState.ships.values())
-      .filter(ship => ship.owner === targetUsername && ship.roomName === roomName)
-      .map(ship => ({
-        id: ship.id,
-        name: ship.name,
-        type: ship.type,
-        country: ship.country
-      }));
-    
-    // Monta o objeto de detalhes
-    const playerDetails = {
-      username: targetUsername,
-      country: playerCountry,
-      isOnline: gameState.onlinePlayers.has(targetUsername),
-      score: playerState?.customData?.score || 0,
-      lastPosition: playerState?.customData?.lastPosition || [0, 0],
-      ships: playerShips,
-      // Não envia dados sensíveis
-    };
-    
-    socket.emit('playerDetails', playerDetails);
-    console.log(`Enviando detalhes do jogador ${targetUsername}`);
-  });
-  
-  // Atualizar nome de exibição
-  socket.on('updateDisplayName', (newDisplayName) => {
-    const username = socket.username;
-    if (!username) {
-      socket.emit('error', 'Usuário não autenticado');
-      return;
-    }
-    
-    if (!newDisplayName || typeof newDisplayName !== 'string' || newDisplayName.trim() === '') {
-      socket.emit('error', 'Nome de exibição inválido');
-      return;
-    }
-    
-    // Limita o tamanho do nome
-    if (newDisplayName.length > 30) {
-      socket.emit('error', 'Nome de exibição muito longo (máximo 30 caracteres)');
-      return;
-    }
-    
-    // Armazena o novo nome de exibição
-    if (!gameState.displayNames) {
-      gameState.displayNames = new Map();
-    }
-    
-    gameState.displayNames.set(username, newDisplayName);
-    
-    // Confirma a atualização
-    socket.emit('displayNameUpdated', newDisplayName);
-    
-    // Atualiza o nome nas salas em que o jogador está
-    for (const [roomName, room] of gameState.rooms.entries()) {
-      if (room.players) {
-        const playerIndex = room.players.findIndex(player => {
-          if (typeof player === 'object') {
-            return player.username === username;
-          }
-          return false;
-        });
-        
-        if (playerIndex !== -1) {
-          if (typeof room.players[playerIndex] === 'object') {
-            room.players[playerIndex].displayName = newDisplayName;
-          }
-          
-          // Notifica todos na sala sobre a mudança
-          io.to(roomName).emit('playerDisplayNameChanged', {
-            username,
-            displayName: newDisplayName
-          });
-        }
-      }
-    }
-    
-    console.log(`Jogador ${username} atualizou nome de exibição para ${newDisplayName}`);
   });
   
   // Enviar uma mensagem privada para outro jogador (atalho)

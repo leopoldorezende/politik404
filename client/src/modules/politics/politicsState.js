@@ -9,9 +9,6 @@ const initialState = {
   
   // Eventos políticos recentes
   events: [], // Lista de eventos políticos
-  
-  // Dinheiro gasto em política
-  politicalSpending: {}, // Formato: { countryName: number }
 };
 
 export const politicsState = createSlice({
@@ -54,50 +51,11 @@ export const politicsState = createSlice({
       });
     },
     
-    // Registra gasto político
-    recordPoliticalSpending: (state, action) => {
-      const { country, amount } = action.payload;
-      
-      if (!state.politicalSpending[country]) {
-        state.politicalSpending[country] = 0;
-      }
-      
-      state.politicalSpending[country] += amount;
-    },
-    
-    // Aumenta aprovação parlamentar (compra de parlamento)
-    increaseParlamentaryApproval: (state, action) => {
-      const { country, amount } = action.payload;
-      
-      if (!state.approval[country]) {
-        state.approval[country] = { parliament: 50, media: 50, popularity: 50 };
-      }
-      
-      // Limita o aumento a no máximo 95% no total
-      const newValue = Math.min(state.approval[country].parliament + amount, 95);
-      state.approval[country].parliament = newValue;
-      
-      // Registra o evento
-      const eventData = {
-        country,
-        type: 'PARLIAMENT_APPROVAL_INCREASED',
-        description: `Aprovação parlamentar aumentada em ${amount}%`,
-        timestamp: Date.now()
-      };
-      
-      if (state.events.length >= 20) {
-        state.events.shift();
-      }
-      
-      state.events.push(eventData);
-    },
-    
     // Reseta todo o estado de política
     resetPoliticsState: (state) => {
       state.approval = {};
       state.instability = {};
       state.events = [];
-      state.politicalSpending = {};
     }
   },
 });
@@ -106,8 +64,6 @@ export const {
   updateApproval,
   updateInstability,
   addPoliticalEvent,
-  recordPoliticalSpending,
-  increaseParlamentaryApproval,
   resetPoliticsState
 } = politicsState.actions;
 

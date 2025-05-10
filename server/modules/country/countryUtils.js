@@ -71,25 +71,9 @@ function getAvailableCountries(gameState, room) {
   return allCountries.filter(country => !countriesInUse.includes(country));
 }
 
-/**
- * Obtém apenas países fronteiriços disponíveis de uma lista de países elegíveis
- * @param {Object} gameState - Estado global do jogo
- * @param {Object} room - Sala a verificar
- * @returns {Array<string>} - Lista de países elegíveis disponíveis
- */
-function getAvailableEligibleCountries(gameState, room) {
-  if (!room || !room.eligibleCountries) return [];
-  
-  const availableCountries = getAvailableCountries(gameState, room);
-  
-  // Filtra apenas os países elegíveis que também estão disponíveis
-  return room.eligibleCountries.filter(country => availableCountries.includes(country));
-}
-
 export {
   isValidCountry,
   getBorderingCountries,
   areCountriesNeighbors,
-  getAvailableCountries,
-  getAvailableEligibleCountries
+  getAvailableCountries
 };

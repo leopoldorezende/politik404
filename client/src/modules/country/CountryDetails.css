@@ -50,7 +50,7 @@
     font-size: 14px;
   }
   
-  .military-section,
+  .defense-section,
   .borders-section,
   .economy-section {
     background: rgba(255, 255, 255, 0.1);
@@ -59,7 +59,7 @@
     margin-bottom: 15px;
   }
   
-  .military-section h4,
+  .defense-section h4,
   .borders-section h4,
   .economy-section h4 {
     margin-top: 0;
@@ -75,13 +75,13 @@
     font-size: 14px;
   }
   
-  .military-bars {
+  .defense-bars {
     display: flex;
     flex-direction: column;
     gap: 10px;
   }
   
-  .military-stat {
+  .defense-stat {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -89,7 +89,7 @@
     font-size: 14px;
   }
   
-  .military-stat span:first-child {
+  .defense-stat span:first-child {
     width: 80px;
   }
   

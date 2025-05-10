@@ -72,12 +72,6 @@ const MapView = () => {
       setLoaded(true);
       loadData();
       addCountryClickHandler();
-      
-      // Garante que os rótulos sejam configurados corretamente após o carregamento do mapa
-      if (countriesData) {
-        hideLabelsForUnknownCountries();
-        highlightOtherPlayersLabels();
-      }
     });
 
     return () => {
@@ -127,89 +121,9 @@ const MapView = () => {
     }
   };
 
-  const hideLabelsForUnknownCountries = () => {
-    if (!map.current) return;
-    
-    // Lista de países conhecidos
-    const knownCountries = Object.keys(countriesData || {});
-    
-    // Primeiro, encontra todas as camadas de texto (labels) no mapa
-    const layers = map.current.getStyle().layers;
-    if (!layers) return;
-    
-    // Itera por todas as camadas para encontrar camadas de texto/símbolos
-    layers.forEach(layer => {
-      if (layer && layer.type === 'symbol' && layer.id.includes('label')) {
-        // Para camadas específicas de rótulos de países, aplica o filtro
-        if (layer.id === 'country-label' || layer.id.includes('place-country')) {
-          map.current.setFilter(layer.id, [
-            'in',
-            ['get', 'name_en'],
-            ['literal', knownCountries]
-          ]);
-        }
-      }
-    });
-  };
-  
-  const highlightOtherPlayersLabels = () => {
-    if (!map.current) return;
-  
-    const otherCountries = getOtherPlayersCountries();
-    if (!otherCountries.length) return;
-    
-    // Encontra todas as camadas de texto (labels) no mapa
-    const layers = map.current.getStyle().layers;
-    if (!layers) return;
-    
-    // Para formatar arrays para a expressão match do Mapbox
-    const formatMatchExpression = (countries, trueValue, falseValue) => {
-      const result = ['match', ['get', 'name_en']];
-      countries.forEach(country => {
-        result.push(country);
-        result.push(trueValue);
-      });
-      result.push(falseValue);
-      return result;
-    };
-    
-    // Itera por todas as camadas para encontrar camadas de texto/símbolos
-    layers.forEach(layer => {
-      if (layer && layer.type === 'symbol' && layer.id.includes('label')) {
-        // Para camadas específicas de rótulos de países, aplica o destaque
-        if (layer.id === 'country-label' || layer.id.includes('place-country')) {
-          // Define texto branco para países de outros jogadores
-          map.current.setPaintProperty(
-            layer.id, 
-            'text-color', 
-            formatMatchExpression(otherCountries, '#ffffff', '#444')
-          );
-          
-          // Define contorno preto para países de outros jogadores
-          map.current.setPaintProperty(
-            layer.id, 
-            'text-halo-color', 
-            formatMatchExpression(otherCountries, 'rgba(0, 0, 0, 0.5)', '#ffffff')
-          );
-          
-          // Aumenta o brilho do contorno para melhor legibilidade
-          map.current.setPaintProperty(
-            layer.id, 
-            'text-halo-width', 
-            formatMatchExpression(otherCountries, 1.5, 0.75)
-          );
-        }
-      }
-    });
-  };
-
   useEffect(() => {
     if (loaded && countriesData && map.current) {
       setupMapLayers();
-      
-      // Chamadas explícitas para garantir que os rótulos sejam sempre atualizados
-      hideLabelsForUnknownCountries();
-      highlightOtherPlayersLabels();
     }
   }, [loaded, countriesData, myCountry, players]);
 
@@ -303,12 +217,6 @@ const MapView = () => {
       // Atualiza a expressão de cores da borda
       mapInstance.setPaintProperty('country-borders', 'line-color', borderColorExpression);
     }
-
-    // Oculta rótulos de países que não estão em countriesData
-    hideLabelsForUnknownCountries();
-    
-    // Destaca os rótulos dos países de outros jogadores
-    highlightOtherPlayersLabels();
     
     // Adiciona os círculos dos estreitos estratégicos
     setTimeout(() => {

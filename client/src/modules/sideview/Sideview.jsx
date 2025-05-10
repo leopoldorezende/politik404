@@ -19,13 +19,6 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
       setActiveTab('country');
     }
   }, [selectedCountry]);
-  
-  // Retornar para o chat público quando mudar de aba
-  useEffect(() => {
-    if (activeTab !== 'chat' && currentChatMode !== 'public') {
-      dispatch(setChatMode('public'));
-    }
-  }, [activeTab, dispatch]);
 
   // Quando clicar na aba de chat, marca as mensagens como lidas para o modo atual
   const handleChatTabClick = () => {
