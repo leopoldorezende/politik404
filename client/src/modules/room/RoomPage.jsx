@@ -5,13 +5,24 @@ import './RoomPage.css';
 
 const RoomPage = () => {
   const [roomName, setRoomName] = useState('');
+  const [roomDuration, setRoomDuration] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [connectionRetries, setConnectionRetries] = useState(0);
   const [joiningRoomName, setJoiningRoomName] = useState('');
+  const [joinAttemptTime, setJoinAttemptTime] = useState(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
   
   const dispatch = useDispatch();
   const rooms = useSelector(state => state.rooms.rooms);
   const username = useSelector(state => state.auth.username);
+
+  // Atualizar o tempo a cada segundo
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
 
   // Função para garantir conexão e atualizar lista de salas
   const ensureConnectionAndUpdateRooms = () => {
@@ -68,34 +79,48 @@ const RoomPage = () => {
 
   // Efeito para verificar se já passou tempo suficiente desde a última tentativa de entrar na sala
   useEffect(() => {
-    if (joiningRoomName) {
-      const timer = setTimeout(() => {
+    if (joiningRoomName && joinAttemptTime) {
+      const now = Date.now();
+      const elapsed = now - joinAttemptTime;
+      
+      // Se passou mais de 10 segundos e ainda estamos tentando entrar na mesma sala,
+      // podemos considerar que houve um problema
+      if (elapsed > 10000) {
         console.log(`Tempo limite para entrar na sala ${joiningRoomName} atingido.`);
         setIsLoading(false);
         setJoiningRoomName('');
+        setJoinAttemptTime(null);
         
         // Mostrar mensagem para o usuário
         alert(`Não foi possível entrar na sala ${joiningRoomName}. Por favor, tente novamente.`);
-      }, 10000);
-
-      return () => clearTimeout(timer);
+      }
     }
-  }, [joiningRoomName]);
+  }, [joiningRoomName, joinAttemptTime]);
 
-  const handleCreateRoom = () => {
-    if (!roomName.trim()) {
-      alert('Por favor, digite um nome para a sala!');
+    const handleCreateRoom = () => {
+    
+    if (!roomName.trim() || !roomDuration) {
+      alert('Por favor, preencha o nome da sala e a duração!');
+      return;
+    }
+    
+    // Validar e usar valor padrão de 30 se não houver duração
+    const duration = roomDuration ? parseInt(roomDuration) : 30;
+    
+    if (isNaN(duration) || duration < 1 || duration > 90) {
+      alert('Por favor, insira uma duração válida entre 1 e 90 minutos!');
       return;
     }
     
     setIsLoading(true);
     console.log(`Iniciando criação da sala: ${roomName}`);
     
-    // Criar a sala
-    socketApi.createRoom(roomName);
+    // Criar a sala com duração
+    socketApi.createRoom({ name: roomName, duration: duration * 60000 });
     
-    // Limpar o campo de entrada
+    // Limpar os campos de entrada
     setRoomName('');
+    setRoomDuration(''); // Adicione esta linha
     
     // Atualizar lista de salas após um delay
     setTimeout(() => {
@@ -114,9 +139,12 @@ const RoomPage = () => {
     console.log(`Tentando entrar na sala: ${roomName}`);
     setIsLoading(true);
     setJoiningRoomName(roomName);
+    setJoinAttemptTime(Date.now());
     
     // Entrar na sala
     socketApi.joinRoom(roomName);
+    
+    // Se não conseguir entrar na sala depois de 10 segundos, isso será tratado pelo useEffect acima
   };
 
   const handleRefreshRooms = () => {
@@ -141,6 +169,14 @@ const RoomPage = () => {
     }
   };
 
+  // Função para formatar tempo em mm:ss
+  const formatTime = (ms) => {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
   // Função para verificar se uma sala específica está sendo tentada
   const isJoiningThisRoom = (roomName) => {
     return joiningRoomName === roomName;
@@ -162,28 +198,32 @@ const RoomPage = () => {
         <p>Logado como: {username}</p>
       </div>
       <div className="room-actions">
-        <input
-          type="text"
-          id="room-name"
-          value={roomName}
-          onChange={(e) => setRoomName(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Nome da sala"
-          disabled={isLoading || joiningRoomName}
-        />
+        <div>
+          <input
+            type="text"
+            id="room-name"
+            value={roomName}
+            onChange={(e) => setRoomName(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Nome da sala"
+            disabled={isLoading || joiningRoomName}
+          />
+          <input
+            type="number"
+            value={roomDuration}
+            onChange={(e) => setRoomDuration(parseInt(e.target.value))}
+            min="1"
+            max="90"
+            placeholder="Duração (minutos)"
+            disabled={isLoading || joiningRoomName}
+          />
+        </div>
         <button 
           id="create-room-button" 
           onClick={handleCreateRoom}
           disabled={isLoading || joiningRoomName || !roomName.trim()}
         >
           {isLoading && !joiningRoomName ? 'Criando...' : 'Criar Sala'}
-        </button>
-        <button 
-          id="refresh-rooms-button" 
-          onClick={handleRefreshRooms}
-          disabled={isLoading || joiningRoomName}
-        >
-          {isLoading && !joiningRoomName ? 'Atualizando...' : 'Atualizar Lista'}
         </button>
       </div>
       <div className="room-list-container">
@@ -197,43 +237,54 @@ const RoomPage = () => {
             <li className="no-rooms">
               {isLoading && !joiningRoomName 
                 ? 'Carregando salas...' 
-                : connectionRetries > 0
-                  ? 'Tentando reconectar... Por favor, aguarde.'
-                  : 'Nenhuma sala disponível.\nCrie uma nova!'}
+                : 'Nenhuma sala disponível.\nCrie uma nova!'}
             </li>
           ) : (
-            rooms.map((room) => (
-              <li key={room.name} className="room-item">
-                <div className="room-details">
-                  <h4>{room.name}</h4>
-                  <p>Criador: {room.owner}</p>
-                  <p>Jogadores: {room.playerCount}</p>
-                  <p>Criada em: {new Date(room.createdAt).toLocaleString('pt-BR')}</p>
-                </div>
-                <button 
-                  className="join-room-btn" 
-                  onClick={() => handleJoinRoom(room.name)}
-                  disabled={isLoading || joiningRoomName}
-                >
-                  {isJoiningThisRoom(room.name) ? 'Entrando...' : 'Entrar'}
-                </button>
-              </li>
-            ))
+            [...rooms]  // Criar uma cópia do array antes de ordenar
+              .sort((a, b) => {
+                // Ordenar por mais recente primeiro (por createdAt ou timestamp)
+                const dateA = new Date(a.createdAt).getTime();
+                const dateB = new Date(b.createdAt).getTime();
+                return dateB - dateA; // Ordem decrescente (mais recente primeiro)
+              })
+              .map((room) => {
+                const timeRemaining = room.expiresAt ? Math.max(0, room.expiresAt - currentTime) : 0;
+                const totalTime = room.duration || 0;
+                const isExpired = timeRemaining === 0 && room.expiresAt > 0; // Verificar se a sala expirou
+                
+                return (
+                  <li key={room.name} className={`room-item ${isExpired ? 'room-expired' : ''}`}>
+                    <div className="room-details">
+                      <h4>{room.name} - {formatTime(totalTime)} - Restante: {formatTime(timeRemaining)}</h4>
+                      <p>Criador: {room.owner}</p>
+                      <p>Jogadores: {room.playerCount}</p>
+                      {/* <p>Criada em: {new Date(room.createdAt).toLocaleString('pt-BR')}</p> */}
+                    </div>
+                    <button 
+                      className="join-room-btn" 
+                      onClick={() => handleJoinRoom(room.name)}
+                      disabled={isLoading || joiningRoomName}
+                    >
+                      {isExpired ? 'Visualizar' : (isJoiningThisRoom(room.name) ? 'Entrando...' : 'Entrar')}
+                    </button>
+                  </li>
+                );
+              })
           )}
         </ul>
       </div>
       
-      {/* Status de conexão e debugging */}
-      {(connectionRetries > 0 || joiningRoomName) && (
-        <div className="connection-status">
-          {connectionRetries > 0 && (
-            <p>Tentativa de reconexão: {connectionRetries}/3</p>
-          )}
-          {joiningRoomName && (
-            <p>Tentando entrar em: {joiningRoomName}</p>
-          )}
-        </div>
-      )}
+      {/* Adicionar logs para depuração */}
+      <div className="debug-info" style={{display: 'none'}}>
+        <pre>
+          {JSON.stringify({
+            username, 
+            roomsCount: rooms.length, 
+            joiningRoom: joiningRoomName,
+            loading: isLoading
+          }, null, 2)}
+        </pre>
+      </div>
     </div>
   );
 };

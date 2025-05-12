@@ -138,6 +138,19 @@ export const setupSocketEvents = (socket, socketApi) => {
     }
   });
   
+  // Handler para quando a sala é deletada (manual ou automaticamente)
+  socket.on('roomDeleted', (data) => {
+    console.log('Sala deletada:', data);
+    // Faz o mesmo que roomLeft - volta para a tela de salas
+    store.dispatch(leaveRoom());
+    store.dispatch(resetCountryState());
+    
+    // Opcional: mostrar alerta para o usuário
+    if (data.message) {
+      alert(data.message);
+    }
+  });
+  
   // ======================================================================
   // EVENTOS DE CHAT
   // ======================================================================

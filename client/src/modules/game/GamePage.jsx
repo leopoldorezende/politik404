@@ -10,10 +10,102 @@ import './GamePage.css';
 const GamePage = () => {
   const dispatch = useDispatch();
   const myCountry = useSelector(state => state.game.myCountry);
+  const currentRoom = useSelector(state => state.rooms.currentRoom);
+  const rooms = useSelector(state => state.rooms.rooms);  // Adicionar lista de salas
+  const players = useSelector(state => state.game.players);  // Lista de jogadores
+  const countriesData = useSelector(state => state.game.countriesData);  // Dados dos países
   
   const [sideviewActive, setSideviewActive] = useState(true);
   const [sidetoolsActive, setSidetoolsActive] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  const [showTimeupPopup, setShowTimeupPopup] = useState(false);  // Estado do popup
+  
+  // Atualizar o tempo a cada segundo
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  // Função para formatar tempo em MM:SS
+  const formatTimeRemaining = (ms) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+  
+  // Buscar dados da sala atual na lista de salas para obter informações completas de tempo
+  const roomData = currentRoom ? rooms.find(room => room.name === currentRoom.name) : null;
+  const timeRemaining = roomData?.expiresAt ? Math.max(0, roomData.expiresAt - currentTime) : 0;
+  
+  // Verificar se o tempo acabou e mostrar popup
+  useEffect(() => {
+    if (roomData && timeRemaining === 0 && roomData.expiresAt > 0 && !showTimeupPopup) {
+      setShowTimeupPopup(true);
+    }
+  }, [timeRemaining, roomData, showTimeupPopup]);
+  
+  // Debug para verificar os valores
+  useEffect(() => {
+    if (currentRoom) {
+      console.log('Current Room:', currentRoom);
+      console.log('Room Data from list:', roomData);
+      console.log('Expires At:', roomData?.expiresAt);
+      console.log('Current Time:', currentTime);
+      console.log('Time Remaining:', timeRemaining);
+    }
+  }, [currentRoom, roomData, currentTime, timeRemaining]);
+  
+  // Obter países com jogadores humanos e seus nomes
+  const getCountriesWithPlayers = () => {
+    if (!players) return {};
+    
+    const countryPlayerMap = {};
+    
+    players.forEach(player => {
+      let username = null;
+      let country = null;
+      
+      if (typeof player === 'object') {
+        username = player.username;
+        country = player.country;
+      } else if (typeof player === 'string') {
+        const match = player.match(/^(.*?)\s*\((.*)\)$/);
+        if (match) {
+          username = match[1];
+          country = match[2];
+        }
+      }
+      
+      if (username && country) {
+        countryPlayerMap[country] = username;
+      }
+    });
+    
+    return countryPlayerMap;
+  };
+  
+  // Obter lista completa de países para o popup
+  const getAllCountries = () => {
+    if (!countriesData) return [];
+    
+    const countryPlayerMap = getCountriesWithPlayers();
+    
+    return Object.keys(countriesData).map(countryName => ({
+      name: countryName,
+      hasPlayer: !!countryPlayerMap[countryName],
+      playerName: countryPlayerMap[countryName] || null
+    })).sort((a, b) => a.name.localeCompare(b.name));
+  };
+  
+  // Função para fechar o popup
+  const closeTimeupPopup = () => {
+    setShowTimeupPopup(false);
+  };
   
   useEffect(() => {
     const loadAllData = async () => {
@@ -32,7 +124,12 @@ const GamePage = () => {
     };
     
     loadAllData();
-  }, [dispatch]);
+    
+    // Atualizar lista de salas quando entrar na GamePage
+    if (currentRoom) {
+      dispatch({ type: 'socket/getRooms' });
+    }
+  }, [dispatch, currentRoom]);
   
   const handleExitRoom = () => {
     dispatch({ type: 'socket/leaveRoom' });
@@ -119,6 +216,17 @@ const GamePage = () => {
 
   return (
     <div id="game-screen">
+      {/* Timer no topo da tela */}
+      {currentRoom && (
+        <div className="room-timer">
+          <div className="timer-content">
+            <span className={`timer-value ${timeRemaining <= 100000 ? 'timer-warning' : ''}`}>
+              {formatTimeRemaining(timeRemaining)}
+            </span>
+          </div>
+        </div>
+      )}
+      
       <div id="map-container">
         <MapView />
       </div>
@@ -142,6 +250,41 @@ const GamePage = () => {
         onClose={toggleSideview} 
         isActive={sideviewActive}
       />
+      
+      {/* Popup quando o tempo acaba */}
+      {showTimeupPopup && (
+        <div className="timeup-popup-overlay">
+          <div className="timeup-popup">
+            <div className="timeup-popup-header">
+              <h2>Tempo Esgotado!</h2>
+              {/* <button className="close-popup-btn" onClick={closeTimeupPopup}>×</button> */}
+            </div>
+            <div className="timeup-popup-content">
+              <h3>Resultados da Sala</h3>
+              <div className="countries-list">
+                {getAllCountries().map((country, index) => (
+                  <div 
+                    key={index} 
+                    className={`country-item ${country.hasPlayer ? 'with-player' : 'without-player'}`}
+                  >
+                    <span className="country-name">{country.name}</span>
+                    {country.hasPlayer && (
+                      <span className="player-indicator" title={country.playerName}>
+                        {country.playerName}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="timeup-popup-footer">
+              <button className="exit-room-btn" onClick={handleExitRoom}>
+                Sair da Sala
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -69,7 +69,10 @@ function sendUpdatedRoomsList(io, gameState) {
     name,
     owner: room.owner,
     playerCount: room.players.length,
-    createdAt: room.createdAt
+    createdAt: room.createdAt,
+    duration: room.duration,
+    createdTimestamp: room.createdTimestamp,
+    expiresAt: room.expiresAt
   }));
   
   io.emit('roomsList', roomsList);

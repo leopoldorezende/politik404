@@ -72,9 +72,13 @@ export const socketApi = {
     socket.emit('getRooms');
   },
   
-  createRoom: (roomName) => {
+  createRoom: (roomData) => {
     const socket = getSocketInstance() || socketApi.connect();
-    socket.emit('createRoom', roomName);
+    // Se for string (compatibilidade com código antigo), converte para objeto
+    if (typeof roomData === 'string') {
+      roomData = { name: roomData, duration: 30 * 60000 }; // 30 minutos padrão
+    }
+    socket.emit('createRoom', roomData);
   },
   
   joinRoom: (roomName) => {

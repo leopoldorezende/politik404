@@ -2,56 +2,12 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
-
-  font-synthesis: none;
+  color-scheme: light dark;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
 }
 
 @media (prefers-color-scheme: light) {
@@ -59,21 +15,12 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
 }
 
-
-/* shared.css - Common styles across components */
-
-/* Reset and base styles */
+/* Base reset */
 * {
-  outline: none !important;
   box-sizing: border-box;
+  outline: none !important;
 }
 
 html, body {
@@ -86,48 +33,53 @@ html, body {
   font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }
 
-/* Common layout elements */
-.container {
+body {
   display: flex;
-  flex-direction: column;
-  height: 100%;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
 }
 
-/* Progress bars used in multiple components */
-.progress-bar {
-  height: 10px;
-  flex-grow: 1;
-  background-color: #e0e0e0;
-  border-radius: 5px;
-  overflow: hidden;
-  margin: 0 10px;
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
 }
 
-.progress-fill {
-  height: 100%;
-  border-radius: 5px;
+a:hover {
+  color: #535bf2;
 }
 
-.progress-fill.high {
-  background-color: #28a745;
+@media (prefers-color-scheme: light) {
+  a:hover {
+    color: #747bff;
+  }
 }
 
-.progress-fill.medium {
-  background-color: #ffc107;
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
 }
 
-.progress-fill.low {
-  background-color: #dc3545;
-}
-
-/* Common button styles */
 button {
   cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
   border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
-  font-size: 14px;
-  transition: background-color 0.2s;
+  border-radius: 5px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  transition: background-color 0.2s, border-color 0.25s;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
 }
 
 .action-btn {
@@ -152,28 +104,14 @@ button {
   background-color: #c82333;
 }
 
-/* Status indicators */
-.status-yes {
-  color: #f44336;
-  font-weight: bold;
+/* Layout */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-.status-no {
-  color: #4caf50;
-}
-
-/* Sidebar layouts */
-.sidetools {
-  background: rgba(190, 208, 224, 0.8);
-  backdrop-filter: blur(10px);
-}
-
-.sideview {
-  background: rgba(20, 30, 40, 0.8);
-  backdrop-filter: blur(10px);
-}
-
-/* Tab navigation common styles */
+/* Tabs */
 .tabs {
   display: flex;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -184,8 +122,8 @@ button {
   text-align: center;
   padding: 8px 5px;
   cursor: pointer;
-  transition: background-color 0.2s;
   position: relative;
+  transition: background-color 0.2s;
 }
 
 .tab:hover {
@@ -206,12 +144,51 @@ button {
   display: block;
 }
 
-/* Notification badges */
+/* Progress bars */
+.progress-bar {
+  height: 10px;
+  flex-grow: 1;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  margin: 0 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 5px;
+}
+
+.progress-fill.high { background-color: #28a745; }
+.progress-fill.medium { background-color: #ffc107; }
+.progress-fill.low { background-color: #dc3545; }
+
+/* Status */
+.status-yes {
+  color: #f44336;
+  font-weight: bold;
+}
+
+.status-no {
+  color: #4caf50;
+}
+
+/* Side panels */
+.sidetools {
+  background: rgba(190, 208, 224, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.sideview {
+  background: rgba(20, 30, 40, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+/* Badges */
 .badge {
   position: absolute;
   top: 4px;
   right: 4px;
-  display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -224,49 +201,23 @@ button {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(255, 56, 96, 0.7);
   }
-  
   70% {
     transform: scale(1);
     box-shadow: 0 0 0 5px rgba(255, 56, 96, 0);
   }
-  
   100% {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(255, 56, 96, 0);
   }
 }
 
-/* Empty state messages */
-.no-data {
-  color: #888;
-  font-style: italic;
-  text-align: center;
-  padding: 15px 0;
-}
-
-
-/* App.css */
-
-* {
-  outline: none !important;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
-  color: #eee;
-  background-color: #1F262F;
-  font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-}
-
-ul { 
+/* Others */
+ul {
   margin: 0;
   padding: 0 0 16px 0;
 }
 
-ul li { 
+ul li {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -274,24 +225,17 @@ ul li {
 
 input {
   padding: 10px;
-  margin: 0;
   font-size: 16px;
   border-radius: 4px;
   border: 0;
+  background: rgba(255, 255, 255, .06)
 }
 
-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #0056b3;
+.no-data {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 15px 0;
 }
 
 #game-screen {
@@ -300,6 +244,6 @@ button:hover {
   height: 100vh;
 }
 
-.mapboxgl-ctrl-logo { 
-  display: none !important; 
-} 
+.mapboxgl-ctrl-logo {
+  display: none !important;
+}

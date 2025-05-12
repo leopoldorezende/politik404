@@ -9,6 +9,9 @@ import {
   sendUpdatedPlayersList 
 } from './roomNotifications.js';
 
+// Store room timers
+const roomTimers = new Map();
+
 /**
  * Configures event handlers related to room management
  * @param {Object} io - Socket.io instance
@@ -69,47 +72,105 @@ function setupRoomManagement(io, socket, gameState) {
     }
   };
 
+  // Function to automatically delete room after timeout
+  const scheduleRoomDeletion = (roomName, duration = 30000) => {
+    const timerId = setTimeout(() => {
+      console.log(`Room "${roomName}" expired after ${duration/1000} seconds`);
+      
+      // Notify all players in the room
+      io.to(roomName).emit('roomDeleted', { 
+        name: roomName, 
+        message: `This room has expired after ${duration/1000} seconds` 
+      });
+      
+      // Remove all players from the room
+      const socketsInRoom = io.sockets.adapter.rooms.get(roomName);
+      if (socketsInRoom) {
+        for (const socketId of socketsInRoom) {
+          const clientSocket = io.sockets.sockets.get(socketId);
+          if (clientSocket) {
+            clientSocket.leave(roomName);
+            // Remove user-room association
+            const clientUsername = clientSocket.username;
+            if (clientUsername) {
+              gameState.userToRoom.delete(clientUsername);
+            }
+          }
+        }
+      }
+      
+      // Clean up room-related data
+      cleanupRoomData(gameState, roomName);
+      
+      // Save to Redis
+      saveRoomsToRedis();
+
+      // Update room list for everyone
+      sendUpdatedRoomsList(io, gameState);
+      
+      // Clear timer from map
+      roomTimers.delete(roomName);
+    }, duration);
+    
+    roomTimers.set(roomName, timerId);
+  };
+
   // Get room list
   socket.on('getRooms', () => {
     console.log('Sending room list');
     sendUpdatedRoomsList(io, gameState);
   });
   
-  // Create room
-  socket.on('createRoom', (roomName) => {
-    console.log(`Request to create room: ${roomName}`);
-    const username = verifyAuth();
-    if (!username) return;
-    
-    if (!roomName || typeof roomName !== 'string' || roomName.trim() === '') {
-      socket.emit('error', 'Invalid room name');
-      return;
-    }
-    
-    if (gameState.rooms.has(roomName)) {
-      socket.emit('error', 'Room with this name already exists');
-      return;
-    }
-    
-    // Create room with standardized structure using helper function
-    const newRoom = gameState.createRoom(roomName, username);
-    
-    // Store room in the map
-    gameState.rooms.set(roomName, newRoom);
-    console.log(`Room "${roomName}" created by ${username}`);
-    
-    // Inicializar estados dos países para esta sala
-    countryStateManager.initializeRoom(roomName, gameState.countriesData);
-    console.log(`Initialized country states for room ${roomName}`);
-    
-    // Save to Redis
-    saveRoomsToRedis();
+// Create room
+  socket.on('createRoom', (roomData) => {
+      // Mantém compatibilidade - se receber string, converte para objeto
+      if (typeof roomData === 'string') {
+        roomData = { name: roomData, duration: 30000 }; // 30 segundos padrão
+      }
+      
+      const { name: roomName, duration = 30000 } = roomData;
+      
+      console.log(`Request to create room: ${roomName} with duration: ${duration/1000} seconds`);
+      const username = verifyAuth();
+      if (!username) return;
+      
+      if (!roomName || typeof roomName !== 'string' || roomName.trim() === '') {
+        socket.emit('error', 'Invalid room name');
+        return;
+      }
+      
+      if (gameState.rooms.has(roomName)) {
+        socket.emit('error', 'Room with this name already exists');
+        return;
+      }
+      
+      // Create room with standardized structure using helper function
+      const newRoom = gameState.createRoom(roomName, username);
+      
+      // Adicionar informações de tempo
+      newRoom.duration = duration;
+      newRoom.createdTimestamp = Date.now();
+      newRoom.expiresAt = Date.now() + duration;
+      
+      // Store room in the map
+      gameState.rooms.set(roomName, newRoom);
+      console.log(`Room "${roomName}" created by ${username}`);
+      
+      // Inicializar estados dos países para esta sala
+      countryStateManager.initializeRoom(roomName, gameState.countriesData);
+      console.log(`Initialized country states for room ${roomName}`);
+      
+      // Save to Redis
+      saveRoomsToRedis();
+      
+      // Schedule automatic deletion with custom duration
+      scheduleRoomDeletion(roomName, duration);
 
-    // Notify client that created the room
-    socket.emit('roomCreated', { name: roomName, success: true });
-    
-    // Update room list for all connected clients
-    sendUpdatedRoomsList(io, gameState);
+      // Notify client that created the room
+      socket.emit('roomCreated', { name: roomName, success: true });
+      
+      // Update room list for all connected clients
+      sendUpdatedRoomsList(io, gameState);
   });
   
   // Delete room (owner only)
@@ -118,6 +179,12 @@ function setupRoomManagement(io, socket, gameState) {
     if (!result) return;
     
     const { username, room } = result;
+    
+    // Clear the auto-deletion timer if exists
+    if (roomTimers.has(roomName)) {
+      clearTimeout(roomTimers.get(roomName));
+      roomTimers.delete(roomName);
+    }
     
     // Notify all players in the room
     io.to(roomName).emit('roomDeleted', { 
