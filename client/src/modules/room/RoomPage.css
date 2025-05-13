@@ -184,8 +184,14 @@
   /* Mobile responsiveness */
   @media screen and (max-width: 1200px) {
     #room-selection-screen {
-      left: 5%;
-      width: 90%;
+      left: 0%;
+      width: 100%;
+    }
+    
+    .room-item {
+      flex-direction: column;
+      align-items: first baseline;
+      gap: 8px;
     }
     
     .room-actions {
