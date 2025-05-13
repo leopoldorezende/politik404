@@ -273,7 +273,7 @@
   width: 40px;
   height: 40px;
   border-radius: 4px;
-  transition: background-color 0.2s; /* Apenas transição de cor */
+  transition: background-color 0.3s; /* Apenas transição de cor */
 }
 
 

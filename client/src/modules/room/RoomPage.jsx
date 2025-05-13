@@ -147,21 +147,6 @@ const RoomPage = () => {
     // Se não conseguir entrar na sala depois de 10 segundos, isso será tratado pelo useEffect acima
   };
 
-  const handleRefreshRooms = () => {
-    // Não atualizar se estiver tentando entrar em uma sala
-    if (joiningRoomName) return;
-    
-    console.log('Atualizando lista de salas');
-    setIsLoading(true);
-    
-    // Atualizar lista de salas
-    socketApi.getRooms();
-    
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-  };
-
   // Handle Enter key press
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !isLoading) {
