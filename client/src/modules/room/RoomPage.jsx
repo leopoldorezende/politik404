@@ -171,7 +171,7 @@ const RoomPage = () => {
     return (
       <div id="room-selection-screen">
         <h2>Politik404</h2>
-        <p>Você precisa estar autenticado para acessar as salas.</p>
+        <p>Você precisa estar autenticado para acessar as partidas.</p>
       </div>
     );
   }
@@ -190,7 +190,7 @@ const RoomPage = () => {
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Nome da sala"
+            placeholder="Nome da partida"
             disabled={isLoading || joiningRoomName}
           />
           <input
@@ -208,12 +208,12 @@ const RoomPage = () => {
           onClick={handleCreateRoom}
           disabled={isLoading || joiningRoomName || !roomName.trim()}
         >
-          {isLoading && !joiningRoomName ? 'Criando...' : 'Criar Sala'}
+          {isLoading && !joiningRoomName ? 'Criando...' : 'Criar Partida'}
         </button>
       </div>
       <div className="room-list-container">
         <h3>
-          Salas Disponíveis 
+          Partidas Disponíveis 
           {isLoading && !joiningRoomName && ' (Carregando...)'}
           {joiningRoomName && ` (Entrando em ${joiningRoomName}...)`}
         </h3>
@@ -221,8 +221,8 @@ const RoomPage = () => {
           {rooms.length === 0 ? (
             <li className="no-rooms">
               {isLoading && !joiningRoomName 
-                ? 'Carregando salas...' 
-                : 'Nenhuma sala disponível.\nCrie uma nova!'}
+                ? 'Carregando partidas...' 
+                : 'Nenhuma partida disponível.\nCrie uma nova!'}
             </li>
           ) : (
             [...rooms]  // Criar uma cópia do array antes de ordenar

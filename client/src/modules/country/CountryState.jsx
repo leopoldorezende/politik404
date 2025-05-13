@@ -43,7 +43,7 @@ const CountryState = ({ roomName, countryName }) => {
   if (!room || !country) {
     return (
       <div className="country-state-display no-data">
-        <p>Selecione uma sala e um país para ver seus indicadores.</p>
+        <p>Selecione uma partida e um país para ver seus indicadores.</p>
       </div>
     );
   }

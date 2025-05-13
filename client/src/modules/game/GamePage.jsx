@@ -260,7 +260,7 @@ const GamePage = () => {
               {/* <button className="close-popup-btn" onClick={closeTimeupPopup}>×</button> */}
             </div>
             <div className="timeup-popup-content">
-              <h3>Resultados da Sala</h3>
+              <h3>Resultados da Partida</h3>
               <div className="countries-list">
                 {getAllCountries().map((country, index) => (
                   <div 
@@ -279,7 +279,7 @@ const GamePage = () => {
             </div>
             <div className="timeup-popup-footer">
               <button className="exit-room-btn" onClick={handleExitRoom}>
-                Sair da Sala
+                Sair da Partida
               </button>
             </div>
           </div>

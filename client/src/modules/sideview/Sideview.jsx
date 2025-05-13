@@ -128,16 +128,16 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
           Expandir seu mercado para o exterior e atrapalhar a expansão de mercados dos outros países. O cálculo base de evolução de mercado é o crescimento percentual de comércio.
         </p>
 
-        <h4>Informações da Sala</h4>
+        <h4>Informações da Partida</h4>
         <div id="room-details">
-          <p><strong>Nome da sala:</strong> <span id="room-name-display">{currentRoom?.name}</span></p>
+          <p><strong>Nome da partida:</strong> <span id="room-name-display">{currentRoom?.name}</span></p>
           <p><strong>Criador:</strong> <span id="room-owner-display">{currentRoom?.owner}</span></p>
           <p><strong>Jogadores:</strong> <span id="room-players-count">{currentRoom?.playerCount}</span></p>
           <p><strong>Criada em:</strong> <span id="room-created-at">
             {currentRoom?.createdAt && new Date(currentRoom.createdAt).toLocaleString('pt-BR')}
           </span></p>
           <div className="room-info">
-            <button id="exit-room-button" onClick={onExitRoom}>Sair da Sala</button>
+            <button id="exit-room-button" onClick={onExitRoom}>Sair da Partida</button>
           </div>
         </div>
         <div id="room-admin-controls"></div>
