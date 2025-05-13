@@ -48,31 +48,34 @@ const RoomPage = () => {
   };
 
   useEffect(() => {
-    // Verificar se o usuário está autenticado
+    // Verificar se o usuário está autenticado e configurar conexão inicial
     if (!username) {
       console.warn('Usuário não está autenticado na tela de salas');
       return;
     }
 
     console.log('Inicializando RoomPage para usuário:', username);
-    
-    // Não definir isLoading aqui para evitar ocultar as salas
-    // setIsLoading(true);
+    setIsLoading(true);
 
-    // Iniciar conexão e carregar salas imediatamente
+    // Iniciar conexão e carregar salas
     ensureConnectionAndUpdateRooms();
     
+    // Finalizar carregamento após um tempo
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
     // Definir intervalo para atualização periódica de salas
     const interval = setInterval(() => {
       // Não atualizar se estiver tentando entrar em uma sala
       if (!joiningRoomName) {
         socketApi.getRooms();
       }
-    }, 10000); // Reduzir para 10 segundos para atualizações mais frequentes
+    }, 30000); // A cada 30 segundos
 
     // Limpar o intervalo ao desmontar
     return () => clearInterval(interval);
-  }, [dispatch, username, joiningRoomName]); // Adicionar joiningRoomName como dependência
+  }, [dispatch, username]);
 
   // Efeito para verificar se já passou tempo suficiente desde a última tentativa de entrar na sala
   useEffect(() => {
@@ -92,9 +95,9 @@ const RoomPage = () => {
         alert(`Não foi possível entrar na sala ${joiningRoomName}. Por favor, tente novamente.`);
       }
     }
-  }, [joiningRoomName, joinAttemptTime, currentTime]); // Adicionar currentTime para verificação contínua
+  }, [joiningRoomName, joinAttemptTime]);
 
-  const handleCreateRoom = () => {
+    const handleCreateRoom = () => {
     
     if (!roomName.trim() || !roomDuration) {
       alert('Por favor, preencha o nome da sala e a duração!');
@@ -117,7 +120,7 @@ const RoomPage = () => {
     
     // Limpar os campos de entrada
     setRoomName('');
-    setRoomDuration('');
+    setRoomDuration(''); // Adicione esta linha
     
     // Atualizar lista de salas após um delay
     setTimeout(() => {
@@ -148,7 +151,7 @@ const RoomPage = () => {
     // Não atualizar se estiver tentando entrar em uma sala
     if (joiningRoomName) return;
     
-    console.log('Atualizando lista de salas manualmente');
+    console.log('Atualizando lista de salas');
     setIsLoading(true);
     
     // Atualizar lista de salas
@@ -228,14 +231,6 @@ const RoomPage = () => {
           Salas Disponíveis 
           {isLoading && !joiningRoomName && ' (Carregando...)'}
           {joiningRoomName && ` (Entrando em ${joiningRoomName}...)`}
-          <button 
-            id="refresh-rooms-button" 
-            onClick={handleRefreshRooms}
-            disabled={isLoading || joiningRoomName}
-            style={{ marginLeft: '10px', fontSize: '14px' }}
-          >
-            ↻ Atualizar
-          </button>
         </h3>
         <ul id="room-list">
           {rooms.length === 0 ? (
@@ -263,14 +258,14 @@ const RoomPage = () => {
                       <h4>{room.name} - {formatTime(totalTime)} - Restante: {formatTime(timeRemaining)}</h4>
                       <p>Criador: {room.owner}</p>
                       <p>Jogadores: {room.playerCount}</p>
+                      {/* <p>Criada em: {new Date(room.createdAt).toLocaleString('pt-BR')}</p> */}
                     </div>
                     <button 
                       className="join-room-btn" 
                       onClick={() => handleJoinRoom(room.name)}
-                      disabled={isLoading || joiningRoomName || isExpired}
-                      title={isExpired ? 'Esta sala já expirou' : ''}
+                      disabled={isLoading || joiningRoomName}
                     >
-                      {isExpired ? 'Expirou' : (isJoiningThisRoom(room.name) ? 'Entrando...' : 'Entrar')}
+                      {isExpired ? 'Visualizar' : (isJoiningThisRoom(room.name) ? 'Entrando...' : 'Entrar')}
                     </button>
                   </li>
                 );
@@ -279,24 +274,17 @@ const RoomPage = () => {
         </ul>
       </div>
       
-      {/* Mostrar informações de debug quando houver rooms */}
-      {rooms.length > 0 && process.env.NODE_ENV === 'development' && (
-        <div className="debug-info" style={{display: 'block', fontSize: '12px', marginTop: '20px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '5px'}}>
-          <details>
-            <summary>Debug Info (clique para expandir)</summary>
-            <pre style={{fontSize: '11px', marginTop: '10px'}}>
-              {JSON.stringify({
-                username, 
-                roomsCount: rooms.length,
-                rooms: rooms.map(r => ({ name: r.name, expired: r.expiresAt < currentTime })),
-                joiningRoom: joiningRoomName,
-                loading: isLoading,
-                currentTime: new Date(currentTime).toISOString()
-              }, null, 2)}
-            </pre>
-          </details>
-        </div>
-      )}
+      {/* Adicionar logs para depuração */}
+      <div className="debug-info" style={{display: 'none'}}>
+        <pre>
+          {JSON.stringify({
+            username, 
+            roomsCount: rooms.length, 
+            joiningRoom: joiningRoomName,
+            loading: isLoading
+          }, null, 2)}
+        </pre>
+      </div>
     </div>
   );
 };
