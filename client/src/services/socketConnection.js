@@ -40,7 +40,7 @@ export const initializeSocket = () => {
   const sessionId = getSessionId();
   const connectionOptions = {
     withCredentials: true,
-    transports: ['polling'], // Usar polling primeiro para melhor compatibilidade
+    transports: ['websocket'], // Usar polling primeiro para melhor compatibilidade
     reconnection: true,
     reconnectionAttempts: 10,
     reconnectionDelay: 1000,
