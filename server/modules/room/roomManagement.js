@@ -72,49 +72,6 @@ function setupRoomManagement(io, socket, gameState) {
     }
   };
 
-  // Function to automatically delete room after timeout
-  const scheduleRoomDeletion = (roomName, duration = 30000) => {
-    const timerId = setTimeout(() => {
-      console.log(`Room "${roomName}" expired after ${duration/1000} seconds`);
-      
-      // Notify all players in the room
-      io.to(roomName).emit('roomDeleted', { 
-        name: roomName, 
-        message: `This room has expired after ${duration/1000} seconds` 
-      });
-      
-      // Remove all players from the room
-      const socketsInRoom = io.sockets.adapter.rooms.get(roomName);
-      if (socketsInRoom) {
-        for (const socketId of socketsInRoom) {
-          const clientSocket = io.sockets.sockets.get(socketId);
-          if (clientSocket) {
-            clientSocket.leave(roomName);
-            // Remove user-room association
-            const clientUsername = clientSocket.username;
-            if (clientUsername) {
-              gameState.userToRoom.delete(clientUsername);
-            }
-          }
-        }
-      }
-      
-      // Clean up room-related data
-      cleanupRoomData(gameState, roomName);
-      
-      // Save to Redis
-      saveRoomsToRedis();
-
-      // Update room list for everyone
-      sendUpdatedRoomsList(io, gameState);
-      
-      // Clear timer from map
-      roomTimers.delete(roomName);
-    }, duration);
-    
-    roomTimers.set(roomName, timerId);
-  };
-
   // Get room list
   socket.on('getRooms', () => {
     console.log('Sending room list');
@@ -162,9 +119,6 @@ function setupRoomManagement(io, socket, gameState) {
       
       // Save to Redis
       saveRoomsToRedis();
-      
-      // Schedule automatic deletion with custom duration
-      scheduleRoomDeletion(roomName, duration);
 
       // Notify client that created the room
       socket.emit('roomCreated', { name: roomName, success: true });

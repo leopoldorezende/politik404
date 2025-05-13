@@ -193,21 +193,21 @@ button:focus-visible {
   height: 8px;
   border-radius: 50%;
   background-color: #ff3860;
-  animation: pulse 2s infinite;
+  animation: pulse 1s infinite;
 }
 
 @keyframes pulse {
   0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 56, 96, 0.7);
+    transform: scale(0.9);
   }
-  70% {
+  20% {
     transform: scale(1);
-    box-shadow: 0 0 0 5px rgba(255, 56, 96, 0);
+  }
+  80% {
+    transform: scale(1);
   }
   100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 56, 96, 0);
+    transform: scale(0.9);
   }
 }
 
