@@ -7,8 +7,6 @@
   │   ├── index.html  # HTML principal
   │   ├── package.json  # Dependências e scripts principais (monorepo)
   │   ├── public
-  │   │   ├── ico.png
-  │   │   ├── logo.png
   │   │   └── vite2.svg
   │   ├── src
   │   │   ├── App.css
@@ -100,6 +98,7 @@
       │   │   ├── playerStateManager.js  # Gerencia estado dos jogadores
       │   │   └── playerUtils.js  # Funções utilitárias
       │   └── room
+      │       ├── roomExpirationManager.js
       │       ├── roomManagement.js  # Gerenciamento de sala
       │       └── roomNotifications.js  # Notificações da Sala
       ├── package.json  # Dependências e scripts principais (monorepo)

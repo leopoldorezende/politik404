@@ -16,6 +16,10 @@ import {
   cleanupInactiveUsers, 
   registerSocketUserMapping 
 } from './shared/gameStateUtils.js';
+import { 
+  initializeExistingRoomsExpiration,
+  cleanup as cleanupExpirationTimers
+} from './modules/room/roomExpirationManager.js';
 import googleAuthRoutes from './modules/auth/google.js';
 
 // Adicionar isso para lidar com __dirname e __filename no ES modules
@@ -148,6 +152,9 @@ async function restoreRoomsFromRedis() {
         gameState.rooms.set(name, room);
       }
       console.log(`[REDIS] Salas restauradas: ${gameState.rooms.size}`);
+      
+      // Inicializar os timers de expiração para salas existentes
+      initializeExistingRoomsExpiration(io, gameState);
     }
   } catch (err) {
     console.error('[REDIS] Erro ao restaurar salas:', err.message);
@@ -168,6 +175,9 @@ const shutdownHandler = () => {
   if (global.countryStateManager) {
     global.countryStateManager.cleanup();
   }
+  
+  // Limpar os timers de expiração
+  cleanupExpirationTimers();
   
   process.exit(0);
 };

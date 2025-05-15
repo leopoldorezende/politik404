@@ -8,6 +8,10 @@ import {
   sendUpdatedRoomsList, 
   sendUpdatedPlayersList 
 } from './roomNotifications.js';
+import { 
+  scheduleRoomExpiration, 
+  cancelRoomExpiration 
+} from './roomExpirationManager.js';
 
 /**
  * Configures event handlers related to room management
@@ -71,7 +75,6 @@ function setupRoomManagement(io, socket, gameState) {
 
   // Get room list
   socket.on('getRooms', () => {
-    console.log('Sending room list');
     sendUpdatedRoomsList(io, gameState);
   });
   
@@ -79,10 +82,10 @@ function setupRoomManagement(io, socket, gameState) {
   socket.on('createRoom', (roomData) => {
     // Mantém compatibilidade - se receber string, converte para objeto
     if (typeof roomData === 'string') {
-      roomData = { name: roomData, duration: 30000 }; // 30 segundos padrão
+      roomData = { name: roomData, duration: 30 * 60000 }; // 30 minutos padrão em milissegundos
     }
     
-    const { name: roomName, duration = 30000 } = roomData;
+    const { name: roomName, duration = 30 * 60000 } = roomData;
     
     console.log(`Request to create room: ${roomName} with duration: ${duration/1000} seconds`);
     const username = verifyAuth();
@@ -95,6 +98,12 @@ function setupRoomManagement(io, socket, gameState) {
     
     if (gameState.rooms.has(roomName)) {
       socket.emit('error', 'Room with this name already exists');
+      return;
+    }
+    
+    // Validar duração (entre 1 minuto e 2 horas)
+    if (duration < 60000 || duration > 120 * 60000) {
+      socket.emit('error', 'Room duration must be between 1 minute and 2 hours');
       return;
     }
     
@@ -114,6 +123,9 @@ function setupRoomManagement(io, socket, gameState) {
     countryStateManager.initializeRoom(roomName, gameState.countriesData);
     console.log(`Initialized country states for room ${roomName}`);
     
+    // Agendar expiração da sala
+    scheduleRoomExpiration(io, gameState, roomName, newRoom.expiresAt);
+    
     // Save to Redis
     saveRoomsToRedis();
 
@@ -131,10 +143,14 @@ function setupRoomManagement(io, socket, gameState) {
     
     const { username, room } = result;
     
+    // Cancela o timer de expiração se existir
+    cancelRoomExpiration(roomName);
+    
     // Notify all players in the room
     io.to(roomName).emit('roomDeleted', { 
       name: roomName, 
-      message: 'This room has been removed by the owner' 
+      message: 'This room has been removed by the owner',
+      reason: 'manual_deletion'
     });
     
     // Remove all players from the room
@@ -167,7 +183,7 @@ function setupRoomManagement(io, socket, gameState) {
 }
 
 /**
- * Cleans up data related to a room (simplified version)
+ * Cleans up data related to a room
  * @param {Object} gameState - Global game state
  * @param {string} roomName - Name of the room to clean up
  */
