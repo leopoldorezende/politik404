@@ -8,7 +8,6 @@
     display: block;
     margin: 0 0 5px 0;
     font-size: 18px;
-    color: #fff;
     text-align: center;
     padding-bottom: 5px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
@@ -38,25 +37,10 @@
     flex-direction: column;
   }
   
-  .country-stats {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 10px;
-    margin-bottom: 15px;
-  }
   
   .country-stats p {
     margin: 5px 0;
     font-size: 14px;
-  }
-  
-  .defense-section,
-  .borders-section,
-  .economy-section {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 10px;
-    margin-bottom: 15px;
   }
   
   .defense-section h4,

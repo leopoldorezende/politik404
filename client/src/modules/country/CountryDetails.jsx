@@ -69,22 +69,6 @@ const CountryDetails = () => {
           {country.hdi && <p><strong>IDH:</strong> {country.hdi}</p>}
         </div>
 
-        {country.borders && country.borders.length > 0 && (
-          <div className="borders-section">
-            <h4>Fronteiras</h4>
-            <ul className="borders-list">
-              {country.borders.map((border, index) => (
-                <li key={index} className={border.enabled ? 'enabled' : 'disabled'}>
-                  {border.country} 
-                  <span className="border-type">({border.type})</span>
-                  <span className="border-status">
-                    {border.enabled ? '✓ Aberta' : '✕ Fechada'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
     </div>
   );

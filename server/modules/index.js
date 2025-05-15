@@ -10,6 +10,7 @@ import { setupPlayerStateManager } from './player/playerStateManager.js';
 import { setupCountryAssignment } from './country/countryAssignment.js';
 import { setupCountryStateHandlers } from './country/countryStateHandlers.js';
 import { setupChatHandlers } from './chat/chatHandlers.js';
+import { setupEconomyHandlers } from './economy/economyHandlers.js';
 
 /**
  * Inicializa todos os handlers de socket
@@ -29,6 +30,7 @@ function initializeSocketHandlers(io, socket, gameState) {
   setupCountryAssignment(io, socket, gameState);
   setupCountryStateHandlers(io, socket, gameState); 
   setupChatHandlers(io, socket, gameState);
+  setupEconomyHandlers(io, socket, gameState);
   
   console.log('Todos os handlers inicializados com sucesso');
 }

@@ -1,9 +1,7 @@
 /**
  * Handlers centralizados para gerenciamento de jogadores
+ * ARQUIVO SIMPLIFICADO - Remove delegação desnecessária
  */
-
-import { setupPlayerRoomHandlers } from './playerRoomHandlers.js';
-import { setupPlayerStateManager } from './playerStateManager.js';
 
 /**
  * Configura todos os handlers relacionados a jogadores
@@ -14,49 +12,10 @@ import { setupPlayerStateManager } from './playerStateManager.js';
 function setupPlayerHandlers(io, socket, gameState) {
   console.log('Player handlers inicializados');
   
-  // Inicializa os handlers específicos de jogadores
-  setupPlayerRoomHandlers(io, socket, gameState);
-  setupPlayerStateManager(io, socket, gameState);
-  
   // Inicializa o conjunto de jogadores online se não existir
   if (!gameState.onlinePlayers) {
     gameState.onlinePlayers = new Set();
   }
-  
-  // Quando um usuário se autentica, marca-o como online
-  socket.on('authenticate', (username) => {
-    if (username) {
-      console.log(`Jogador ${username} autenticado`);
-      
-      // Não marca como online aqui, apenas quando entra em uma sala
-      // A marcação online acontece no evento 'joinRoom'
-    }
-  });
-  
-  // Enviar uma mensagem privada para outro jogador (atalho)
-  socket.on('directMessage', (data) => {
-    const { targetUsername, message } = data;
-    const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'Usuário não autenticado');
-      return;
-    }
-    
-    if (!targetUsername || !message) {
-      socket.emit('error', 'Destinatário ou mensagem inválidos');
-      return;
-    }
-    
-    // Reencaminha para o handler de chat como uma mensagem privada
-    socket.emit('chatMessage', {
-      message,
-      isPrivate: true,
-      recipient: targetUsername
-    });
-    
-    console.log(`Mensagem direta de ${username} para ${targetUsername}`);
-  });
   
   // Evento de desconexão para marcar o jogador como offline
   socket.on('disconnect', () => {

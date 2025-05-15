@@ -47,6 +47,11 @@ export const socketApi = {
     disconnectSocket();
   },
   
+  // Método para obter a instância do socket
+  getSocketInstance: () => {
+    return getSocketInstance();
+  },
+  
   authenticate: (username) => {
     if (!username) {
       console.error('Nome de usuário não fornecido para autenticação');
@@ -192,6 +197,15 @@ export const socketApi = {
   updateCountryState: (roomName, countryName, category, updates) => {
     const socket = getSocketInstance() || socketApi.connect();
     socket.emit('updateCountryState', { roomName, countryName, category, updates });
+  },
+
+  // ======================================================================
+  // MÉTODOS DE ECONOMIA
+  // ======================================================================
+
+  issueDebtBonds: (bondAmount) => {
+    const socket = getSocketInstance() || socketApi.connect();
+    socket.emit('issueDebtBonds', { bondAmount });
   }
 };
 

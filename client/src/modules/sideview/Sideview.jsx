@@ -32,8 +32,13 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
     }
   };
 
-  // Verificar se há novas mensagens não lidas
+  // Verificar se há novas mensagens não lidas (CORRIGIDO)
   const hasUnreadMessages = () => {
+    // Se estamos na aba de chat, não mostrar badge
+    if (activeTab === 'chat') {
+      return false;
+    }
+    
     // Verifica se há mensagens públicas não lidas
     if (unreadCount.public > 0) {
       return true;
@@ -75,7 +80,7 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
           onClick={handleChatTabClick}
         >
           <span className="material-icons">chat</span>
-          {/* Badge apenas se houver mensagens não lidas */}
+          {/* Badge apenas se houver mensagens não lidas E não estivermos na aba chat */}
           {hasUnreadMessages() && (
             <span className="chat-badge" title="Novas mensagens">•</span>
           )}

@@ -84,22 +84,18 @@ app.get('/check-data-files', (req, res) => {
 });
 
 const server = http.createServer(app);
-// Configuração do Socket.io - Adicionando configurações para melhor lidar com conexões
+
+// Configuração simplificada do Socket.io
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      callback(null, true); // aceita qualquer origem
-    },
+    origin: true, // Aceita qualquer origem
     credentials: true
   },
-  // Configurações adicionais para melhorar a compatibilidade com proxies e firewalls
-  transports: ['polling', 'websocket'], // Tenta primeiro polling e depois websocket
-  allowUpgrades: true, // Permite upgrade de polling para websocket, se disponível
-  pingTimeout: 30000, // Aumentar timeout para detecção de desconexão
-  pingInterval: 10000, // Intervalo para verificar conexão
-  cookie: false, // Desativa cookies para evitar problemas com CORS
-  maxHttpBufferSize: 1e8, // 100MB - para lidar com mensagens maiores se necessário
-  path: '/socket.io/', // Caminho padrão para o socket.io
+  transports: ['polling', 'websocket'],
+  allowUpgrades: true,
+  pingTimeout: 30000,
+  pingInterval: 10000,
+  maxHttpBufferSize: 1e8 // 100MB
 });
 
 // Rota para obter o token Mapbox
@@ -140,27 +136,8 @@ gameState.countriesData = countriesData;
 // Disponibilizamos o gameState globalmente para acesso em outros módulos
 global.gameState = gameState;
 
-// Função para limpar periodicamente sockets e usuários inativos
-const setupCleanupSchedule = () => {
-  // Executa limpeza a cada 15 minutos
-  const CLEANUP_INTERVAL = 15 * 60 * 1000; // 15 minutos
-  
-  // Inicia o intervalo para limpeza
-  const cleanupInterval = setInterval(() => {
-    const now = new Date();
-    console.log(`[${now.toISOString()}] Iniciando limpeza programada...`);
-    
-    const removedCount = cleanupInactiveUsers(io, gameState);
-    
-    console.log(`[${now.toISOString()}] Limpeza concluída: ${removedCount} itens removidos`);
-  }, CLEANUP_INTERVAL);
-  
-  // Disponibiliza o countryStateManager globalmente para acesso em outros módulos
-  global.countryStateManager = countryStateManager;
-
-  // Retorna os intervalos para possível cancelamento futuro
-  return { cleanupInterval };
-};
+// Disponibiliza o countryStateManager globalmente para acesso em outros módulos
+global.countryStateManager = countryStateManager;
 
 async function restoreRoomsFromRedis() {
   try {
@@ -183,44 +160,31 @@ app.get('/check-connection', (req, res) => {
   res.status(200).send('OK');
 });
 
+// Handler único para encerramento do servidor
+const shutdownHandler = () => {
+  console.log('Servidor está sendo encerrado. Limpando recursos...');
+  
+  // Limpar o countryStateManager
+  if (global.countryStateManager) {
+    global.countryStateManager.cleanup();
+  }
+  
+  process.exit(0);
+};
+
+// Configurar handlers de encerramento
+process.on('SIGINT', shutdownHandler);
+process.on('SIGTERM', shutdownHandler);
+
 // Iniciar servidor só depois que Redis restaurar
 restoreRoomsFromRedis().then(() => {
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);
-
-    // Configurar limpeza programada
-    const cleanupSchedules = setupCleanupSchedule();
-    
-    // Salvar as referências no objeto global para possível acesso futuro
-    global.cleanupSchedules = cleanupSchedules;
   });
 });
 
 io.use(createSocketMiddleware(io));
-
-// Configurar limpeza do countryStateManager ao encerrar o servidor
-process.on('SIGINT', () => {
-  console.log('Servidor está sendo encerrado. Limpando recursos...');
-  
-  // Limpar o countryStateManager
-  if (global.countryStateManager) {
-    global.countryStateManager.cleanup();
-  }
-  
-  process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-  console.log('Servidor está sendo encerrado. Limpando recursos...');
-  
-  // Limpar o countryStateManager
-  if (global.countryStateManager) {
-    global.countryStateManager.cleanup();
-  }
-  
-  process.exit(0);
-});
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);

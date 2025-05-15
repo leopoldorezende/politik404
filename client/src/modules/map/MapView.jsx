@@ -3,8 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './MapView.css';
-import SeaRoutes from './SeaRoutes';
-import * as turf from '@turf/turf';
+import Chokepoints from './Chokepoints';
 
 import {
   loadCountriesData,
@@ -57,16 +56,6 @@ const MapView = () => {
       logo: false 
     });
 
-    map.current.on('style.load', () => {
-      console.log('Estilo do mapa carregado');
-      // Readicionar os chokepoints quando o estilo do mapa for alterado
-      if (loaded) {
-        setTimeout(() => {
-          addSeaRoutes();
-        }, 500);
-      }
-    });
-
     map.current.on('load', () => {
       console.log('Mapa totalmente carregado - inicializando camadas');
       setLoaded(true);
@@ -113,9 +102,6 @@ const MapView = () => {
 
       if (coordinates) dispatch(setCountriesCoordinates(coordinates));
       if (countries && map.current) setupMapLayers();
-      
-      // Adiciona os chokepoints diretamente
-      addSeaRoutes();
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
     }
@@ -166,7 +152,6 @@ const MapView = () => {
     
     // Se já existe a layer country-fills, atualize-a em vez de tentar criar novamente
     if (mapInstance.getLayer('country-fills')) {
-
       // Atualiza a expressão de cores
       mapInstance.setPaintProperty('country-fills', 'fill-color', fillColorExpression);
     } else {
@@ -217,11 +202,13 @@ const MapView = () => {
       // Atualiza a expressão de cores da borda
       mapInstance.setPaintProperty('country-borders', 'line-color', borderColorExpression);
     }
-    
-    // Adiciona os círculos dos estreitos estratégicos
-    setTimeout(() => {
-      addSeaRoutes();
-    }, 500); // Atraso de 500ms para garantir que todas as outras camadas sejam carregadas primeiro
+
+    // Ocultar labels dos países que não existem no JSON
+    if (countriesData) {
+      mapInstance.setFilter('country-label', [
+        'in', ['get', 'name_en'], ['literal', Object.keys(countriesData)]
+      ]);
+    }
   };
 
   const addCountryClickHandler = () => {
@@ -271,101 +258,10 @@ const MapView = () => {
     map.current.flyTo({ center, zoom: zoomLevel, speed: 0.8, curve: 1, essential: true });
   };
 
-  // Função para adicionar os círculos dos estreitos estratégicos diretamente
-  const addSeaRoutes = () => {
-    if (!map.current || !map.current.loaded()) {
-      console.log('Mapa não está pronto para adicionar chokepoints');
-      return;
-    }
-    
-    console.log('Adicionando chokepoints diretamente no MapView');
-    
-    // Lista de estreitos estratégicos
-    const chokepoints = [
-      { id: 'hormuz', title: 'Estreito de Hormuz', coordinates: [56.0, 26.0] },
-      { id: 'malacca', title: 'Estreito de Malaca', coordinates: [101.0, 2.5] },
-      { id: 'suez', title: 'Canal de Suez', coordinates: [32.5833, 30.8333] },
-      { id: 'panama', title: 'Canal do Panamá', coordinates: [-79.5, 9.0] },
-      { id: 'gibraltar', title: 'Estreito de Gibraltar', coordinates: [-5.0, 36.0] }
-    ];
-    
-    try {
-      // Remover camadas anteriores se existirem
-      if (map.current.getLayer('chokepoints-fill-direct')) map.current.removeLayer('chokepoints-fill-direct');
-      if (map.current.getLayer('chokepoints-outline-direct')) map.current.removeLayer('chokepoints-outline-direct');
-      if (map.current.getLayer('chokepoints-labels-direct')) map.current.removeLayer('chokepoints-labels-direct');
-      if (map.current.getSource('chokepoints-source-direct')) map.current.removeSource('chokepoints-source-direct');
-      
-      // Criar os círculos usando turf.js - reduzindo o raio para 210km (40% menor que 350km)
-      const features = chokepoints.map(point => {
-        const circle = turf.circle(point.coordinates, 210, { steps: 64, units: 'kilometers' });
-        circle.properties = {
-          id: point.id,
-          title: point.title
-        };
-        return circle;
-      });
-      
-      // Adicionar a fonte com os dados
-      map.current.addSource('chokepoints-source-direct', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: features
-        }
-      });
-      
-      // Adicionar camada de preenchimento
-      map.current.addLayer({
-        id: 'chokepoints-fill-direct',
-        type: 'fill',
-        source: 'chokepoints-source-direct',
-        paint: {
-          'fill-color': 'rgba(255, 105, 180, 0.3)',
-          'fill-opacity': 0.6
-        }
-      });
-      
-      // Adicionar camada de contorno com borda mais fina (1px em vez de 2px)
-      map.current.addLayer({
-        id: 'chokepoints-outline-direct',
-        type: 'line',
-        source: 'chokepoints-source-direct',
-        paint: {
-          'line-color': 'rgba(255, 105, 180, 0.8)',
-          'line-width': 1
-        }
-      });
-      
-      // Adicionar camada de texto
-      map.current.addLayer({
-        id: 'chokepoints-labels-direct',
-        type: 'symbol',
-        source: 'chokepoints-source-direct',
-        layout: {
-          'text-field': ['get', 'title'],
-          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-          'text-size': 12,
-          'text-offset': [0, 0],
-          'text-anchor': 'center'
-        },
-        paint: {
-          'text-color': '#333333',
-          'text-halo-color': 'rgba(255, 255, 255, 0.7)',
-          'text-halo-width': 1
-        }
-      });
-      
-      console.log('Chokepoints adicionados diretamente com sucesso!');
-    } catch (error) {
-      console.error('Erro ao adicionar chokepoints diretamente:', error);
-    }
-  };
-
   return (
     <div className="map-container">
       <div ref={mapContainer} className="map" />
-      <SeaRoutes map={map.current} />
+      <Chokepoints map={map.current} />
     </div>
   );
 };

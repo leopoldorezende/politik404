@@ -42,6 +42,7 @@
     font-size: 16px;
     border-radius: 4px;
     border: 0;
+    color: #eee;
   }
   .room-actions input:first-child {
     flex: 1;
@@ -52,7 +53,7 @@
   }
 
   .room-actions button {
-    min-width: 120px;
+    min-width: 140px;
     padding: 10px 20px;
     font-size: 16px;
     background-color: #007bff;
@@ -155,22 +156,6 @@
   }
   
   .join-room-btn:hover {
-    background-color: #0056b3;
-  }
-  
-  #refresh-rooms-button {
-    margin-top: 10px;
-    width: 150px;
-    float: right;
-    padding: 8px 15px;
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  #refresh-rooms-button:hover {
     background-color: #0056b3;
   }
   

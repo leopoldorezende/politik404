@@ -44,9 +44,9 @@
   │   │   │   │   ├── GamePage.jsx  # Tela principal do jogo
   │   │   │   │   └── gameState.js  # Estado do jogo
   │   │   │   ├── map
+  │   │   │   │   ├── Chokepoints.jsx
   │   │   │   │   ├── MapView.css
-  │   │   │   │   ├── MapView.jsx  # Mapa principal
-  │   │   │   │   └── SeaRoutes.jsx  # Rotas marítimas
+  │   │   │   │   └── MapView.jsx  # Mapa principal
   │   │   │   ├── politics
   │   │   │   │   ├── PoliticsPanel.css
   │   │   │   │   ├── PoliticsPanel.jsx  # Componente Painel de Política

@@ -220,7 +220,7 @@ const GamePage = () => {
       {currentRoom && (
         <div className="room-timer">
           <div className="timer-content">
-            <span className={`timer-value ${timeRemaining <= 100000 ? 'timer-warning' : ''}`}>
+            <span className={`timer-value ${timeRemaining <= roomData.duration * 0.2 ? 'timer-warning' : ''}`}>
               {formatTimeRemaining(timeRemaining)}
             </span>
           </div>

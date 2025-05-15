@@ -4,6 +4,7 @@
  */
 
 import redis from './redisClient.js';
+import { performEconomicCalculations } from '../modules/economy/economyCalculations.js';
 
 // Default values for new country indicators - simplified as specified
 const DEFAULT_INDICATORS = {
@@ -42,7 +43,7 @@ class CountryStateManager {
     this.roomStates = new Map(); // Room name -> country states
     this.lastUpdated = new Map(); // Room name -> timestamp
     this.saveInterval = null;
-    this.updateInterval = null; // For the test +1 updates
+    this.updateInterval = null; // For the economic updates
     this.initialized = false;
   }
 
@@ -61,10 +62,10 @@ class CountryStateManager {
         this.saveStatesToRedis();
       }, 60000); // Save every minute
       
-      // Set up test increment interval (for testing purposes)
+      // Set up economic calculation interval
       this.updateInterval = setInterval(() => {
-        this.incrementAllIndicators();
-      }, 1000); // Update every second for demonstration
+        this.performPeriodicEconomicUpdates();
+      }, 5000); // Update every 5 seconds for demonstration
       
       this.initialized = true;
       console.log('CountryStateManager initialized successfully');
@@ -74,9 +75,13 @@ class CountryStateManager {
   }
   
   /**
-   * For testing: Increment all indicators by 1 every interval
+   * Perform periodic economic updates for all countries in all rooms
    */
-  incrementAllIndicators() {
+  performPeriodicEconomicUpdates() {
+    // Access the global game state for countries data
+    const gameState = global.gameState;
+    if (!gameState || !gameState.countriesData) return;
+    
     // Iterate through all rooms
     for (const [roomName, roomState] of this.roomStates.entries()) {
       let updated = false;
@@ -84,41 +89,22 @@ class CountryStateManager {
       // Iterate through all countries in the room
       for (const countryName of Object.keys(roomState)) {
         const countryState = roomState[countryName];
+        const staticData = gameState.countriesData[countryName];
         
-        // Economy indicators
-        if (countryState.economy) {
-          if (countryState.economy.gdp) {
-            countryState.economy.gdp.value += 1;
-            updated = true;
-          }
-          if (countryState.economy.treasury) {
-            countryState.economy.treasury.value += 1;
-            updated = true;
-          }
-        }
-        
-        // Defense indicators
-        if (countryState.defense) {
-          countryState.defense.navy = (countryState.defense.navy + 1) % 101; // Keep under 100%
-          countryState.defense.army = (countryState.defense.army + 1) % 101;
-          countryState.defense.airforce = (countryState.defense.airforce + 1) % 101;
+        // Perform economic calculations for this country
+        if (staticData && staticData.economy) {
+          const calculationResult = performEconomicCalculations(
+            countryState,
+            staticData
+          );
+          
+          // Update the economy indicators
+          countryState.economy = calculationResult.economy;
           updated = true;
         }
         
-        // Commerce indicators
-        if (countryState.commerce) {
-          countryState.commerce.exports = (countryState.commerce.exports + 1) % 101;
-          countryState.commerce.imports = (countryState.commerce.imports + 1) % 101;
-          updated = true;
-        }
-        
-        // Politics indicators
-        if (countryState.politics) {
-          countryState.politics.parliament = (countryState.politics.parliament + 1) % 101;
-          countryState.politics.media = (countryState.politics.media + 1) % 101;
-          countryState.politics.opposition = (countryState.politics.opposition + 1) % 101;
-          updated = true;
-        }
+        // Note: Removed the +1 increments for defense, commerce, and politics
+        // These indicators will now only change through manual updates via handlers
       }
       
       // Only update timestamp if changes were made

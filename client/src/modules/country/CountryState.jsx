@@ -73,7 +73,7 @@ const CountryState = ({ roomName, countryName }) => {
       </div>
       
       {/* Seção de Economia */}
-      <div className="state-section economy-section">
+      <div className="state-section">
         <h3>Economia</h3>
         <div className="indicator">
           <span className="indicator-label">PIB:</span>
@@ -90,7 +90,7 @@ const CountryState = ({ roomName, countryName }) => {
       </div>
       
       {/* Seção de Defesa */}
-      <div className="state-section defense-section">
+      <div className="state-section">
         <h3>Defesa</h3>
         <div className="indicator">
           <span className="indicator-label">Marinha:</span>

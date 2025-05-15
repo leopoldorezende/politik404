@@ -31,6 +31,6 @@ export const store = configureStore({
         ],
         // Ignorar caminhos no estado que podem conter valores não serializáveis
         ignoredPaths: ['socket']
-      }
+      } 
     }).concat(socketMiddleware),
 });

@@ -51,18 +51,6 @@ function setupCountryAssignment(io, socket, gameState) {
     // Notifica todos sobre o status online
     io.emit('playerOnlineStatus', { username, isOnline: true });
     
-    // Inicializa as estruturas de histórico de chat se não existirem
-    if (!room.chatHistory) {
-      room.chatHistory = {
-        public: [],
-        private: new Map()
-      };
-    }
-    
-    if (!room.chatHistory.private) {
-      room.chatHistory.private = new Map();
-    }
-    
     // Chave para identificar o par usuário-sala
     const userRoomKey = `${username}:${roomName}`;
     
@@ -299,14 +287,11 @@ function setupCountryAssignment(io, socket, gameState) {
     
     // Atualiza a lista de jogadores para todos na sala
     sendUpdatedPlayersList(io, roomName, gameState);
-    
-    // Atualiza países elegíveis
-    updateEligibleCountries(countryName, room, gameState);
   });
 }
 
 /**
- * Seleciona um país para um novo jogador
+ * Seleciona um país para um novo jogador (versão simplificada)
  * @param {string} username - Nome do usuário
  * @param {string} roomName - Nome da sala
  * @param {Object} gameState - Estado global do jogo
@@ -315,122 +300,95 @@ function setupCountryAssignment(io, socket, gameState) {
 function selectCountryForPlayer(username, roomName, gameState) {
   const room = gameState.rooms.get(roomName);
   
-  // Certifica-se de que countriesData não seja nulo ou indefinido antes de usar Object.keys
-  const allAvailableCountries = gameState.countriesData ? Object.keys(gameState.countriesData) : [];
+  // Obter todos os países disponíveis
+  const allCountries = gameState.countriesData ? Object.keys(gameState.countriesData) : [];
   
-  // Verificação extra para garantir que temos países disponíveis
-  if (allAvailableCountries.length === 0) {
+  if (allCountries.length === 0) {
     console.error("Erro: Não há países disponíveis no gameState.countriesData!");
     return null;
   }
   
-  // Log para depuração - ver quais países estão disponíveis
-  console.log('Países disponíveis em countriesData:', allAvailableCountries.length);
+  // Obter países já em uso na sala
+  const countriesInUse = getCountriesInUse(room);
   
-  // Verifica se é o primeiro jogador na sala
-  if (!room.players || room.players.length === 0 || 
-      !room.players.some(p => typeof p === 'object' && p.country)) {
-    // Primeiro jogador na sala - pode escolher qualquer país do countriesData
-    const availableCountries = [...allAvailableCountries];
-    
-    if (availableCountries.length === 0) {
-      return null;
-    }
-    
-    // Sorteia um país aleatório entre os disponíveis
-    const playerCountry = availableCountries[Math.floor(Math.random() * availableCountries.length)];
-    console.log(`País sorteado para ${username}: ${playerCountry}`);
-    
-    // Inicializa o conjunto de países elegíveis se não existir
-    if (!room.eligibleCountries) {
-      room.eligibleCountries = [];
-    }
-    
-    // Define países elegíveis para próximos jogadores com base nas fronteiras
-    updateEligibleCountries(playerCountry, room, gameState, allAvailableCountries);
-    
-    return playerCountry;
-  } else {
-    // Jogadores subsequentes - prioriza países fronteiriços elegíveis
-    
-    // Obtém países já em uso
-    const countriesInUse = room.players
-      .filter(p => typeof p === 'object' && p.country)
-      .map(p => p.country);
-    
-    // Inicializa eligibleCountries se não existir
-    if (!room.eligibleCountries) {
-      room.eligibleCountries = allAvailableCountries.filter(c => !countriesInUse.includes(c));
-    }
-    
-    // Garante que todos os países elegíveis estejam no countriesData
-    room.eligibleCountries = room.eligibleCountries.filter(c => allAvailableCountries.includes(c));
-    
-    // Filtrar países elegíveis que não estão em uso
-    const availableEligibleCountries = room.eligibleCountries.filter(
-      c => !countriesInUse.includes(c)
-    );
-    
-    if (availableEligibleCountries.length > 0) {
-      // Prioriza países elegíveis (fronteiriços)
-      const playerCountry = availableEligibleCountries[Math.floor(Math.random() * availableEligibleCountries.length)];
-      console.log(`País elegível sorteado para ${username}: ${playerCountry}`);
-      
-      // Adiciona novos países de fronteira aos elegíveis
-      updateEligibleCountries(playerCountry, room, gameState, allAvailableCountries);
-      
-      return playerCountry;
-    } else {
-      // Se não houver elegíveis, escolhe entre os países restantes do countriesData
-      const remainingCountries = allAvailableCountries.filter(
-        c => !countriesInUse.includes(c)
-      );
-      
-      if (remainingCountries.length === 0) {
-        return null;
-      }
-      
-      const playerCountry = remainingCountries[Math.floor(Math.random() * remainingCountries.length)];
-      console.log(`País não-elegível sorteado para ${username}: ${playerCountry}`);
-      
-      // Adiciona novos países de fronteira aos elegíveis
-      updateEligibleCountries(playerCountry, room, gameState, allAvailableCountries);
-      
-      return playerCountry;
-    }
+  // Filtrar países disponíveis (não em uso)
+  const availableCountries = allCountries.filter(country => !countriesInUse.includes(country));
+  
+  if (availableCountries.length === 0) {
+    console.log('Não há países disponíveis para atribuição');
+    return null;
   }
+  
+  // Se é o primeiro jogador ou não há estratégia de fronteira, escolhe aleatoriamente
+  if (countriesInUse.length === 0) {
+    const selectedCountry = getRandomCountry(availableCountries);
+    console.log(`Primeiro jogador ${username}: país sorteado ${selectedCountry}`);
+    return selectedCountry;
+  }
+  
+  // Para jogadores subsequentes, tenta priorizar países fronteiriços
+  const borderingCountries = getBorderingAvailableCountries(countriesInUse, availableCountries, gameState);
+  
+  if (borderingCountries.length > 0) {
+    const selectedCountry = getRandomCountry(borderingCountries);
+    console.log(`${username}: país fronteiriço sorteado ${selectedCountry}`);
+    return selectedCountry;
+  }
+  
+  // Se não há países fronteiriços disponíveis, escolhe qualquer um disponível
+  const selectedCountry = getRandomCountry(availableCountries);
+  console.log(`${username}: país aleatório sorteado ${selectedCountry}`);
+  return selectedCountry;
 }
 
 /**
- * Atualiza a lista de países elegíveis com base no novo país
- * @param {string} country - País a considerar
- * @param {Object} room - Sala
- * @param {Object} gameState - Estado global do jogo
- * @param {Array<string>} [allAvailableCountries] - Todos os países disponíveis (opcional)
+ * Obtém países já em uso na sala
+ * @param {Object} room - Objeto da sala
+ * @returns {Array<string>} - Lista de países em uso
  */
-function updateEligibleCountries(country, room, gameState, allAvailableCountries) {
-  // Se allAvailableCountries não for fornecido, obtenha da countriesData
-  if (!allAvailableCountries) {
-    allAvailableCountries = gameState.countriesData ? Object.keys(gameState.countriesData) : [];
+function getCountriesInUse(room) {
+  if (!room.players || room.players.length === 0) {
+    return [];
   }
   
-  if (gameState.countriesData[country] && gameState.countriesData[country].borders) {
-    const newBorders = gameState.countriesData[country].borders
-      .filter(border => border.enabled)
-      .map(border => border.country)
-      .filter(c => allAvailableCountries.includes(c));
-    
-    // Adiciona novos países de fronteira aos elegíveis (evitando duplicatas)
-    if (!room.eligibleCountries) {
-      room.eligibleCountries = [];
+  return room.players
+    .filter(p => typeof p === 'object' && p.country)
+    .map(p => p.country);
+}
+
+/**
+ * Obtém países fronteiriços disponíveis
+ * @param {Array<string>} countriesInUse - Países já em uso
+ * @param {Array<string>} availableCountries - Países disponíveis
+ * @param {Object} gameState - Estado global do jogo
+ * @returns {Array<string>} - Países fronteiriços disponíveis
+ */
+function getBorderingAvailableCountries(countriesInUse, availableCountries, gameState) {
+  const borderingCountries = new Set();
+  
+  // Para cada país em uso, adiciona suas fronteiras aos países fronteiriços
+  for (const country of countriesInUse) {
+    const borders = getBorderingCountries(gameState, country);
+    for (const border of borders) {
+      if (availableCountries.includes(border)) {
+        borderingCountries.add(border);
+      }
     }
-    
-    room.eligibleCountries = [...new Set([...room.eligibleCountries, ...newBorders])];
   }
+  
+  return Array.from(borderingCountries);
+}
+
+/**
+ * Seleciona um país aleatório de uma lista
+ * @param {Array<string>} countries - Lista de países
+ * @returns {string} - País selecionado
+ */
+function getRandomCountry(countries) {
+  return countries[Math.floor(Math.random() * countries.length)];
 }
 
 export { 
   setupCountryAssignment,
-  selectCountryForPlayer,
-  updateEligibleCountries
+  selectCountryForPlayer
 };

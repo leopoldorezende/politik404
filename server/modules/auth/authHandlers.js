@@ -30,12 +30,6 @@ function setupAuthHandlers(io, socket, gameState) {
     // Verifica se o nome de usuário já está em uso por um socket conectado
     let isUsernameInUse = false;
     let existingSocketId = null;
-    let isSocketFromSameIP = false;
-    
-    // Obter o IP do cliente atual
-    const clientIP = socket.handshake.headers['x-forwarded-for'] || 
-                     socket.handshake.address || 
-                     socket.request.connection.remoteAddress;
     
     for (const [socketId, existingUsername] of gameState.socketIdToUsername.entries()) {
       if (existingUsername === username && socketId !== socket.id) {
@@ -45,16 +39,18 @@ function setupAuthHandlers(io, socket, gameState) {
           isUsernameInUse = true;
           existingSocketId = socketId;
           
-          // Verificar se é o mesmo IP (provavelmente mesma pessoa atualizando a página)
-          const existingIP = existingSocket.handshake.headers['x-forwarded-for'] || 
-                            existingSocket.handshake.address || 
-                            existingSocket.request.connection.remoteAddress;
+          // Desconectar o socket anterior automaticamente
+          console.log(`Desconectando socket anterior ${existingSocketId} para ${username}`);
+          existingSocket.emit('forcedDisconnect', { 
+            reason: 'Nova sessão iniciada',
+            reconnect: false
+          });
+          existingSocket.disconnect(true);
           
-          if (existingIP === clientIP) {
-            isSocketFromSameIP = true;
-            console.log(`Detectado mesmo IP para usuário ${username}: ${clientIP}`);
+          // Marcar para limpeza
+          if (gameState.pendingSocketsRemoval) {
+            gameState.pendingSocketsRemoval.add(existingSocketId);
           }
-          
           break;
         } else {
           // Socket antigo não está mais conectado, remover do mapa
@@ -67,49 +63,17 @@ function setupAuthHandlers(io, socket, gameState) {
       }
     }
     
-    if (isUsernameInUse) {
-      // Se o usuário já existe, mas é do mesmo IP (mesma pessoa com F5), apenas substitua o socket
-      // sem enviar mensagem de erro ou desconexão forçada
-      if (isSocketFromSameIP) {
-        console.log(`Substituindo socket antigo ${existingSocketId} por ${socket.id} para mesmo usuário ${username} do mesmo IP`);
-        
-        // Atualizar o mapeamento para o novo socket
-        if (gameState.usernameToSocketId) {
-          gameState.usernameToSocketId.set(username, socket.id);
-        }
-        
-        // Manter a entrada antiga mas iremos ignorá-la na limpeza
-        gameState.socketIdToUsername.set(socket.id, username);
-        
-        // Marcar o socket antigo para remoção na próxima limpeza
-        if (gameState.pendingSocketsRemoval) {
-          gameState.pendingSocketsRemoval.add(existingSocketId);
-        }
-        
-        // Não desconectar forçadamente o socket antigo aqui, 
-        // pois isso causa os alertas de desconexão
-      } else {
-        // Se não for do mesmo IP, provavelmente é outra pessoa tentando usar o mesmo username
-        console.log(`Nome de usuário ${username} em uso por ${existingSocketId} de outro IP`);
-        socket.emit('error', 'Este nome de usuário já está em uso');
-        return;
-      }
-    } else {
-      // Username não está em uso, registrar normalmente
-      console.log(`Usuário ${username} autenticado com socket ${socket.id}`);
-      socket.username = username;
-      
-      // Associa o socketId ao username
-      gameState.socketIdToUsername.set(socket.id, username);
-      
-      // Associa o username ao socketId (mapeamento bidirecional)
-      if (gameState.usernameToSocketId) {
-        gameState.usernameToSocketId.set(username, socket.id);
-      }
-    }
-    
-    // Completa o processo de autenticação
+    // Registrar o novo socket
+    console.log(`Usuário ${username} autenticado com socket ${socket.id}`);
     socket.username = username;
+    
+    // Associa o socketId ao username
+    gameState.socketIdToUsername.set(socket.id, username);
+    
+    // Associa o username ao socketId (mapeamento bidirecional)
+    if (gameState.usernameToSocketId) {
+      gameState.usernameToSocketId.set(username, socket.id);
+    }
     
     // Atualiza o timestamp de atividade
     if (gameState.lastActivityTimestamp) {
@@ -141,7 +105,6 @@ function setupAuthHandlers(io, socket, gameState) {
     const existingRoom = gameState.userToRoom.get(username);
     if (existingRoom) {
       // Verificar se o usuário saiu intencionalmente da sala
-      // Isso está armazenado na propriedade 'intentionalLeave' que podemos criar
       const userRoomKey = `${username}:${existingRoom}`;
       const playerState = gameState.playerStates.get(userRoomKey);
       

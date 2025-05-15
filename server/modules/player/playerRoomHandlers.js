@@ -17,7 +17,7 @@ import { getCurrentRoom } from '../../shared/gameStateUtils.js';
 function setupPlayerRoomHandlers(io, socket, gameState) {
   console.log('Player room handlers inicializados');
   
-  // Sair da sala - MODIFICADO para manter o jogador na lista de jogadores mas marcá-lo como offline
+  // Sair da sala - versão simplificada
   socket.on('leaveRoom', (options = {}) => {
     const username = socket.username;
     if (!username) {
@@ -38,67 +38,46 @@ function setupPlayerRoomHandlers(io, socket, gameState) {
     // Marca o jogador como offline
     gameState.onlinePlayers.delete(username);
     
-    // Encontra o jogador na lista de jogadores da sala
-    const playerIndex = room.players.findIndex(player => {
-      if (typeof player === 'object') {
-        return player.username === username;
-      }
-      if (typeof player === 'string') {
-        return player.startsWith(username + ' ');
-      }
-      return false;
-    });
+    // Remove associação do usuário com a sala
+    gameState.userToRoom.delete(username);
     
-    // Atualiza o jogador para marcá-lo como offline
-    if (playerIndex !== -1) {
-      const player = room.players[playerIndex];
-      if (typeof player === 'object') {
-        player.isOnline = false;
+    // Atualiza o jogador na lista para marcá-lo como offline
+    if (room.players) {
+      const playerIndex = room.players.findIndex(player => {
+        if (typeof player === 'object') {
+          return player.username === username;
+        }
+        return false;
+      });
+      
+      if (playerIndex !== -1) {
+        const player = room.players[playerIndex];
+        if (typeof player === 'object') {
+          player.isOnline = false;
+        }
       }
     }
     
     // Sai da sala do socket.io
     socket.leave(roomName);
     
-    // *** CORREÇÃO IMPORTANTE: Remover a associação do usuário com a sala ***
-    // Esta linha é crucial para evitar a reconexão automática
-    gameState.userToRoom.delete(username);
+    console.log(`${username} saiu da sala ${roomName}`);
     
-    // Marcar no estado do jogador que a saída foi intencional
-    const userRoomKey = `${username}:${roomName}`;
-    
-    // Obter ou criar o estado do jogador
-    let playerState = gameState.playerStates.get(userRoomKey);
-    if (!playerState) {
-      playerState = {
-        country: gameState.userRoomCountries.get(userRoomKey),
-        customData: {}
-      };
-    }
-    
-    // Verificar se a saída foi intencional a partir do parâmetro recebido
-    playerState.intentionalLeave = !!options.intentional;
-    
-    // Salvar o estado atualizado
-    gameState.playerStates.set(userRoomKey, playerState);
-    
-    console.log(`${username} saiu da sala ${roomName} - Saída intencional: ${playerState.intentionalLeave}`);
-    
-    // Se o jogador era dono da sala e há outros jogadores, transfere a propriedade
+    // Transferir propriedade da sala se necessário
     if (room.owner === username && room.players.length > 1) {
-      // Encontra outro jogador online para se tornar o dono
-      const onlinePlayers = room.players.filter(player => {
+      // Encontra o próximo jogador para se tornar dono (preferencialmente online)
+      const onlinePlayer = room.players.find(player => {
         if (typeof player === 'object') {
           return player.username !== username && player.isOnline;
         }
         return false;
       });
       
-      if (onlinePlayers.length > 0) {
-        room.owner = onlinePlayers[0].username;
-        console.log(`Novo dono da sala ${roomName} é ${room.owner}`);
+      if (onlinePlayer) {
+        room.owner = onlinePlayer.username;
+        console.log(`Propriedade da sala ${roomName} transferida para ${room.owner} (online)`);
       } else {
-        // Se não há jogadores online, encontra qualquer jogador
+        // Se não há jogadores online, encontra qualquer outro jogador
         const anyPlayer = room.players.find(player => {
           if (typeof player === 'object') {
             return player.username !== username;
@@ -108,12 +87,15 @@ function setupPlayerRoomHandlers(io, socket, gameState) {
         
         if (anyPlayer) {
           room.owner = anyPlayer.username;
-          console.log(`Novo dono da sala ${roomName} é ${room.owner} (offline)`);
+          console.log(`Propriedade da sala ${roomName} transferida para ${room.owner} (offline)`);
+        } else {
+          // Se não há outros jogadores, a sala será deletada automaticamente
+          console.log(`Sala ${roomName} ficará sem dono`);
         }
       }
     }
     
-    // Atualiza listas de jogadores para todos os clientes na sala com status offline
+    // Atualiza listas de jogadores para todos os clientes na sala
     sendUpdatedPlayersList(io, roomName, gameState);
     
     // Transmite status offline do jogador para todos os clientes
@@ -121,6 +103,15 @@ function setupPlayerRoomHandlers(io, socket, gameState) {
     
     // Notifica o jogador que saiu
     socket.emit('roomLeft');
+    
+    // Se a sala ficou vazia, remove ela
+    const onlinePlayersInRoom = room.players.filter(p => 
+      typeof p === 'object' && p.isOnline
+    ).length;
+    
+    if (onlinePlayersInRoom === 0) {
+      console.log(`Sala ${roomName} vazia, será removida automaticamente pelo sistema de limpeza`);
+    }
     
     // Atualiza lista de salas para todos os clientes
     sendUpdatedRoomsList(io, gameState);

@@ -1,5 +1,6 @@
 /**
  * Utilitários para gerenciamento de jogadores
+ * SIMPLIFICADO - Apenas funções realmente utilizadas
  */
 
 /**
@@ -41,17 +42,6 @@ function standardizePlayer(player) {
   return null;
 }
 
-/**
- * Verifica se um jogador está online
- * @param {Object} gameState - Estado global do jogo
- * @param {string} username - Nome do usuário a verificar
- * @returns {boolean} - Verdadeiro se online, falso caso contrário
- */
-function isPlayerOnline(gameState, username) {
-  return gameState.onlinePlayers.has(username);
-}
-
 export {
-  standardizePlayer,
-  isPlayerOnline
+  standardizePlayer
 };

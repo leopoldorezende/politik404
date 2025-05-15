@@ -18,8 +18,8 @@ function createSocketMiddleware(io) {
   
   // Set up a periodic cleanup to prevent resource leaks
   const setupCleanupInterval = () => {
-    // Time in ms between cleanup operations
-    const CLEANUP_INTERVAL = 10 * 60 * 1000; // 10 minutes
+    // Time in ms between cleanup operations - reduced frequency
+    const CLEANUP_INTERVAL = 30 * 60 * 1000; // 30 minutes instead of 10
     
     // Create the interval and return it for potential cancellation
     const interval = setInterval(() => {
@@ -48,29 +48,10 @@ function createSocketMiddleware(io) {
   return function(socket, next) {
     console.log(`Socket connected: ${socket.id}`);
     
-    // Track client session ID
+    // Track client session ID if provided (but don't use it for complex logic)
     const clientSessionId = socket.handshake.query.clientSessionId;
     if (clientSessionId) {
       console.log(`Socket ${socket.id} associated with client session: ${clientSessionId}`);
-      gameState.socketToSessionId.set(socket.id, clientSessionId);
-      
-      // Check if a username is already associated with this session
-      const existingUsername = gameState.sessionIdToUsername.get(clientSessionId);
-      if (existingUsername) {
-        console.log(`Session ${clientSessionId} already associated with user ${existingUsername}`);
-        
-        // Automatically handle reconnection if possible
-        if (gameState.usernameToSocketId) {
-          gameState.usernameToSocketId.set(existingUsername, socket.id);
-        }
-        gameState.socketIdToUsername.set(socket.id, existingUsername);
-        socket.username = existingUsername;
-        
-        // Update activity timestamp
-        if (gameState.lastActivityTimestamp) {
-          gameState.lastActivityTimestamp.set(existingUsername, Date.now());
-        }
-      }
     }
     
     // Error handling
@@ -79,93 +60,12 @@ function createSocketMiddleware(io) {
       socket.emit('error', 'Internal server error');
     });
     
-    // Inactivity detection
-    let inactivityTimeout;
-    
-    // Reset inactivity timer
-    const resetInactivityTimer = () => {
-      clearTimeout(inactivityTimeout);
-      
-      // Set up a new timeout (2 hours of inactivity)
-      inactivityTimeout = setTimeout(() => {
-        const username = socket.username;
-        if (username) {
-          console.log(`Disconnecting ${username} due to inactivity`);
-          socket.emit('inactivityDisconnect', { message: 'Disconnected due to inactivity' });
-          socket.disconnect(true);
-        }
-      }, 2 * 60 * 60 * 1000);
-    };
-    
-    // Reset timer on every event
-    socket.use((packet, next) => {
-      resetInactivityTimer();
-      
-      // Update activity timestamp
-      const username = socket.username;
-      if (username && gameState.lastActivityTimestamp) {
-        gameState.lastActivityTimestamp.set(username, Date.now());
-      }
-      
-      next();
-    });
-    
-    // Initial timer
-    resetInactivityTimer();
-    
-    // Custom authentication handler
+    // Simplified authentication handler
     const originalOn = socket.on;
     socket.on = function(event, handler) {
       if (event === 'authenticate') {
-        // Enhanced authentication with session tracking
-        return originalOn.call(socket, event, function(username, options = {}) {
-          const clientSessionId = (options && options.clientSessionId) || 
-                                gameState.socketToSessionId.get(socket.id);
-          
-          if (clientSessionId) {
-            // Associate session with username
-            gameState.sessionIdToUsername.set(clientSessionId, username);
-            
-            // Check for existing socket with same username
-            let existingSocketId = null;
-            let isSameSession = false;
-            
-            for (const [socketId, existingUsername] of gameState.socketIdToUsername.entries()) {
-              if (existingUsername === username && socketId !== socket.id) {
-                existingSocketId = socketId;
-                
-                // Check if same session
-                const existingSessionId = gameState.socketToSessionId.get(socketId);
-                if (existingSessionId && existingSessionId === clientSessionId) {
-                  isSameSession = true;
-                  console.log(`Detected reconnection from same device for ${username}`);
-                }
-                break;
-              }
-            }
-            
-            // Handle multiple connections from same user
-            if (existingSocketId && isSameSession) {
-              const existingSocket = io.sockets.sockets.get(existingSocketId);
-              if (existingSocket) {
-                console.log(`Disconnecting old socket ${existingSocketId} from same device`);
-                
-                // Notify old socket about disconnection
-                existingSocket.emit('forcedDisconnect', { 
-                  reason: 'New session started elsewhere',
-                  reconnect: false,
-                  sameBrowser: true
-                });
-                
-                // Mark for cleanup
-                if (!gameState.pendingSocketsRemoval) {
-                  gameState.pendingSocketsRemoval = new Set();
-                }
-                gameState.pendingSocketsRemoval.add(existingSocketId);
-              }
-            }
-          }
-          
+        // Simplified authentication without complex session tracking
+        return originalOn.call(socket, event, function(username) {
           // Call original handler
           handler.apply(socket, [username]);
         });
@@ -174,15 +74,6 @@ function createSocketMiddleware(io) {
       // Default behavior for other events
       return originalOn.apply(socket, arguments);
     };
-    
-    // Cleanup resources when socket instance is destroyed
-    socket.on('close', () => {
-      // Clear the inactivity timeout to prevent memory leaks
-      if (inactivityTimeout) {
-        clearTimeout(inactivityTimeout);
-        inactivityTimeout = null;
-      }
-    });
     
     // Continue to next middleware
     next();

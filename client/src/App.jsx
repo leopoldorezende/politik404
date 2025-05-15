@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import AuthPage from './modules/auth/AuthPage';
 import RoomPage from './modules/room/RoomPage';
@@ -10,18 +10,25 @@ function App() {
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
   const currentRoom = useSelector(state => state.rooms.currentRoom);
   const dispatch = useDispatch();
+  const socketInitialized = useRef(false);
 
   useEffect(() => {
-    // Inicializa a conexão do socket ao montar o componente
-    socketApi.connect();
+    // Só inicializa o socket uma vez, mesmo em Strict Mode
+    if (!socketInitialized.current) {
+      console.log('Inicializando socket connection...');
+      socketInitialized.current = true;
+      
+      // Inicializa a conexão do socket
+      socketApi.connect();
+      
+      // Dispara o evento Redux para manter o fluxo consistente
+      dispatch({ type: SOCKET_EVENTS.CONNECT });
+    }
     
-    // Também dispara o evento Redux para manter o fluxo consistente
-    dispatch({ type: SOCKET_EVENTS.CONNECT });
-    
-    // Cleanup ao desmontar
+    // O cleanup não deve desconectar o socket em desenvolvimento
+    // porque isso causará problemas com Strict Mode
     return () => {
-      // Não precisamos fazer nada aqui, o socket é uma singleton
-      // e permanecerá até o fim da sessão
+      // No cleanup em desenvolvimento
     };
   }, [dispatch]);
 
