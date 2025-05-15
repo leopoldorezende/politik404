@@ -90,6 +90,9 @@
       │   │   ├── countryAssignment.js  # Atribuições de países
       │   │   ├── countryStateHandlers.js
       │   │   └── countryUtils.js  # Utilitários para países
+      │   ├── economy
+      │   │   ├── economyCalculations.js
+      │   │   └── economyHandlers.js
       │   ├── index.js  # Criação e combinação dos reducers
       │   ├── player
       │   │   ├── playerHandlers.js  # Handlers para jogadores
