@@ -192,46 +192,32 @@ const GamePage = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      // Verifica se a Visual Viewport API está disponível
-      if (window.visualViewport) {
-        // Usa a Visual Viewport API que não é afetada pelo teclado virtual
-        const viewportWidth = window.visualViewport.width;
-        
-        if (viewportWidth <= 1200) {
-          setSideviewActive(false);
-          setSidetoolsActive(false);
-        }
-      } else {
-        // Fallback para navegadores sem suporte à Visual Viewport API
-        // Usa apenas a largura para detectar mobile
-        if (window.innerWidth <= 1200) {
-          // Verifica se é um redimensionamento real comparando aspect ratio
-          const aspectRatio = window.innerWidth / window.innerHeight;
-          
-          // Se o aspect ratio for muito vertical (provável teclado), não fecha
-          if (aspectRatio < 0.5) {
-            return;
-          }
-          
-          setSideviewActive(false);
-          setSidetoolsActive(false);
-        }
+      // Não feche os painéis se o chat está focado
+      if (document.body.classList.contains('chat-input-focused')) {
+        return;
+      }
+      
+      // Aplica a lógica normal apenas para mudanças reais de largura
+      if (window.innerWidth <= 1200) {
+        setSideviewActive(false);
+        setSidetoolsActive(false);
       }
     };
 
     handleResize();
-    window.addEventListener('resize', handleResize);
     
-    // Adiciona listener para Visual Viewport se disponível
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize);
-    }
+    // Debounce o resize para evitar múltiplas chamadas
+    let resizeTimeout;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(handleResize, 150);
+    };
+    
+    window.addEventListener('resize', debouncedResize);
     
     return () => {
-      window.removeEventListener('resize', handleResize);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleResize);
-      }
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(resizeTimeout);
     };
   }, []);
 

@@ -28,6 +28,33 @@ const ChatPanel = ({ hasUnreadMessagesFrom }) => {
     }
   }, [displayMessages]);
 
+  useEffect(() => {
+    const chatInput = document.getElementById('chat-input');
+    
+    if (chatInput) {
+      const handleFocus = () => {
+        // Adiciona uma classe ao body para indicar que o chat está ativo
+        document.body.classList.add('chat-input-focused');
+      };
+      
+      const handleBlur = () => {
+        // Remove a classe após um delay para evitar fechamento acidental
+        setTimeout(() => {
+          document.body.classList.remove('chat-input-focused');
+        }, 300);
+      };
+      
+      chatInput.addEventListener('focus', handleFocus);
+      chatInput.addEventListener('blur', handleBlur);
+      
+      return () => {
+        chatInput.removeEventListener('focus', handleFocus);
+        chatInput.removeEventListener('blur', handleBlur);
+        document.body.classList.remove('chat-input-focused');
+      };
+    }
+  }, []);
+
   // Mark messages as read when chat mode changes
   useEffect(() => {
     if (currentChatMode === 'public') {
