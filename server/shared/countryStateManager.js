@@ -45,6 +45,8 @@ class CountryStateManager {
     this.saveInterval = null;
     this.updateInterval = null; // For the economic updates
     this.initialized = false;
+    this.lastLogTime = 0;
+    this.logInterval = 3000; // Log apenas a cada 3 segundos
   }
 
   /**
@@ -62,13 +64,13 @@ class CountryStateManager {
         this.saveStatesToRedis();
       }, 60000); // Save every minute
       
-      // Set up economic calculation interval
+      // ✅ VERIFICAR: Set up economic calculation interval
       this.updateInterval = setInterval(() => {
         this.performPeriodicEconomicUpdates();
-      }, 5000); // Update every 5 seconds for demonstration
+      }, 2000);
       
       this.initialized = true;
-      console.log('CountryStateManager initialized successfully');
+      console.log('CountryStateManager initialized successfully with economic updates');
     } catch (error) {
       console.error('Error initializing CountryStateManager:', error);
     }
@@ -78,38 +80,52 @@ class CountryStateManager {
    * Perform periodic economic updates for all countries in all rooms
    */
   performPeriodicEconomicUpdates() {
-    // Access the global game state for countries data
     const gameState = global.gameState;
     if (!gameState || !gameState.countriesData) return;
     
+    let totalUpdates = 0;
+    
     // Iterate through all rooms
     for (const [roomName, roomState] of this.roomStates.entries()) {
-      let updated = false;
+      // Verificar se há jogadores online na sala
+      const room = gameState.rooms.get(roomName);
+      const hasOnlinePlayers = room && room.players && 
+        room.players.some(p => typeof p === 'object' && p.isOnline);
+      
+      if (!hasOnlinePlayers) {
+        continue;
+      }
+      
+      let roomUpdates = 0;
       
       // Iterate through all countries in the room
       for (const countryName of Object.keys(roomState)) {
         const countryState = roomState[countryName];
         const staticData = gameState.countriesData[countryName];
         
-        // Perform economic calculations for this country
         if (staticData && staticData.economy) {
           const calculationResult = performEconomicCalculations(
             countryState,
             staticData
           );
           
-          // Update the economy indicators
           countryState.economy = calculationResult.economy;
-          updated = true;
+          roomUpdates++;
+          totalUpdates++;
         }
-        
-        // Note: Removed the +1 increments for defense, commerce, and politics
-        // These indicators will now only change through manual updates via handlers
       }
       
-      // Only update timestamp if changes were made
-      if (updated) {
+      if (roomUpdates > 0) {
         this.lastUpdated.set(roomName, Date.now());
+      }
+    }
+    
+    // ✅ Log simplificado - apenas a cada 30 segundos
+    this.updateCounter = (this.updateCounter || 0) + 1;
+    
+    if (this.updateCounter % 30 === 0) { // A cada 30 ciclos (30 segundos)
+      if (totalUpdates > 0) {
+        console.log(`[ECONOMY] 30-second update: ${totalUpdates} total country updates across all rooms`);
       }
     }
   }

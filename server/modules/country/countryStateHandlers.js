@@ -10,7 +10,7 @@ const roomSubscriptions = new Map(); // roomName -> Set of socket IDs
 const roomIntervals = new Map(); // roomName -> interval ID
 
 // Default broadcast interval in milliseconds
-const DEFAULT_BROADCAST_INTERVAL = 1000; // 1 second for testing
+const DEFAULT_BROADCAST_INTERVAL = 2000; // 1 second for testing
 
 /**
  * Setup country state handlers for a socket
@@ -193,6 +193,8 @@ function startBroadcastingUpdates(io, roomName) {
   
   console.log(`Starting country state broadcasts for room ${roomName}`);
   
+  let broadcastCounter = 0;
+  
   // Create an interval to broadcast updates
   const intervalId = setInterval(() => {
     // Get the current states
@@ -205,7 +207,13 @@ function startBroadcastingUpdates(io, roomName) {
       states,
       timestamp
     });
-  }, DEFAULT_BROADCAST_INTERVAL);
+    
+    // ✅ Log menos frequente
+    broadcastCounter++;
+    if (broadcastCounter % 30 === 0) { // A cada 60 segundos (30 broadcasts)
+      console.log(`[BROADCAST] Room ${roomName}: 30 updates sent to clients`);
+    }
+  }, 2000); // Manter 2 segundos
   
   // Store the interval ID
   roomIntervals.set(roomName, intervalId);
