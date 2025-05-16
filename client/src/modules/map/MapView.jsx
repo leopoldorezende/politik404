@@ -30,11 +30,24 @@ const MapView = () => {
   const players = useSelector(state => state.game.players);
   const selectedCountry = useSelector(state => state.game.selectedCountry);
 
-  const getOtherPlayersCountries = () => players?.filter(player => {
-    if (typeof player === 'object') return player.username !== sessionStorage.getItem('username');
-    if (typeof player === 'string') return !player.startsWith(sessionStorage.getItem('username'));
-    return false;
-  }).map(player => typeof player === 'object' ? player.country : (player.match(/\((.*)\)/)?.[1] || '')).filter(Boolean) || [];
+  const getOtherPlayersCountries = () => {
+    return players?.filter(player => {
+      if (typeof player === 'object') {
+        // MUDAR: Não filtrar por isOnline, apenas por username
+        return player.username !== sessionStorage.getItem('username');
+      }
+      if (typeof player === 'string') {
+        return !player.startsWith(sessionStorage.getItem('username'));
+      }
+      return false;
+    }).map(player => {
+      if (typeof player === 'object') {
+        return player.country;
+      }
+      const match = player.match(/\((.*)\)/);
+      return match ? match[1] : '';
+    }).filter(Boolean) || [];
+  };
 
   useEffect(() => {
     if (map.current) return;
@@ -121,7 +134,8 @@ const MapView = () => {
         url: 'mapbox://mapbox.country-boundaries-v1'
       });
     }
-
+    
+    // Considerar jogadores offline como ainda "controlando" o país
     const otherPlayersCountries = getOtherPlayersCountries();
     console.log('Países de outros jogadores:', otherPlayersCountries);
 

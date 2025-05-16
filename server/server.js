@@ -92,14 +92,16 @@ const server = http.createServer(app);
 // Configuração simplificada do Socket.io
 const io = new Server(server, {
   cors: {
-    origin: true, // Aceita qualquer origem
+    origin: true,
     credentials: true
   },
   transports: ['polling', 'websocket'],
   allowUpgrades: true,
-  pingTimeout: 30000,
-  pingInterval: 10000,
-  maxHttpBufferSize: 1e8 // 100MB
+  pingTimeout: 60000, // Aumentar timeout
+  pingInterval: 25000, // Aumentar intervalo
+  maxHttpBufferSize: 1e8,
+  connectTimeout: 45000,
+  upgradeTimeout: 30000
 });
 
 // Rota para obter o token Mapbox

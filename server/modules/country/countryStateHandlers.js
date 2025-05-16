@@ -23,10 +23,15 @@ export function setupCountryStateHandlers(io, socket, gameState) {
   
   // Subscribe to country state updates for a room
   socket.on('subscribeToCountryStates', (roomName) => {
-    const username = socket.username;
+       const username = socket.username;
     
     if (!username) {
       socket.emit('error', 'User not authenticated');
+      return;
+    }
+    
+    if (roomSubscriptions.has(roomName) && roomSubscriptions.get(roomName).has(socket.id)) {
+      console.log(`User ${username} already subscribed to country states for room ${roomName}`);
       return;
     }
     

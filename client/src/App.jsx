@@ -12,7 +12,7 @@ function App() {
   const dispatch = useDispatch();
   const socketInitialized = useRef(false);
 
-  useEffect(() => {
+    useEffect(() => {
     // Só inicializa o socket uma vez, mesmo em Strict Mode
     if (!socketInitialized.current) {
       console.log('Inicializando socket connection...');
@@ -25,10 +25,7 @@ function App() {
       dispatch({ type: SOCKET_EVENTS.CONNECT });
     }
     
-    // O cleanup não deve desconectar o socket em desenvolvimento
-    // porque isso causará problemas com Strict Mode
     return () => {
-      // No cleanup em desenvolvimento
     };
   }, [dispatch]);
 

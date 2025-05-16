@@ -38,10 +38,10 @@ function setupPlayerRoomHandlers(io, socket, gameState) {
     // Marca o jogador como offline
     gameState.onlinePlayers.delete(username);
     
-    // Remove associação do usuário com a sala
+    // ✅ CORREÇÃO: Remove associação do usuário com a sala ANTES de modificar players
     gameState.userToRoom.delete(username);
     
-    // Atualiza o jogador na lista para marcá-lo como offline
+    // Remove o player da lista (saída intencional)
     if (room.players) {
       const playerIndex = room.players.findIndex(player => {
         if (typeof player === 'object') {
@@ -51,24 +51,21 @@ function setupPlayerRoomHandlers(io, socket, gameState) {
       });
       
       if (playerIndex !== -1) {
-        const player = room.players[playerIndex];
-        if (typeof player === 'object') {
-          player.isOnline = false;
-        }
+        room.players.splice(playerIndex, 1);
       }
     }
-    
+
     // Sai da sala do socket.io
     socket.leave(roomName);
     
     console.log(`${username} saiu da sala ${roomName}`);
     
     // Transferir propriedade da sala se necessário
-    if (room.owner === username && room.players.length > 1) {
+    if (room.owner === username && room.players.length > 0) { 
       // Encontra o próximo jogador para se tornar dono (preferencialmente online)
       const onlinePlayer = room.players.find(player => {
         if (typeof player === 'object') {
-          return player.username !== username && player.isOnline;
+          return player.isOnline;
         }
         return false;
       });
@@ -80,7 +77,7 @@ function setupPlayerRoomHandlers(io, socket, gameState) {
         // Se não há jogadores online, encontra qualquer outro jogador
         const anyPlayer = room.players.find(player => {
           if (typeof player === 'object') {
-            return player.username !== username;
+            return true;
           }
           return false;
         });
@@ -105,11 +102,7 @@ function setupPlayerRoomHandlers(io, socket, gameState) {
     socket.emit('roomLeft');
     
     // Se a sala ficou vazia, remove ela
-    const onlinePlayersInRoom = room.players.filter(p => 
-      typeof p === 'object' && p.isOnline
-    ).length;
-    
-    if (onlinePlayersInRoom === 0) {
+    if (room.players.length === 0) { 
       console.log(`Sala ${roomName} vazia, será removida automaticamente pelo sistema de limpeza`);
     }
     

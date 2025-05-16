@@ -37,9 +37,17 @@ export const setupSocketEvents = (socket, socketApi) => {
     if (username) {
       console.log('Reautenticando usuário após conexão:', username);
       
-      setTimeout(() => {
-        socket.emit('authenticate', username, { clientSessionId: sessionStorage.getItem('clientSessionId') });
-      }, 300);
+      // MODIFICAR: Verificar se não foi enviado muito recentemente
+      const lastAuthTime = sessionStorage.getItem('lastAuthTime');
+      const now = Date.now();
+      
+      if (!lastAuthTime || (now - parseInt(lastAuthTime)) > 1000) {
+        sessionStorage.setItem('lastAuthTime', now.toString());
+        
+        setTimeout(() => {
+          socket.emit('authenticate', username, { clientSessionId: sessionStorage.getItem('clientSessionId') });
+        }, 300);
+      }
     }
   });
   
@@ -56,13 +64,21 @@ export const setupSocketEvents = (socket, socketApi) => {
     if (username) {
       console.log('Reautenticando após reconexão:', username);
       
-      setTimeout(() => {
-        socket.emit('authenticate', username, { clientSessionId: sessionStorage.getItem('clientSessionId') });
+      // ADICIONAR: Aguardar um pouco mais e verificar se não foi feito recentemente
+      const lastReconnectAuth = sessionStorage.getItem('lastReconnectAuth');
+      const now = Date.now();
+      
+      if (!lastReconnectAuth || (now - parseInt(lastReconnectAuth)) > 5000) {
+        sessionStorage.setItem('lastReconnectAuth', now.toString());
         
         setTimeout(() => {
-          socket.emit('getRooms');
-        }, 500);
-      }, 300);
+          socket.emit('authenticate', username, { clientSessionId: sessionStorage.getItem('clientSessionId') });
+          
+          setTimeout(() => {
+            socket.emit('getRooms');
+          }, 500);
+        }, 1000); // Aguardar mais tempo
+      }
     }
   });
   

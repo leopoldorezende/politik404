@@ -34,10 +34,12 @@ const EconomyPanel = () => {
   // Assinar para atualizações quando o componente montar
   useEffect(() => {
     if (currentRoom?.name) {
+      console.log('Subscribing to country states for room:', currentRoom.name);
       dispatch({ type: COUNTRY_STATE_EVENTS.SUBSCRIBE, payload: currentRoom.name });
       
       // Cancelar assinatura ao desmontar
       return () => {
+        console.log('Unsubscribing from country states for room:', currentRoom.name);
         dispatch({ type: COUNTRY_STATE_EVENTS.UNSUBSCRIBE, payload: currentRoom.name });
       };
     }

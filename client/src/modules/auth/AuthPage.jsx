@@ -17,13 +17,25 @@ const AuthPage = () => {
     // Primeiro, atualize o Redux state
     dispatch(login(username));
     
-    // Em seguida, utilize o socketApi para autenticar
-    socketApi.authenticate(username);
+    // MODIFICAR: Verificar se o socket existe e está conectado antes de autenticar
+    const socket = socketApi.getSocketInstance();
+    if (socket && socket.connected) {
+      // Se já estiver conectado, autenticar imediatamente
+      socketApi.authenticate(username);
+    } else {
+      // Se não estiver conectado, conectar primeiro
+      socketApi.connect();
+      
+      // Aguardar a conexão antes de autenticar
+      setTimeout(() => {
+        socketApi.authenticate(username);
+      }, 1000);
+    }
     
     // Também solicite a lista de salas após a autenticação
     setTimeout(() => {
       socketApi.getRooms();
-    }, 500);
+    }, 1500);
   };
 
   // Ao montar o componente, verificar se existe uma sessão salva
@@ -33,8 +45,16 @@ const AuthPage = () => {
       console.log('Sessão existente encontrada para:', storedUsername);
       setIsLoading(true);
       
-      // Se existir um usuário no sessionStorage, fazer login automaticamente
-      authenticateUser(storedUsername);
+      // MODIFICAR: Verificar se não foi feito recentemente
+      const lastAutoAuth = sessionStorage.getItem('lastAutoAuth');
+      const now = Date.now();
+      
+      if (!lastAutoAuth || (now - parseInt(lastAutoAuth)) > 5000) {
+        sessionStorage.setItem('lastAutoAuth', now.toString());
+        authenticateUser(storedUsername);
+      } else {
+        setIsLoading(false);
+      }
       
       // Definir um timeout para finalizar o carregamento mesmo se algo falhar
       setTimeout(() => {

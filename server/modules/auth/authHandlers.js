@@ -15,11 +15,17 @@ function setupAuthHandlers(io, socket, gameState) {
   
   // Evento de autenticação
   socket.on('authenticate', (username) => {
+    if (socket.username) {
+      console.log(`Socket ${socket.id} já está autenticado como ${socket.username}, ignorando nova autenticação`);
+      return;
+    }
+    
     // Valida o nome de usuário
     if (!username || typeof username !== 'string' || username.trim() === '') {
       socket.emit('error', 'Nome de usuário inválido');
       return;
     }
+    
     
     // Limita o tamanho do nome de usuário
     if (username.length > 30) {
@@ -184,13 +190,15 @@ function setupAuthHandlers(io, socket, gameState) {
     }
     
     // Verifica se o nome de usuário já está em uso por um socket conectado
-    let isUsernameInUse = false;
+    let existingSocketId = null;
+    
     for (const [socketId, existingUsername] of gameState.socketIdToUsername.entries()) {
       if (existingUsername === username && socketId !== socket.id) {
-        // Verifica se o socket ainda está conectado
         const existingSocket = io.sockets.sockets.get(socketId);
         if (existingSocket && existingSocket.connected) {
-          isUsernameInUse = true;
+          // Ao invés de desconectar imediatamente, marcar para limpeza
+          console.log(`Marcando socket anterior ${socketId} para limpeza para ${username}`);
+          gameState.pendingSocketsRemoval.add(socketId);
           break;
         }
       }
@@ -379,16 +387,21 @@ function setupAuthHandlers(io, socket, gameState) {
           });
           
           if (playerIndex !== -1) {
-            // Marca o jogador como offline
+            // ✅ CORREÇÃO: Apenas marca como offline, NÃO remove o player
             if (typeof room.players[playerIndex] === 'object') {
               room.players[playerIndex].isOnline = false;
             }
             
-            // Notifica todos na sala
+            console.log(`${username} marcado como offline na sala ${roomName}, país ${room.players[playerIndex].country} mantido`);
+            
+            // Notifica todos na sala sobre o status offline
             io.to(roomName).emit('playerOnlineStatus', { 
               username, 
               isOnline: false 
             });
+            
+            // ✅ IMPORTANTE: Enviar lista atualizada mantendo o player
+            io.to(roomName).emit('playersList', room.players);
           }
         }
       }
@@ -396,13 +409,13 @@ function setupAuthHandlers(io, socket, gameState) {
       // Notifica todos sobre o status offline
       io.emit('playerOnlineStatus', { username, isOnline: false });
       
-      // Verificar se este é o socket atual do usuário
-      if (gameState.usernameToSocketId && gameState.usernameToSocketId.get(username) === socket.id) {
-        // Preservar o mapeamento por um curto período para permitir reconexão
-        // Será removido durante a limpeza periódica se o usuário não reconectar
-        console.log(`Socket atual para ${username} desconectado, mantendo mapeamento para reconexão`);
+      // ✅ CORREÇÃO: NÃO deletar o mapeamento usuário-sala
+      // Apenas remove o socket mapping se for o socket atual
+      const currentSocketId = gameState.usernameToSocketId?.get(username);
+      if (currentSocketId === socket.id) {
+        gameState.socketIdToUsername.delete(socket.id);
+        gameState.usernameToSocketId?.delete(username);
       } else {
-        // Se não for o socket atual, remover do mapeamento
         gameState.socketIdToUsername.delete(socket.id);
       }
     }
