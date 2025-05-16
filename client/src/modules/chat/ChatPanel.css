@@ -265,23 +265,6 @@
   margin-left: 5px;
 }
 
-/* Garante que o input do chat permaneça visível quando o teclado aparece */
-@media screen and (max-width: 1200px) {
-  .chat-sendgroup {
-    position: sticky;
-    bottom: 0;
-    background: var(--background-color, #1a1a1a);
-    padding: 10px;
-    border-top: 1px solid var(--border-color, #333);
-  }
-  
-  /* Ajusta a altura do container de mensagens para compensar o input fixo */
-  #chat-messages {
-    max-height: calc(100vh - 200px);
-    padding-bottom: 10px;
-  }
-}
-
 /* Previne o zoom automatico no iOS quando focalizando inputs */
 @media screen and (max-width: 1200px) {
   #chat-input {
