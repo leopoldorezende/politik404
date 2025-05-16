@@ -192,15 +192,47 @@ const GamePage = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth <= 1200) {
-        setSideviewActive(false);
-        setSidetoolsActive(false);
+      // Verifica se a Visual Viewport API está disponível
+      if (window.visualViewport) {
+        // Usa a Visual Viewport API que não é afetada pelo teclado virtual
+        const viewportWidth = window.visualViewport.width;
+        
+        if (viewportWidth <= 1200) {
+          setSideviewActive(false);
+          setSidetoolsActive(false);
+        }
+      } else {
+        // Fallback para navegadores sem suporte à Visual Viewport API
+        // Usa apenas a largura para detectar mobile
+        if (window.innerWidth <= 1200) {
+          // Verifica se é um redimensionamento real comparando aspect ratio
+          const aspectRatio = window.innerWidth / window.innerHeight;
+          
+          // Se o aspect ratio for muito vertical (provável teclado), não fecha
+          if (aspectRatio < 0.5) {
+            return;
+          }
+          
+          setSideviewActive(false);
+          setSidetoolsActive(false);
+        }
       }
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    
+    // Adiciona listener para Visual Viewport se disponível
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+    }
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+      }
+    };
   }, []);
 
   if (!dataLoaded) {

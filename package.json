@@ -5,7 +5,7 @@
   "scripts": {
     "client": "cd client && npm run dev",
     "server": "cd server && npm run dev",
-    "dev": "concurrently \"npm run server\" \"npm run client\" \"python3 createMap.py -o FOLDER-MAP.md\"",
+    "dev": "concurrently \"npm run server\" \"npm run client\" \"python3 createMap.py -o FOLDER-MAP.md\" \"cd client && npm run build\"",
     "install-all": "npm install && cd client && npm install && cd ../server && npm install",
     "lint": "eslint client/src server"
   },
