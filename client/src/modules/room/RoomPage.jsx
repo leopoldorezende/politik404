@@ -178,6 +178,12 @@ const RoomPage = () => {
 
   return (
     <div id="room-selection-screen">
+      {(isLoading || joiningRoomName) && (
+        <div className="full-screen-spinner">
+          <div className="spinner"></div>
+        </div>
+      )}
+      
       <h2>Politik404</h2>
       <div className="user-info">
         <p>Logado como: {username}</p>
@@ -208,15 +214,11 @@ const RoomPage = () => {
           onClick={handleCreateRoom}
           disabled={isLoading || joiningRoomName || !roomName.trim()}
         >
-          {isLoading && !joiningRoomName ? 'Criando...' : 'Criar Partida'}
+          Criar Partida
         </button>
       </div>
       <div className="room-list-container">
-        <h3>
-          Partidas Disponíveis 
-          {isLoading && !joiningRoomName && ' (Carregando...)'}
-          {joiningRoomName && ` (Entrando em ${joiningRoomName}...)`}
-        </h3>
+        <h3>Partidas Disponíveis</h3>
         <ul id="room-list">
           {rooms.length === 0 ? (
             <li className="no-rooms">
@@ -250,7 +252,7 @@ const RoomPage = () => {
                       onClick={() => handleJoinRoom(room.name)}
                       disabled={isLoading || joiningRoomName}
                     >
-                      {isExpired ? 'Visualizar' : (isJoiningThisRoom(room.name) ? 'Entrando...' : 'Entrar')}
+                      {isExpired ? 'Visualizar' : 'Entrar'}
                     </button>
                   </li>
                 );

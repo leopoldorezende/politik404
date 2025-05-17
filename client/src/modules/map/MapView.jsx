@@ -162,7 +162,7 @@ const MapView = ({ justClosedSidebar }) => {
       ['all', 
         ['==', ['get', 'name_en'], selectedCountry],
         ['!=', ['get', 'name_en'], myCountry]
-      ], 'rgba(255, 155, 50, 0.6)',
+      ], 'rgba(255, 155, 50, 0.8)', // 0, 220, 160  CIANO
       // Países de outros jogadores em roxo
       ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(105, 65, 217, 0.9)',
       // Países disponíveis em branco transparente
