@@ -15,7 +15,9 @@
   │   │   ├── modules
   │   │   │   ├── actions
   │   │   │   │   ├── ActionMenu.css
-  │   │   │   │   └── ActionMenu.jsx
+  │   │   │   │   ├── ActionMenu.jsx
+  │   │   │   │   ├── ActionMenuPopup.css
+  │   │   │   │   └── ActionMenuPopup.jsx
   │   │   │   ├── auth
   │   │   │   │   ├── AuthPage.css
   │   │   │   │   ├── AuthPage.jsx  # Tela de autenticação/login
