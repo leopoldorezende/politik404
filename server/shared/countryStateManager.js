@@ -12,6 +12,21 @@ const DEFAULT_INDICATORS = {
   economy: {
     gdp: { value: 0, unit: 'bi USD' }, // GDP in billions USD
     treasury: { value: 0, unit: 'bi USD' }, // Treasury in billions USD
+    
+    // Novos indicadores derivados do PIB
+    services: { value: 35, unit: '%' }, // Percentual de serviços no PIB
+    commodities: { value: 35, unit: '%' }, // Percentual de commodities no PIB
+    manufactures: { value: 30, unit: '%' }, // Percentual de manufaturas no PIB
+    
+    servicesOutput: { value: 0, unit: 'bi USD' }, // Produção de serviços em valor absoluto
+    commoditiesOutput: { value: 0, unit: 'bi USD' }, // Produção de commodities em valor absoluto
+    manufacturesOutput: { value: 0, unit: 'bi USD' }, // Produção de manufaturas em valor absoluto
+    
+    commoditiesNeeds: { value: 30, percentValue: 30, unit: 'bi USD' }, // Necessidade interna de commodities
+    manufacturesNeeds: { value: 45, percentValue: 45, unit: 'bi USD' }, // Necessidade interna de manufaturas
+    
+    commoditiesBalance: { value: 0, unit: 'bi USD' }, // Saldo de commodities
+    manufacturesBalance: { value: 0, unit: 'bi USD' }, // Saldo de manufaturas
   },
   
   // Defense indicators
@@ -110,6 +125,10 @@ class CountryStateManager {
           );
           
           countryState.economy = calculationResult.economy;
+          
+          // Calcular os indicadores derivados do PIB
+          this.updateDerivedEconomicIndicators(countryState);
+          
           roomUpdates++;
           totalUpdates++;
         }
@@ -127,6 +146,118 @@ class CountryStateManager {
       if (totalUpdates > 0) {
         console.log(`[ECONOMY] 30-second update: ${totalUpdates} total country updates across all rooms`);
       }
+    }
+  }
+
+  /**
+   * Atualiza os indicadores econômicos derivados do PIB
+   * @param {Object} countryState - Estado atual do país
+   */
+  updateDerivedEconomicIndicators(countryState) {
+    const economy = countryState.economy;
+    const gdp = economy.gdp.value;
+    
+    // Garantir que os percentuais setoriais existam
+    if (!economy.services || typeof economy.services.value !== 'number') {
+      economy.services = { value: 35, unit: '%' };
+    }
+    
+    if (!economy.commodities || typeof economy.commodities.value !== 'number') {
+      economy.commodities = { value: 35, unit: '%' };
+    }
+    
+    if (!economy.manufactures || typeof economy.manufactures.value !== 'number') {
+      economy.manufactures = { value: 30, unit: '%' };
+    }
+    
+    // Produção nos setores (valor absoluto)
+    economy.servicesOutput = { 
+      value: parseFloat((gdp * economy.services.value / 100).toFixed(2)), 
+      unit: 'bi USD' 
+    };
+    
+    economy.commoditiesOutput = { 
+      value: parseFloat((gdp * economy.commodities.value / 100).toFixed(2)), 
+      unit: 'bi USD' 
+    };
+    
+    economy.manufacturesOutput = { 
+      value: parseFloat((gdp * economy.manufactures.value / 100).toFixed(2)), 
+      unit: 'bi USD' 
+    };
+    
+    // Inicializar estruturas das necessidades se não existirem
+    if (!economy.commoditiesNeeds || typeof economy.commoditiesNeeds !== 'object') {
+      economy.commoditiesNeeds = { value: 0, percentValue: 30, unit: 'bi USD' };
+    }
+    
+    if (!economy.manufacturesNeeds || typeof economy.manufacturesNeeds !== 'object') {
+      economy.manufacturesNeeds = { value: 0, percentValue: 45, unit: 'bi USD' };
+    }
+    
+    // Inicializar estruturas dos saldos se não existirem
+    if (!economy.commoditiesBalance || typeof economy.commoditiesBalance !== 'object') {
+      economy.commoditiesBalance = { value: 0, unit: 'bi USD' };
+    }
+    
+    if (!economy.manufacturesBalance || typeof economy.manufacturesBalance !== 'object') {
+      economy.manufacturesBalance = { value: 0, unit: 'bi USD' };
+    }
+    
+    // Atualizar percentuais de necessidade com variação aleatória a cada 3 ciclos
+    if (this.updateCounter % 3 === 0) {
+      const commoditiesVariation = (Math.random() * 0.4) - 0.2;
+      const manufacturesVariation = (Math.random() * 0.4) - 0.2;
+      
+      economy.commoditiesNeeds.percentValue = Math.max(10, Math.min(50, 
+        economy.commoditiesNeeds.percentValue + commoditiesVariation
+      ));
+      
+      economy.manufacturesNeeds.percentValue = Math.max(20, Math.min(70, 
+        economy.manufacturesNeeds.percentValue + manufacturesVariation
+      ));
+    }
+    
+    // Cálculo das necessidades em valores absolutos
+    economy.commoditiesNeeds.value = parseFloat((gdp * economy.commoditiesNeeds.percentValue / 100).toFixed(2));
+    economy.manufacturesNeeds.value = parseFloat((gdp * economy.manufacturesNeeds.percentValue / 100).toFixed(2));
+    
+    // Cálculo dos saldos
+    economy.commoditiesBalance.value = parseFloat((economy.commoditiesOutput.value - economy.commoditiesNeeds.value).toFixed(2));
+    economy.manufacturesBalance.value = parseFloat((economy.manufacturesOutput.value - economy.manufacturesNeeds.value).toFixed(2));
+    
+    // Atualizar distribuição setorial com pequena variação a cada 6 ciclos
+    if (this.updateCounter % 6 === 0) {
+      // Variação de -1 a +1 ponto percentual
+      const servicesVariation = Math.floor(Math.random() * 3) - 1;
+      const commoditiesVariation = Math.floor(Math.random() * 3) - 1;
+      
+      // Ajustar percentuais mantendo a soma em 100%
+      let services = economy.services.value + servicesVariation;
+      let commodities = economy.commodities.value + commoditiesVariation;
+      let manufactures = 100 - services - commodities;
+      
+      // Corrigir valores extremos
+      if (services < 15) services = 15;
+      if (commodities < 15) commodities = 15;
+      if (manufactures < 15) {
+        const excess = 15 - manufactures;
+        services -= Math.floor(excess / 2);
+        commodities -= Math.ceil(excess / 2);
+        manufactures = 15;
+      }
+      
+      // Garantir que a soma seja 100%
+      const total = services + commodities + manufactures;
+      if (total !== 100) {
+        const adjustment = 100 - total;
+        services += adjustment;
+      }
+      
+      // Atualizar os valores
+      economy.services.value = services;
+      economy.commodities.value = commodities;
+      economy.manufactures.value = manufactures;
     }
   }
   
@@ -233,6 +364,68 @@ class CountryStateManager {
           value: state.economy.gdp.value * 0.1, 
           unit: 'bi USD' 
         };
+        
+        // Inicializar valores para a distribuição setorial
+        // Usar services como complemento se não estiver definido diretamente
+        
+        // Ler commodities.gdpShare se disponível
+        if (countryData.economy.commodities && countryData.economy.commodities.gdpShare !== undefined) {
+          state.economy.commodities.value = countryData.economy.commodities.gdpShare;
+        } else if (countryData.economy.commodities && typeof countryData.economy.commodities === 'number') {
+          state.economy.commodities.value = countryData.economy.commodities;
+        }
+        
+        // Ler manufacturing.gdpShare se disponível (para manufaturas)
+        if (countryData.economy.manufacturing && countryData.economy.manufacturing.gdpShare !== undefined) {
+          state.economy.manufactures.value = countryData.economy.manufacturing.gdpShare;
+        } else if (countryData.economy.manufactures && typeof countryData.economy.manufactures === 'number') {
+          state.economy.manufactures.value = countryData.economy.manufactures;
+        }
+        
+        // Calcular serviços como residual (complemento para 100%)
+        state.economy.services.value = 100 - state.economy.commodities.value - state.economy.manufactures.value;
+        
+        // Garantir que a soma seja 100%
+        const total = state.economy.services.value + state.economy.commodities.value + state.economy.manufactures.value;
+        if (total !== 100) {
+          // Ajustar o serviço para garantir soma 100%
+          state.economy.services.value += (100 - total);
+        }
+        
+        // Calcular os valores absolutos iniciais
+        state.economy.servicesOutput.value = parseFloat((state.economy.gdp.value * state.economy.services.value / 100).toFixed(2));
+        state.economy.commoditiesOutput.value = parseFloat((state.economy.gdp.value * state.economy.commodities.value / 100).toFixed(2));
+        state.economy.manufacturesOutput.value = parseFloat((state.economy.gdp.value * state.economy.manufactures.value / 100).toFixed(2));
+        
+        // Inicializar necessidades
+        // Usar consumo doméstico se disponível, caso contrário usar valores padrão
+        if (countryData.economy.commodities && countryData.economy.commodities.domesticConsumption !== undefined) {
+          // Calcular como porcentagem do PIB
+          const gdpValue = state.economy.gdp.value;
+          const domesticConsumption = countryData.economy.commodities.domesticConsumption;
+          state.economy.commoditiesNeeds.percentValue = Math.round((domesticConsumption / gdpValue) * 100);
+          state.economy.commoditiesNeeds.value = domesticConsumption;
+        } else if (countryData.economy.commoditiesNeeds) {
+          state.economy.commoditiesNeeds.percentValue = countryData.economy.commoditiesNeeds;
+        }
+        
+        if (countryData.economy.manufacturing && countryData.economy.manufacturing.domesticConsumption !== undefined) {
+          // Calcular como porcentagem do PIB
+          const gdpValue = state.economy.gdp.value;
+          const domesticConsumption = countryData.economy.manufacturing.domesticConsumption;
+          state.economy.manufacturesNeeds.percentValue = Math.round((domesticConsumption / gdpValue) * 100);
+          state.economy.manufacturesNeeds.value = domesticConsumption;
+        } else if (countryData.economy.manufacturesNeeds) {
+          state.economy.manufacturesNeeds.percentValue = countryData.economy.manufacturesNeeds;
+        }
+        
+        // Calcular valores absolutos de necessidades
+        state.economy.commoditiesNeeds.value = parseFloat((state.economy.gdp.value * state.economy.commoditiesNeeds.percentValue / 100).toFixed(2));
+        state.economy.manufacturesNeeds.value = parseFloat((state.economy.gdp.value * state.economy.manufacturesNeeds.percentValue / 100).toFixed(2));
+        
+        // Calcular saldos iniciais
+        state.economy.commoditiesBalance.value = parseFloat((state.economy.commoditiesOutput.value - state.economy.commoditiesNeeds.value).toFixed(2));
+        state.economy.manufacturesBalance.value = parseFloat((state.economy.manufacturesOutput.value - state.economy.manufacturesNeeds.value).toFixed(2));
       }
       
       // Set defense values
@@ -281,6 +474,11 @@ class CountryStateManager {
     
     // Apply updates to the category
     Object.assign(roomStates[countryName][category], updates);
+    
+    // If the updates are for the economy, recalculate derived indicators
+    if (category === 'economy') {
+      this.updateDerivedEconomicIndicators(roomStates[countryName]);
+    }
     
     // Update timestamp
     this.lastUpdated.set(roomName, Date.now());

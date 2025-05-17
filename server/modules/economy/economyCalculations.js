@@ -77,6 +77,28 @@ function performEconomicCalculations(countryState, staticData, updates = {}) {
     updatedEconomy.gdp.value = newGdp;
   }
   
+  // Preservar os valores dos indicadores derivados para que sejam recalculados
+  // pelo countryStateManager a partir do novo PIB
+  const preservedValues = {
+    services: updatedEconomy.services,
+    commodities: updatedEconomy.commodities,
+    manufactures: updatedEconomy.manufactures,
+    servicesOutput: updatedEconomy.servicesOutput,
+    commoditiesOutput: updatedEconomy.commoditiesOutput,
+    manufacturesOutput: updatedEconomy.manufacturesOutput,
+    commoditiesNeeds: updatedEconomy.commoditiesNeeds,
+    manufacturesNeeds: updatedEconomy.manufacturesNeeds,
+    commoditiesBalance: updatedEconomy.commoditiesBalance,
+    manufacturesBalance: updatedEconomy.manufacturesBalance
+  };
+  
+  // Garantir que os valores preservados sejam recuperados
+  Object.entries(preservedValues).forEach(([key, value]) => {
+    if (value !== undefined) {
+      updatedEconomy[key] = value;
+    }
+  });
+  
   return {
     economy: updatedEconomy,
     publicDebtResult: updates.publicDebtResult || null

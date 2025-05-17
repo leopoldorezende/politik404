@@ -1,4 +1,3 @@
-
 /* TradePanel.css - Updated version with improved structure */
 
 .trade-panel {
@@ -7,12 +6,159 @@
   color: #333;
   height: 100%;
   overflow-y: auto;
+  padding: 0 5px;
 }
 
 .trade-panel h4 {
   margin: 15px 0 10px;
   color: #34495e;
   font-size: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 5px;
+}
+
+/* Economic Overview Section */
+.economic-overview-section {
+  margin-bottom: 15px;
+}
+
+.economy-data {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.economy-stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 10px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+.stat-label {
+  font-weight: bold;
+}
+
+/* Sectoral Distribution Section */
+.sectoral-distribution-section {
+  margin-bottom: 15px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 5px;
+}
+
+.distribution-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sector-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sector-info {
+  display: flex;
+  justify-content: space-between;
+}
+
+.sector-label {
+  font-weight: bold;
+}
+
+.progress-container {
+  height: 12px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 6px;
+}
+
+.progress-fill.services {
+  background-color: #3498db;
+}
+
+.progress-fill.commodities {
+  background-color: #2ecc71;
+}
+
+.progress-fill.manufactures {
+  background-color: #9b59b6;
+}
+
+.sector-output {
+  text-align: right;
+  font-size: 12px;
+  color: #777;
+}
+
+/* Trade Balance Section */
+.trade-balance-section {
+  margin-bottom: 15px;
+}
+
+.balance-item {
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.balance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.balance-title {
+  font-weight: bold;
+}
+
+.balance-value {
+  font-weight: bold;
+}
+
+.balance-value.positive {
+  color: #2ecc71;
+}
+
+.balance-value.negative {
+  color: #e74c3c;
+}
+
+.balance-details {
+  padding: 8px 12px;
+}
+
+.balance-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.balance-label {
+  width: 90px;
+  font-size: 13px;
+}
+
+.balance-number {
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.balance-percent {
+  font-size: 12px;
+  color: #777;
 }
 
 /* Form styling */
@@ -20,6 +166,7 @@
   border-radius: 4px;
   padding: 12px;
   margin-bottom: 15px;
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
 .form-row {
@@ -75,6 +222,8 @@
   padding: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   transition: transform 0.2s, box-shadow 0.2s;
+  margin-bottom: 10px;
+  background-color: white;
 }
 
 .trade-card:hover {
@@ -87,6 +236,7 @@
   margin-bottom: 8px;
   color: #34495e;
   font-size: 15px;
+  border-bottom: none;
 }
 
 .trade-card p {
@@ -106,12 +256,12 @@
 }
 
 /* Card colors for import/export */
-.trade-card.import {
-  border-left: 4px solid #3498db;
-}
-
 .trade-card.export {
   border-left: 4px solid #2ecc71;
+}
+
+.trade-card.import {
+  border-left: 4px solid #3498db;
 }
 
 /* Trade benefits section */
@@ -132,6 +282,14 @@
   font-size: 14px;
 }
 
+/* No data message */
+.no-data {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 15px 0;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .cards-grid {
@@ -145,5 +303,18 @@
   .form-actions button {
     margin-top: 8px;
     width: 100%;
+  }
+  
+  .balance-row {
+    flex-wrap: wrap;
+  }
+  
+  .balance-label {
+    width: 100%;
+    margin-bottom: 2px;
+  }
+  
+  .balance-percent {
+    margin-left: auto;
   }
 }

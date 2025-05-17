@@ -953,393 +953,393 @@
     ]
   },
   "Germany": {
-  "name": "Germany",
-  "population": 83000000,
-  "hdi": 0.942,
-  "borders": [],
-  "defense": { "navy": 50, "airforce": 70, "army": 60, "missiles": 60, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 78,
-    "mediaSupport": 75,
-    "protests": { "value": 1.0, "unit": "per month" },
-    "opposition": { "strength": 22, "foreignConnections": [] }
+    "name": "Germany",
+    "population": 83000000,
+    "hdi": 0.942,
+    "borders": [],
+    "defense": { "navy": 50, "airforce": 70, "army": 60, "missiles": 60, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 78,
+      "mediaSupport": 75,
+      "protests": { "value": 1.0, "unit": "per month" },
+      "opposition": { "strength": 22, "foreignConnections": [] }
+    },
+    "economy": {
+      "interestRate": 4.5, "taxBurden": 37, "publicServices": 40,
+      "treasury": { "value": 850, "unit": "billion USD" },
+      "gdp": { "value": 4300, "unit": "billion USD" }, "gdpGrowth": 0.2,
+      "publicDebt": { "value": 1600, "unit": "billion USD" }, "publicDebtToGdp": 37.2,
+      "inflation": 2.8, "unemployment": 5.5, "popularity": 60,
+      "commodities": { "value": 600, "gdpShare": 14, "domesticConsumption": 350, "stock": 250 },
+      "manufacturing": { "value": 1500, "gdpShare": 35, "domesticConsumption": 1300, "stock": 200 },
+      "defensePower": 8, "technologyLevel": 9, "naturalResources": 4
+    },
+    "coastalPoints": []
   },
-  "economy": {
-    "interestRate": 4.5, "taxBurden": 37, "publicServices": 40,
-    "treasury": { "value": 850, "unit": "billion USD" },
-    "gdp": { "value": 4300, "unit": "billion USD" }, "gdpGrowth": 0.2,
-    "publicDebt": { "value": 1600, "unit": "billion USD" }, "publicDebtToGdp": 37.2,
-    "inflation": 2.8, "unemployment": 5.5, "popularity": 60,
-    "commodities": { "value": 600, "gdpShare": 14, "domesticConsumption": 350, "stock": 250 },
-    "manufacturing": { "value": 1500, "gdpShare": 35, "domesticConsumption": 1300, "stock": 200 },
-    "defensePower": 8, "technologyLevel": 9, "naturalResources": 4
+  "France": {
+    "name": "France",
+    "population": 68000000,
+    "hdi": 0.903,
+    "borders": [],
+    "defense": { "navy": 70, "airforce": 75, "army": 65, "missiles": 70, "nuclearCapability": true },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 80,
+      "mediaSupport": 77,
+      "protests": { "value": 2.5, "unit": "per month" },
+      "opposition": { "strength": 20, "foreignConnections": [] }
+    },
+    "economy": {
+      "interestRate": 4.0, "taxBurden": 45, "publicServices": 42,
+      "treasury": { "value": 790, "unit": "billion USD" },
+      "gdp": { "value": 3200, "unit": "billion USD" }, "gdpGrowth": 0.8,
+      "publicDebt": { "value": 1400, "unit": "billion USD" }, "publicDebtToGdp": 43.7,
+      "inflation": 3.1, "unemployment": 7.2, "popularity": 62,
+      "commodities": { "value": 500, "gdpShare": 15, "domesticConsumption": 350, "stock": 150 },
+      "manufacturing": { "value": 1100, "gdpShare": 34, "domesticConsumption": 950, "stock": 150 },
+      "defensePower": 9, "technologyLevel": 9, "naturalResources": 5
+    },
+    "coastalPoints": []
   },
-  "coastalPoints": []
-},
-"France": {
-  "name": "France",
-  "population": 68000000,
-  "hdi": 0.903,
-  "borders": [],
-  "defense": { "navy": 70, "airforce": 75, "army": 65, "missiles": 70, "nuclearCapability": true },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 80,
-    "mediaSupport": 77,
-    "protests": { "value": 2.5, "unit": "per month" },
-    "opposition": { "strength": 20, "foreignConnections": [] }
+  "Poland": {
+    "name": "Poland",
+    "population": 38000000,
+    "hdi": 0.880,
+    "borders": [],
+    "defense": { "navy": 30, "airforce": 55, "army": 60, "missiles": 50, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 70,
+      "mediaSupport": 60,
+      "protests": { "value": 1.5, "unit": "per month" },
+      "opposition": { "strength": 25, "foreignConnections": [] }
+    },
+    "economy": {
+      "interestRate": 5.75, "taxBurden": 32, "publicServices": 35,
+      "treasury": { "value": 420, "unit": "billion USD" },
+      "gdp": { "value": 900, "unit": "billion USD" }, "gdpGrowth": 2.5,
+      "publicDebt": { "value": 400, "unit": "billion USD" }, "publicDebtToGdp": 44.4,
+      "inflation": 6.5, "unemployment": 5.2, "popularity": 58,
+      "commodities": { "value": 300, "gdpShare": 33, "domesticConsumption": 210, "stock": 90 },
+      "manufacturing": { "value": 390, "gdpShare": 43, "domesticConsumption": 310, "stock": 80 },
+      "defensePower": 7, "technologyLevel": 7, "naturalResources": 6
+    },
+    "coastalPoints": []
   },
-  "economy": {
-    "interestRate": 4.0, "taxBurden": 45, "publicServices": 42,
-    "treasury": { "value": 790, "unit": "billion USD" },
-    "gdp": { "value": 3200, "unit": "billion USD" }, "gdpGrowth": 0.8,
-    "publicDebt": { "value": 1400, "unit": "billion USD" }, "publicDebtToGdp": 43.7,
-    "inflation": 3.1, "unemployment": 7.2, "popularity": 62,
-    "commodities": { "value": 500, "gdpShare": 15, "domesticConsumption": 350, "stock": 150 },
-    "manufacturing": { "value": 1100, "gdpShare": 34, "domesticConsumption": 950, "stock": 150 },
-    "defensePower": 9, "technologyLevel": 9, "naturalResources": 5
+  "Algeria": {
+    "name": "Algeria",
+    "population": 45600000,
+    "hdi": 0.745,
+    "borders": [],
+    "defense": { "navy": 35, "airforce": 55, "army": 65, "missiles": 45, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 68,
+      "mediaSupport": 55,
+      "protests": { "value": 3.0, "unit": "per month" },
+      "opposition": { "strength": 25, "foreignConnections": ["France"] }
+    },
+    "economy": {
+      "interestRate": 8.0, "taxBurden": 10, "publicServices": 25,
+      "treasury": { "value": 70, "unit": "billion USD" },
+      "gdp": { "value": 206, "unit": "billion USD" }, "gdpGrowth": 2.6,
+      "publicDebt": { "value": 67, "unit": "billion USD" }, "publicDebtToGdp": 32.5,
+      "inflation": 9.5, "unemployment": 11.4, "popularity": 50,
+      "commodities": { "value": 120, "gdpShare": 58, "domesticConsumption": 70, "stock": 50 },
+      "manufacturing": { "value": 40, "gdpShare": 20, "domesticConsumption": 30, "stock": 10 },
+      "defensePower": 6, "technologyLevel": 5, "naturalResources": 8
+    },
+    "coastalPoints": []
   },
-  "coastalPoints": []
-},
-"Poland": {
-  "name": "Poland",
-  "population": 38000000,
-  "hdi": 0.880,
-  "borders": [],
-  "defense": { "navy": 30, "airforce": 55, "army": 60, "missiles": 50, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 70,
-    "mediaSupport": 60,
-    "protests": { "value": 1.5, "unit": "per month" },
-    "opposition": { "strength": 25, "foreignConnections": [] }
+  "Morocco": {
+    "name": "Morocco",
+    "population": 37700000,
+    "hdi": 0.714,
+    "borders": [],
+    "defense": { "navy": 30, "airforce": 45, "army": 55, "missiles": 35, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 70,
+      "mediaSupport": 60,
+      "protests": { "value": 2.2, "unit": "per month" },
+      "opposition": { "strength": 22, "foreignConnections": [] }
+    },
+    "economy": {
+      "interestRate": 3.0, "taxBurden": 18, "publicServices": 28,
+      "treasury": { "value": 48, "unit": "billion USD" },
+      "gdp": { "value": 143, "unit": "billion USD" }, "gdpGrowth": 3.5,
+      "publicDebt": { "value": 96, "unit": "billion USD" }, "publicDebtToGdp": 67.1,
+      "inflation": 5.0, "unemployment": 11.8, "popularity": 55,
+      "commodities": { "value": 60, "gdpShare": 42, "domesticConsumption": 40, "stock": 20 },
+      "manufacturing": { "value": 40, "gdpShare": 28, "domesticConsumption": 32, "stock": 8 },
+      "defensePower": 5, "technologyLevel": 5, "naturalResources": 6
+    },
+    "coastalPoints": []
   },
-  "economy": {
-    "interestRate": 5.75, "taxBurden": 32, "publicServices": 35,
-    "treasury": { "value": 420, "unit": "billion USD" },
-    "gdp": { "value": 900, "unit": "billion USD" }, "gdpGrowth": 2.5,
-    "publicDebt": { "value": 400, "unit": "billion USD" }, "publicDebtToGdp": 44.4,
-    "inflation": 6.5, "unemployment": 5.2, "popularity": 58,
-    "commodities": { "value": 300, "gdpShare": 33, "domesticConsumption": 210, "stock": 90 },
-    "manufacturing": { "value": 390, "gdpShare": 43, "domesticConsumption": 310, "stock": 80 },
-    "defensePower": 7, "technologyLevel": 7, "naturalResources": 6
+  "Spain": {
+    "name": "Spain",
+    "population": 48000000,
+    "hdi": 0.905,
+    "borders": [],
+    "defense": { "navy": 55, "airforce": 60, "army": 60, "missiles": 55, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 72,
+      "mediaSupport": 75,
+      "protests": { "value": 1.8, "unit": "per month" },
+      "opposition": { "strength": 20, "foreignConnections": [] }
+    },
+    "economy": {
+      "interestRate": 4.25, "taxBurden": 39, "publicServices": 40,
+      "treasury": { "value": 630, "unit": "billion USD" },
+      "gdp": { "value": 1800, "unit": "billion USD" }, "gdpGrowth": 1.4,
+      "publicDebt": { "value": 1400, "unit": "billion USD" }, "publicDebtToGdp": 77.8,
+      "inflation": 3.5, "unemployment": 11.5, "popularity": 65,
+      "commodities": { "value": 230, "gdpShare": 13, "domesticConsumption": 190, "stock": 40 },
+      "manufacturing": { "value": 620, "gdpShare": 34, "domesticConsumption": 500, "stock": 120 },
+      "defensePower": 8, "technologyLevel": 8, "naturalResources": 5
+    },
+    "coastalPoints": []
   },
-  "coastalPoints": []
-},
-"Algeria": {
-  "name": "Algeria",
-  "population": 45600000,
-  "hdi": 0.745,
-  "borders": [],
-  "defense": { "navy": 35, "airforce": 55, "army": 65, "missiles": 45, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 68,
-    "mediaSupport": 55,
-    "protests": { "value": 3.0, "unit": "per month" },
-    "opposition": { "strength": 25, "foreignConnections": ["France"] }
+  "Ukraine": {
+    "name": "Ukraine",
+    "population": 36000000,
+    "hdi": 0.773,
+    "borders": [],
+    "defense": { "navy": 20, "airforce": 55, "army": 80, "missiles": 60, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 65,
+      "mediaSupport": 70,
+      "protests": { "value": 3.0, "unit": "per month" },
+      "opposition": { "strength": 30, "foreignConnections": ["Russia"] }
+    },
+    "economy": {
+      "interestRate": 14.0, "taxBurden": 18, "publicServices": 20,
+      "treasury": { "value": 50, "unit": "billion USD" },
+      "gdp": { "value": 158, "unit": "billion USD" }, "gdpGrowth": -5.0,
+      "publicDebt": { "value": 132, "unit": "billion USD" }, "publicDebtToGdp": 83.5,
+      "inflation": 16.0, "unemployment": 18.0, "popularity": 55,
+      "commodities": { "value": 90, "gdpShare": 57, "domesticConsumption": 60, "stock": 30 },
+      "manufacturing": { "value": 50, "gdpShare": 32, "domesticConsumption": 40, "stock": 10 },
+      "defensePower": 9, "technologyLevel": 6, "naturalResources": 7
+    },
+    "coastalPoints": []
   },
-  "economy": {
-    "interestRate": 8.0, "taxBurden": 10, "publicServices": 25,
-    "treasury": { "value": 70, "unit": "billion USD" },
-    "gdp": { "value": 206, "unit": "billion USD" }, "gdpGrowth": 2.6,
-    "publicDebt": { "value": 67, "unit": "billion USD" }, "publicDebtToGdp": 32.5,
-    "inflation": 9.5, "unemployment": 11.4, "popularity": 50,
-    "commodities": { "value": 120, "gdpShare": 58, "domesticConsumption": 70, "stock": 50 },
-    "manufacturing": { "value": 40, "gdpShare": 20, "domesticConsumption": 30, "stock": 10 },
-    "defensePower": 6, "technologyLevel": 5, "naturalResources": 8
+  "Argentina": {
+    "name": "Argentina",
+    "population": 46000000,
+    "hdi": 0.849,
+    "borders": [],
+    "defense": { "navy": 40, "airforce": 50, "army": 55, "missiles": 30, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 60,
+      "mediaSupport": 58,
+      "protests": { "value": 3.5, "unit": "per month" },
+      "opposition": { "strength": 32, "foreignConnections": [] }
+    },
+    "economy": {
+      "interestRate": 60.0, "taxBurden": 29, "publicServices": 32,
+      "treasury": { "value": 35, "unit": "billion USD" },
+      "gdp": { "value": 640, "unit": "billion USD" }, "gdpGrowth": -2.5,
+      "publicDebt": { "value": 420, "unit": "billion USD" }, "publicDebtToGdp": 65.6,
+      "inflation": 250.0, "unemployment": 7.0, "popularity": 40,
+      "commodities": { "value": 320, "gdpShare": 50, "domesticConsumption": 180, "stock": 140 },
+      "manufacturing": { "value": 170, "gdpShare": 27, "domesticConsumption": 140, "stock": 30 },
+      "defensePower": 6, "technologyLevel": 6, "naturalResources": 7
+    },
+    "coastalPoints": []
   },
-  "coastalPoints": []
-},
-"Morocco": {
-  "name": "Morocco",
-  "population": 37700000,
-  "hdi": 0.714,
-  "borders": [],
-  "defense": { "navy": 30, "airforce": 45, "army": 55, "missiles": 35, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 70,
-    "mediaSupport": 60,
-    "protests": { "value": 2.2, "unit": "per month" },
-    "opposition": { "strength": 22, "foreignConnections": [] }
+  "Mexico": {
+    "name": "Mexico",
+    "population": 128000000,
+    "hdi": 0.758,
+    "borders": [],
+    "defense": { "navy": 45, "airforce": 50, "army": 65, "missiles": 35, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 62,
+      "mediaSupport": 60,
+      "protests": { "value": 2.5, "unit": "per month" },
+      "opposition": { "strength": 30, "foreignConnections": [] }
+    },
+    "economy": {
+      "interestRate": 11.0, "taxBurden": 16, "publicServices": 25,
+      "treasury": { "value": 120, "unit": "billion USD" },
+      "gdp": { "value": 1800, "unit": "billion USD" }, "gdpGrowth": 3.0,
+      "publicDebt": { "value": 750, "unit": "billion USD" }, "publicDebtToGdp": 41.6,
+      "inflation": 4.8, "unemployment": 3.0, "popularity": 65,
+      "commodities": { "value": 700, "gdpShare": 39, "domesticConsumption": 500, "stock": 200 },
+      "manufacturing": { "value": 750, "gdpShare": 42, "domesticConsumption": 600, "stock": 150 },
+      "defensePower": 7, "technologyLevel": 7, "naturalResources": 7
+    },
+    "coastalPoints": []
   },
-  "economy": {
-    "interestRate": 3.0, "taxBurden": 18, "publicServices": 28,
-    "treasury": { "value": 48, "unit": "billion USD" },
-    "gdp": { "value": 143, "unit": "billion USD" }, "gdpGrowth": 3.5,
-    "publicDebt": { "value": 96, "unit": "billion USD" }, "publicDebtToGdp": 67.1,
-    "inflation": 5.0, "unemployment": 11.8, "popularity": 55,
-    "commodities": { "value": 60, "gdpShare": 42, "domesticConsumption": 40, "stock": 20 },
-    "manufacturing": { "value": 40, "gdpShare": 28, "domesticConsumption": 32, "stock": 8 },
-    "defensePower": 5, "technologyLevel": 5, "naturalResources": 6
+  "Venezuela": {
+    "name": "Venezuela",
+    "population": 28000000,
+    "hdi": 0.691,
+    "borders": [],
+    "defense": { "navy": 35, "airforce": 40, "army": 60, "missiles": 40, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 70,
+      "mediaSupport": 30,
+      "protests": { "value": 4.0, "unit": "per month" },
+      "opposition": { "strength": 38, "foreignConnections": ["United States", "Colombia"] }
+    },
+    "economy": {
+      "interestRate": 58.0, "taxBurden": 10, "publicServices": 20,
+      "treasury": { "value": 15, "unit": "billion USD" },
+      "gdp": { "value": 97, "unit": "billion USD" }, "gdpGrowth": -3.2,
+      "publicDebt": { "value": 160, "unit": "billion USD" }, "publicDebtToGdp": 165.0,
+      "inflation": 360.0, "unemployment": 14.0, "popularity": 38,
+      "commodities": { "value": 80, "gdpShare": 82, "domesticConsumption": 40, "stock": 40 },
+      "manufacturing": { "value": 10, "gdpShare": 10, "domesticConsumption": 8, "stock": 2 },
+      "defensePower": 6, "technologyLevel": 4, "naturalResources": 9
+    },
+    "coastalPoints": []
   },
-  "coastalPoints": []
-},
-"Spain": {
-  "name": "Spain",
-  "population": 48000000,
-  "hdi": 0.905,
-  "borders": [],
-  "defense": { "navy": 55, "airforce": 60, "army": 60, "missiles": 55, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 72,
-    "mediaSupport": 75,
-    "protests": { "value": 1.8, "unit": "per month" },
-    "opposition": { "strength": 20, "foreignConnections": [] }
+  "Italy": {
+    "name": "Italy",
+    "population": 59000000,
+    "hdi": 0.895,
+    "borders": [],
+    "defense": { "navy": 60, "airforce": 65, "army": 65, "missiles": 60, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 70,
+      "mediaSupport": 70,
+      "protests": { "value": 1.8, "unit": "per month" },
+      "opposition": { "strength": 25, "foreignConnections": [] }
+    },
+    "economy": {
+      "interestRate": 4.5, "taxBurden": 43, "publicServices": 38,
+      "treasury": { "value": 670, "unit": "billion USD" },
+      "gdp": { "value": 2400, "unit": "billion USD" }, "gdpGrowth": 0.6,
+      "publicDebt": { "value": 2900, "unit": "billion USD" }, "publicDebtToGdp": 120.8,
+      "inflation": 3.3, "unemployment": 7.5, "popularity": 63,
+      "commodities": { "value": 350, "gdpShare": 14, "domesticConsumption": 300, "stock": 50 },
+      "manufacturing": { "value": 820, "gdpShare": 34, "domesticConsumption": 700, "stock": 120 },
+      "defensePower": 8, "technologyLevel": 8, "naturalResources": 4
+    },
+    "coastalPoints": []
   },
-  "economy": {
-    "interestRate": 4.25, "taxBurden": 39, "publicServices": 40,
-    "treasury": { "value": 630, "unit": "billion USD" },
-    "gdp": { "value": 1800, "unit": "billion USD" }, "gdpGrowth": 1.4,
-    "publicDebt": { "value": 1400, "unit": "billion USD" }, "publicDebtToGdp": 77.8,
-    "inflation": 3.5, "unemployment": 11.5, "popularity": 65,
-    "commodities": { "value": 230, "gdpShare": 13, "domesticConsumption": 190, "stock": 40 },
-    "manufacturing": { "value": 620, "gdpShare": 34, "domesticConsumption": 500, "stock": 120 },
-    "defensePower": 8, "technologyLevel": 8, "naturalResources": 5
+  "Angola": {
+    "name": "Angola",
+    "population": 48000000,
+    "hdi": 0.510,
+    "borders": [],
+    "defense": { "navy": 15, "airforce": 30, "army": 65, "missiles": 20, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 40,
+      "mediaSupport": 35,
+      "protests": { "value": 6.0, "unit": "per month" },
+      "opposition": { "strength": 50, "foreignConnections": ["Egypt", "United Arab Emirates"] }
+    },
+    "economy": {
+      "interestRate": 20.0, "taxBurden": 8, "publicServices": 10,
+      "treasury": { "value": 10, "unit": "billion USD" },
+      "gdp": { "value": 34, "unit": "billion USD" }, "gdpGrowth": -1.2,
+      "publicDebt": { "value": 52, "unit": "billion USD" }, "publicDebtToGdp": 152.9,
+      "inflation": 140.0, "unemployment": 18.0, "popularity": 30,
+      "commodities": { "value": 22, "gdpShare": 65, "domesticConsumption": 12, "stock": 10 },
+      "manufacturing": { "value": 6, "gdpShare": 18, "domesticConsumption": 5, "stock": 1 },
+      "defensePower": 5, "technologyLevel": 3, "naturalResources": 6
+    },
+    "coastalPoints": []
   },
-  "coastalPoints": []
-},
-"Ukraine": {
-  "name": "Ukraine",
-  "population": 36000000,
-  "hdi": 0.773,
-  "borders": [],
-  "defense": { "navy": 20, "airforce": 55, "army": 80, "missiles": 60, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 65,
-    "mediaSupport": 70,
-    "protests": { "value": 3.0, "unit": "per month" },
-    "opposition": { "strength": 30, "foreignConnections": ["Russia"] }
+  "Israel": {
+    "name": "Israel",
+    "population": 9500000,
+    "hdi": 0.919,
+    "borders": [],
+    "defense": { "navy": 55, "airforce": 85, "army": 80, "missiles": 80, "nuclearCapability": true },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 65,
+      "mediaSupport": 70,
+      "protests": { "value": 2.0, "unit": "per month" },
+      "opposition": { "strength": 35, "foreignConnections": ["Iran", "Lebanon", "Palestine"] }
+    },
+    "economy": {
+      "interestRate": 4.5, "taxBurden": 30, "publicServices": 35,
+      "treasury": { "value": 150, "unit": "billion USD" },
+      "gdp": { "value": 520, "unit": "billion USD" }, "gdpGrowth": 2.8,
+      "publicDebt": { "value": 290, "unit": "billion USD" }, "publicDebtToGdp": 55.7,
+      "inflation": 3.0, "unemployment": 4.0, "popularity": 60,
+      "commodities": { "value": 70, "gdpShare": 13, "domesticConsumption": 60, "stock": 10 },
+      "manufacturing": { "value": 180, "gdpShare": 35, "domesticConsumption": 150, "stock": 30 },
+      "defensePower": 9, "technologyLevel": 9, "naturalResources": 4
+    },
+    "coastalPoints": []
   },
-  "economy": {
-    "interestRate": 14.0, "taxBurden": 18, "publicServices": 20,
-    "treasury": { "value": 50, "unit": "billion USD" },
-    "gdp": { "value": 158, "unit": "billion USD" }, "gdpGrowth": -5.0,
-    "publicDebt": { "value": 132, "unit": "billion USD" }, "publicDebtToGdp": 83.5,
-    "inflation": 16.0, "unemployment": 18.0, "popularity": 55,
-    "commodities": { "value": 90, "gdpShare": 57, "domesticConsumption": 60, "stock": 30 },
-    "manufacturing": { "value": 50, "gdpShare": 32, "domesticConsumption": 40, "stock": 10 },
-    "defensePower": 9, "technologyLevel": 6, "naturalResources": 7
+  "South Africa": {
+    "name": "South Africa",
+    "population": 60000000,
+    "hdi": 0.713,
+    "borders": [],
+    "defense": { "navy": 40, "airforce": 50, "army": 55, "missiles": 35, "nuclearCapability": false },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 58,
+      "mediaSupport": 55,
+      "protests": { "value": 4.2, "unit": "per month" },
+      "opposition": { "strength": 34, "foreignConnections": [] }
+    },
+    "economy": {
+      "interestRate": 8.25, "taxBurden": 26, "publicServices": 30,
+      "treasury": { "value": 87, "unit": "billion USD" },
+      "gdp": { "value": 399, "unit": "billion USD" }, "gdpGrowth": 1.7,
+      "publicDebt": { "value": 250, "unit": "billion USD" }, "publicDebtToGdp": 62.6,
+      "inflation": 5.5, "unemployment": 32.0, "popularity": 40,
+      "commodities": { "value": 180, "gdpShare": 45, "domesticConsumption": 120, "stock": 60 },
+      "manufacturing": { "value": 100, "gdpShare": 25, "domesticConsumption": 85, "stock": 15 },
+      "defensePower": 6, "technologyLevel": 6, "naturalResources": 7
+    },
+    "coastalPoints": []
   },
-  "coastalPoints": []
-},
-"Argentina": {
-  "name": "Argentina",
-  "population": 46000000,
-  "hdi": 0.849,
-  "borders": [],
-  "defense": { "navy": 40, "airforce": 50, "army": 55, "missiles": 30, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 60,
-    "mediaSupport": 58,
-    "protests": { "value": 3.5, "unit": "per month" },
-    "opposition": { "strength": 32, "foreignConnections": [] }
-  },
-  "economy": {
-    "interestRate": 60.0, "taxBurden": 29, "publicServices": 32,
-    "treasury": { "value": 35, "unit": "billion USD" },
-    "gdp": { "value": 640, "unit": "billion USD" }, "gdpGrowth": -2.5,
-    "publicDebt": { "value": 420, "unit": "billion USD" }, "publicDebtToGdp": 65.6,
-    "inflation": 250.0, "unemployment": 7.0, "popularity": 40,
-    "commodities": { "value": 320, "gdpShare": 50, "domesticConsumption": 180, "stock": 140 },
-    "manufacturing": { "value": 170, "gdpShare": 27, "domesticConsumption": 140, "stock": 30 },
-    "defensePower": 6, "technologyLevel": 6, "naturalResources": 7
-  },
-  "coastalPoints": []
-},
-"Mexico": {
-  "name": "Mexico",
-  "population": 128000000,
-  "hdi": 0.758,
-  "borders": [],
-  "defense": { "navy": 45, "airforce": 50, "army": 65, "missiles": 35, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 62,
-    "mediaSupport": 60,
-    "protests": { "value": 2.5, "unit": "per month" },
-    "opposition": { "strength": 30, "foreignConnections": [] }
-  },
-  "economy": {
-    "interestRate": 11.0, "taxBurden": 16, "publicServices": 25,
-    "treasury": { "value": 120, "unit": "billion USD" },
-    "gdp": { "value": 1800, "unit": "billion USD" }, "gdpGrowth": 3.0,
-    "publicDebt": { "value": 750, "unit": "billion USD" }, "publicDebtToGdp": 41.6,
-    "inflation": 4.8, "unemployment": 3.0, "popularity": 65,
-    "commodities": { "value": 700, "gdpShare": 39, "domesticConsumption": 500, "stock": 200 },
-    "manufacturing": { "value": 750, "gdpShare": 42, "domesticConsumption": 600, "stock": 150 },
-    "defensePower": 7, "technologyLevel": 7, "naturalResources": 7
-  },
-  "coastalPoints": []
-},
-"Venezuela": {
-  "name": "Venezuela",
-  "population": 28000000,
-  "hdi": 0.691,
-  "borders": [],
-  "defense": { "navy": 35, "airforce": 40, "army": 60, "missiles": 40, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 70,
-    "mediaSupport": 30,
-    "protests": { "value": 4.0, "unit": "per month" },
-    "opposition": { "strength": 38, "foreignConnections": ["United States", "Colombia"] }
-  },
-  "economy": {
-    "interestRate": 58.0, "taxBurden": 10, "publicServices": 20,
-    "treasury": { "value": 15, "unit": "billion USD" },
-    "gdp": { "value": 97, "unit": "billion USD" }, "gdpGrowth": -3.2,
-    "publicDebt": { "value": 160, "unit": "billion USD" }, "publicDebtToGdp": 165.0,
-    "inflation": 360.0, "unemployment": 14.0, "popularity": 38,
-    "commodities": { "value": 80, "gdpShare": 82, "domesticConsumption": 40, "stock": 40 },
-    "manufacturing": { "value": 10, "gdpShare": 10, "domesticConsumption": 8, "stock": 2 },
-    "defensePower": 6, "technologyLevel": 4, "naturalResources": 9
-  },
-  "coastalPoints": []
-},
-"Italy": {
-  "name": "Italy",
-  "population": 59000000,
-  "hdi": 0.895,
-  "borders": [],
-  "defense": { "navy": 60, "airforce": 65, "army": 65, "missiles": 60, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 70,
-    "mediaSupport": 70,
-    "protests": { "value": 1.8, "unit": "per month" },
-    "opposition": { "strength": 25, "foreignConnections": [] }
-  },
-  "economy": {
-    "interestRate": 4.5, "taxBurden": 43, "publicServices": 38,
-    "treasury": { "value": 670, "unit": "billion USD" },
-    "gdp": { "value": 2400, "unit": "billion USD" }, "gdpGrowth": 0.6,
-    "publicDebt": { "value": 2900, "unit": "billion USD" }, "publicDebtToGdp": 120.8,
-    "inflation": 3.3, "unemployment": 7.5, "popularity": 63,
-    "commodities": { "value": 350, "gdpShare": 14, "domesticConsumption": 300, "stock": 50 },
-    "manufacturing": { "value": 820, "gdpShare": 34, "domesticConsumption": 700, "stock": 120 },
-    "defensePower": 8, "technologyLevel": 8, "naturalResources": 4
-  },
-  "coastalPoints": []
-},
-"Sudan": {
-  "name": "Sudan",
-  "population": 48000000,
-  "hdi": 0.510,
-  "borders": [],
-  "defense": { "navy": 15, "airforce": 30, "army": 65, "missiles": 20, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 40,
-    "mediaSupport": 35,
-    "protests": { "value": 6.0, "unit": "per month" },
-    "opposition": { "strength": 50, "foreignConnections": ["Egypt", "United Arab Emirates"] }
-  },
-  "economy": {
-    "interestRate": 20.0, "taxBurden": 8, "publicServices": 10,
-    "treasury": { "value": 10, "unit": "billion USD" },
-    "gdp": { "value": 34, "unit": "billion USD" }, "gdpGrowth": -1.2,
-    "publicDebt": { "value": 52, "unit": "billion USD" }, "publicDebtToGdp": 152.9,
-    "inflation": 140.0, "unemployment": 18.0, "popularity": 30,
-    "commodities": { "value": 22, "gdpShare": 65, "domesticConsumption": 12, "stock": 10 },
-    "manufacturing": { "value": 6, "gdpShare": 18, "domesticConsumption": 5, "stock": 1 },
-    "defensePower": 5, "technologyLevel": 3, "naturalResources": 6
-  },
-  "coastalPoints": []
-},
-"Israel": {
-  "name": "Israel",
-  "population": 9500000,
-  "hdi": 0.919,
-  "borders": [],
-  "defense": { "navy": 55, "airforce": 85, "army": 80, "missiles": 80, "nuclearCapability": true },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 65,
-    "mediaSupport": 70,
-    "protests": { "value": 2.0, "unit": "per month" },
-    "opposition": { "strength": 35, "foreignConnections": ["Iran", "Lebanon", "Palestine"] }
-  },
-  "economy": {
-    "interestRate": 4.5, "taxBurden": 30, "publicServices": 35,
-    "treasury": { "value": 150, "unit": "billion USD" },
-    "gdp": { "value": 520, "unit": "billion USD" }, "gdpGrowth": 2.8,
-    "publicDebt": { "value": 290, "unit": "billion USD" }, "publicDebtToGdp": 55.7,
-    "inflation": 3.0, "unemployment": 4.0, "popularity": 60,
-    "commodities": { "value": 70, "gdpShare": 13, "domesticConsumption": 60, "stock": 10 },
-    "manufacturing": { "value": 180, "gdpShare": 35, "domesticConsumption": 150, "stock": 30 },
-    "defensePower": 9, "technologyLevel": 9, "naturalResources": 4
-  },
-  "coastalPoints": []
-},
-"South Africa": {
-  "name": "South Africa",
-  "population": 60000000,
-  "hdi": 0.713,
-  "borders": [],
-  "defense": { "navy": 40, "airforce": 50, "army": 55, "missiles": 35, "nuclearCapability": false },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 58,
-    "mediaSupport": 55,
-    "protests": { "value": 4.2, "unit": "per month" },
-    "opposition": { "strength": 34, "foreignConnections": [] }
-  },
-  "economy": {
-    "interestRate": 8.25, "taxBurden": 26, "publicServices": 30,
-    "treasury": { "value": 87, "unit": "billion USD" },
-    "gdp": { "value": 399, "unit": "billion USD" }, "gdpGrowth": 1.7,
-    "publicDebt": { "value": 250, "unit": "billion USD" }, "publicDebtToGdp": 62.6,
-    "inflation": 5.5, "unemployment": 32.0, "popularity": 40,
-    "commodities": { "value": 180, "gdpShare": 45, "domesticConsumption": 120, "stock": 60 },
-    "manufacturing": { "value": 100, "gdpShare": 25, "domesticConsumption": 85, "stock": 15 },
-    "defensePower": 6, "technologyLevel": 6, "naturalResources": 7
-  },
-  "coastalPoints": []
-},
-"Pakistan": {
-  "name": "Pakistan",
-  "population": 240000000,
-  "hdi": 0.544,
-  "borders": [],
-  "defense": { "navy": 45, "airforce": 65, "army": 85, "missiles": 75, "nuclearCapability": true },
-  "politics": {
-    "economicAlliances": [],
-    "defenseAlliances": [],
-    "parliamentSupport": 50,
-    "mediaSupport": 45,
-    "protests": { "value": 5.0, "unit": "per month" },
-    "opposition": { "strength": 40, "foreignConnections": ["India", "United States"] }
-  },
-  "economy": {
-    "interestRate": 22.0, "taxBurden": 10, "publicServices": 20,
-    "treasury": { "value": 25, "unit": "billion USD" },
-    "gdp": { "value": 370, "unit": "billion USD" }, "gdpGrowth": 1.0,
-    "publicDebt": { "value": 280, "unit": "billion USD" }, "publicDebtToGdp": 75.7,
-    "inflation": 28.0, "unemployment": 8.5, "popularity": 42,
-    "commodities": { "value": 160, "gdpShare": 43, "domesticConsumption": 100, "stock": 60 },
-    "manufacturing": { "value": 130, "gdpShare": 35, "domesticConsumption": 110, "stock": 20 },
-    "defensePower": 8, "technologyLevel": 6, "naturalResources": 7
-  },
-  "coastalPoints": []
-}
+  "Pakistan": {
+    "name": "Pakistan",
+    "population": 240000000,
+    "hdi": 0.544,
+    "borders": [],
+    "defense": { "navy": 45, "airforce": 65, "army": 85, "missiles": 75, "nuclearCapability": true },
+    "politics": {
+      "economicAlliances": [],
+      "defenseAlliances": [],
+      "parliamentSupport": 50,
+      "mediaSupport": 45,
+      "protests": { "value": 5.0, "unit": "per month" },
+      "opposition": { "strength": 40, "foreignConnections": ["India", "United States"] }
+    },
+    "economy": {
+      "interestRate": 22.0, "taxBurden": 10, "publicServices": 20,
+      "treasury": { "value": 25, "unit": "billion USD" },
+      "gdp": { "value": 370, "unit": "billion USD" }, "gdpGrowth": 1.0,
+      "publicDebt": { "value": 280, "unit": "billion USD" }, "publicDebtToGdp": 75.7,
+      "inflation": 28.0, "unemployment": 8.5, "popularity": 42,
+      "commodities": { "value": 160, "gdpShare": 43, "domesticConsumption": 100, "stock": 60 },
+      "manufacturing": { "value": 130, "gdpShare": 35, "domesticConsumption": 110, "stock": 20 },
+      "defensePower": 8, "technologyLevel": 6, "naturalResources": 7
+    },
+    "coastalPoints": []
+  }
 }

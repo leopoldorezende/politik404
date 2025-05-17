@@ -1,6 +1,5 @@
 /* Estilos para o componente CountryState */
 
-
 .country-state-display.loading,
 .country-state-display.no-data {
   display: flex;
@@ -14,6 +13,7 @@
   font-size: 12px;
   text-align: right;
   margin-bottom: 10px;
+  color: #777;
 }
 
 .state-section {
@@ -40,11 +40,21 @@
 .indicator-label {
   width: 100px;
   font-weight: bold;
+  font-size: 13px;
 }
 
 .indicator-value {
-  min-width: 40px;
+  min-width: 45px;
   text-align: right;
+  font-weight: bold;
+}
+
+.indicator-value.positive {
+  color: #2ecc71;
+}
+
+.indicator-value.negative {
+  color: #e74c3c;
 }
 
 /* Barra de progresso */
@@ -61,4 +71,29 @@
   height: 100%;
   background-color: #4caf50;
   border-radius: 4px;
+}
+
+/* Estilos para diferentes seções */
+.commerce-section .progress-fill {
+  background-color: #3498db;
+}
+
+.politics-section .progress-fill {
+  background-color: #e67e22;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  .indicator {
+    flex-wrap: wrap;
+  }
+  
+  .indicator-label {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+  
+  .progress-bar {
+    margin: 0 5px;
+  }
 }

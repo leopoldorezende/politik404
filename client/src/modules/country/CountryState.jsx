@@ -13,9 +13,11 @@ import './CountryState.css';
  */
 const CountryState = ({ roomName, countryName }) => {
   const dispatch = useDispatch();
-  const currentRoom = useSelector(state => state.rooms.currentRoom);
+  
+  // Seletores para obter dados de vários reducers
   const myCountry = useSelector(state => state.game.myCountry);
-  const loading = useSelector(selectCountryStateLoading);
+  const countriesData = useSelector(state => state.game.countriesData);
+  const currentRoom = useSelector(state => state.rooms.currentRoom);
   
   // Se roomName e countryName não forem fornecidos, usar valores padrão
   const room = roomName || (currentRoom?.name || null);
@@ -26,6 +28,12 @@ const CountryState = ({ roomName, countryName }) => {
   
   // Obter o timestamp da última atualização
   const lastUpdated = useSelector(state => selectLastUpdated(state, room));
+  
+  // Dados estáticos do país
+  const staticCountryData = countriesData && country ? countriesData[country] : null;
+  
+  // Loading state
+  const loading = useSelector(selectCountryStateLoading);
   
   // Assinar para atualizações quando o componente montar
   useEffect(() => {
@@ -66,6 +74,12 @@ const CountryState = ({ roomName, countryName }) => {
     );
   }
   
+  // Formatar valor com sinal
+  const formatValueWithSign = (value) => {
+    if (value === undefined || value === null) return '0';
+    return (value >= 0 ? '+' : '') + value.toFixed(2) + ' bi';
+  };
+  
   return (
     <div className="country-state-display">
       <div className="last-updated">
@@ -87,6 +101,25 @@ const CountryState = ({ roomName, countryName }) => {
             {countryState.economy.treasury.value} {countryState.economy.treasury.unit}
           </span>
         </div>
+        
+        {/* Novos indicadores econômicos derivados */}
+        {countryState.economy.commoditiesBalance && (
+          <div className="indicator">
+            <span className="indicator-label">Saldo de Commodities:</span>
+            <span className={`indicator-value ${countryState.economy.commoditiesBalance.value >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(countryState.economy.commoditiesBalance.value)}
+            </span>
+          </div>
+        )}
+        
+        {countryState.economy.manufacturesBalance && (
+          <div className="indicator">
+            <span className="indicator-label">Saldo de Manufaturas:</span>
+            <span className={`indicator-value ${countryState.economy.manufacturesBalance.value >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(countryState.economy.manufacturesBalance.value)}
+            </span>
+          </div>
+        )}
       </div>
       
       {/* Seção de Defesa */}
