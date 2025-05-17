@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Sideview from '../sideview/Sideview';
 import Sidetools from '../sidetools/Sidetools';
 import MapView from '../map/MapView';
+import ActionMenu from '../actions/ActionMenu'; // Import the new ActionMenu component
 import { loadCountriesData, loadCountriesCoordinates } from '../country/countryService';
 import { setCountriesCoordinates } from './gameState'; 
 import './GamePage.css';
@@ -256,6 +257,9 @@ const GamePage = () => {
       <button id="btn-open-sideview" className="map-control" onClick={toggleSideview}>
         <span className="material-icons">public</span>
       </button>
+      
+      {/* Add the ActionMenu component */}
+      <ActionMenu />
       
       <Sidetools 
         onClose={toggleSidetools} 

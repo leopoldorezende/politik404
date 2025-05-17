@@ -13,6 +13,9 @@
   │   │   ├── App.jsx  # Componente raiz
   │   │   ├── main.jsx  # Entry point (Vite)
   │   │   ├── modules
+  │   │   │   ├── actions
+  │   │   │   │   ├── ActionMenu.css
+  │   │   │   │   └── ActionMenu.jsx
   │   │   │   ├── auth
   │   │   │   │   ├── AuthPage.css
   │   │   │   │   ├── AuthPage.jsx  # Tela de autenticação/login

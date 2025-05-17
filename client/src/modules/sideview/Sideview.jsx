@@ -70,6 +70,12 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
       
       <div className="tabs">
         <div 
+          className={`tab ${activeTab === 'country' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('country')}
+        >
+          <span className="material-icons">map</span>
+        </div>
+        <div 
           className={`tab ${activeTab === 'ranking' ? 'active' : ''}`} 
           onClick={() => setActiveTab('ranking')}
         >
@@ -84,12 +90,6 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
           {hasUnreadMessages() && (
             <span className="chat-badge" title="Novas mensagens">•</span>
           )}
-        </div>
-        <div 
-          className={`tab ${activeTab === 'country' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('country')}
-        >
-          <span className="material-icons">map</span>
         </div>
         <div 
           className={`tab ${activeTab === 'info' ? 'active' : ''}`} 
