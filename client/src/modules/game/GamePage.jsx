@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Sideview from '../sideview/Sideview';
 import Sidetools from '../sidetools/Sidetools';
@@ -21,6 +21,7 @@ const GamePage = () => {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [showTimeupPopup, setShowTimeupPopup] = useState(false);  // Estado do popup
+  const [activeTab, setActiveTab] = useState('chat'); // Add state for active tab
   
   // Atualizar o tempo a cada segundo
   useEffect(() => {
@@ -145,6 +146,12 @@ const GamePage = () => {
     setSidetoolsActive(!sidetoolsActive);
   };
 
+  // Function to open sideview with specific tab
+  const openSideviewWithTab = (tabName) => {
+    setSideviewActive(true);
+    setActiveTab(tabName);
+  };
+
   useEffect(() => {
     const sideview = document.getElementById('sideview');
     const sidetools = document.getElementById('sidetools');
@@ -258,8 +265,26 @@ const GamePage = () => {
         <span className="material-icons">public</span>
       </button>
       
-      {/* Add the ActionMenu component */}
-      <ActionMenu />
+      {/* Add the ActionMenu component with needed props */}
+      <ActionMenu 
+        onOpenSideview={() => {
+          setSideviewActive(true);
+          // Directly set the activeTab in Sideview by finding and clicking the country tab
+          setTimeout(() => {
+            const countryTab = document.querySelector('#sideview .tabs .tab[data-tab="country"]');
+            if (countryTab) {
+              countryTab.click();
+            }
+          }, 100);
+        }} 
+        onSetActiveTab={(tab) => {
+          // Find and click the tab directly
+          const tabElement = document.querySelector(`#sideview .tabs .tab[data-tab="${tab}"]`);
+          if (tabElement) {
+            tabElement.click();
+          }
+        }}
+      />
       
       <Sidetools 
         onClose={toggleSidetools} 
@@ -271,6 +296,8 @@ const GamePage = () => {
         onExitRoom={handleExitRoom} 
         onClose={toggleSideview} 
         isActive={sideviewActive}
+        activeTab={activeTab} // Pass activeTab to Sideview
+        onTabChange={setActiveTab} // Allow Sideview to update our activeTab state
       />
       
       {/* Popup quando o tempo acaba */}

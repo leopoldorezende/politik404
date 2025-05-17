@@ -5,9 +5,28 @@ import './ActionMenu.css';
  * ActionMenu - Component with action icons at the bottom of GamePage
  * Displays a menu of options when an action icon is clicked
  */
-const ActionMenu = () => {
+const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
   const [activeMenu, setActiveMenu] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const menuRef = useRef(null);
+
+  // Check if screen is mobile on mount and when window resizes
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 1200);
+    };
+    
+    // Initial check
+    checkMobile();
+    
+    // Listen for window resize
+    window.addEventListener('resize', checkMobile);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // Define the action menu options
   const menuOptions = {
@@ -18,6 +37,16 @@ const ActionMenu = () => {
 
   // Handle icon click to toggle menu
   const handleIconClick = (menuType) => {
+    // Special case for map icon - open sideview with country tab
+    if (menuType === 'map') {
+      // Close any open menu
+      setActiveMenu(null);
+      // Then open sideview with country tab
+      onOpenSideview();
+      onSetActiveTab('country');
+      return;
+    }
+    
     // If clicking the active menu, close it
     if (activeMenu === menuType) {
       setActiveMenu(null);
@@ -74,9 +103,10 @@ const ActionMenu = () => {
   // Get icon for each action type
   const getActionIcon = (action) => {
     const icons = {
-      'trade': 'monetization_on',
-      'hybrid': 'psychology',
-      'attack': 'gps_fixed'
+      'trade': 'directions_boat ',
+      'hybrid': 'public_off',
+      'attack': 'gps_fixed',
+      'map': 'map' 
     };
     
     return icons[action] || 'help';
@@ -87,7 +117,8 @@ const ActionMenu = () => {
     const titles = {
       'trade': 'Acordo Comercial',
       'hybrid': 'Guerra Híbrida',
-      'attack': 'Ataque Bélico'
+      'attack': 'Ataque Bélico',
+      'map': 'Ver País Selecionado' // Added map title
     };
     
     return titles[action] || '';
@@ -135,6 +166,17 @@ const ActionMenu = () => {
         >
           <span className="material-icons">{getActionIcon('attack')}</span>
         </button>
+        
+        {/* Map icon to open sideview with country information - only on mobile */}
+        {isMobile && (
+          <button 
+            className="action-icon"
+            onClick={() => handleIconClick('map')}
+            title={getActionTitle('map')}
+          >
+            <span className="material-icons">{getActionIcon('map')}</span>
+          </button>
+        )}
       </div>
     </div>
   );

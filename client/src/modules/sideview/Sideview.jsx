@@ -72,21 +72,23 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
         <div 
           className={`tab ${activeTab === 'country' ? 'active' : ''}`} 
           onClick={() => setActiveTab('country')}
+          data-tab="country"
         >
           <span className="material-icons">map</span>
         </div>
         <div 
           className={`tab ${activeTab === 'ranking' ? 'active' : ''}`} 
           onClick={() => setActiveTab('ranking')}
+          data-tab="ranking"
         >
           <span className="material-icons">leaderboard</span>
         </div>
         <div 
           className={`tab ${activeTab === 'chat' ? 'active' : ''}`} 
           onClick={handleChatTabClick}
+          data-tab="chat"
         >
           <span className="material-icons">chat</span>
-          {/* Badge apenas se houver mensagens não lidas E não estivermos na aba chat */}
           {hasUnreadMessages() && (
             <span className="chat-badge" title="Novas mensagens">•</span>
           )}
@@ -94,6 +96,7 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
         <div 
           className={`tab ${activeTab === 'info' ? 'active' : ''}`} 
           onClick={() => setActiveTab('info')}
+          data-tab="info"
         >
           <span className="material-icons">info</span>
         </div>
