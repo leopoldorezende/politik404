@@ -1,0 +1,139 @@
+/* ActionMenuPopup.css */
+
+.action-menu-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.action-menu-popup-content {
+  background-color: #2a3441;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  color: #fff;
+  animation: popup-appear 0.3s ease-out forwards;
+  overflow: hidden;
+}
+
+.action-menu-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #1e2730;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-menu-popup-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.action-menu-popup-close {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.action-menu-popup-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.action-menu-popup-body {
+  padding: 20px;
+}
+
+@keyframes popup-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Estilos para elementos de formulário dentro do popup */
+.popup-form-group {
+  margin-bottom: 20px;
+}
+
+.popup-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.popup-form-group input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.2);
+  color: #fff;
+  font-size: 14px;
+}
+
+.popup-form-group .radio-options {
+  display: flex;
+  gap: 20px;
+}
+
+.popup-form-group .radio-option {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.popup-form-group .radio-option input {
+  cursor: pointer;
+}
+
+.popup-actions {
+  margin-top: 25px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.popup-actions button {
+  padding: 10px 20px;
+  border-radius: 4px;
+  border: none;
+  background-color: #3498db;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.popup-actions button:hover {
+  background-color: #2980b9;
+}
+
+.popup-actions button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}

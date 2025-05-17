@@ -283,11 +283,12 @@
 }
 
 /* No data message */
-.no-data {
-  color: #888;
+.trade-panel .no-data {
+  color: #777;
   font-style: italic;
-  text-align: center;
-  padding: 15px 0;
+  text-align: left!important;
+  padding: 0!important;
+  margin: 0!important;
 }
 
 /* Responsive adjustments */

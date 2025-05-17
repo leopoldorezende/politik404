@@ -42,7 +42,6 @@ const TradePanel = () => {
   if (!countryState || !countryState.economy) {
     return (
       <div className="trade-panel">
-        <h3>Economia de {myCountry}</h3>
         <p>Carregando dados econômicos...</p>
       </div>
     );
@@ -53,12 +52,68 @@ const TradePanel = () => {
   
   return (
     <div className="trade-panel">
-      <div className="economic-overview-section">
-        <h4>Economia de {myCountry}</h4>
-        <div className="economy-data">
-          <div className="economy-stat">
-            <span className="stat-label">PIB:</span>
-            <span className="stat-value">{economy.gdp.value} {economy.gdp.unit}</span>
+
+      <div className="trade-agreements-section">
+        <h4>Acordos Comerciais</h4>
+
+        {agreements.length > 0 ? (
+          <div className="agreements-list">
+            {agreements.map((agreement, index) => (
+              <div key={index} className={`trade-card ${agreement.type}`}>
+                <h4>{agreement.country}</h4>
+                <p>Tipo: {agreement.type === 'export' ? 'Exportação' : 'Importação'}</p>
+                <p>Valor: {agreement.value} bi USD</p>
+                <button className="action-btn danger">Cancelar Acordo</button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-data">
+            <p>Nenhum acordo comercial ativo</p>
+          </div>
+        )}
+      </div>
+
+      <div className="trade-balance-section">
+        <h4>Balanço Comercial</h4>
+        
+        <div className="balance-item">
+          <div className="balance-header">
+            <span className="balance-title">Commodities</span>
+            <div className={`balance-value ${economy.commoditiesBalance?.value >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(economy.commoditiesBalance?.value)}
+            </div>
+          </div>
+          <div className="balance-details">
+            <div className="balance-row">
+              <span className="balance-label">Produção:</span>
+              <span className="balance-number">{economy.commoditiesOutput?.value || 0} bi</span>
+            </div>
+            <div className="balance-row">
+              <span className="balance-label">Necessidade:</span>
+              <span className="balance-number">{economy.commoditiesNeeds?.value || 0} bi</span>
+              <span className="balance-percent">({economy.commoditiesNeeds?.percentValue || 0}% do PIB)</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="balance-item">
+          <div className="balance-header">
+            <span className="balance-title">Manufaturas</span>
+            <div className={`balance-value ${economy.manufacturesBalance?.value >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(economy.manufacturesBalance?.value)}
+            </div>
+          </div>
+          <div className="balance-details">
+            <div className="balance-row">
+              <span className="balance-label">Produção:</span>
+              <span className="balance-number">{economy.manufacturesOutput?.value || 0} bi</span>
+            </div>
+            <div className="balance-row">
+              <span className="balance-label">Necessidade:</span>
+              <span className="balance-number">{economy.manufacturesNeeds?.value || 0} bi</span>
+              <span className="balance-percent">({economy.manufacturesNeeds?.percentValue || 0}% do PIB)</span>
+            </div>
           </div>
         </div>
       </div>
@@ -110,101 +165,6 @@ const TradePanel = () => {
         </div>
       </div>
       
-      <div className="trade-balance-section">
-        <h4>Balanço Comercial</h4>
-        
-        <div className="balance-item">
-          <div className="balance-header">
-            <span className="balance-title">Commodities</span>
-            <div className={`balance-value ${economy.commoditiesBalance?.value >= 0 ? 'positive' : 'negative'}`}>
-              {formatValueWithSign(economy.commoditiesBalance?.value)}
-            </div>
-          </div>
-          <div className="balance-details">
-            <div className="balance-row">
-              <span className="balance-label">Produção:</span>
-              <span className="balance-number">{economy.commoditiesOutput?.value || 0} bi</span>
-            </div>
-            <div className="balance-row">
-              <span className="balance-label">Necessidade:</span>
-              <span className="balance-number">{economy.commoditiesNeeds?.value || 0} bi</span>
-              <span className="balance-percent">({economy.commoditiesNeeds?.percentValue || 0}% do PIB)</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="balance-item">
-          <div className="balance-header">
-            <span className="balance-title">Manufaturas</span>
-            <div className={`balance-value ${economy.manufacturesBalance?.value >= 0 ? 'positive' : 'negative'}`}>
-              {formatValueWithSign(economy.manufacturesBalance?.value)}
-            </div>
-          </div>
-          <div className="balance-details">
-            <div className="balance-row">
-              <span className="balance-label">Produção:</span>
-              <span className="balance-number">{economy.manufacturesOutput?.value || 0} bi</span>
-            </div>
-            <div className="balance-row">
-              <span className="balance-label">Necessidade:</span>
-              <span className="balance-number">{economy.manufacturesNeeds?.value || 0} bi</span>
-              <span className="balance-percent">({economy.manufacturesNeeds?.percentValue || 0}% do PIB)</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="trade-agreements-section">
-        <h4>Acordos Comerciais</h4>
-        <div className="form-section">
-          <div className="form-row">
-            <label>
-              <select 
-                name="targetCountry"
-                value={targetCountry}
-                onChange={(e) => setTargetCountry(e.target.value)}
-              >
-                <option value="">Selecione um país</option>
-                {players
-                  .filter(player => {
-                    if (typeof player === 'object') {
-                      return player.username !== sessionStorage.getItem('username');
-                    }
-                    return false;
-                  })
-                  .map(player => typeof player === 'object' ? player.country : null)
-                  .filter(Boolean)
-                  .map((country, index) => (
-                    <option key={index} value={country}>{country}</option>
-                  ))}
-              </select>
-            </label>
-          </div>
-          
-          <div className="form-actions">
-            <button className="action-btn" disabled={!targetCountry}>
-              Propor Acordo Comercial
-            </button>
-          </div>
-        </div>
-        
-        {agreements.length > 0 ? (
-          <div className="agreements-list">
-            {agreements.map((agreement, index) => (
-              <div key={index} className={`trade-card ${agreement.type}`}>
-                <h4>{agreement.country}</h4>
-                <p>Tipo: {agreement.type === 'export' ? 'Exportação' : 'Importação'}</p>
-                <p>Valor: {agreement.value} bi USD</p>
-                <button className="action-btn danger">Cancelar</button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="no-data">
-            <p>Nenhum acordo comercial ativo</p>
-          </div>
-        )}
-      </div>
     </div>
   );
 };
