@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { socketApi } from '../../services/socketClient';
 import './TradePanel.css';
 
 const TradePanel = () => {
+  const dispatch = useDispatch();
+  
   // Estados Redux com fallbacks seguros
   const myCountry = useSelector(state => state.game?.myCountry || 'Seu País');
   const players = useSelector(state => state.game?.players || []);
@@ -12,9 +15,29 @@ const TradePanel = () => {
     return state.countryState?.roomStates?.[currentRoom.name]?.[myCountry] || null;
   });
   
-  // Estado local
-  const [targetCountry, setTargetCountry] = useState('');
-  const [agreements, setAgreements] = useState([]);
+  // Acordos comerciais do Redux
+  const tradeAgreements = useSelector(state => state.trade?.tradeAgreements || []);
+  const tradeStats = useSelector(state => state.trade?.tradeStats || {
+    commodityImports: 0,
+    commodityExports: 0,
+    manufactureImports: 0,
+    manufactureExports: 0,
+  });
+  
+  // Efeito para solicitar acordos comerciais ao montar o componente
+  useEffect(() => {
+    if (currentRoom?.name) {
+      // Solicitar lista atualizada de acordos comerciais
+      socketApi.getTradeAgreements();
+    }
+  }, [currentRoom]);
+
+  // Função para cancelar acordo comercial
+  const handleCancelAgreement = (agreementId) => {
+    if (confirm('Tem certeza que deseja cancelar este acordo comercial?')) {
+      socketApi.cancelTradeAgreement(agreementId);
+    }
+  };
   
   // Formatar valor com sinal
   const formatValueWithSign = (value) => {
@@ -47,6 +70,11 @@ const TradePanel = () => {
     );
   }
   
+  // Filtramos apenas os acordos pertencentes ao país atual
+  const myAgreements = tradeAgreements.filter(agreement => 
+    agreement.originCountry === myCountry || agreement.country === myCountry
+  );
+
   // Dados econômicos
   const economy = countryState.economy;
   
@@ -56,14 +84,23 @@ const TradePanel = () => {
       <div className="trade-agreements-section">
         <h4>Acordos Comerciais</h4>
 
-        {agreements.length > 0 ? (
+        {myAgreements.length > 0 ? (
           <div className="agreements-list">
-            {agreements.map((agreement, index) => (
-              <div key={index} className={`trade-card ${agreement.type}`}>
+            {myAgreements.map((agreement) => (
+              <div 
+                key={agreement.id} 
+                className={`trade-card ${agreement.type}`}
+              >
                 <h4>{agreement.country}</h4>
                 <p>Tipo: {agreement.type === 'export' ? 'Exportação' : 'Importação'}</p>
+                <p>Produto: {agreement.product === 'commodity' ? 'Commodities' : 'Manufatura'}</p>
                 <p>Valor: {agreement.value} bi USD</p>
-                <button className="action-btn danger">Cancelar Acordo</button>
+                <button 
+                  className="action-btn danger"
+                  onClick={() => handleCancelAgreement(agreement.id)}
+                >
+                  Cancelar Acordo
+                </button>
               </div>
             ))}
           </div>
@@ -89,6 +126,23 @@ const TradePanel = () => {
               <span className="balance-label">Produção:</span>
               <span className="balance-number">{economy.commoditiesOutput?.value || 0} bi</span>
             </div>
+            
+            {/* Importações de commodities */}
+            {tradeStats.commodityImports > 0 && (
+              <div className="balance-row">
+                <span className="balance-label trade-import">Total de Importações:</span>
+                <span className="balance-number positive">+{tradeStats.commodityImports.toFixed(2)} bi</span>
+              </div>
+            )}
+            
+            {/* Exportações de commodities */}
+            {tradeStats.commodityExports > 0 && (
+              <div className="balance-row">
+                <span className="balance-label trade-export">Total de Exportações:</span>
+                <span className="balance-number negative">-{tradeStats.commodityExports.toFixed(2)} bi</span>
+              </div>
+            )}
+            
             <div className="balance-row">
               <span className="balance-label">Necessidade:</span>
               <span className="balance-number">{economy.commoditiesNeeds?.value || 0} bi</span>
@@ -109,6 +163,23 @@ const TradePanel = () => {
               <span className="balance-label">Produção:</span>
               <span className="balance-number">{economy.manufacturesOutput?.value || 0} bi</span>
             </div>
+            
+            {/* Importações de manufaturas */}
+            {tradeStats.manufactureImports > 0 && (
+              <div className="balance-row">
+                <span className="balance-label trade-import">Total de Importações:</span>
+                <span className="balance-number positive">+{tradeStats.manufactureImports.toFixed(2)} bi</span>
+              </div>
+            )}
+            
+            {/* Exportações de manufaturas */}
+            {tradeStats.manufactureExports > 0 && (
+              <div className="balance-row">
+                <span className="balance-label trade-export">Total de Exportações:</span>
+                <span className="balance-number negative">-{tradeStats.manufactureExports.toFixed(2)} bi</span>
+              </div>
+            )}
+            
             <div className="balance-row">
               <span className="balance-label">Necessidade:</span>
               <span className="balance-number">{economy.manufacturesNeeds?.value || 0} bi</span>
@@ -165,6 +236,12 @@ const TradePanel = () => {
         </div>
       </div>
       
+      <div className="trade-benefits">
+        <h4>Benefícios do Comércio Internacional</h4>
+        <p>Importar produtos que você não produz em quantidade suficiente ajuda a suprir demandas internas e fortalecer a economia.</p>
+        <p>Exportar produtos excedentes aumenta o PIB e permite acumulação de capital estrangeiro.</p>
+        <p>Acordos comerciais inteligentes podem reduzir a inflação e estimular setores estratégicos da economia.</p>
+      </div>
     </div>
   );
 };

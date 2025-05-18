@@ -8,6 +8,12 @@ import {
   updateCountryState,
   resetState as resetCountryState
 } from '../modules/country/countryStateSlice';
+import {
+  addTradeAgreement,
+  removeTradeAgreement,
+  resetTradeState,
+  updateStats
+} from '../modules/trade/tradeState';
 import { 
   setReconnectAttempts, 
   incrementReconnectAttempts,
@@ -145,6 +151,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     setIsJoiningRoom(false);
     store.dispatch(leaveRoom());
     store.dispatch(resetCountryState());
+    store.dispatch(resetTradeState());
   });
   
   socket.on('roomCreated', (data) => {
@@ -160,6 +167,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     // Faz o mesmo que roomLeft - volta para a tela de salas
     store.dispatch(leaveRoom());
     store.dispatch(resetCountryState());
+    store.dispatch(resetTradeState());
     
     // Opcional: mostrar alerta para o usuário
     if (data.message) {
@@ -252,6 +260,56 @@ export const setupSocketEvents = (socket, socketApi) => {
       updates: data.state[data.category],
       timestamp: data.timestamp
     }));
+  });
+  
+  // ======================================================================
+  // EVENTOS DE COMÉRCIO
+  // ======================================================================
+  
+  // Receber confirmação de que um acordo comercial foi criado
+  socket.on('tradeAgreementCreated', (agreement) => {
+    console.log('Acordo comercial criado:', agreement);
+    store.dispatch(addTradeAgreement(agreement));
+  });
+  
+  // Receber confirmação de que um acordo comercial foi cancelado
+  socket.on('tradeAgreementCancelled', (agreementId) => {
+    console.log('Acordo comercial cancelado:', agreementId);
+    store.dispatch(removeTradeAgreement(agreementId));
+  });
+  
+  // Receber lista atualizada de acordos comerciais
+  socket.on('tradeAgreementsList', (data) => {
+    console.log('Lista de acordos comerciais recebida:', data);
+    
+    // Limpar os acordos atuais antes de adicionar os novos
+    store.dispatch(resetTradeState());
+    
+    if (data.agreements && Array.isArray(data.agreements)) {
+      data.agreements.forEach(agreement => {
+        store.dispatch(addTradeAgreement(agreement));
+      });
+    }
+    
+    // Atualizar estatísticas após carregar os acordos
+    store.dispatch(updateStats());
+  });
+  
+  // Receber atualizações de acordos comerciais (broadcast)
+  socket.on('tradeAgreementUpdated', (data) => {
+    console.log('Atualização de acordos comerciais recebida:', data);
+    
+    // Limpar os acordos atuais antes de adicionar os novos
+    store.dispatch(resetTradeState());
+    
+    if (data.agreements && Array.isArray(data.agreements)) {
+      data.agreements.forEach(agreement => {
+        store.dispatch(addTradeAgreement(agreement));
+      });
+    }
+    
+    // Atualizar estatísticas após atualizar os acordos
+    store.dispatch(updateStats());
   });
   
   // ======================================================================

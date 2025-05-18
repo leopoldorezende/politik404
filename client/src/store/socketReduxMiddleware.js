@@ -1,4 +1,4 @@
-import socketApi, { SOCKET_EVENTS, COUNTRY_STATE_EVENTS } from '../services/socketClient';
+import socketApi, { SOCKET_EVENTS, COUNTRY_STATE_EVENTS, TRADE_EVENTS } from '../services/socketClient';
 
 // Middleware refinado que usa o serviço socketApi centralizado
 const socketMiddleware = store => next => action => {
@@ -66,6 +66,19 @@ const socketMiddleware = store => next => action => {
         action.payload.updates
       );
       break;
+    
+    // Eventos de comércio
+    case TRADE_EVENTS.CREATE_AGREEMENT:
+      socketApi.createTradeAgreement(action.payload);
+      break;
+    
+    case TRADE_EVENTS.CANCEL_AGREEMENT:
+      socketApi.cancelTradeAgreement(action.payload);
+      break;
+    
+    case TRADE_EVENTS.GET_AGREEMENTS:
+      socketApi.getTradeAgreements();
+      break;
 
     default:
       // Não faz nada para outras ações
@@ -75,6 +88,6 @@ const socketMiddleware = store => next => action => {
   return result;
 };
 
-export { COUNTRY_STATE_EVENTS };
+export { COUNTRY_STATE_EVENTS, TRADE_EVENTS };
 
 export default socketMiddleware;

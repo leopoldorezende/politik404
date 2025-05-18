@@ -67,7 +67,7 @@
   │   │   │   └── trade
   │   │   │       ├── TradePanel.css
   │   │   │       ├── TradePanel.jsx  # Componente Painel de Comercio
-  │   │   │       └── tradeState.js  # Estado do comércio
+  │   │   │       └── TradeState.js
   │   │   ├── services
   │   │   │   ├── socketClient.js
   │   │   │   ├── socketConnection.js

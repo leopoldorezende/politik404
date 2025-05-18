@@ -45,6 +45,63 @@ function issueDebtBonds(currentTreasury, currentPublicDebt, bondAmount) {
 }
 
 /**
+ * Calcula o impacto dos acordos comerciais na economia
+ * @param {Object} economy - Estado econômico atual
+ * @param {Object} tradeAgreements - Acordos comerciais ativos
+ * @returns {Object} - Ajustes a serem aplicados
+ */
+function calculateTradeAgreementsImpact(economy, tradeAgreements = []) {
+  if (!tradeAgreements || tradeAgreements.length === 0) {
+    return {
+      commodityImports: 0,
+      commodityExports: 0,
+      manufactureImports: 0,
+      manufactureExports: 0,
+      balanceAdjustments: {}
+    };
+  }
+
+  // Totais iniciais
+  let commodityImports = 0;
+  let commodityExports = 0;
+  let manufactureImports = 0;
+  let manufactureExports = 0;
+
+  // Calcular totais por tipo
+  tradeAgreements.forEach(agreement => {
+    if (agreement.type === 'import') {
+      if (agreement.product === 'commodity') {
+        commodityImports += agreement.value;
+      } else if (agreement.product === 'manufacture') {
+        manufactureImports += agreement.value;
+      }
+    } else if (agreement.type === 'export') {
+      if (agreement.product === 'commodity') {
+        commodityExports += agreement.value;
+      } else if (agreement.product === 'manufacture') {
+        manufactureExports += agreement.value;
+      }
+    }
+  });
+
+  // Calcular ajustes nos balanços
+  const commoditiesBalanceAdjustment = commodityImports - commodityExports;
+  const manufacturesBalanceAdjustment = manufactureImports - manufactureExports;
+
+  // Retornar os ajustes calculados
+  return {
+    commodityImports,
+    commodityExports,
+    manufactureImports,
+    manufactureExports,
+    balanceAdjustments: {
+      commodities: commoditiesBalanceAdjustment,
+      manufactures: manufacturesBalanceAdjustment
+    }
+  };
+}
+
+/**
  * Perform all economic calculations for a country
  * @param {Object} countryState - Current country state
  * @param {Object} staticData - Static country data (for unemployment, etc.)
@@ -75,6 +132,28 @@ function performEconomicCalculations(countryState, staticData, updates = {}) {
     );
     
     updatedEconomy.gdp.value = newGdp;
+  }
+  
+  // Aplicar impacto dos acordos comerciais, se fornecidos
+  if (updates.tradeAgreements && updates.tradeAgreements.length > 0) {
+    const tradeImpact = calculateTradeAgreementsImpact(updatedEconomy, updates.tradeAgreements);
+    
+    // Ajustar os balanços comerciais
+    if (updatedEconomy.commoditiesBalance) {
+      updatedEconomy.commoditiesBalance.value += tradeImpact.balanceAdjustments.commodities;
+    }
+    
+    if (updatedEconomy.manufacturesBalance) {
+      updatedEconomy.manufacturesBalance.value += tradeImpact.balanceAdjustments.manufactures;
+    }
+    
+    // Guardar as estatísticas comerciais (opcional, se necessário para outras partes do sistema)
+    updatedEconomy.tradeStats = {
+      commodityImports: tradeImpact.commodityImports,
+      commodityExports: tradeImpact.commodityExports,
+      manufactureImports: tradeImpact.manufactureImports,
+      manufactureExports: tradeImpact.manufactureExports
+    };
   }
   
   // Preservar os valores dos indicadores derivados para que sejam recalculados
@@ -108,5 +187,6 @@ function performEconomicCalculations(countryState, staticData, updates = {}) {
 export {
   calculateGdpGrowth,
   issueDebtBonds,
+  calculateTradeAgreementsImpact,
   performEconomicCalculations
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { socketApi } from '../../services/socketClient';
 import ActionMenuPopup from './ActionMenuPopup';
 import './ActionMenu.css';
 
@@ -8,6 +9,7 @@ import './ActionMenu.css';
  * Displays a menu of options when an action icon is clicked
  */
 const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
+  const dispatch = useDispatch();
   const [activeMenu, setActiveMenu] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const menuRef = useRef(null);
@@ -97,11 +99,36 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
 
   // Função para finalizar ação de comércio
   const handleFinalizeTrade = () => {
+    const amount = parseFloat(tradeAmount);
+    if (!amount || amount <= 0) {
+      alert('Por favor, insira um valor válido maior que zero.');
+      return;
+    }
+    
+    // Criar um novo acordo comercial via socket API
+    socketApi.createTradeAgreement({
+      type: currentOption, // 'export' ou 'import'
+      product: tradeType, // 'commodity' ou 'manufacture'
+      country: selectedCountry,
+      value: amount,
+    });
+    
     const action = currentOption === 'export' ? 'exportação' : 'importação';
     const type = tradeType === 'commodity' ? 'commodities' : 'manufatura';
     
-    alert(`Acordo de ${action} de ${type} assinado!`);
+    alert(`Acordo de ${action} de ${type} solicitado com ${selectedCountry}!`);
     handleClosePopup();
+    
+    // Opcional: Redirecionar para o painel de comércio
+    onOpenSideview();
+    onSetActiveTab('tools');
+    setTimeout(() => {
+      // Encontrar e clicar na aba de comércio no sidetools, se disponível
+      const tradeTab = document.querySelector('.tab[title="Comércio"]');
+      if (tradeTab) {
+        tradeTab.click();
+      }
+    }, 300);
   };
 
   // Função para finalizar aliança militar

@@ -2,6 +2,7 @@ import { store } from '../store';
 import { login } from '../modules/auth/authState';
 import { setMyCountry } from '../modules/game/gameState';
 import { resetState as resetCountryState } from '../modules/country/countryStateSlice';
+import { resetTradeState } from '../modules/trade/tradeState';
 import { 
   initializeSocket, 
   getSocketInstance, 
@@ -29,6 +30,12 @@ export const COUNTRY_STATE_EVENTS = {
   UNSUBSCRIBE: 'socket/unsubscribeFromCountryStates',
   GET_STATE: 'socket/getCountryState',
   UPDATE_STATE: 'socket/updateCountryState',
+};
+
+export const TRADE_EVENTS = {
+  CREATE_AGREEMENT: 'socket/createTradeAgreement',
+  CANCEL_AGREEMENT: 'socket/cancelTradeAgreement',
+  GET_AGREEMENTS: 'socket/getTradeAgreements'
 };
 
 // API pública para enviar eventos ao servidor
@@ -142,6 +149,7 @@ export const socketApi = {
     store.dispatch(setMyCountry(null));
     sessionStorage.removeItem('myCountry');
     store.dispatch(resetCountryState());
+    store.dispatch(resetTradeState());
   },
   
   // ======================================================================
@@ -206,6 +214,28 @@ export const socketApi = {
   issueDebtBonds: (bondAmount) => {
     const socket = getSocketInstance() || socketApi.connect();
     socket.emit('issueDebtBonds', { bondAmount });
+  },
+  
+  // ======================================================================
+  // MÉTODOS DE COMÉRCIO
+  // ======================================================================
+  
+  // Criar um novo acordo comercial
+  createTradeAgreement: (tradeData) => {
+    const socket = getSocketInstance() || socketApi.connect();
+    socket.emit('createTradeAgreement', tradeData);
+  },
+  
+  // Cancelar um acordo comercial existente
+  cancelTradeAgreement: (agreementId) => {
+    const socket = getSocketInstance() || socketApi.connect();
+    socket.emit('cancelTradeAgreement', agreementId);
+  },
+  
+  // Obter lista de acordos comerciais ativos
+  getTradeAgreements: () => {
+    const socket = getSocketInstance() || socketApi.connect();
+    socket.emit('getTradeAgreements');
   }
 };
 

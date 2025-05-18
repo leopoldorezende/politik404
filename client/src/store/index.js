@@ -4,6 +4,7 @@ import roomsReducer from '../modules/room/roomState';
 import gameReducer from '../modules/game/gameState';
 import chatReducer from '../modules/chat/chatState';
 import countryStateReducer from '../modules/country/countryStateSlice';
+import tradeReducer from '../modules/trade/tradeState';
 import socketMiddleware from './socketReduxMiddleware';
 
 export const store = configureStore({
@@ -12,7 +13,8 @@ export const store = configureStore({
     rooms: roomsReducer,
     game: gameReducer,
     chat: chatReducer,
-    countryState: countryStateReducer
+    countryState: countryStateReducer,
+    trade: tradeReducer // Adicionar à lista de reducers
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -28,6 +30,10 @@ export const store = configureStore({
           'socket/unsubscribeFromCountryStates',
           'socket/getCountryState',
           'socket/updateCountryState',
+          // Ações de comércio
+          'socket/createTradeAgreement',
+          'socket/cancelTradeAgreement',
+          'socket/getTradeAgreements'
         ],
         // Ignorar caminhos no estado que podem conter valores não serializáveis
         ignoredPaths: ['socket']

@@ -151,9 +151,30 @@
   font-size: 13px;
 }
 
+/* Estilos específicos para labels de importação/exportação */
+.balance-label.trade-import {
+  color: #2ecc71;
+  font-weight: bold;
+  width: 130px;
+}
+
+.balance-label.trade-export {
+  color: #e74c3c;
+  font-weight: bold;
+  width: 130px;
+}
+
 .balance-number {
   font-weight: bold;
   margin-right: 5px;
+}
+
+.balance-number.positive {
+  color: #2ecc71;
+}
+
+.balance-number.negative {
+  color: #e74c3c;
 }
 
 .balance-percent {
@@ -257,11 +278,11 @@
 
 /* Card colors for import/export */
 .trade-card.export {
-  border-left: 4px solid #2ecc71;
+  border-left: 4px solid #e74c3c;
 }
 
 .trade-card.import {
-  border-left: 4px solid #3498db;
+  border-left: 4px solid #2ecc71;
 }
 
 /* Trade benefits section */
@@ -269,11 +290,14 @@
   border-radius: 4px;
   margin-top: 20px;
   padding: 12px;
+  background-color: rgba(52, 152, 219, 0.1);
+  border-left: 4px solid #3498db;
 }
 
 .trade-benefits h4 {
   margin-top: 0;
   color: #34495e;
+  border-bottom: none;
 }
 
 .trade-benefits p {
