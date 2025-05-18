@@ -94,10 +94,10 @@ function calculateTradeAgreementsImpact(economy, tradeAgreements = [], countryNa
     }
   });
 
-  // Calcular ajustes nos balanços - exportações positivas, importações negativas
-  // Para o cálculo do balanço, exportações somam e importações subtraem
-  const commoditiesBalanceAdjustment = commodityExports - commodityImports;
-  const manufacturesBalanceAdjustment = manufactureExports - manufactureImports;
+  // Calcular ajustes nos balanços - CORREÇÃO: exportações DIMINUEM, importações aumentam
+  // Para o cálculo do balanço, exportações subtraem e importações adicionam ao saldo interno disponível
+  const commoditiesBalanceAdjustment = -commodityExports + commodityImports;
+  const manufacturesBalanceAdjustment = -manufactureExports + manufactureImports;
 
   console.log(`Trade adjustments for ${countryName}:`, {
     commodityExports,
@@ -174,13 +174,13 @@ function performEconomicCalculations(countryState, staticData, updates = {}) {
       // Necessidade interna
       const internalNeeds = updatedEconomy.commoditiesNeeds?.value || 0;
       
-      // Exportações (positivo)
+      // CORREÇÃO: Exportações (negativo) - o que sai do país
       const exports = tradeImpact.commodityExports || 0;
-      // Importações (negativo)
+      // Importações (positivo) - o que entra no país
       const imports = tradeImpact.commodityImports || 0;
       
-      // Balanço final = Produção + Exportações - Importações - Necessidade
-      const newBalance = baseProduction + exports - imports - internalNeeds;
+      // Balanço final = Produção - Exportações + Importações - Necessidade
+      const newBalance = baseProduction - exports + imports - internalNeeds;
       
       console.log(`Commodities balance for ${countryName}:`, { 
         baseProduction, 
@@ -199,13 +199,13 @@ function performEconomicCalculations(countryState, staticData, updates = {}) {
       // Necessidade interna
       const internalNeeds = updatedEconomy.manufacturesNeeds?.value || 0;
       
-      // Exportações (positivo)
+      // CORREÇÃO: Exportações (negativo) - o que sai do país
       const exports = tradeImpact.manufactureExports || 0;
-      // Importações (negativo)
+      // Importações (positivo) - o que entra no país
       const imports = tradeImpact.manufactureImports || 0;
       
-      // Balanço final = Produção + Exportações - Importações - Necessidade
-      const newBalance = baseProduction + exports - imports - internalNeeds;
+      // Balanço final = Produção - Exportações + Importações - Necessidade
+      const newBalance = baseProduction - exports + imports - internalNeeds;
       
       console.log(`Manufactures balance for ${countryName}:`, { 
         baseProduction, 

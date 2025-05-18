@@ -452,12 +452,12 @@
 }
 
 /* Special styles for imports/exports */
-.balance-label.trade-import {
+.balance-label.trade-export {
   color: #0f7a3c;
   padding-left: 4px;
 }
 
-.balance-label.trade-export {
+.balance-label.trade-import {
   color: #a82112;
   padding-left: 4px;
 }
@@ -468,11 +468,11 @@
   font-size: 13px;
 }
 
-.balance-number.positive {
+.balance-number.negative {
   color: #0f7a3c;
 }
 
-.balance-number.negative {
+.balance-number.positive {
   color: #a82112;
 }
 
