@@ -116,7 +116,6 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
     const action = currentOption === 'export' ? 'exportação' : 'importação';
     const type = tradeType === 'commodity' ? 'commodities' : 'manufatura';
     
-    alert(`Acordo de ${action} de ${type} solicitado com ${selectedCountry}!`);
     handleClosePopup();
     
     // Opcional: Redirecionar para o painel de comércio

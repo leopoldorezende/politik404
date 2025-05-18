@@ -70,13 +70,22 @@ const TradePanel = () => {
     );
   }
   
-  // Filtramos apenas os acordos pertencentes ao país atual
+  // Filtramos apenas os acordos onde o meu país é o originCountry
+  // Isso garante que veremos apenas os acordos que criamos, não os espelhados
   const myAgreements = tradeAgreements.filter(agreement => 
-    agreement.originCountry === myCountry || agreement.country === myCountry
+    agreement.originCountry === myCountry && agreement.country !== myCountry
   );
 
   // Dados econômicos
   const economy = countryState.economy;
+  
+  // Obter as estatísticas comerciais já calculadas pelo servidor
+  const tradeStatistics = economy.tradeStats || {
+    commodityImports: 0,
+    commodityExports: 0,
+    manufactureImports: 0,
+    manufactureExports: 0
+  };
   
   return (
     <div className="trade-panel">
@@ -127,19 +136,19 @@ const TradePanel = () => {
               <span className="balance-number">{economy.commoditiesOutput?.value || 0} bi</span>
             </div>
             
-            {/* Importações de commodities */}
-            {tradeStats.commodityImports > 0 && (
+            {/* Importações de commodities - usar valores calculados pelo servidor */}
+            {tradeStatistics.commodityImports > 0 && (
               <div className="balance-row">
                 <span className="balance-label trade-import">Total de Importações:</span>
-                <span className="balance-number positive">+{tradeStats.commodityImports.toFixed(2)} bi</span>
+                <span className="balance-number positive">+{tradeStatistics.commodityImports.toFixed(2)} bi</span>
               </div>
             )}
             
-            {/* Exportações de commodities */}
-            {tradeStats.commodityExports > 0 && (
+            {/* Exportações de commodities - usar valores calculados pelo servidor */}
+            {tradeStatistics.commodityExports > 0 && (
               <div className="balance-row">
                 <span className="balance-label trade-export">Total de Exportações:</span>
-                <span className="balance-number negative">-{tradeStats.commodityExports.toFixed(2)} bi</span>
+                <span className="balance-number negative">-{tradeStatistics.commodityExports.toFixed(2)} bi</span>
               </div>
             )}
             
@@ -164,19 +173,19 @@ const TradePanel = () => {
               <span className="balance-number">{economy.manufacturesOutput?.value || 0} bi</span>
             </div>
             
-            {/* Importações de manufaturas */}
-            {tradeStats.manufactureImports > 0 && (
+            {/* Importações de manufaturas - usar valores calculados pelo servidor */}
+            {tradeStatistics.manufactureImports > 0 && (
               <div className="balance-row">
                 <span className="balance-label trade-import">Total de Importações:</span>
-                <span className="balance-number positive">+{tradeStats.manufactureImports.toFixed(2)} bi</span>
+                <span className="balance-number positive">+{tradeStatistics.manufactureImports.toFixed(2)} bi</span>
               </div>
             )}
             
-            {/* Exportações de manufaturas */}
-            {tradeStats.manufactureExports > 0 && (
+            {/* Exportações de manufaturas - usar valores calculados pelo servidor */}
+            {tradeStatistics.manufactureExports > 0 && (
               <div className="balance-row">
                 <span className="balance-label trade-export">Total de Exportações:</span>
-                <span className="balance-number negative">-{tradeStats.manufactureExports.toFixed(2)} bi</span>
+                <span className="balance-number negative">-{tradeStatistics.manufactureExports.toFixed(2)} bi</span>
               </div>
             )}
             

@@ -46,12 +46,14 @@ function issueDebtBonds(currentTreasury, currentPublicDebt, bondAmount) {
 
 /**
  * Calcula o impacto dos acordos comerciais na economia
+ * Evita dupla contagem considerando apenas acordos onde o país atual é originCountry
  * @param {Object} economy - Estado econômico atual
- * @param {Object} tradeAgreements - Acordos comerciais ativos
+ * @param {Array} tradeAgreements - Acordos comerciais ativos
+ * @param {string} countryName - Nome do país atual
  * @returns {Object} - Ajustes a serem aplicados
  */
-function calculateTradeAgreementsImpact(economy, tradeAgreements = []) {
-  if (!tradeAgreements || tradeAgreements.length === 0) {
+function calculateTradeAgreementsImpact(economy, tradeAgreements = [], countryName) {
+  if (!tradeAgreements || tradeAgreements.length === 0 || !countryName) {
     return {
       commodityImports: 0,
       commodityExports: 0,
@@ -67,28 +69,40 @@ function calculateTradeAgreementsImpact(economy, tradeAgreements = []) {
   let manufactureImports = 0;
   let manufactureExports = 0;
 
-  // Calcular totais por tipo
+  // Considerar todos os acordos onde este país está envolvido
+  // Seja como origem ou destino
   tradeAgreements.forEach(agreement => {
-    if (agreement.type === 'import') {
-      if (agreement.product === 'commodity') {
-        commodityImports += agreement.value;
-      } else if (agreement.product === 'manufacture') {
-        manufactureImports += agreement.value;
-      }
-    } else if (agreement.type === 'export') {
-      if (agreement.product === 'commodity') {
-        commodityExports += agreement.value;
-      } else if (agreement.product === 'manufacture') {
-        manufactureExports += agreement.value;
+    // Verificar se o acordo é relevante para este país
+    const isRelevant = agreement.originCountry === countryName || agreement.country === countryName;
+    
+    if (isRelevant) {
+      // Determinar se é importação ou exportação para este país
+      const isImport = (agreement.originCountry === countryName && agreement.type === 'import') ||
+                       (agreement.country === countryName && agreement.type === 'export');
+                       
+      const isExport = (agreement.originCountry === countryName && agreement.type === 'export') ||
+                       (agreement.country === countryName && agreement.type === 'import');
+      
+      if (isImport) {
+        if (agreement.product === 'commodity') {
+          commodityImports += agreement.value;
+        } else if (agreement.product === 'manufacture') {
+          manufactureImports += agreement.value;
+        }
+      } else if (isExport) {
+        if (agreement.product === 'commodity') {
+          commodityExports += agreement.value;
+        } else if (agreement.product === 'manufacture') {
+          manufactureExports += agreement.value;
+        }
       }
     }
   });
 
-  // Calcular ajustes nos balanços
+  // Calcular ajustes nos balanços - importações adicionam e exportações subtraem
   const commoditiesBalanceAdjustment = commodityImports - commodityExports;
   const manufacturesBalanceAdjustment = manufactureImports - manufactureExports;
 
-  // Retornar os ajustes calculados
   return {
     commodityImports,
     commodityExports,
@@ -110,6 +124,7 @@ function calculateTradeAgreementsImpact(economy, tradeAgreements = []) {
  */
 function performEconomicCalculations(countryState, staticData, updates = {}) {
   let updatedEconomy = { ...countryState.economy };
+  const countryName = staticData?.name || updatedEconomy?.countryName || staticData.countryName;
   
   // Apply any manual updates first
   if (updates.issueDebtBonds && updates.bondAmount > 0) {
@@ -134,49 +149,95 @@ function performEconomicCalculations(countryState, staticData, updates = {}) {
     updatedEconomy.gdp.value = newGdp;
   }
   
+  // Recalcular a produção baseada no PIB atualizado
+  if (updatedEconomy.services && updatedEconomy.commodities && updatedEconomy.manufactures) {
+    updatedEconomy.servicesOutput.value = Math.round((updatedEconomy.gdp.value * updatedEconomy.services.value / 100) * 100) / 100;
+    updatedEconomy.commoditiesOutput.value = Math.round((updatedEconomy.gdp.value * updatedEconomy.commodities.value / 100) * 100) / 100;
+    updatedEconomy.manufacturesOutput.value = Math.round((updatedEconomy.gdp.value * updatedEconomy.manufactures.value / 100) * 100) / 100;
+  }
+  
   // Aplicar impacto dos acordos comerciais, se fornecidos
   if (updates.tradeAgreements && updates.tradeAgreements.length > 0) {
-    const tradeImpact = calculateTradeAgreementsImpact(updatedEconomy, updates.tradeAgreements);
+    console.log(`Calculating trade impact for ${countryName} with ${updates.tradeAgreements.length} agreements`);
+    
+    const tradeImpact = calculateTradeAgreementsImpact(updatedEconomy, updates.tradeAgreements, countryName);
+    
+    console.log(`Trade impact for ${countryName}:`, tradeImpact);
     
     // Ajustar os balanços comerciais
     if (updatedEconomy.commoditiesBalance) {
-      updatedEconomy.commoditiesBalance.value += tradeImpact.balanceAdjustments.commodities;
+      // Produção básica
+      const baseProduction = updatedEconomy.commoditiesOutput?.value || 0;
+      // Necessidade interna
+      const internalNeeds = updatedEconomy.commoditiesNeeds?.value || 0;
+      // Importações (positivo)
+      const imports = tradeImpact.commodityImports || 0;
+      // Exportações (negativo)
+      const exports = tradeImpact.commodityExports || 0;
+      
+      // Balanço final = Produção + Importações - Exportações - Necessidade
+      const newBalance = baseProduction + imports - exports - internalNeeds;
+      
+      console.log(`Commodities balance for ${countryName}:`, { 
+        baseProduction, 
+        imports, 
+        exports, 
+        internalNeeds, 
+        newBalance 
+      });
+      
+      updatedEconomy.commoditiesBalance.value = Math.round(newBalance * 100) / 100;
     }
     
     if (updatedEconomy.manufacturesBalance) {
-      updatedEconomy.manufacturesBalance.value += tradeImpact.balanceAdjustments.manufactures;
+      // Produção básica
+      const baseProduction = updatedEconomy.manufacturesOutput?.value || 0;
+      // Necessidade interna
+      const internalNeeds = updatedEconomy.manufacturesNeeds?.value || 0;
+      // Importações (positivo)
+      const imports = tradeImpact.manufactureImports || 0;
+      // Exportações (negativo)
+      const exports = tradeImpact.manufactureExports || 0;
+      
+      // Balanço final = Produção + Importações - Exportações - Necessidade
+      const newBalance = baseProduction + imports - exports - internalNeeds;
+      
+      console.log(`Manufactures balance for ${countryName}:`, { 
+        baseProduction, 
+        imports, 
+        exports, 
+        internalNeeds, 
+        newBalance 
+      });
+      
+      updatedEconomy.manufacturesBalance.value = Math.round(newBalance * 100) / 100;
     }
     
-    // Guardar as estatísticas comerciais (opcional, se necessário para outras partes do sistema)
+    // Guardar as estatísticas comerciais no estado da economia para uso futuro
     updatedEconomy.tradeStats = {
       commodityImports: tradeImpact.commodityImports,
       commodityExports: tradeImpact.commodityExports,
       manufactureImports: tradeImpact.manufactureImports,
       manufactureExports: tradeImpact.manufactureExports
     };
-  }
-  
-  // Preservar os valores dos indicadores derivados para que sejam recalculados
-  // pelo countryStateManager a partir do novo PIB
-  const preservedValues = {
-    services: updatedEconomy.services,
-    commodities: updatedEconomy.commodities,
-    manufactures: updatedEconomy.manufactures,
-    servicesOutput: updatedEconomy.servicesOutput,
-    commoditiesOutput: updatedEconomy.commoditiesOutput,
-    manufacturesOutput: updatedEconomy.manufacturesOutput,
-    commoditiesNeeds: updatedEconomy.commoditiesNeeds,
-    manufacturesNeeds: updatedEconomy.manufacturesNeeds,
-    commoditiesBalance: updatedEconomy.commoditiesBalance,
-    manufacturesBalance: updatedEconomy.manufacturesBalance
-  };
-  
-  // Garantir que os valores preservados sejam recuperados
-  Object.entries(preservedValues).forEach(([key, value]) => {
-    if (value !== undefined) {
-      updatedEconomy[key] = value;
+  } else {
+    // Se não há acordos, calcular os balanços apenas com produção e necessidade
+    if (updatedEconomy.commoditiesBalance) {
+      updatedEconomy.commoditiesBalance.value = Math.round((updatedEconomy.commoditiesOutput.value - updatedEconomy.commoditiesNeeds.value) * 100) / 100;
     }
-  });
+    
+    if (updatedEconomy.manufacturesBalance) {
+      updatedEconomy.manufacturesBalance.value = Math.round((updatedEconomy.manufacturesOutput.value - updatedEconomy.manufacturesNeeds.value) * 100) / 100;
+    }
+    
+    // Zerar as estatísticas comerciais
+    updatedEconomy.tradeStats = {
+      commodityImports: 0,
+      commodityExports: 0,
+      manufactureImports: 0,
+      manufactureExports: 0
+    };
+  }
   
   return {
     economy: updatedEconomy,
