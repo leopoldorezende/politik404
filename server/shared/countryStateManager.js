@@ -119,9 +119,19 @@ class CountryStateManager {
         const staticData = gameState.countriesData[countryName];
         
         if (staticData && staticData.economy) {
+          // MODIFICAÇÃO: Verificar se existem acordos comerciais para considerar nos cálculos
+          let tradeAgreements = [];
+          if (room && room.tradeAgreements && room.tradeAgreements.length > 0) {
+            // Obter todos os acordos disponíveis na sala - tanto os que envolvem este país diretamente
+            // quanto os outros acordos que podem afetar indiretamente
+            tradeAgreements = room.tradeAgreements;
+          }
+          
+          // Realizar os cálculos econômicos, incluindo acordos comerciais se existirem
           const calculationResult = performEconomicCalculations(
             countryState,
-            staticData
+            staticData,
+            { tradeAgreements } // Passar os acordos comerciais para serem considerados
           );
           
           countryState.economy = calculationResult.economy;
@@ -131,6 +141,15 @@ class CountryStateManager {
           
           roomUpdates++;
           totalUpdates++;
+          
+          // Log detalhado para debug do cálculo de balanços comerciais
+          if (tradeAgreements.length > 0) {
+            console.log(`[ECONOMY] Country ${countryName} trade balances updated:`, {
+              manufacturesBalance: countryState.economy.manufacturesBalance?.value,
+              commoditiesBalance: countryState.economy.commoditiesBalance?.value,
+              tradeStats: countryState.economy.tradeStats
+            });
+          }
         }
       }
       
@@ -222,9 +241,13 @@ class CountryStateManager {
     economy.commoditiesNeeds.value = parseFloat((gdp * economy.commoditiesNeeds.percentValue / 100).toFixed(2));
     economy.manufacturesNeeds.value = parseFloat((gdp * economy.manufacturesNeeds.percentValue / 100).toFixed(2));
     
-    // Cálculo dos saldos
-    economy.commoditiesBalance.value = parseFloat((economy.commoditiesOutput.value - economy.commoditiesNeeds.value).toFixed(2));
-    economy.manufacturesBalance.value = parseFloat((economy.manufacturesOutput.value - economy.manufacturesNeeds.value).toFixed(2));
+    // MODIFICAÇÃO: Verificar se já temos valores de balanço calculados por acordos comerciais
+    // Se não, calcular o balanço básico (sem acordos)
+    if (!economy.tradeStats) {
+      // Cálculo dos saldos sem acordos comerciais
+      economy.commoditiesBalance.value = parseFloat((economy.commoditiesOutput.value - economy.commoditiesNeeds.value).toFixed(2));
+      economy.manufacturesBalance.value = parseFloat((economy.manufacturesOutput.value - economy.manufacturesNeeds.value).toFixed(2));
+    }
     
     // Atualizar distribuição setorial com pequena variação a cada 6 ciclos
     if (this.updateCounter % 6 === 0) {
@@ -478,6 +501,18 @@ class CountryStateManager {
     // If the updates are for the economy, recalculate derived indicators
     if (category === 'economy') {
       this.updateDerivedEconomicIndicators(roomStates[countryName]);
+      
+      // MODIFICAÇÃO: Log para depuração dos valores de balanços comerciais
+      const economy = roomStates[countryName].economy;
+      
+      // Apenas log se tivermos estatísticas de comércio
+      if (economy.tradeStats) {
+        console.log(`[CountryStateManager] Trade balance updated for ${countryName} in room ${roomName}:`, {
+          manufacturesBalance: economy.manufacturesBalance?.value,
+          commoditiesBalance: economy.commoditiesBalance?.value,
+          tradeStats: economy.tradeStats
+        });
+      }
     }
     
     // Update timestamp

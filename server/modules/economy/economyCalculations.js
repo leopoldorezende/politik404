@@ -46,7 +46,7 @@ function issueDebtBonds(currentTreasury, currentPublicDebt, bondAmount) {
 
 /**
  * Calcula o impacto dos acordos comerciais na economia
- * Evita dupla contagem considerando apenas acordos onde o país atual é originCountry
+ * Evita dupla contagem considerando apenas acordos onde o país atual é originador
  * @param {Object} economy - Estado econômico atual
  * @param {Array} tradeAgreements - Acordos comerciais ativos
  * @param {string} countryName - Nome do país atual
@@ -69,39 +69,44 @@ function calculateTradeAgreementsImpact(economy, tradeAgreements = [], countryNa
   let manufactureImports = 0;
   let manufactureExports = 0;
 
-  // Considerar todos os acordos onde este país está envolvido
-  // Seja como origem ou destino
-  tradeAgreements.forEach(agreement => {
-    // Verificar se o acordo é relevante para este país
-    const isRelevant = agreement.originCountry === countryName || agreement.country === countryName;
-    
-    if (isRelevant) {
-      // Determinar se é importação ou exportação para este país
-      const isImport = (agreement.originCountry === countryName && agreement.type === 'import') ||
-                       (agreement.country === countryName && agreement.type === 'export');
-                       
-      const isExport = (agreement.originCountry === countryName && agreement.type === 'export') ||
-                       (agreement.country === countryName && agreement.type === 'import');
-      
-      if (isImport) {
-        if (agreement.product === 'commodity') {
-          commodityImports += agreement.value;
-        } else if (agreement.product === 'manufacture') {
-          manufactureImports += agreement.value;
-        }
-      } else if (isExport) {
-        if (agreement.product === 'commodity') {
-          commodityExports += agreement.value;
-        } else if (agreement.product === 'manufacture') {
-          manufactureExports += agreement.value;
-        }
+  // Filtramos apenas os acordos onde este país é o originador
+  // Isso é fundamental para evitar a contagem dupla
+  const ownAgreements = tradeAgreements.filter(agreement => 
+    agreement.originCountry === countryName
+  );
+  
+  // Processamos apenas os acordos originados por este país
+  ownAgreements.forEach(agreement => {
+    if (agreement.type === 'export') {
+      // Exportação do país atual
+      if (agreement.product === 'commodity') {
+        commodityExports += agreement.value;
+      } else if (agreement.product === 'manufacture') {
+        manufactureExports += agreement.value;
+      }
+    } else if (agreement.type === 'import') {
+      // Importação para o país atual
+      if (agreement.product === 'commodity') {
+        commodityImports += agreement.value;
+      } else if (agreement.product === 'manufacture') {
+        manufactureImports += agreement.value;
       }
     }
   });
 
-  // Calcular ajustes nos balanços - importações adicionam e exportações subtraem
-  const commoditiesBalanceAdjustment = commodityImports - commodityExports;
-  const manufacturesBalanceAdjustment = manufactureImports - manufactureExports;
+  // Calcular ajustes nos balanços - exportações positivas, importações negativas
+  // Para o cálculo do balanço, exportações somam e importações subtraem
+  const commoditiesBalanceAdjustment = commodityExports - commodityImports;
+  const manufacturesBalanceAdjustment = manufactureExports - manufactureImports;
+
+  console.log(`Trade adjustments for ${countryName}:`, {
+    commodityExports,
+    commodityImports,
+    manufactureExports, 
+    manufactureImports,
+    commoditiesBalanceAdjustment,
+    manufacturesBalanceAdjustment
+  });
 
   return {
     commodityImports,
@@ -162,21 +167,20 @@ function performEconomicCalculations(countryState, staticData, updates = {}) {
     
     const tradeImpact = calculateTradeAgreementsImpact(updatedEconomy, updates.tradeAgreements, countryName);
     
-    console.log(`Trade impact for ${countryName}:`, tradeImpact);
-    
     // Ajustar os balanços comerciais
     if (updatedEconomy.commoditiesBalance) {
       // Produção básica
       const baseProduction = updatedEconomy.commoditiesOutput?.value || 0;
       // Necessidade interna
       const internalNeeds = updatedEconomy.commoditiesNeeds?.value || 0;
-      // Importações (positivo)
-      const imports = tradeImpact.commodityImports || 0;
-      // Exportações (negativo)
-      const exports = tradeImpact.commodityExports || 0;
       
-      // Balanço final = Produção + Importações - Exportações - Necessidade
-      const newBalance = baseProduction + imports - exports - internalNeeds;
+      // Exportações (positivo)
+      const exports = tradeImpact.commodityExports || 0;
+      // Importações (negativo)
+      const imports = tradeImpact.commodityImports || 0;
+      
+      // Balanço final = Produção + Exportações - Importações - Necessidade
+      const newBalance = baseProduction + exports - imports - internalNeeds;
       
       console.log(`Commodities balance for ${countryName}:`, { 
         baseProduction, 
@@ -194,13 +198,14 @@ function performEconomicCalculations(countryState, staticData, updates = {}) {
       const baseProduction = updatedEconomy.manufacturesOutput?.value || 0;
       // Necessidade interna
       const internalNeeds = updatedEconomy.manufacturesNeeds?.value || 0;
-      // Importações (positivo)
-      const imports = tradeImpact.manufactureImports || 0;
-      // Exportações (negativo)
-      const exports = tradeImpact.manufactureExports || 0;
       
-      // Balanço final = Produção + Importações - Exportações - Necessidade
-      const newBalance = baseProduction + imports - exports - internalNeeds;
+      // Exportações (positivo)
+      const exports = tradeImpact.manufactureExports || 0;
+      // Importações (negativo)
+      const imports = tradeImpact.manufactureImports || 0;
+      
+      // Balanço final = Produção + Exportações - Importações - Necessidade
+      const newBalance = baseProduction + exports - imports - internalNeeds;
       
       console.log(`Manufactures balance for ${countryName}:`, { 
         baseProduction, 

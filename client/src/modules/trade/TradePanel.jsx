@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { socketApi } from '../../services/socketClient';
 import './TradePanel.css';
 
 const TradePanel = () => {
-  const dispatch = useDispatch();
   
   // Estados Redux com fallbacks seguros
   const myCountry = useSelector(state => state.game?.myCountry || 'Seu País');
@@ -133,29 +132,39 @@ const TradePanel = () => {
           <div className="balance-details">
             <div className="balance-row">
               <span className="balance-label">Produção:</span>
-              <span className="balance-number">{economy.commoditiesOutput?.value || 0} bi</span>
+              <div className="balance-values-container">
+                <span className="balance-number">{economy.commoditiesOutput?.value || 0} bi</span>
+              </div>
             </div>
             
-            {/* Importações de commodities - usar valores calculados pelo servidor */}
+            {/* Importações de commodities */}
             {tradeStatistics.commodityImports > 0 && (
               <div className="balance-row">
-                <span className="balance-label trade-import">Total de Importações:</span>
-                <span className="balance-number positive">+{tradeStatistics.commodityImports.toFixed(2)} bi</span>
+                <span className="balance-label">Importações:</span>
+                <div className="balance-values-container">
+                  <span className="balance-number positive">+{tradeStatistics.commodityImports.toFixed(2)} bi</span>
+                </div>
               </div>
             )}
             
-            {/* Exportações de commodities - usar valores calculados pelo servidor */}
+            {/* Exportações de commodities */}
             {tradeStatistics.commodityExports > 0 && (
               <div className="balance-row">
-                <span className="balance-label trade-export">Total de Exportações:</span>
-                <span className="balance-number negative">-{tradeStatistics.commodityExports.toFixed(2)} bi</span>
+                <span className="balance-label">Exportações:</span>
+                <div className="balance-values-container">
+                  <span className="balance-number negative">-{tradeStatistics.commodityExports.toFixed(2)} bi</span>
+                </div>
               </div>
             )}
             
             <div className="balance-row">
               <span className="balance-label">Necessidade:</span>
-              <span className="balance-number">{economy.commoditiesNeeds?.value || 0} bi</span>
-              <span className="balance-percent">({economy.commoditiesNeeds?.percentValue || 0}% do PIB)</span>
+              <div className="balance-values-container">
+                <span className="balance-number">{economy.commoditiesNeeds?.value || 0} bi</span>
+                <span className="balance-percent">
+                  ({Math.round(economy.commoditiesNeeds?.percentValue || 0)}% PIB)
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -170,29 +179,39 @@ const TradePanel = () => {
           <div className="balance-details">
             <div className="balance-row">
               <span className="balance-label">Produção:</span>
-              <span className="balance-number">{economy.manufacturesOutput?.value || 0} bi</span>
+              <div className="balance-values-container">
+                <span className="balance-number">{economy.manufacturesOutput?.value || 0} bi</span>
+              </div>
             </div>
             
-            {/* Importações de manufaturas - usar valores calculados pelo servidor */}
+            {/* Importações de manufaturas */}
             {tradeStatistics.manufactureImports > 0 && (
               <div className="balance-row">
-                <span className="balance-label trade-import">Total de Importações:</span>
-                <span className="balance-number positive">+{tradeStatistics.manufactureImports.toFixed(2)} bi</span>
+                <span className="balance-label trade-import">Importações:</span>
+                <div className="balance-values-container">
+                  <span className="balance-number positive">+{tradeStatistics.manufactureImports.toFixed(2)} bi</span>
+                </div>
               </div>
             )}
             
-            {/* Exportações de manufaturas - usar valores calculados pelo servidor */}
+            {/* Exportações de manufaturas */}
             {tradeStatistics.manufactureExports > 0 && (
               <div className="balance-row">
-                <span className="balance-label trade-export">Total de Exportações:</span>
-                <span className="balance-number negative">-{tradeStatistics.manufactureExports.toFixed(2)} bi</span>
+                <span className="balance-label trade-export">Exportações:</span>
+                <div className="balance-values-container">
+                  <span className="balance-number negative">-{tradeStatistics.manufactureExports.toFixed(2)} bi</span>
+                </div>
               </div>
             )}
             
             <div className="balance-row">
               <span className="balance-label">Necessidade:</span>
-              <span className="balance-number">{economy.manufacturesNeeds?.value || 0} bi</span>
-              <span className="balance-percent">({economy.manufacturesNeeds?.percentValue || 0}% do PIB)</span>
+              <div className="balance-values-container">
+                <span className="balance-number">{economy.manufacturesNeeds?.value || 0} bi</span>
+                <span className="balance-percent">
+                  ({Math.round(economy.manufacturesNeeds?.percentValue || 0)}% PIB)
+                </span>
+              </div>
             </div>
           </div>
         </div>

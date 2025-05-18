@@ -225,6 +225,9 @@ function setupEconomyHandlers(io, socket, gameState) {
     room.tradeAgreements.push(originAgreement);
     room.tradeAgreements.push(targetAgreement);
     
+    console.log(`Created trade agreement:`, originAgreement);
+    console.log(`Created mirrored trade agreement:`, targetAgreement);
+    
     // Atualizar economias dos países envolvidos
     updateCountryEconomiesWithTradeAgreement(gameState, roomName, originAgreement, countryStateManager);
     
@@ -276,9 +279,16 @@ function setupEconomyHandlers(io, socket, gameState) {
     
     const agreement = room.tradeAgreements[agreementIndex];
     
-    // Verificar se o usuário tem permissão para cancelar (origem ou destino)
-    if (agreement.originPlayer !== username && agreement.country !== userCountry) {
-      socket.emit('error', 'You do not have permission to cancel this agreement');
+    // MODIFICAÇÃO: Remover a verificação de permissão para que qualquer jogador 
+    // envolvido no acordo possa cancelá-lo
+    
+    // Verificar apenas se o usuário está envolvido no acordo de alguma forma
+    // Se é originador ou destino
+    const isInvolved = (agreement.originCountry === userCountry || 
+                         agreement.country === userCountry);
+    
+    if (!isInvolved) {
+      socket.emit('error', 'You are not involved in this trade agreement');
       return;
     }
     
@@ -362,7 +372,7 @@ function setupPeriodicTradeUpdates(io, gameState) {
     clearInterval(gameState.tradeUpdateInterval);
   }
   
-  // Setup interval for periodic updates (every 10 seconds)
+  // Setup interval for periodic updates (every 5 seconds)
   gameState.tradeUpdateInterval = setInterval(() => {
     console.log('Running periodic trade agreement economic updates...');
     
@@ -396,7 +406,7 @@ function setupPeriodicTradeUpdates(io, gameState) {
         timestamp: Date.now()
       });
     }
-  }, 5000); // Run every 5 seconds (reduced from 10 for faster feedback)
+  }, 5000); // Run every 5 seconds
   
   console.log('Periodic trade updates scheduled (every 5 seconds)');
 }
@@ -446,30 +456,27 @@ function updateCountryEconomyForTrade(gameState, roomName, countryName, countryS
     return;
   }
   
-  // Obter todos os acordos em que este país está envolvido
-  // Seja como origem ou destino - Para considerar todos os impactos
-  const countryAgreements = (room.tradeAgreements || []).filter(a => 
-    a.originCountry === countryName || a.country === countryName
-  );
+  // MODIFICADO: Agora consideramos todos os acordos na sala
+  // Isso é importante porque precisamos considerar acordos onde o país é tanto origem quanto destino
+  const allAgreements = room.tradeAgreements || [];
   
-  console.log(`Processing ${countryAgreements.length} trade agreements for ${countryName} in room ${roomName}`);
-  
-  // Log dos acordos para debug
-  if (countryAgreements.length > 0) {
-    console.log('Trade agreements details:');
-    countryAgreements.forEach((a, i) => {
-      console.log(`[${i}] ${a.originCountry} -> ${a.country}: ${a.type} ${a.product} ${a.value}bi`);
-    });
-  }
+  console.log(`Processing ${allAgreements.length} trade agreements for ${countryName} in room ${roomName}`);
   
   // Realizar cálculos econômicos
   const calculationResult = performEconomicCalculations(
     currentState,
-    { ...staticData, countryName: countryName }, // Garantir que o countryName está disponível
+    { ...staticData, countryName: countryName },
     {
-      tradeAgreements: countryAgreements
+      tradeAgreements: allAgreements
     }
   );
+  
+  // Log para debug dos balanços comerciais
+  console.log(`Trade calculation results for ${countryName}:`, {
+    manufacturesBalance: calculationResult.economy.manufacturesBalance?.value,
+    commoditiesBalance: calculationResult.economy.commoditiesBalance?.value,
+    tradeStats: calculationResult.economy.tradeStats
+  });
   
   // Atualizar o estado do país
   countryStateManager.updateCountryState(
