@@ -6,6 +6,7 @@ import {
   initializeGameState, 
   cleanupInactiveUsers
 } from '../shared/gameStateUtils.js';
+import { simulateAICountryActions } from '../modules/ai/aiCountryController.js';
 
 /**
  * Creates a middleware for registration, monitoring, and processing of Socket.io events
@@ -16,6 +17,41 @@ function createSocketMiddleware(io) {
   // Use the existing global gameState to avoid creating duplicate state
   const gameState = global.gameState || initializeGameState();
   
+  // Set up a periodic simulation for AI-controlled countries
+  const setupAISimulationInterval = () => {
+    // Time in ms between AI simulation operations
+    const AI_SIMULATION_INTERVAL = 10000; // 10 seconds
+    
+    // Create the interval and return it for potential cancellation
+    const interval = setInterval(() => {
+      // Verificar se há salas ativas
+      if (gameState.rooms.size === 0) return;
+      
+      // Executar simulação para cada sala
+      for (const [roomName, room] of gameState.rooms.entries()) {
+        // Verificar se há jogadores humanos online na sala
+        const hasOnlinePlayers = room.players && 
+          room.players.some(p => typeof p === 'object' && p.isOnline);
+        
+        // Apenas simular salas com jogadores humanos online
+        if (hasOnlinePlayers) {
+          simulateAICountryActions(io, gameState, roomName);
+        }
+      }
+    }, AI_SIMULATION_INTERVAL);
+    
+    return interval;
+  };
+
+  // Start the AI simulation interval
+  const aiSimulationInterval = setupAISimulationInterval();
+
+  // Store the interval for potential cleanup
+  if (!gameState.cleanupIntervals) {
+    gameState.cleanupIntervals = new Set();
+  }
+  gameState.cleanupIntervals.add(aiSimulationInterval);
+
   // Set up a periodic cleanup to prevent resource leaks
   const setupCleanupInterval = () => {
     // Time in ms between cleanup operations - reduced frequency

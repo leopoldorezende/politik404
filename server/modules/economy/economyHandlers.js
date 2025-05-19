@@ -12,6 +12,7 @@ import {
   cancelTradeAgreement,
   updateCountryEconomyForTrade
 } from './tradeAgreementService.js';
+import { evaluateTradeProposal } from '../ai/aiCountryController.js';
 
 // Flag to track if the periodic updates have been initialized
 let periodicUpdatesInitialized = false;
@@ -231,13 +232,18 @@ function setupEconomyHandlers(io, socket, gameState) {
         socket.emit('error', 'Target player is not online');
       }
     } else {
-      // País alvo é controlado pelo sistema - decisão automática
-      // 50% de chance de aceitar
-      const accepted = Math.random() >= 0.5;
+      // País alvo é controlado pelo sistema - usar lógica de IA
+      const aiDecision = evaluateTradeProposal(gameState, roomName, {
+        type,
+        product,
+        targetCountry,
+        value,
+        originCountry
+      });
       
       setTimeout(() => {
-        if (accepted) {
-          console.log(`AI-controlled country ${targetCountry} accepted trade proposal from ${originCountry}`);
+        if (aiDecision.accepted) {
+          console.log(`AI-controlled country ${targetCountry} accepted trade proposal from ${originCountry}: ${aiDecision.reason}`);
           
           // Criar acordo comercial
           createTradeAgreement(io, gameState, roomName, {
@@ -257,7 +263,7 @@ function setupEconomyHandlers(io, socket, gameState) {
             message: `${targetCountry} accepted your trade proposal`
           });
         } else {
-          console.log(`AI-controlled country ${targetCountry} rejected trade proposal from ${originCountry}`);
+          console.log(`AI-controlled country ${targetCountry} rejected trade proposal from ${originCountry}: ${aiDecision.reason}`);
           
           // Notificar jogador que enviou que a proposta foi rejeitada
           socket.emit('tradeProposalResponse', {

@@ -92,6 +92,8 @@
       ├── middlewares
       │   └── socketServerMiddleware.js
       ├── modules
+      │   ├── ai
+      │   │   └── aiCountryController.js
       │   ├── auth
       │   │   ├── authHandlers.js  # Handlers de autenticação
       │   │   └── google.js

@@ -1,6 +1,3 @@
-/**
- * Socket.io - Inicialização e coordenação de todos os handlers
- */
 
 import { setupAuthHandlers } from './auth/authHandlers.js';
 import { setupRoomManagement } from './room/roomManagement.js';
@@ -11,6 +8,7 @@ import { setupCountryAssignment } from './country/countryAssignment.js';
 import { setupCountryStateHandlers } from './country/countryStateHandlers.js';
 import { setupChatHandlers } from './chat/chatHandlers.js';
 import { setupEconomyHandlers } from './economy/economyHandlers.js';
+import { simulateAICountryActions } from './ai/aiCountryController.js';
 
 /**
  * Inicializa todos os handlers de socket
@@ -31,6 +29,14 @@ function initializeSocketHandlers(io, socket, gameState) {
   setupCountryStateHandlers(io, socket, gameState); 
   setupChatHandlers(io, socket, gameState);
   setupEconomyHandlers(io, socket, gameState);
+  
+  // Disponibiliza a função de simulação de IA globalmente
+  if (!global.aiController) {
+    global.aiController = {
+      simulateAICountryActions
+    };
+    console.log('Controlador de IA inicializado globalmente');
+  }
   
   console.log('Todos os handlers inicializados com sucesso');
 }
