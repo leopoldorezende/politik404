@@ -266,6 +266,20 @@ export const setupSocketEvents = (socket, socketApi) => {
   // EVENTOS DE COMÉRCIO
   // ======================================================================
   
+  // Handler para receber uma proposta de comércio (para o destinatário)
+  socket.on('tradeProposalReceived', (proposal) => {
+    console.log('Proposta de comércio recebida:', proposal);
+    // Este evento é capturado pelo GamePage que exibe o componente TradeProposalPopup
+    // O componente TradeProposalPopup permitirá ao usuário aceitar ou recusar a proposta
+    // e então chamará socketApi.respondToTradeProposal com a decisão do usuário
+  });
+  
+  // Handler para receber resposta a uma proposta enviada
+  socket.on('tradeProposalResponse', (response) => {
+    console.log('Resposta à proposta de comércio recebida:', response);
+    // A lógica de UI para este evento é tratada nos componentes
+  });
+  
   // Receber confirmação de que um acordo comercial foi criado
   socket.on('tradeAgreementCreated', (agreement) => {
     console.log('Acordo comercial criado:', agreement);

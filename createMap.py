@@ -109,6 +109,7 @@ def main():
         'socketMiddleware.js': 'Middleware para Socket.io',
         'Sideview.jsx': 'Layout da sidebar direita Sideview',
         'Sidetools.jsx': 'Layout da sidebar esquerda Sidetools',
+        'Popup.jsx': 'Layout da popup genérica que será usada em todo game',
         'redisClient.js': 'Infraestrutura do Redis',
         'gameStateUtils.js': 'Utilitários de estado para o jogo',
         'server.js': 'Entry point do servidor',

@@ -45,6 +45,10 @@ const socketMiddleware = store => next => action => {
       socketApi.requestCountry(action.payload);
       break;
       
+    case SOCKET_EVENTS.SEND_TRADE_PROPOSAL:
+      socketApi.sendTradeProposal(action.payload);
+      break;
+      
     // Eventos de estado de país
     case COUNTRY_STATE_EVENTS.SUBSCRIBE:
       socketApi.subscribeToCountryStates(action.payload);
@@ -78,6 +82,14 @@ const socketMiddleware = store => next => action => {
     
     case TRADE_EVENTS.GET_AGREEMENTS:
       socketApi.getTradeAgreements();
+      break;
+    
+    case TRADE_EVENTS.SEND_PROPOSAL:
+      socketApi.sendTradeProposal(action.payload);
+      break;
+      
+    case TRADE_EVENTS.RESPOND_PROPOSAL:
+      socketApi.respondToTradeProposal(action.payload.proposalId, action.payload.accepted);
       break;
 
     default:

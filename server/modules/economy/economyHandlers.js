@@ -119,7 +119,244 @@ function setupEconomyHandlers(io, socket, gameState) {
     });
   });
 
-  // Handler para criação de acordos comerciais
+  // Handler para envio de propostas de comércio
+  socket.on('sendTradeProposal', (proposal) => {
+    const username = socket.username;
+    
+    if (!username) {
+      socket.emit('error', 'User not authenticated');
+      return;
+    }
+    
+    // Get current room
+    const roomName = getCurrentRoom(socket, gameState);
+    if (!roomName) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+    
+    const room = gameState.rooms.get(roomName);
+    if (!room) {
+      socket.emit('error', 'Room not found');
+      return;
+    }
+    
+    // Validar dados da proposta
+    const { type, product, targetCountry, value, originCountry } = proposal;
+    
+    if (!type || !product || !targetCountry || !value || !originCountry) {
+      socket.emit('error', 'Missing required proposal details');
+      return;
+    }
+    
+    if (type !== 'import' && type !== 'export') {
+      socket.emit('error', 'Invalid trade type. Must be "import" or "export"');
+      return;
+    }
+    
+    if (product !== 'commodity' && product !== 'manufacture') {
+      socket.emit('error', 'Invalid product type. Must be "commodity" or "manufacture"');
+      return;
+    }
+    
+    if (value <= 0 || value > 1000) {
+      socket.emit('error', 'Invalid trade value. Must be between 0 and 1000 billions');
+      return;
+    }
+    
+    // Verificar se o país de origem é controlado pelo jogador que enviou a proposta
+    const userRoomKey = `${username}:${roomName}`;
+    const userCountry = gameState.userRoomCountries.get(userRoomKey);
+    
+    if (userCountry !== originCountry) {
+      socket.emit('error', 'You can only create proposals for your own country');
+      return;
+    }
+    
+    // Gerar ID único para a proposta
+    const proposalId = `trade-proposal-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    // Criar objeto da proposta
+    const tradeProposal = {
+      id: proposalId,
+      type,
+      product,
+      targetCountry,
+      value,
+      originCountry,
+      originPlayer: username,
+      timestamp: Date.now()
+    };
+    
+    // Verificar se o país alvo é controlado por um jogador
+    let targetPlayer = null;
+    let isPlayerControlled = false;
+    
+    // Procurar o jogador que controla o país alvo
+    for (const player of room.players) {
+      if (typeof player === 'object' && player.country === targetCountry) {
+        targetPlayer = player.username;
+        isPlayerControlled = true;
+        break;
+      }
+    }
+    
+    console.log(`Trade proposal from ${originCountry} to ${targetCountry}. Target is ${isPlayerControlled ? 'player-controlled' : 'AI-controlled'}`);
+    
+    if (isPlayerControlled) {
+      // País alvo é controlado por um jogador
+      // Verificar se o jogador está online
+      const targetSocketId = gameState.usernameToSocketId?.get(targetPlayer);
+      const targetSocket = targetSocketId ? io.sockets.sockets.get(targetSocketId) : null;
+      
+      if (targetSocket && targetSocket.connected) {
+        // Armazenar a proposta no socket do jogador alvo para uso posterior
+        targetSocket.tradeProposal = tradeProposal;
+        
+        // Enviar proposta para o jogador alvo
+        targetSocket.emit('tradeProposalReceived', tradeProposal);
+        console.log(`Trade proposal sent to player ${targetPlayer}`);
+        
+        // Informar o jogador que enviou que a proposta foi encaminhada
+        socket.emit('tradeProposalSent', {
+          proposalId,
+          targetPlayer,
+          message: `Proposal sent to ${targetPlayer}`
+        });
+      } else {
+        // Jogador alvo não está online
+        socket.emit('error', 'Target player is not online');
+      }
+    } else {
+      // País alvo é controlado pelo sistema - decisão automática
+      // 50% de chance de aceitar
+      const accepted = Math.random() >= 0.5;
+      
+      setTimeout(() => {
+        if (accepted) {
+          console.log(`AI-controlled country ${targetCountry} accepted trade proposal from ${originCountry}`);
+          
+          // Criar acordo comercial
+          createTradeAgreement(io, gameState, roomName, {
+            type,
+            product,
+            country: targetCountry,
+            value,
+            originCountry,
+            originPlayer: username
+          });
+          
+          // Notificar jogador que enviou que a proposta foi aceita
+          socket.emit('tradeProposalResponse', {
+            proposalId,
+            accepted: true,
+            targetCountry,
+            message: `${targetCountry} accepted your trade proposal`
+          });
+        } else {
+          console.log(`AI-controlled country ${targetCountry} rejected trade proposal from ${originCountry}`);
+          
+          // Notificar jogador que enviou que a proposta foi rejeitada
+          socket.emit('tradeProposalResponse', {
+            proposalId,
+            accepted: false,
+            targetCountry,
+            message: `${targetCountry} rejected your trade proposal`
+          });
+        }
+      }, 1500); // Pequeno delay para simular "pensamento" do AI
+    }
+  });
+  
+  // Handler para respostas às propostas comerciais
+  socket.on('respondToTradeProposal', (response) => {
+    const username = socket.username;
+    
+    if (!username) {
+      socket.emit('error', 'User not authenticated');
+      return;
+    }
+    
+    const { proposalId, accepted } = response;
+    
+    if (!proposalId) {
+      socket.emit('error', 'Proposal ID is required');
+      return;
+    }
+    
+    // Get current room
+    const roomName = getCurrentRoom(socket, gameState);
+    if (!roomName) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+    
+    // Recuperar detalhes da proposta do socket (armazenados quando recebeu a proposta)
+    const proposal = socket.tradeProposal;
+    
+    if (!proposal) {
+      socket.emit('error', 'Trade proposal details not found');
+      return;
+    }
+    
+    // Tentar encontrar o socket do jogador que enviou a proposta
+    const originPlayer = proposal.originPlayer;
+    const originSocketId = gameState.usernameToSocketId?.get(originPlayer);
+    const originSocket = originSocketId ? io.sockets.sockets.get(originSocketId) : null;
+    
+    if (accepted) {
+      console.log(`Trade proposal ${proposalId} accepted by ${username}`);
+      
+      // Criar acordo comercial
+      createTradeAgreement(io, gameState, roomName, {
+        type: proposal.type,
+        product: proposal.product,
+        country: proposal.targetCountry,
+        value: proposal.value,
+        originCountry: proposal.originCountry,
+        originPlayer: proposal.originPlayer
+      });
+      
+      // Notificar ambos os jogadores
+      socket.emit('tradeProposalProcessed', {
+        proposalId,
+        accepted: true,
+        message: `You accepted the trade proposal from ${proposal.originCountry}`
+      });
+      
+      if (originSocket && originSocket.connected) {
+        originSocket.emit('tradeProposalResponse', {
+          proposalId,
+          accepted: true,
+          targetCountry: proposal.targetCountry,
+          message: `${proposal.targetCountry} accepted your trade proposal`
+        });
+      }
+    } else {
+      console.log(`Trade proposal ${proposalId} rejected by ${username}`);
+      
+      // Notificar ambos os jogadores
+      socket.emit('tradeProposalProcessed', {
+        proposalId,
+        accepted: false,
+        message: 'You rejected the trade proposal'
+      });
+      
+      if (originSocket && originSocket.connected) {
+        originSocket.emit('tradeProposalResponse', {
+          proposalId,
+          accepted: false,
+          targetCountry: proposal.targetCountry,
+          message: `${proposal.targetCountry} rejected your trade proposal`
+        });
+      }
+    }
+    
+    // Limpar a proposta armazenada
+    delete socket.tradeProposal;
+  });
+
+  // Handler para criação de acordos comerciais (ainda mantido para compatibilidade)
   socket.on('createTradeAgreement', (data) => {
     const username = socket.username;
     
@@ -179,68 +416,24 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Create agreement object for the origin country
-    const originAgreement = {
-      id: `trade-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      timestamp: Date.now(),
+    // Criar o acordo comercial
+    const agreement = createTradeAgreement(io, gameState, roomName, {
       type,
       product,
       country,
-      value,
+      value, 
       originCountry: userCountry,
       originPlayer: username
-    };
-    
-    // Create a mirrored agreement for the target country
-    // If origin is import, target is export and vice versa
-    const targetAgreement = {
-      id: `trade-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      timestamp: Date.now(),
-      type: type === 'import' ? 'export' : 'import', // Invert the type for the target country
-      product,
-      country: userCountry, // The target sees the origin country
-      value,
-      originCountry: country, // For the target, the origin is itself
-      originPlayer: null // No player assigned for target country's perspective
-    };
-    
-    // Salvar o acordo no estado da sala (se não existir, crie o array)
-    if (!room.tradeAgreements) {
-      room.tradeAgreements = [];
-    }
-    
-    // Remover acordos existentes conflitantes (mesmo tipo, produto e países)
-    room.tradeAgreements = room.tradeAgreements.filter(existing => 
-      !(existing.type === type && 
-        existing.product === product && 
-        existing.country === country && 
-        existing.originCountry === userCountry) &&
-      !(existing.type === targetAgreement.type && 
-        existing.product === product && 
-        existing.country === userCountry && 
-        existing.originCountry === country)
-    );
-    
-    // Adicionar os dois acordos (origem e destino)
-    room.tradeAgreements.push(originAgreement);
-    room.tradeAgreements.push(targetAgreement);
-    
-    console.log(`Created trade agreement:`, originAgreement);
-    console.log(`Created mirrored trade agreement:`, targetAgreement);
-    
-    // Atualizar economias dos países envolvidos
-    updateCountryEconomiesWithTradeAgreement(gameState, roomName, originAgreement, countryStateManager);
-    
-    console.log(`${username} created a trade agreement: ${type} ${product} with ${country}`);
-    
-    // Send success response
-    socket.emit('tradeAgreementCreated', originAgreement);
-    
-    // Broadcast to all players in the room about the new agreements
-    io.to(roomName).emit('tradeAgreementUpdated', {
-      agreements: room.tradeAgreements,
-      timestamp: Date.now()
     });
+    
+    if (agreement) {
+      console.log(`${username} created a trade agreement: ${type} ${product} with ${country}`);
+      
+      // Send success response (já enviado dentro de createTradeAgreement)
+      socket.emit('tradeAgreementCreated', agreement);
+    } else {
+      socket.emit('error', 'Failed to create trade agreement');
+    }
   });
   
   // Handler para cancelamento de acordos comerciais
@@ -409,6 +602,90 @@ function setupPeriodicTradeUpdates(io, gameState) {
   }, 5000); // Run every 5 seconds
   
   console.log('Periodic trade updates scheduled (every 5 seconds)');
+}
+
+/**
+ * Função auxiliar para criar acordo comercial
+ * @param {Object} io - Instância do Socket.io
+ * @param {Object} gameState - Estado global do jogo
+ * @param {string} roomName - Nome da sala
+ * @param {Object} agreementData - Dados do acordo
+ * @returns {Object|null} - Acordo criado ou null em caso de erro
+ */
+function createTradeAgreement(io, gameState, roomName, agreementData) {
+  const room = gameState.rooms.get(roomName);
+  if (!room) return null;
+  
+  const { type, product, country, value, originCountry, originPlayer } = agreementData;
+  
+  // Create agreement object for the origin country
+  const originAgreement = {
+    id: `trade-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    timestamp: Date.now(),
+    type,
+    product,
+    country,
+    value,
+    originCountry,
+    originPlayer
+  };
+  
+  // Create a mirrored agreement for the target country
+  // If origin is import, target is export and vice versa
+  const targetAgreement = {
+    id: `trade-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    timestamp: Date.now(),
+    type: type === 'import' ? 'export' : 'import', // Invert the type for the target country
+    product,
+    country: originCountry, // The target sees the origin country
+    value,
+    originCountry: country, // For the target, the origin is itself
+    originPlayer: null // No player assigned for target country's perspective
+  };
+  
+  // Inicializar array de acordos comerciais se não existir
+  if (!room.tradeAgreements) {
+    room.tradeAgreements = [];
+  }
+  
+  // Remover acordos existentes conflitantes (mesmo tipo, produto e países)
+  room.tradeAgreements = room.tradeAgreements.filter(existing => 
+    !(existing.type === type && 
+      existing.product === product && 
+      existing.country === country && 
+      existing.originCountry === originCountry) &&
+    !(existing.type === targetAgreement.type && 
+      existing.product === product && 
+      existing.country === originCountry && 
+      existing.originCountry === country)
+  );
+  
+  // Adicionar os dois acordos (origem e destino)
+  room.tradeAgreements.push(originAgreement);
+  room.tradeAgreements.push(targetAgreement);
+  
+  console.log(`Created trade agreement:`, originAgreement);
+  console.log(`Created mirrored trade agreement:`, targetAgreement);
+  
+  // Atualizar economias dos países envolvidos
+  updateCountryEconomiesWithTradeAgreement(gameState, roomName, originAgreement, countryStateManager);
+  
+  // Broadcast to all players in the room about the new agreements
+  io.to(roomName).emit('tradeAgreementUpdated', {
+    agreements: room.tradeAgreements,
+    timestamp: Date.now()
+  });
+  
+  // Notificar o criador especificamente que o acordo foi criado
+  const originSocketId = gameState.usernameToSocketId?.get(originPlayer);
+  if (originSocketId) {
+    const originSocket = io.sockets.sockets.get(originSocketId);
+    if (originSocket && originSocket.connected) {
+      originSocket.emit('tradeAgreementCreated', originAgreement);
+    }
+  }
+  
+  return originAgreement;
 }
 
 /**

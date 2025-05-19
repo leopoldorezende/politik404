@@ -19,10 +19,12 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
   const [tradeType, setTradeType] = useState('commodity'); // 'commodity' ou 'manufacture'
   const [tradeAmount, setTradeAmount] = useState('');
   const [currentOption, setCurrentOption] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Selecionar dados do Redux
   const myCountry = useSelector(state => state.game?.myCountry || '');
   const selectedCountry = useSelector(state => state.game?.selectedCountry || '');
+  const players = useSelector(state => state.game?.players || []);
 
   // Verificar se o país selecionado é o país do próprio jogador
   const isOwnCountrySelected = myCountry && selectedCountry && myCountry === selectedCountry;
@@ -45,11 +47,51 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
     };
   }, []);
 
+  // Configure socket event listener for trade proposal responses
+  useEffect(() => {
+    const socket = socketApi.getSocketInstance();
+    if (!socket) return;
+    
+    const handleTradeProposalResponse = (response) => {
+      setIsSubmitting(false);
+      
+      if (response.accepted) {
+        alert(`Proposta de ${currentOption === 'export' ? 'exportação' : 'importação'} aceita por ${selectedCountry}!`);
+        
+        // Redirecionar para o painel de comércio após acordo aceito
+        handleClosePopup();
+        redirectToTradePanel();
+      } else {
+        alert(`${selectedCountry} recusou sua proposta de ${currentOption === 'export' ? 'exportação' : 'importação'}.`);
+      }
+    };
+    
+    socket.on('tradeProposalResponse', handleTradeProposalResponse);
+    
+    return () => {
+      socket.off('tradeProposalResponse', handleTradeProposalResponse);
+    };
+  }, [currentOption, selectedCountry]);
+
   // Define the action menu options
   const menuOptions = {
     trade: ['import', 'export'],
     hybrid: ['sabotage', 'interference', 'disinformation'],
     attack: ['missiles', 'maritime', 'ground', 'aerial']
+  };
+
+  // Verificar se o país selecionado é controlado por um jogador
+  const isCountryControlledByPlayer = () => {
+    return players.some(player => {
+      if (typeof player === 'object') {
+        return player.country === selectedCountry;
+      }
+      if (typeof player === 'string') {
+        const match = player.match(/\((.*)\)/);
+        return match && match[1] === selectedCountry;
+      }
+      return false;
+    });
   };
 
   // Handle icon click to toggle menu
@@ -89,36 +131,18 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
     setCurrentOption(option);
     setTradeType('commodity'); // reset para o valor padrão
     setTradeAmount(''); // limpar o valor anterior
+    setIsSubmitting(false); // resetar estado de submissão
   };
 
   // Função para fechar popup
   const handleClosePopup = () => {
     setPopupType(null);
     setCurrentOption('');
+    setIsSubmitting(false);
   };
 
-  // Função para finalizar ação de comércio
-  const handleFinalizeTrade = () => {
-    const amount = parseFloat(tradeAmount);
-    if (!amount || amount <= 0) {
-      alert('Por favor, insira um valor válido maior que zero.');
-      return;
-    }
-    
-    // Criar um novo acordo comercial via socket API
-    socketApi.createTradeAgreement({
-      type: currentOption, // 'export' ou 'import'
-      product: tradeType, // 'commodity' ou 'manufacture'
-      country: selectedCountry,
-      value: amount,
-    });
-    
-    const action = currentOption === 'export' ? 'exportação' : 'importação';
-    const type = tradeType === 'commodity' ? 'commodities' : 'manufatura';
-    
-    handleClosePopup();
-    
-    // Opcional: Redirecionar para o painel de comércio
+  // Função para redirecionar ao painel de comércio
+  const redirectToTradePanel = () => {
     onOpenSideview();
     onSetActiveTab('tools');
     setTimeout(() => {
@@ -128,6 +152,27 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
         tradeTab.click();
       }
     }, 300);
+  };
+
+  // Função para enviar proposta de comércio
+  const handleSendTradeProposal = () => {
+    const amount = parseFloat(tradeAmount);
+    if (!amount || amount <= 0) {
+      alert('Por favor, insira um valor válido maior que zero.');
+      return;
+    }
+    
+    // Desabilitar o botão enquanto processa
+    setIsSubmitting(true);
+    
+    // Enviar proposta de acordo comercial via socket API
+    socketApi.sendTradeProposal({
+      type: currentOption, // 'export' ou 'import'
+      product: tradeType, // 'commodity' ou 'manufacture'
+      targetCountry: selectedCountry,
+      value: amount,
+      originCountry: myCountry
+    });
   };
 
   // Função para finalizar aliança militar
@@ -245,6 +290,8 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
         );
       case 'trade':
         if (currentOption === 'export' || currentOption === 'import') {
+          const isTargetControlledByPlayer = isCountryControlledByPlayer();
+          
           return (
             <>
               <div className="popup-form-group">
@@ -284,12 +331,21 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
                 />
               </div>
 
+              <div className="popup-info">
+                <p>
+                  {isTargetControlledByPlayer 
+                    ? `${selectedCountry} é controlado por outro jogador e precisará aprovar esta proposta.`
+                    : `${selectedCountry} é controlado pelo sistema e poderá aprovar ou recusar esta proposta.`
+                  }
+                </p>
+              </div>
+
               <div className="popup-actions">
                 <button 
-                  onClick={handleFinalizeTrade}
-                  disabled={!tradeAmount || tradeAmount <= 0}
+                  onClick={handleSendTradeProposal}
+                  disabled={isSubmitting || !tradeAmount || tradeAmount <= 0}
                 >
-                  Assinar Acordo
+                  {isSubmitting ? 'Enviando...' : 'Enviar Proposta'}
                 </button>
               </div>
             </>

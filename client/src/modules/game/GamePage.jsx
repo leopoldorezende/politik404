@@ -3,25 +3,28 @@ import { useDispatch, useSelector } from 'react-redux';
 import Sideview from '../../ui/sideview/Sideview';
 import Sidetools from '../../ui/sidetools/Sidetools';
 import MapView from '../map/MapView';
-import ActionMenu from '../actions/ActionMenu'; // Import the new ActionMenu component
+import ActionMenu from '../actions/ActionMenu';
 import { loadCountriesData, loadCountriesCoordinates } from '../country/countryService';
-import { setCountriesCoordinates } from './gameState'; 
+import { setCountriesCoordinates } from './gameState';
+import { socketApi } from '../../services/socketClient';
+import TradeProposalPopup from '../trade/TradeProposalPopup';
 import './GamePage.css';
 
 const GamePage = () => {
   const dispatch = useDispatch();
   const myCountry = useSelector(state => state.game.myCountry);
   const currentRoom = useSelector(state => state.rooms.currentRoom);
-  const rooms = useSelector(state => state.rooms.rooms);  // Adicionar lista de salas
-  const players = useSelector(state => state.game.players);  // Lista de jogadores
-  const countriesData = useSelector(state => state.game.countriesData);  // Dados dos países
+  const rooms = useSelector(state => state.rooms.rooms);
+  const players = useSelector(state => state.game.players);
+  const countriesData = useSelector(state => state.game.countriesData);
   
   const [sideviewActive, setSideviewActive] = useState(true);
   const [sidetoolsActive, setSidetoolsActive] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
-  const [showTimeupPopup, setShowTimeupPopup] = useState(false);  // Estado do popup
-  const [activeTab, setActiveTab] = useState('chat'); // Add state for active tab
+  const [showTimeupPopup, setShowTimeupPopup] = useState(false);
+  const [activeTab, setActiveTab] = useState('chat');
+  const [tradeProposal, setTradeProposal] = useState(null);
   
   // Atualizar o tempo a cada segundo
   useEffect(() => {
@@ -61,6 +64,38 @@ const GamePage = () => {
       console.log('Time Remaining:', timeRemaining);
     }
   }, [currentRoom, roomData, currentTime, timeRemaining]);
+  
+  // Listener para propostas de comércio
+  useEffect(() => {
+    const socket = socketApi.getSocketInstance();
+    if (!socket) return;
+    
+    const handleTradeProposalReceived = (proposal) => {
+      console.log('Trade proposal received:', proposal);
+      // Adicionar som de notificação, se disponível
+      if (window.Audio) {
+        try {
+          const notificationSound = new Audio('/notification.mp3');
+          notificationSound.play();
+        } catch (error) {
+          console.error('Failed to play notification sound:', error);
+        }
+      }
+      
+      setTradeProposal(proposal);
+    };
+    
+    socket.on('tradeProposalReceived', handleTradeProposalReceived);
+    
+    return () => {
+      socket.off('tradeProposalReceived', handleTradeProposalReceived);
+    };
+  }, []);
+  
+  // Função para fechar o popup de proposta
+  const handleCloseTradeProposal = () => {
+    setTradeProposal(null);
+  };
   
   // Obter países com jogadores humanos e seus nomes
   const getCountriesWithPlayers = () => {
@@ -334,6 +369,13 @@ const GamePage = () => {
           </div>
         </div>
       )}
+      
+      {/* Popup de proposta de comércio */}
+      <TradeProposalPopup 
+        proposal={tradeProposal}
+        isOpen={tradeProposal !== null}
+        onClose={handleCloseTradeProposal}
+      />
     </div>
   );
 };

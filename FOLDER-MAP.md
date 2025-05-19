@@ -59,6 +59,8 @@
   │   │   │   └── trade
   │   │   │       ├── TradePanel.css
   │   │   │       ├── TradePanel.jsx  # Componente Painel de Comercio
+  │   │   │       ├── TradeProposalPopup.css
+  │   │   │       ├── TradeProposalPopup.jsx
   │   │   │       └── tradeState.js  # Estado do comércio
   │   │   ├── services
   │   │   │   ├── socketClient.js
@@ -70,7 +72,7 @@
   │   │   └── ui
   │   │       ├── popup
   │   │       │   ├── Popup.css
-  │   │       │   └── Popup.jsx
+  │   │       │   └── Popup.jsx  # Layout da popup genérica que será usada em todo game
   │   │       ├── sidetools
   │   │       │   ├── Sidetools.css
   │   │       │   └── Sidetools.jsx  # Layout da sidebar esquerda Sidetools

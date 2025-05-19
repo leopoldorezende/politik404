@@ -23,6 +23,7 @@ export const SOCKET_EVENTS = {
   SEND_CHAT: 'socket/sendChatMessage',
   REQUEST_CHAT_HISTORY: 'socket/requestPrivateHistory',
   REQUEST_COUNTRY: 'socket/requestCountry',
+  SEND_TRADE_PROPOSAL: 'socket/sendTradeProposal',
 };
 
 export const COUNTRY_STATE_EVENTS = {
@@ -35,7 +36,9 @@ export const COUNTRY_STATE_EVENTS = {
 export const TRADE_EVENTS = {
   CREATE_AGREEMENT: 'socket/createTradeAgreement',
   CANCEL_AGREEMENT: 'socket/cancelTradeAgreement',
-  GET_AGREEMENTS: 'socket/getTradeAgreements'
+  GET_AGREEMENTS: 'socket/getTradeAgreements',
+  SEND_PROPOSAL: 'socket/sendTradeProposal',
+  RESPOND_PROPOSAL: 'socket/respondTradeProposal',
 };
 
 // API pública para enviar eventos ao servidor
@@ -220,10 +223,17 @@ export const socketApi = {
   // MÉTODOS DE COMÉRCIO
   // ======================================================================
   
-  // Criar um novo acordo comercial
-  createTradeAgreement: (tradeData) => {
+  // Enviar proposta de acordo comercial (substituindo createTradeAgreement)
+  sendTradeProposal: (proposalData) => {
     const socket = getSocketInstance() || socketApi.connect();
-    socket.emit('createTradeAgreement', tradeData);
+    console.log('Enviando proposta de comércio:', proposalData);
+    socket.emit('sendTradeProposal', proposalData);
+  },
+  
+  // Responder a uma proposta de comércio (aceitar ou recusar)
+  respondToTradeProposal: (proposalId, accepted) => {
+    const socket = getSocketInstance() || socketApi.connect();
+    socket.emit('respondToTradeProposal', { proposalId, accepted });
   },
   
   // Cancelar um acordo comercial existente
