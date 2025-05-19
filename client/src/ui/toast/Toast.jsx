@@ -14,7 +14,8 @@ const Toast = forwardRef((props, ref) => {
   // Expor métodos para componentes que usam a ref
   useImperativeHandle(ref, () => ({
     show: (message, type = 'info', duration = 8000) => {
-      const id = Date.now();
+      // Garantir um ID único com timestamp + valor aleatório
+      const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       const newMessage = { id, text: message, type, duration };
       
       setMessages(prev => [...prev, newMessage]);
@@ -53,9 +54,9 @@ const Toast = forwardRef((props, ref) => {
 
   return (
     <div className={`toast-container ${props.className || ''}`}>
-      {messages.map(message => (
+      {messages.map((message, index) => (
         <div
-          key={message.id}
+          key={`${message.id}-${index}`}
           className={`toast toast-${message.type} toast-show`}
           onClick={() => dismiss(message.id)}
         >

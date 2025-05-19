@@ -20,10 +20,11 @@ function createSocketMiddleware(io) {
   // Set up a periodic simulation for AI-controlled countries
   const setupAISimulationInterval = () => {
     // Time in ms between AI simulation operations
-    const AI_SIMULATION_INTERVAL = 10000; // 10 seconds
+    const AI_SIMULATION_INTERVAL = 60000; // Cada 1 minuto (era 10 segundos antes)
+    const AI_TRADE_PROPOSAL_INTERVAL = 180000; // Cada 3 minutos para propostas comerciais
     
-    // Create the interval and return it for potential cancellation
-    const interval = setInterval(() => {
+    // Intervalo principal para simulações de IA
+    const simulationInterval = setInterval(() => {
       // Verificar se há salas ativas
       if (gameState.rooms.size === 0) return;
       
@@ -40,17 +41,44 @@ function createSocketMiddleware(io) {
       }
     }, AI_SIMULATION_INTERVAL);
     
-    return interval;
+    // Intervalo específico para propostas comerciais da IA
+    // Este intervalo separado permite controlar melhor a frequência das propostas
+    const tradeProposalInterval = setInterval(() => {
+      // Verifica se há salas ativas
+      if (gameState.rooms.size === 0) return;
+      
+      // Para cada sala ativa
+      for (const [roomName, room] of gameState.rooms.entries()) {
+        // Verificar se há jogadores humanos online
+        const onlinePlayers = room.players ? 
+          room.players.filter(p => typeof p === 'object' && p.isOnline) : [];
+        
+        if (onlinePlayers.length > 0) {
+          // Se houver jogadores online, há uma chance de a IA fazer uma proposta comercial
+          // A função simulateAICountryActions já controla internamente quais países IA farão propostas
+          if (Math.random() < 0.6) { // 60% de chance a cada intervalo
+            console.log(`[AI Trade Proposals] Iniciando simulação para sala ${roomName}`);
+            simulateAICountryActions(io, gameState, roomName);
+          }
+        }
+      }
+    }, AI_TRADE_PROPOSAL_INTERVAL);
+    
+    return [simulationInterval, tradeProposalInterval];
   };
 
-  // Start the AI simulation interval
-  const aiSimulationInterval = setupAISimulationInterval();
+  // Start the AI simulation intervals
+  const aiIntervals = setupAISimulationInterval();
 
-  // Store the interval for potential cleanup
+  // Store the intervals for potential cleanup
   if (!gameState.cleanupIntervals) {
     gameState.cleanupIntervals = new Set();
   }
-  gameState.cleanupIntervals.add(aiSimulationInterval);
+  
+  // Adicionar todos os intervalos ao conjunto de limpeza
+  aiIntervals.forEach(interval => {
+    gameState.cleanupIntervals.add(interval);
+  });
 
   // Set up a periodic cleanup to prevent resource leaks
   const setupCleanupInterval = () => {

@@ -94,9 +94,9 @@ const TradePanel = () => {
 
         {myAgreements.length > 0 ? (
           <div className="agreements-list">
-            {myAgreements.map((agreement) => (
+            {myAgreements.map((agreement, index) => (
               <div 
-                key={agreement.id} 
+                key={`${agreement.id}-${index}`} 
                 className={`trade-card ${agreement.type}`}
               >
                 <h4>{agreement.country}</h4>

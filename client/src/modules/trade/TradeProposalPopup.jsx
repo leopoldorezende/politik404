@@ -14,11 +14,16 @@ import './TradeProposalPopup.css';
 const TradeProposalPopup = ({ proposal, isOpen, onClose }) => {
   if (!proposal || !isOpen) return null;
 
-  const { id, type, product, originCountry, value } = proposal;
+  const { id, type, product, originCountry, value, reason } = proposal;
   
   // Determinar título e mensagem baseados no tipo da proposta
   const title = `Proposta de ${type === 'export' ? 'Exportação' : 'Importação'} de ${originCountry}`;
   const productType = product === 'commodity' ? 'commodities' : 'manufaturas';
+  
+  // Análise econômica simples para contextualizar a proposta
+  const economicContext = type === 'export' 
+    ? `${originCountry} deseja enviar ${productType} para o seu país`
+    : `${originCountry} deseja receber ${productType} do seu país`;
   
   // Funções para aceitar ou recusar proposta
   const handleAccept = () => {
@@ -66,6 +71,14 @@ const TradeProposalPopup = ({ proposal, isOpen, onClose }) => {
             {type === 'export' 
               ? ' Você receberá produtos deste país, o que poderá ajudar a suprir demandas internas.'
               : ' Você enviará produtos para este país, o que poderá reforçar suas receitas.'}
+          </p>
+          
+          {/* Contexto econômico adicional */}
+          <p className="economic-context">
+            <strong>Contexto:</strong> {economicContext}
+            {type === 'export' 
+              ? ', o que pode ajudar você se estiver com déficit neste setor.'
+              : ', o que pode ser vantajoso se você tiver excedente neste setor.'}
           </p>
         </div>
         

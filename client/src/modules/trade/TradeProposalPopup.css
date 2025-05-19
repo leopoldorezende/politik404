@@ -1,89 +1,91 @@
 .trade-proposal-content {
-  padding: 15px;
-  max-width: 600px;
+  padding: 10px 0;
 }
 
 .proposal-message {
   margin-bottom: 20px;
   font-size: 16px;
   line-height: 1.5;
-  background-color: rgba(255, 255, 255, 0.07);
-  padding: 15px;
-  border-radius: 8px;
 }
 
 .proposal-details {
-  margin-bottom: 20px;
-  background-color: rgba(255, 255, 255, 0.03);
-  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
 }
 
 .detail-item {
   display: flex;
-  justify-content: space-between;
   margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  align-items: center;
 }
 
 .detail-item:last-child {
-  border-bottom: none;
   margin-bottom: 0;
-  padding-bottom: 0;
 }
 
 .detail-label {
+  width: 100px;
   font-weight: bold;
-  color: #9ba3af;
+  color: #aaa;
 }
 
 .detail-value {
-  color: #ffffff;
+  flex-grow: 1;
 }
 
 .proposal-info {
   margin-bottom: 20px;
   font-size: 14px;
-  line-height: 1.5;
-  color: #9ba3af;
-  font-style: italic;
+  line-height: 1.6;
+  color: #ccc;
+}
+
+.economic-context {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 10px;
+  border-left: 3px solid #3498db;
 }
 
 .proposal-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px;
 }
 
 .proposal-actions button {
-  flex: 1;
-  padding: 12px;
-  font-size: 16px;
+  min-width: 100px;
+  padding: 10px 20px;
   font-weight: bold;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
 }
 
-.proposal-actions button:hover {
-  transform: translateY(-2px);
+/* Indicadores de tipo de proposta */
+.proposal-type-icon {
+  margin-right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-.proposal-actions .action-btn {
-  background-color: #0066cc;
-  color: white;
+/* Animação de entrada */
+@keyframes proposal-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.proposal-actions .action-btn:hover {
-  background-color: #0055aa;
-}
-
-.proposal-actions .danger {
-  background-color: #dc3545;
-}
-
-.proposal-actions .danger:hover {
-  background-color: #c82333;
+.trade-proposal-content {
+  animation: proposal-slide-in 0.3s ease-out forwards;
 }

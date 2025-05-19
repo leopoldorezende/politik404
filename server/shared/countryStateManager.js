@@ -544,10 +544,7 @@ class CountryStateManager {
       return null;
     }
     
-    // Importar a função necessária para cálculos econômicos
-    const { performEconomicCalculations } = require('../modules/economy/economyCalculations.js');
-    
-    // Fazer os cálculos de impacto comercial
+    // Usar a função performEconomicCalculations que já deve estar importada no topo do arquivo
     const staticData = { 
       ...gameState.countriesData[countryName],
       countryName // Garantir que o nome do país está disponível

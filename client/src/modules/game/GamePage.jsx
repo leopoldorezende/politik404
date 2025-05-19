@@ -8,6 +8,7 @@ import { loadCountriesData, loadCountriesCoordinates } from '../country/countryS
 import { setCountriesCoordinates } from './gameState';
 import { socketApi } from '../../services/socketClient';
 import TradeProposalPopup from '../trade/TradeProposalPopup';
+import MessageService from '../../ui/toast/messageService';
 import './GamePage.css';
 
 const GamePage = () => {
@@ -54,18 +55,7 @@ const GamePage = () => {
     }
   }, [timeRemaining, roomData, showTimeupPopup]);
   
-  // Debug para verificar os valores
-  useEffect(() => {
-    if (currentRoom) {
-      // console.log('Current Room:', currentRoom);
-      // console.log('Room Data from list:', roomData);
-      // console.log('Expires At:', roomData?.expiresAt);
-      // console.log('Current Time:', currentTime);
-      // console.log('Time Remaining:', timeRemaining);
-    }
-  }, [currentRoom, roomData, currentTime, timeRemaining]);
-  
-  // Listener para propostas de comércio
+  // Listener para propostas de comércio - CORRIGIDO para evitar duplicação de Toast
   useEffect(() => {
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
@@ -81,6 +71,9 @@ const GamePage = () => {
           console.error('Failed to play notification sound:', error);
         }
       }
+      
+      // REMOVER: A notificação toast agora é feita apenas no socketEventHandlers.js
+      // para evitar duplicação
       
       setTradeProposal(proposal);
     };

@@ -308,10 +308,8 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Tentar encontrar o socket do jogador que enviou a proposta
-    const originPlayer = proposal.originPlayer;
-    const originSocketId = gameState.usernameToSocketId?.get(originPlayer);
-    const originSocket = originSocketId ? io.sockets.sockets.get(originSocketId) : null;
+    // Verificar se o país de origem é controlado por um jogador humano ou pela IA
+    const isAIControlledProposal = !isCountryControlledByHuman(gameState, roomName, proposal.originCountry);
     
     if (accepted) {
       console.log(`Trade proposal ${proposalId} accepted by ${username}`);
@@ -323,41 +321,53 @@ function setupEconomyHandlers(io, socket, gameState) {
         country: proposal.targetCountry,
         value: proposal.value,
         originCountry: proposal.originCountry,
-        originPlayer: proposal.originPlayer
+        originPlayer: proposal.originPlayer || null // O país IA não tem jogador associado
       });
       
-      // Notificar ambos os jogadores
+      // Notificar o jogador que aceitou
       socket.emit('tradeProposalProcessed', {
         proposalId,
         accepted: true,
         message: `You accepted the trade proposal from ${proposal.originCountry}`
       });
       
-      if (originSocket && originSocket.connected) {
-        originSocket.emit('tradeProposalResponse', {
-          proposalId,
-          accepted: true,
-          targetCountry: proposal.targetCountry,
-          message: `${proposal.targetCountry} accepted your trade proposal`
-        });
+      // Se não for uma proposta de IA, notificar o jogador humano que enviou a proposta
+      if (!isAIControlledProposal) {
+        const originSocketId = gameState.usernameToSocketId?.get(proposal.originPlayer);
+        const originSocket = originSocketId ? io.sockets.sockets.get(originSocketId) : null;
+        
+        if (originSocket && originSocket.connected) {
+          originSocket.emit('tradeProposalResponse', {
+            proposalId,
+            accepted: true,
+            targetCountry: proposal.targetCountry,
+            message: `${proposal.targetCountry} accepted your trade proposal`
+          });
+        }
       }
     } else {
       console.log(`Trade proposal ${proposalId} rejected by ${username}`);
       
-      // Notificar ambos os jogadores
+      // Notificar o jogador que rejeitou
       socket.emit('tradeProposalProcessed', {
         proposalId,
         accepted: false,
         message: 'You rejected the trade proposal'
       });
       
-      if (originSocket && originSocket.connected) {
-        originSocket.emit('tradeProposalResponse', {
-          proposalId,
-          accepted: false,
-          targetCountry: proposal.targetCountry,
-          message: `${proposal.targetCountry} rejected your trade proposal`
-        });
+      // Se não for uma proposta de IA, notificar o jogador humano que enviou a proposta
+      if (!isAIControlledProposal) {
+        const originSocketId = gameState.usernameToSocketId?.get(proposal.originPlayer);
+        const originSocket = originSocketId ? io.sockets.sockets.get(originSocketId) : null;
+        
+        if (originSocket && originSocket.connected) {
+          originSocket.emit('tradeProposalResponse', {
+            proposalId,
+            accepted: false,
+            targetCountry: proposal.targetCountry,
+            message: `${proposal.targetCountry} rejected your trade proposal`
+          });
+        }
       }
     }
     
@@ -502,6 +512,29 @@ function setupEconomyHandlers(io, socket, gameState) {
       agreements,
       timestamp: Date.now()
     });
+  });
+}
+
+/**
+ * Função auxiliar para verificar se um país é controlado por um jogador humano
+ * @param {Object} gameState - Estado global do jogo
+ * @param {string} roomName - Nome da sala
+ * @param {string} countryName - Nome do país
+ * @returns {boolean} - Verdadeiro se controlado por humano
+ */
+function isCountryControlledByHuman(gameState, roomName, countryName) {
+  const room = gameState.rooms.get(roomName);
+  if (!room || !room.players) return false;
+  
+  return room.players.some(player => {
+    if (typeof player === 'object') {
+      return player.country === countryName;
+    }
+    if (typeof player === 'string') {
+      const match = player.match(/\((.*)\)/);
+      return match && match[1] === countryName;
+    }
+    return false;
   });
 }
 

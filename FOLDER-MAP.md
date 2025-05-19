@@ -7,6 +7,7 @@
   │   ├── index.html  # HTML principal
   │   ├── package.json  # Dependências e scripts principais (monorepo)
   │   ├── public
+  │   │   ├── notification.mp3
   │   │   └── vite2.svg
   │   ├── src
   │   │   ├── App.css

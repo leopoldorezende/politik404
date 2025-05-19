@@ -6,6 +6,15 @@
 import { performEconomicCalculations } from '../economy/economyCalculations.js';
 import countryStateManager from '../../shared/countryStateManager.js';
 
+// Armazenar informações sobre envio de propostas para controlar frequência
+const proposalCooldowns = new Map(); // countryName -> { lastProposalTime, targetPlayer }
+
+// Tempo mínimo entre propostas do mesmo país (em ms)
+const PROPOSAL_COOLDOWN = 10 * 60 * 1000; // 10 minutos
+
+// Probabilidade base de um país IA fazer uma proposta em cada ciclo (0-1)
+const BASE_PROPOSAL_CHANCE = 0.1; // 10% de chance por ciclo
+
 /**
  * Avalia uma proposta comercial e decide se deve aceitá-la
  * @param {Object} gameState - Estado global do jogo
@@ -148,10 +157,14 @@ function simulateAICountryActions(io, gameState, roomName) {
   
   // Obter todos os países IA (países sem jogadores humanos controlando)
   const humanControlledCountries = new Set();
+  const humanPlayers = new Map(); // Map de país -> usuário
   
   room.players.forEach(player => {
     if (typeof player === 'object' && player.country) {
       humanControlledCountries.add(player.country);
+      if (player.username && player.isOnline) {
+        humanPlayers.set(player.country, player.username);
+      }
     } else if (typeof player === 'string') {
       const match = player.match(/\((.*)\)/);
       if (match) {
@@ -163,13 +176,242 @@ function simulateAICountryActions(io, gameState, roomName) {
   const allCountries = Object.keys(gameState.countriesData || {});
   const aiCountries = allCountries.filter(country => !humanControlledCountries.has(country));
   
-  // Lógica de simulação seria implementada aqui
-  // Por exemplo: criar acordos comerciais entre países IA ou com jogadores humanos
+  // Nenhum jogador humano, nada a fazer
+  if (humanPlayers.size === 0) return;
   
-  // Por enquanto, apenas log para debug
-  if (Math.random() < 0.01) { // Limitar logs (apenas 1% das vezes)
-    console.log(`[AI] ${roomName}: Simulando ${aiCountries.length} países IA`);
+  // Para cada país IA, decidir se deve propor comércio
+  // Limitamos a uma proposta por ciclo para evitar sobrecarga
+  let proposalMade = false;
+  
+  // Embaralhar países IA para seleção aleatória
+  const shuffledAICountries = shuffleArray(aiCountries);
+  
+  for (const aiCountry of shuffledAICountries) {
+    // Se já fizemos uma proposta neste ciclo, pare
+    if (proposalMade) break;
+    
+    // Verificar cooldown
+    const cooldown = proposalCooldowns.get(aiCountry);
+    const now = Date.now();
+    if (cooldown && now - cooldown.lastProposalTime < PROPOSAL_COOLDOWN) {
+      continue; // Ainda em cooldown, pular para o próximo país
+    }
+    
+    // Chance base de fazer proposta
+    if (Math.random() > BASE_PROPOSAL_CHANCE) {
+      continue; // Não passou na chance aleatória, próximo país
+    }
+    
+    // Avaliar situação econômica do país IA e gerar proposta se necessário
+    const proposal = evaluateAndGenerateTradeProposal(gameState, roomName, aiCountry, humanPlayers);
+    
+    if (proposal) {
+      // Enviar a proposta
+      sendAITradeProposal(io, gameState, roomName, proposal);
+      
+      // Marcar que fizemos uma proposta neste ciclo
+      proposalMade = true;
+      
+      // Atualizar o cooldown para este país
+      proposalCooldowns.set(aiCountry, {
+        lastProposalTime: now,
+        targetPlayer: proposal.targetPlayer
+      });
+      
+      console.log(`[AI] ${aiCountry} propôs acordo comercial para ${proposal.targetCountry}`);
+    }
   }
+}
+
+/**
+ * Avalia a situação econômica de um país IA e gera uma proposta de comércio se apropriado
+ * @param {Object} gameState - Estado global do jogo
+ * @param {string} roomName - Nome da sala
+ * @param {string} aiCountry - Nome do país IA
+ * @param {Map} humanPlayers - Map de países humanos -> nomes de usuários
+ * @returns {Object|null} - Proposta comercial ou null se não houver proposta
+ */
+function evaluateAndGenerateTradeProposal(gameState, roomName, aiCountry, humanPlayers) {
+  // Obter estado econômico do país
+  const countryState = countryStateManager.getCountryState(roomName, aiCountry);
+  if (!countryState || !countryState.economy) {
+    return null;
+  }
+  
+  const economy = countryState.economy;
+  
+  // Verificar balanços comerciais
+  const commoditiesBalance = economy.commoditiesBalance?.value || 0;
+  const manufacturesBalance = economy.manufacturesBalance?.value || 0;
+  const gdp = economy.gdp?.value || 100;
+  
+  // Determinar se o país tem superávit ou déficit significativo
+  const hasCommoditySurplus = commoditiesBalance > gdp * 0.05; // 5% do PIB
+  const hasCommodityDeficit = commoditiesBalance < -gdp * 0.05;
+  const hasManufactureSurplus = manufacturesBalance > gdp * 0.05;
+  const hasManufactureDeficit = manufacturesBalance < -gdp * 0.05;
+  
+  // Variáveis para a decisão
+  let proposalType = null; // 'import' ou 'export'
+  let proposalProduct = null; // 'commodity' ou 'manufacture'
+  let proposalValue = 0;
+  
+  // Decidir qual situação abordar primeiro (priorizar a mais extrema)
+  if (hasCommoditySurplus && Math.abs(commoditiesBalance) > Math.abs(manufacturesBalance)) {
+    // Tem superávit de commodities, quer exportar (solicitará que outro país importe dele)
+    proposalType = 'import'; // Perspectiva do destinatário
+    proposalProduct = 'commodity';
+    // Valor baseado no superávit, entre 30% e 70% do superávit
+    proposalValue = Math.round(commoditiesBalance * (0.3 + Math.random() * 0.4));
+  } 
+  else if (hasManufactureSurplus && Math.abs(manufacturesBalance) > Math.abs(commoditiesBalance)) {
+    // Tem superávit de manufaturas, quer exportar (solicitará que outro país importe dele)
+    proposalType = 'import'; // Perspectiva do destinatário
+    proposalProduct = 'manufacture';
+    // Valor baseado no superávit, entre 30% e 70% do superávit
+    proposalValue = Math.round(manufacturesBalance * (0.3 + Math.random() * 0.4));
+  }
+  else if (hasCommodityDeficit) {
+    // Tem déficit de commodities, quer importar (solicitará que outro país exporte para ele)
+    proposalType = 'export'; // Perspectiva do destinatário
+    proposalProduct = 'commodity';
+    // Valor baseado no déficit, entre 30% e 70% do déficit (valor absoluto)
+    proposalValue = Math.round(Math.abs(commoditiesBalance) * (0.3 + Math.random() * 0.4));
+  }
+  else if (hasManufactureDeficit) {
+    // Tem déficit de manufaturas, quer importar (solicitará que outro país exporte para ele)
+    proposalType = 'export'; // Perspectiva do destinatário
+    proposalProduct = 'manufacture';
+    // Valor baseado no déficit, entre 30% e 70% do déficit (valor absoluto)
+    proposalValue = Math.round(Math.abs(manufacturesBalance) * (0.3 + Math.random() * 0.4));
+  }
+  
+  // Se não temos nenhuma situação para abordar, não propor nada
+  if (!proposalType || !proposalProduct || proposalValue <= 0) {
+    return null;
+  }
+  
+  // Garantir que o valor mínimo seja significativo (pelo menos 1 bilhão)
+  proposalValue = Math.max(1, proposalValue);
+  // E o valor máximo não seja excessivo (no máximo 20% do PIB)
+  proposalValue = Math.min(proposalValue, gdp * 0.2);
+  // Arredondar para 1 casa decimal
+  proposalValue = Math.round(proposalValue * 10) / 10;
+  
+  // Selecionar aleatoriamente um país/jogador humano como alvo
+  const targetEntry = selectRandomHumanPlayer(humanPlayers, aiCountry);
+  if (!targetEntry) {
+    return null;
+  }
+  
+  const [targetCountry, targetPlayer] = targetEntry;
+  
+  // Verificar se já existe um acordo similar (evitar duplicação)
+  const room = gameState.rooms.get(roomName);
+  const hasExistingAgreement = (room.tradeAgreements || []).some(agreement => 
+    agreement.originCountry === aiCountry && 
+    agreement.country === targetCountry &&
+    agreement.type === proposalType &&
+    agreement.product === proposalProduct
+  );
+  
+  if (hasExistingAgreement) {
+    return null;
+  }
+  
+  // Construir a proposta
+  return {
+    type: proposalType,
+    product: proposalProduct,
+    targetCountry,
+    targetPlayer,
+    value: proposalValue,
+    originCountry: aiCountry,
+  };
+}
+
+/**
+ * Seleciona aleatoriamente um jogador humano para interagir
+ * @param {Map} humanPlayers - Map de países -> nomes de usuários
+ * @param {string} aiCountry - País IA originador
+ * @returns {Array|null} - Par [país, jogador] selecionado ou null
+ */
+function selectRandomHumanPlayer(humanPlayers, aiCountry) {
+  if (humanPlayers.size === 0) return null;
+  
+  // Converter o Map para array para seleção aleatória
+  const entries = Array.from(humanPlayers.entries());
+  if (entries.length === 0) return null;
+  
+  // Verificar cooldowns para evitar enviar para o mesmo jogador repetidamente
+  const eligibleEntries = entries.filter(([country, player]) => {
+    const cooldown = proposalCooldowns.get(aiCountry);
+    if (!cooldown) return true;
+    
+    // Se já enviamos proposta para este jogador recentemente, evitar repetir
+    return cooldown.targetPlayer !== player;
+  });
+  
+  // Se não há jogadores elegíveis, tentar qualquer um mesmo com cooldown
+  const candidates = eligibleEntries.length > 0 ? eligibleEntries : entries;
+  
+  // Selecionar aleatoriamente
+  const randomIndex = Math.floor(Math.random() * candidates.length);
+  return candidates[randomIndex];
+}
+
+/**
+ * Envia uma proposta comercial de um país IA para um jogador humano
+ * @param {Object} io - Instância do Socket.io
+ * @param {Object} gameState - Estado global do jogo
+ * @param {string} roomName - Nome da sala
+ * @param {Object} proposal - Proposta comercial
+ */
+function sendAITradeProposal(io, gameState, roomName, proposal) {
+  const { targetPlayer, type, product, targetCountry, value, originCountry } = proposal;
+  
+  // Gerar ID único para a proposta
+  const proposalId = `trade-proposal-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  
+  // Criar objeto da proposta para enviar ao jogador
+  const tradeProposal = {
+    id: proposalId,
+    type,
+    product,
+    targetCountry,
+    value,
+    originCountry,
+    timestamp: Date.now(),
+  };
+  
+  // Encontrar socket do jogador alvo
+  const targetSocketId = gameState.usernameToSocketId?.get(targetPlayer);
+  const targetSocket = targetSocketId ? io.sockets.sockets.get(targetSocketId) : null;
+  
+  if (targetSocket && targetSocket.connected) {
+    // Armazenar a proposta no socket do jogador alvo para uso posterior
+    targetSocket.tradeProposal = tradeProposal;
+    
+    // Enviar proposta para o jogador alvo
+    targetSocket.emit('tradeProposalReceived', tradeProposal);
+    console.log(`[AI] Proposta de ${originCountry} enviada para ${targetPlayer}`);
+  } else {
+    console.log(`[AI] Não foi possível enviar proposta: jogador ${targetPlayer} offline`);
+  }
+}
+
+/**
+ * Função auxiliar para embaralhar um array
+ * @param {Array} array - Array a ser embaralhado
+ * @returns {Array} - Array embaralhado
+ */
+function shuffleArray(array) {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
 }
 
 export {

@@ -2,6 +2,7 @@ import { store } from '../store';
 import { setRooms, setCurrentRoom, leaveRoom } from '../modules/room/roomState';
 import { setMyCountry, setPlayers, setPlayerOnlineStatus, setOnlinePlayers } from '../modules/game/gameState';
 import { addMessage, setChatHistory } from '../modules/chat/chatState';
+import MessageService from '../ui/toast/messageService';
 
 import {
   initializeCountryStates,
@@ -270,6 +271,30 @@ export const setupSocketEvents = (socket, socketApi) => {
   // Handler para receber uma proposta de comércio (para o destinatário)
   socket.on('tradeProposalReceived', (proposal) => {
     console.log('Proposta de comércio recebida:', proposal);
+    
+    // Adicionar som de notificação, se disponível
+    if (window.Audio) {
+      try {
+        const notificationSound = new Audio('/notification.mp3');
+        notificationSound.play();
+      } catch (error) {
+        console.error('Failed to play notification sound:', error);
+      }
+    }
+    
+    // Nova notificação visual para destacar o país que fez a proposta
+    const { originCountry, type, product } = proposal;
+    const productName = product === 'commodity' ? 'commodities' : 'manufaturas';
+    const actionType = type === 'export' ? 'exportar para você' : 'importar de você';
+    
+    // Notificação visual (toast) com a proposta recebida
+    if (MessageService && MessageService.showInfo) {
+      MessageService.showInfo(
+        `${originCountry} quer ${actionType} ${productName}.`,
+        15000 // 15 segundos
+      );
+    }
+    
     // Este evento é capturado pelo GamePage que exibe o componente TradeProposalPopup
     // O componente TradeProposalPopup permitirá ao usuário aceitar ou recusar a proposta
     // e então chamará socketApi.respondToTradeProposal com a decisão do usuário
@@ -278,7 +303,29 @@ export const setupSocketEvents = (socket, socketApi) => {
   // Handler para receber resposta a uma proposta enviada
   socket.on('tradeProposalResponse', (response) => {
     console.log('Resposta à proposta de comércio recebida:', response);
-    // A lógica de UI para este evento é tratada nos componentes
+    
+    const { accepted, targetCountry, message } = response;
+    
+    // Notificar o usuário sobre a resposta
+    if (accepted) {
+      MessageService.showSuccess(`${targetCountry} aceitou sua proposta comercial!`);
+    } else {
+      MessageService.showWarning(`${targetCountry} recusou sua proposta comercial.`);
+    }
+  });
+  
+  // Confirmação de proposta processada (para quem respondeu)
+  socket.on('tradeProposalProcessed', (response) => {
+    console.log('Proposta de comércio processada:', response);
+    
+    const { accepted, message } = response;
+    
+    // Notificar o usuário sobre o processamento
+    if (accepted) {
+      MessageService.showSuccess('Você aceitou a proposta comercial.');
+    } else {
+      MessageService.showInfo('Você recusou a proposta comercial.');
+    }
   });
   
   // Receber confirmação de que um acordo comercial foi criado
