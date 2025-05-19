@@ -1,6 +1,6 @@
-/* ActionMenuPopup.css */
+/* Popup.css - Adaptado de ActionMenuPopup.css */
 
-.action-menu-popup-overlay {
+.popup-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -14,7 +14,7 @@
   backdrop-filter: blur(3px);
 }
 
-.action-menu-popup-content {
+.popup-content {
   background-color: #2a3441;
   border-radius: 8px;
   width: 90%;
@@ -25,7 +25,7 @@
   overflow: hidden;
 }
 
-.action-menu-popup-header {
+.popup-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -34,13 +34,13 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.action-menu-popup-header h3 {
+.popup-header h3 {
   margin: 0;
   font-size: 18px;
   font-weight: bold;
 }
 
-.action-menu-popup-close {
+.popup-close {
   background: none;
   border: none;
   color: #ccc;
@@ -55,12 +55,12 @@
   border-radius: 50%;
 }
 
-.action-menu-popup-close:hover {
+.popup-close:hover {
   background-color: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 
-.action-menu-popup-body {
+.popup-body {
   padding: 20px;
 }
 
@@ -136,4 +136,17 @@
 .popup-actions button:disabled {
   background-color: #95a5a6;
   cursor: not-allowed;
+}
+
+/* Variações de tamanho - adição para suportar diferentes tamanhos */
+.popup-small {
+  max-width: 400px;
+}
+
+.popup-medium {
+  max-width: 500px;
+}
+
+.popup-large {
+  max-width: 700px;
 }

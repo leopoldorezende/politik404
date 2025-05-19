@@ -15,9 +15,7 @@
   │   │   ├── modules
   │   │   │   ├── actions
   │   │   │   │   ├── ActionMenu.css
-  │   │   │   │   ├── ActionMenu.jsx
-  │   │   │   │   ├── ActionMenuPopup.css
-  │   │   │   │   └── ActionMenuPopup.jsx
+  │   │   │   │   └── ActionMenu.jsx
   │   │   │   ├── auth
   │   │   │   │   ├── AuthPage.css
   │   │   │   │   ├── AuthPage.jsx  # Tela de autenticação/login
@@ -32,7 +30,7 @@
   │   │   │   │   ├── CountryDetails.jsx  # Componente de detalhes
   │   │   │   │   ├── CountryState.css
   │   │   │   │   ├── CountryState.jsx
-  │   │   │   │   ├── countryService.jsx
+  │   │   │   │   ├── countryService.js  # Identificação dos países
   │   │   │   │   └── countryStateSlice.js
   │   │   │   ├── defense
   │   │   │   │   ├── DefensePanel.jsx  # Componente Painel Militar
@@ -58,12 +56,6 @@
   │   │   │   │   ├── RoomPage.css
   │   │   │   │   ├── RoomPage.jsx  # Tela de seleção de sala
   │   │   │   │   └── roomState.js  # Estado das salas
-  │   │   │   ├── sidetools
-  │   │   │   │   ├── Sidetools.css
-  │   │   │   │   └── Sidetools.jsx  # Layout da sidebar esquerda Sidetools
-  │   │   │   ├── sideview
-  │   │   │   │   ├── Sideview.css
-  │   │   │   │   └── Sideview.jsx  # Layout da sidebar direita Sideview
   │   │   │   └── trade
   │   │   │       ├── TradePanel.css
   │   │   │       ├── TradePanel.jsx  # Componente Painel de Comercio
@@ -72,9 +64,19 @@
   │   │   │   ├── socketClient.js
   │   │   │   ├── socketConnection.js
   │   │   │   └── socketEventHandlers.js
-  │   │   └── store
-  │   │       ├── index.js  # Criação e combinação dos reducers
-  │   │       └── socketReduxMiddleware.js
+  │   │   ├── store
+  │   │   │   ├── index.js  # Criação e combinação dos reducers
+  │   │   │   └── socketReduxMiddleware.js
+  │   │   └── ui
+  │   │       ├── popup
+  │   │       │   ├── Popup.css
+  │   │       │   └── Popup.jsx
+  │   │       ├── sidetools
+  │   │       │   ├── Sidetools.css
+  │   │       │   └── Sidetools.jsx  # Layout da sidebar esquerda Sidetools
+  │   │       └── sideview
+  │   │           ├── Sideview.css
+  │   │           └── Sideview.jsx  # Layout da sidebar direita Sideview
   │   └── vite.config.js  # Configuração do Vite
   ├── eslint.config.js  # Configuração do lint para os dois ambientes client e server
   ├── package.json  # Dependências e scripts principais (monorepo)

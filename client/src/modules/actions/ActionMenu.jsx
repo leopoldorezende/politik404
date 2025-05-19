@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { socketApi } from '../../services/socketClient';
-import ActionMenuPopup from './ActionMenuPopup';
+import Popup from '../../ui/popup/Popup';
 import './ActionMenu.css';
 
 /**
@@ -374,14 +374,14 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
         </div>
       </div>
       
-      {/* Popup para diferentes ações */}
-      <ActionMenuPopup 
+      {/* Popup para diferentes ações - agora usando o novo componente Popup */}
+      <Popup 
         isOpen={popupType !== null} 
         onClose={handleClosePopup} 
         title={getPopupTitle()}
       >
         {renderPopupContent()}
-      </ActionMenuPopup>
+      </Popup>
     </>
   );
 };

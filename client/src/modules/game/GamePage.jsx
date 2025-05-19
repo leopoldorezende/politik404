@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import Sideview from '../sideview/Sideview';
-import Sidetools from '../sidetools/Sidetools';
+import Sideview from '../../ui/sideview/Sideview';
+import Sidetools from '../../ui/sidetools/Sidetools';
 import MapView from '../map/MapView';
 import ActionMenu from '../actions/ActionMenu'; // Import the new ActionMenu component
 import { loadCountriesData, loadCountriesCoordinates } from '../country/countryService';

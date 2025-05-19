@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import EconomyPanel from '../economy/EconomyPanel';
-import PoliticsPanel from '../politics/PoliticsPanel';
-import TradePanel from '../trade/TradePanel';
-import DefensePanel from '../defense/DefensePanel';
+import EconomyPanel from '../../modules/economy/EconomyPanel';
+import PoliticsPanel from '../../modules/politics/PoliticsPanel';
+import TradePanel from '../../modules/trade/TradePanel';
+import DefensePanel from '../../modules/defense/DefensePanel';
 import './Sidetools.css';
 
 const Sidetools = ({ onClose, isActive, myCountry }) => {
