@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { socketApi } from '../../services/socketClient';
 import Popup from '../../ui/popup/Popup';
-import MessageService from '../../ui/message/MessageService';
+import MessageService from '../../ui/toast/messageService';
 import './ActionMenu.css';
 
 /**

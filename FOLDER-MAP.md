@@ -70,19 +70,19 @@
   │   │   │   ├── index.js  # Criação e combinação dos reducers
   │   │   │   └── socketReduxMiddleware.js
   │   │   └── ui
-  │   │       ├── message
-  │   │       │   ├── Message.css
-  │   │       │   ├── Message.jsx
-  │   │       │   └── MessageService.js
   │   │       ├── popup
   │   │       │   ├── Popup.css
   │   │       │   └── Popup.jsx  # Layout da popup genérica que será usada em todo game
   │   │       ├── sidetools
   │   │       │   ├── Sidetools.css
   │   │       │   └── Sidetools.jsx  # Layout da sidebar esquerda Sidetools
-  │   │       └── sideview
-  │   │           ├── Sideview.css
-  │   │           └── Sideview.jsx  # Layout da sidebar direita Sideview
+  │   │       ├── sideview
+  │   │       │   ├── Sideview.css
+  │   │       │   └── Sideview.jsx  # Layout da sidebar direita Sideview
+  │   │       └── toast
+  │   │           ├── Toast.css
+  │   │           ├── Toast.jsx
+  │   │           └── messageService.js
   │   └── vite.config.js  # Configuração do Vite
   ├── eslint.config.js  # Configuração do lint para os dois ambientes client e server
   ├── package.json  # Dependências e scripts principais (monorepo)

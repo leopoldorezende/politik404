@@ -1,13 +1,13 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
-import './Message.css';
+import './Toast.css';
 
 /**
- * Componente de Message (Toast) genérico reutilizável em todo o sistema
+ * Componente de Toast (Toast) genérico reutilizável em todo o sistema
  * @param {Object} props - Propriedades do componente
  * @param {string} props.className - Classes CSS adicionais para personalização
- * @returns {React.ReactElement} - O componente de Message
+ * @returns {React.ReactElement} - O componente de Toast
  */
-const Message = forwardRef((props, ref) => {
+const Toast = forwardRef((props, ref) => {
   const [messages, setMessages] = useState([]);
   const [, forceUpdate] = useState({});
 
@@ -52,22 +52,22 @@ const Message = forwardRef((props, ref) => {
   if (messages.length === 0) return null;
 
   return (
-    <div className={`message-container ${props.className || ''}`}>
+    <div className={`toast-container ${props.className || ''}`}>
       {messages.map(message => (
         <div
           key={message.id}
-          className={`message message-${message.type} message-show`}
+          className={`toast toast-${message.type} toast-show`}
           onClick={() => dismiss(message.id)}
         >
-          <div className="message-content">
-            <div className="message-icon">
+          <div className="toast-content">
+            <div className="toast-icon">
               {message.type === 'success' && <span className="material-icons">check_circle</span>}
               {message.type === 'error' && <span className="material-icons">error</span>}
               {message.type === 'warning' && <span className="material-icons">warning</span>}
               {message.type === 'info' && <span className="material-icons">info</span>}
             </div>
-            <div className="message-text">{message.text}</div>
-            <button className="message-close" onClick={() => dismiss(message.id)}>
+            <div className="toast-text">{message.text}</div>
+            <button className="toast-close" onClick={() => dismiss(message.id)}>
               <span className="material-icons">close</span>
             </button>
           </div>
@@ -77,4 +77,4 @@ const Message = forwardRef((props, ref) => {
   );
 });
 
-export default Message;
+export default Toast;

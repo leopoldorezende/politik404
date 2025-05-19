@@ -1,9 +1,9 @@
-// MessageService.js - Um serviço para controlar e exibir mensagens em toda a aplicação
+// messageService.js - Um serviço para controlar e exibir mensagens em toda a aplicação
 
-// Uma variável para armazenar a referência para o componente Message
+// Uma variável para armazenar a referência para o componente Toast
 let messageRef = null;
 
-// Configurar a referência do componente Message
+// Configurar a referência do componente Toast
 export const setMessageRef = (ref) => {
   messageRef = ref;
 };

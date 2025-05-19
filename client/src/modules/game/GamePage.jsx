@@ -57,11 +57,11 @@ const GamePage = () => {
   // Debug para verificar os valores
   useEffect(() => {
     if (currentRoom) {
-      console.log('Current Room:', currentRoom);
-      console.log('Room Data from list:', roomData);
-      console.log('Expires At:', roomData?.expiresAt);
-      console.log('Current Time:', currentTime);
-      console.log('Time Remaining:', timeRemaining);
+      // console.log('Current Room:', currentRoom);
+      // console.log('Room Data from list:', roomData);
+      // console.log('Expires At:', roomData?.expiresAt);
+      // console.log('Current Time:', currentTime);
+      // console.log('Time Remaining:', timeRemaining);
     }
   }, [currentRoom, roomData, currentTime, timeRemaining]);
   

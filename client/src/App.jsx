@@ -3,8 +3,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import AuthPage from './modules/auth/AuthPage';
 import RoomPage from './modules/room/RoomPage';
 import GamePage from './modules/game/GamePage';
-import Message from './ui/message/Message';
-import { setMessageRef } from './ui/message/MessageService';
+import Toast from './ui/toast/Toast';
+import { setMessageRef } from './ui/toast/messageService';
 import './App.css';
 import { socketApi, SOCKET_EVENTS } from './services/socketClient';
 
@@ -53,7 +53,7 @@ function App() {
   return (
     <div className="app">
       {renderScreen()}
-      <Message ref={messageRef} />
+      <Toast ref={messageRef} />
     </div>
   );
 }

@@ -1,158 +1,7 @@
-/* Chat.css */
-
-.chat-section {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    color: #eee;
-  }
-  
-  /* Cabeçalho com nome do usuário */
-  #you {
-    margin: 0 0 10px 0;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: color 0.2s;
-  }
-  
-  #you:hover {
-    color: #4caf50;
-  }
-  
-  /* Lista de jogadores para chat privado */
-  #player-list {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 15px 0;
-    max-height: 160px;
-    overflow-y: auto;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 10px;
-    max-height: 122px;
-  }
-  
-  #player-list .chat-option {
-    padding: 8px 10px;
-    margin: 5px 0;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    font-size: 14px;
-  }
-  
-  #player-list .chat-option:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  #player-list .chat-option.active {
-    background-color: rgba(0, 100, 255, 0.2);
-    font-weight: bold;
-  }
-  
-  /* Container do chat */
-  #chat-container {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    position: relative;
-    height: calc(100% - 190px);
-  }
-  
-  /* Cabeçalho do chat atual */
-  #chat-header {
-    padding: 8px 12px;
-    background-color: rgba(0, 0, 0, 0.3);
-    border-radius: 4px 4px 0 0;
-    font-weight: bold;
-    margin-bottom: 5px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  }
-  
-  /* Área de mensagens */
-  #chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 0 0 4px 4px;
-    margin-bottom: 10px;
-  }
-  
-  /* Estilos das mensagens */
-  .message {
-    margin: 8px 0;
-    padding: 8px 12px;
-    border-radius: 4px;
-    position: relative;
-    max-width: 90%;
-    word-wrap: break-word;
-  }
-  
-  .message > span {
-    display: block;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 3px;
-  }
-  
-  .message.self {
-    background-color: rgba(0, 100, 255, 0.2);
-    margin-left: auto;
-    text-align: right;
-    border-right: 3px solid #7a98c3;
-  }
-  
-  .message.other {
-    background-color: rgba(120, 120, 120, 0.4);
-    margin-right: auto;
-    border-left: 3px solid #7a98c3;
-  }
-  
-  /* Estilo especial para mensagens privadas */
-  .message.private {
-    border-left: 3px solid #ff9800;
-  }
-  
-  .message.private.self {
-    border-right: 3px solid #ff9800;
-    border-left: none;
-  }
-  
-  /* Grupo de envio de mensagem */
-  .chat-sendgroup {
-    display: flex;
-    gap: 8px;
-    margin-top: auto;
-  }
-  
-  #chat-input {
-    width: 100%;
-    flex: 1;
-    padding: 10px 12px;
-    border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background-color: rgba(0, 0, 0, 0.2);
-    color: #fff;
-  }
-  
-  #chat-send {
-    padding: 10px 15px;
-    border-radius: 4px;
-    background-color: #4caf50;
-    color: white;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  #chat-send:hover {
-    background-color: #45a049;
-  }
-
-
-  /* Add these styles to your Chat.css file */
-
+/* Make tab position relative to position the badge */
+.tab {
+  position: relative;
+}
 /* Badge for private messages in the chat tab */
 .chat-badge {
   position: absolute;
@@ -169,8 +18,159 @@
   animation: pulse 2s infinite;
 }
 
+
+.chat-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: #eee;
+}
+
+/* Cabeçalho com nome do usuário */
+.chat-section #you {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.chat-section #you:hover {
+  color: #4caf50;
+}
+
+/* Lista de jogadores para chat privado */
+.chat-section #player-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px 0;
+  max-height: 160px;
+  overflow-y: auto;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+  max-height: 122px;
+}
+
+.chat-section #player-list .chat-option {
+  padding: 8px 10px;
+  margin: 5px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 14px;
+}
+
+.chat-section #player-list .chat-option:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.chat-section #player-list .chat-option.active {
+  background-color: rgba(0, 100, 255, 0.2);
+  font-weight: bold;
+}
+
+/* Container do chat */
+.chat-section #chat-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  position: relative;
+  height: calc(100% - 190px);
+}
+
+/* Cabeçalho do chat atual */
+.chat-section #chat-header {
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 4px 4px 0 0;
+  font-weight: bold;
+  margin-bottom: 5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Área de mensagens */
+.chat-section #chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0 0 4px 4px;
+  margin-bottom: 10px;
+}
+
+/* Estilos das mensagens */
+.chat-section .message {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-radius: 4px;
+  position: relative;
+  max-width: 90%;
+  word-wrap: break-word;
+}
+
+.chat-section .message > span {
+  display: block;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 3px;
+}
+
+.chat-section .message.self {
+  background-color: rgba(0, 100, 255, 0.2);
+  margin-left: auto;
+  text-align: right;
+  border-right: 3px solid #7a98c3;
+}
+
+.chat-section .message.other {
+  background-color: rgba(120, 120, 120, 0.4);
+  margin-right: auto;
+  border-left: 3px solid #7a98c3;
+}
+
+/* Estilo especial para mensagens privadas */
+.chat-section .message.private {
+  border-left: 3px solid #ff9800;
+}
+
+.chat-section .message.private.self {
+  border-right: 3px solid #ff9800;
+  border-left: none;
+}
+
+/* Grupo de envio de mensagem */
+.chat-section .chat-sendgroup {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.chat-section #chat-input {
+  width: 100%;
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+
+.chat-section #chat-send {
+  padding: 10px 15px;
+  border-radius: 4px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.chat-section #chat-send:hover {
+  background-color: #45a049;
+}
+
 /* Badge for private messages in the player list */
-.player-message-badge {
+.chat-section .player-message-badge {
   margin-left: 5px;
   display: inline-block;
   width: 8px;
@@ -202,7 +202,7 @@
 }
 
 /* Updated styles for chat options with badges */
-#player-list .chat-option {
+.chat-section #player-list .chat-option {
   cursor: pointer;
   padding: 5px;
   border-radius: 4px;
@@ -213,23 +213,18 @@
   align-items: center;
 }
 
-#player-list .chat-option:hover {
+.chat-section #player-list .chat-option:hover {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
-#player-list .chat-option.active {
+.chat-section #player-list .chat-option.active {
   background-color: rgba(0, 100, 255, 0.2);
   font-weight: bold;
 }
 
-/* Make tab position relative to position the badge */
-.tab {
-  position: relative;
-}
-
 
 /* Style for offline status indicator */
-.offline-status {
+.chat-section .offline-status {
   color: #888;
   font-style: italic;
   font-size: 0.9em;
@@ -237,7 +232,7 @@
 }
 
 /* Updated player list item styles to accommodate status indicator */
-#player-list .chat-option {
+.chat-section #player-list .chat-option {
   cursor: pointer;
   padding: 5px;
   border-radius: 4px;
@@ -248,7 +243,7 @@
 }
 
 /* Make sure the content fits nicely */
-#player-list .chat-option {
+.chat-section #player-list .chat-option {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -256,19 +251,19 @@
 }
 
 /* Push the badge to the right */
-.player-message-badge {
+.chat-section .player-message-badge {
   margin-left: auto;
   margin-right: 5px;
 }
 
 /* Make sure offline status doesn't push the badge off */
-.offline-status + .player-message-badge {
+.chat-section .offline-status + .player-message-badge {
   margin-left: 5px;
 }
 
 /* Previne o zoom automatico no iOS quando focalizando inputs */
 @media screen and (max-width: 1200px) {
-  #chat-input {
+  .chat-section #chat-input {
     transform: translateZ(0); /* Force hardware acceleration */
   }
 }
