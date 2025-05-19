@@ -162,7 +162,7 @@ const MapView = ({ justClosedSidebar }) => {
       ['all', 
         ['==', ['get', 'name_en'], selectedCountry],
         ['!=', ['get', 'name_en'], myCountry]
-      ], 'rgba(255, 155, 50, 0.8)', // 0, 220, 160  CIANO
+      ], 'rgba(255, 140, 0, 0.8)', // 0, 220, 160  CIANO
       // Países de outros jogadores em roxo
       ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(105, 65, 217, 0.9)',
       // Países disponíveis em branco transparente
@@ -181,7 +181,7 @@ const MapView = ({ justClosedSidebar }) => {
       ['all', 
         ['==', ['get', 'name_en'], selectedCountry],
         ['!=', ['get', 'name_en'], myCountry]
-      ], 'rgba(255, 155, 50, 1)',
+      ], 'rgba(255, 140, 0, 1)',
       // Borda dos países de outros jogadores em preto
       ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(0, 0, 0, 0.8)',
       // Borda dos países disponíveis em cinza

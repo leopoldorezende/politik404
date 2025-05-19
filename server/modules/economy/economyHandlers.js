@@ -325,11 +325,11 @@ function setupEconomyHandlers(io, socket, gameState) {
       });
       
       // Notificar o jogador que aceitou
-      socket.emit('tradeProposalProcessed', {
-        proposalId,
-        accepted: true,
-        message: `You accepted the trade proposal from ${proposal.originCountry}`
-      });
+      // socket.emit('tradeProposalProcessed', {
+      //   proposalId,
+      //   accepted: true,
+      //   message: `You accepted the trade proposal from ${proposal.originCountry}`
+      // });
       
       // Se não for uma proposta de IA, notificar o jogador humano que enviou a proposta
       if (!isAIControlledProposal) {
@@ -349,11 +349,11 @@ function setupEconomyHandlers(io, socket, gameState) {
       console.log(`Trade proposal ${proposalId} rejected by ${username}`);
       
       // Notificar o jogador que rejeitou
-      socket.emit('tradeProposalProcessed', {
-        proposalId,
-        accepted: false,
-        message: 'You rejected the trade proposal'
-      });
+      // socket.emit('tradeProposalProcessed', {
+      //   proposalId,
+      //   accepted: false,
+      //   message: 'You rejected the trade proposal'
+      // });
       
       // Se não for uma proposta de IA, notificar o jogador humano que enviou a proposta
       if (!isAIControlledProposal) {

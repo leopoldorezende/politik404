@@ -61,7 +61,8 @@ class CountryStateManager {
     this.updateInterval = null; // For the economic updates
     this.initialized = false;
     this.lastLogTime = 0;
-    this.logInterval = 3000; // Log apenas a cada 3 segundos
+    this.logInterval = 60000; 
+    this.countryLogHistory = new Map(); // Armazenar último log por país para evitar duplicação
   }
 
   /**
@@ -79,7 +80,7 @@ class CountryStateManager {
         this.saveStatesToRedis();
       }, 60000); // Save every minute
       
-      // ✅ VERIFICAR: Set up economic calculation interval
+      // Set up economic calculation interval
       this.updateInterval = setInterval(() => {
         this.performPeriodicEconomicUpdates();
       }, 2000);
@@ -142,13 +143,23 @@ class CountryStateManager {
           roomUpdates++;
           totalUpdates++;
           
-          // Log detalhado para debug do cálculo de balanços comerciais
-          if (tradeAgreements.length > 0) {
-            console.log(`[ECONOMY] Country ${countryName} trade balances updated:`, {
-              manufacturesBalance: countryState.economy.manufacturesBalance?.value,
-              commoditiesBalance: countryState.economy.commoditiesBalance?.value,
-              tradeStats: countryState.economy.tradeStats
-            });
+          // MODIFICAÇÃO: Log detalhado apenas quando há acordos e apenas para países com acordos comerciais ativos
+          if (tradeAgreements.length > 0 && 
+              (countryState.economy.tradeStats.commodityImports > 0 || 
+              countryState.economy.tradeStats.commodityExports > 0 || 
+              countryState.economy.tradeStats.manufactureImports > 0 || 
+              countryState.economy.tradeStats.manufactureExports > 0)) {
+            
+            // Limitar logs para não sobrecarregar o console
+            const now = Date.now();
+            if (now - this.lastLogTime > this.logInterval) {
+              console.log(`[ECONOMY] Country ${countryName} trade balances updated:`, {
+                manufacturesBalance: countryState.economy.manufacturesBalance?.value,
+                commoditiesBalance: countryState.economy.commoditiesBalance?.value,
+                tradeStats: countryState.economy.tradeStats
+              });
+              this.lastLogTime = now;
+            }
           }
         }
       }
@@ -158,12 +169,12 @@ class CountryStateManager {
       }
     }
     
-    // ✅ Log simplificado - apenas a cada 30 segundos
+    // ✅ MODIFICAÇÃO: Log simplificado - apenas a cada 60 segundos
     this.updateCounter = (this.updateCounter || 0) + 1;
     
-    if (this.updateCounter % 30 === 0) { // A cada 30 ciclos (30 segundos)
+    if (this.updateCounter % 60 === 0) { // A cada 60 ciclos (2 minutos com intervalo de 2s)
       if (totalUpdates > 0) {
-        console.log(`[ECONOMY] 30-second update: ${totalUpdates} total country updates across all rooms`);
+        console.log(`[ECONOMY] 2-minute update: ${totalUpdates} total country updates across all rooms`);
       }
     }
   }
@@ -502,16 +513,33 @@ class CountryStateManager {
     if (category === 'economy') {
       this.updateDerivedEconomicIndicators(roomStates[countryName]);
       
-      // MODIFICAÇÃO: Log para depuração dos valores de balanços comerciais
+      // MODIFICADO: Log para depuração dos valores de balanços comerciais apenas em mudanças relevantes
       const economy = roomStates[countryName].economy;
       
-      // Apenas log se tivermos estatísticas de comércio
-      if (economy.tradeStats) {
-        console.log(`[CountryStateManager] Trade balance updated for ${countryName} in room ${roomName}:`, {
-          manufacturesBalance: economy.manufacturesBalance?.value,
-          commoditiesBalance: economy.commoditiesBalance?.value,
-          tradeStats: economy.tradeStats
-        });
+      // Verificar se há estatísticas de comércio não-zero
+      const hasTradeActivity = economy.tradeStats && (
+        economy.tradeStats.commodityImports > 0 || 
+        economy.tradeStats.commodityExports > 0 || 
+        economy.tradeStats.manufactureImports > 0 || 
+        economy.tradeStats.manufactureExports > 0
+      );
+      
+      // Apenas log se tivermos atividade comercial e se o último log para este país foi há mais de 60 segundos
+      if (hasTradeActivity) {
+        const now = Date.now();
+        const countryLogKey = `${roomName}:${countryName}`;
+        const lastLogTime = this.countryLogHistory.get(countryLogKey) || 0;
+        
+        if (now - lastLogTime > 60000) { // Um minuto entre logs para o mesmo país
+          console.log(`[CountryStateManager] Trade balance updated for ${countryName} in room ${roomName}:`, {
+            manufacturesBalance: economy.manufacturesBalance?.value,
+            commoditiesBalance: economy.commoditiesBalance?.value,
+            tradeStats: economy.tradeStats
+          });
+          
+          // Atualizar timestamp do último log para este país
+          this.countryLogHistory.set(countryLogKey, now);
+        }
       }
     }
     
@@ -520,7 +548,7 @@ class CountryStateManager {
     
     return roomStates[countryName];
   }
-  
+
   /**
    * Atualiza o estado econômico de um país com base nos acordos comerciais
    * @param {string} roomName - Nome da sala

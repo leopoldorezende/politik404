@@ -1,8 +1,3 @@
-/**
- * economyUpdateService.js
- * Service for updating country economies based on trade agreements and other economic factors
- */
-
 import { performEconomicCalculations } from './economyCalculations.js';
 
 /**
@@ -60,12 +55,24 @@ function updateCountryEconomyForTrade(gameState, roomName, countryName) {
     }
   );
   
-  // Log para debug dos balanços comerciais
-  console.log(`Trade calculation results for ${countryName}:`, {
-    manufacturesBalance: calculationResult.economy.manufacturesBalance?.value,
-    commoditiesBalance: calculationResult.economy.commoditiesBalance?.value,
-    tradeStats: calculationResult.economy.tradeStats
-  });
+  // MODIFICADO: Log apenas quando um acordo é realmente processado, não a cada ciclo
+  // Log para debug dos balanços comerciais apenas em eventos importantes
+  const hasActiveAgreements = allAgreements.some(a => 
+    a.originCountry === countryName || a.country === countryName
+  );
+  
+  if (hasActiveAgreements) {
+    // Verificar momento do último log para evitar logs excessivos
+    const now = Date.now();
+    if (!global.lastTradeCalcLog || now - global.lastTradeCalcLog > 60000) { // Log a cada 1 minuto no máximo
+      console.log(`Trade calculation results for ${countryName}:`, {
+        manufacturesBalance: calculationResult.economy.manufacturesBalance?.value,
+        commoditiesBalance: calculationResult.economy.commoditiesBalance?.value,
+        tradeStats: calculationResult.economy.tradeStats
+      });
+      global.lastTradeCalcLog = now;
+    }
+  }
   
   // Atualizar o estado do país
   countryStateManager.updateCountryState(
@@ -131,14 +138,22 @@ function calculateTradeAgreementsImpact(economy, tradeAgreements = [], countryNa
   const commoditiesBalanceAdjustment = -commodityExports + commodityImports;
   const manufacturesBalanceAdjustment = -manufactureExports + manufactureImports;
 
-  console.log(`Trade adjustments for ${countryName}:`, {
-    commodityExports,
-    commodityImports,
-    manufactureExports, 
-    manufactureImports,
-    commoditiesBalanceAdjustment,
-    manufacturesBalanceAdjustment
-  });
+  // MODIFICADO: Log apenas quando há impacto real de comércio e com intervalo mínimo entre logs
+  if (commodityExports > 0 || commodityImports > 0 || manufactureExports > 0 || manufactureImports > 0) {
+    // Verificar tempo desde o último log para evitar logs excessivos
+    const now = Date.now();
+    if (!global.lastTradeAdjustmentLog || now - global.lastTradeAdjustmentLog > 60000) { // Log a cada 1 minuto no máximo
+      console.log(`Trade adjustments for ${countryName}:`, {
+        commodityExports,
+        commodityImports,
+        manufactureExports, 
+        manufactureImports,
+        commoditiesBalanceAdjustment,
+        manufacturesBalanceAdjustment
+      });
+      global.lastTradeAdjustmentLog = now;
+    }
+  }
 
   return {
     commodityImports,
