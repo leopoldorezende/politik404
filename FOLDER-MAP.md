@@ -103,7 +103,10 @@
       │   │   └── countryUtils.js  # Utilitários para países
       │   ├── economy
       │   │   ├── economyCalculations.js
-      │   │   └── economyHandlers.js
+      │   │   ├── economyHandlers.js
+      │   │   ├── economyUpdateService.js
+      │   │   ├── index.js  # Criação e combinação dos reducers
+      │   │   └── tradeAgreementService.js
       │   ├── index.js  # Criação e combinação dos reducers
       │   ├── player
       │   │   ├── playerHandlers.js  # Handlers para jogadores

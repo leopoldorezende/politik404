@@ -522,6 +522,57 @@ class CountryStateManager {
   }
   
   /**
+   * Atualiza o estado econômico de um país com base nos acordos comerciais
+   * @param {string} roomName - Nome da sala
+   * @param {string} countryName - Nome do país
+   * @param {Array} tradeAgreements - Lista de acordos comerciais
+   * @returns {Object|null} - Estado atualizado ou null se não encontrado
+   */
+  updateCountryStateForTrade(roomName, countryName, tradeAgreements) {
+    // Obter o estado atual do país
+    const roomStates = this.getRoomCountryStates(roomName);
+    
+    // Se a sala não existe, retornar null
+    if (!roomStates) return null;
+    
+    // Se o país não existe nesta sala, retornar null
+    if (!roomStates[countryName]) return null;
+    
+    // Obter dados estáticos
+    const gameState = global.gameState;
+    if (!gameState || !gameState.countriesData || !gameState.countriesData[countryName]) {
+      return null;
+    }
+    
+    // Importar a função necessária para cálculos econômicos
+    const { performEconomicCalculations } = require('../modules/economy/economyCalculations.js');
+    
+    // Fazer os cálculos de impacto comercial
+    const staticData = { 
+      ...gameState.countriesData[countryName],
+      countryName // Garantir que o nome do país está disponível
+    };
+    
+    const calculationResult = performEconomicCalculations(
+      roomStates[countryName],
+      staticData,
+      { tradeAgreements }
+    );
+    
+    // Atualizar o estado do país com os resultados do cálculo
+    if (calculationResult.economy) {
+      roomStates[countryName].economy = calculationResult.economy;
+      
+      // Atualizar o timestamp
+      this.lastUpdated.set(roomName, Date.now());
+      
+      console.log(`Updated economy state for ${countryName} in room ${roomName} based on trade agreements`);
+    }
+    
+    return roomStates[countryName];
+  }
+
+  /**
    * Remove a room and all its country states
    * @param {string} roomName - Name of the room to remove
    * @returns {boolean} - True if removed, false if not found
