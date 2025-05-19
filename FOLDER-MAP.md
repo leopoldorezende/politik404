@@ -70,6 +70,10 @@
   │   │   │   ├── index.js  # Criação e combinação dos reducers
   │   │   │   └── socketReduxMiddleware.js
   │   │   └── ui
+  │   │       ├── message
+  │   │       │   ├── Message.css
+  │   │       │   ├── Message.jsx
+  │   │       │   └── MessageService.js
   │   │       ├── popup
   │   │       │   ├── Popup.css
   │   │       │   └── Popup.jsx  # Layout da popup genérica que será usada em todo game

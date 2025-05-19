@@ -3,6 +3,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import AuthPage from './modules/auth/AuthPage';
 import RoomPage from './modules/room/RoomPage';
 import GamePage from './modules/game/GamePage';
+import Message from './ui/message/Message';
+import { setMessageRef } from './ui/message/MessageService';
 import './App.css';
 import { socketApi, SOCKET_EVENTS } from './services/socketClient';
 
@@ -11,8 +13,16 @@ function App() {
   const currentRoom = useSelector(state => state.rooms.currentRoom);
   const dispatch = useDispatch();
   const socketInitialized = useRef(false);
+  const messageRef = useRef(null);
 
-    useEffect(() => {
+  // Configurar a referência do componente Message para o serviço
+  useEffect(() => {
+    if (messageRef.current) {
+      setMessageRef(messageRef.current);
+    }
+  }, [messageRef]);
+
+  useEffect(() => {
     // Só inicializa o socket uma vez, mesmo em Strict Mode
     if (!socketInitialized.current) {
       console.log('Inicializando socket connection...');
@@ -43,6 +53,7 @@ function App() {
   return (
     <div className="app">
       {renderScreen()}
+      <Message ref={messageRef} />
     </div>
   );
 }

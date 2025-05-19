@@ -74,13 +74,13 @@ const TradeProposalPopup = ({ proposal, isOpen, onClose }) => {
             className="action-btn"
             onClick={handleAccept}
           >
-            Aceitar Proposta
+            Aceitar
           </button>
           <button 
             className="action-btn danger"
             onClick={handleReject}
           >
-            Recusar Proposta
+            Recusar
           </button>
         </div>
       </div>

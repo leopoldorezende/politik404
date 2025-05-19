@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { socketApi } from '../../services/socketClient';
 import Popup from '../../ui/popup/Popup';
+import MessageService from '../../ui/message/MessageService';
 import './ActionMenu.css';
 
 /**
@@ -56,13 +57,13 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       setIsSubmitting(false);
       
       if (response.accepted) {
-        alert(`Proposta de ${currentOption === 'export' ? 'exportação' : 'importação'} aceita por ${selectedCountry}!`);
+        MessageService.showSuccess(`Proposta de ${currentOption === 'export' ? 'exportação' : 'importação'} aceita por ${selectedCountry}!`);
         
         // Redirecionar para o painel de comércio após acordo aceito
         handleClosePopup();
         redirectToTradePanel();
       } else {
-        alert(`${selectedCountry} recusou sua proposta de ${currentOption === 'export' ? 'exportação' : 'importação'}.`);
+        MessageService.showWarning(`${selectedCountry} recusou sua proposta de ${currentOption === 'export' ? 'exportação' : 'importação'}.`);
       }
     };
     
@@ -119,7 +120,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
   const handleOpenPopup = (type, option) => {
     // Verificar se existe um país selecionado
     if (!selectedCountry) {
-      alert('Selecione um país no mapa primeiro');
+      MessageService.showWarning('Selecione um país no mapa primeiro');
       return;
     }
     
@@ -158,7 +159,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
   const handleSendTradeProposal = () => {
     const amount = parseFloat(tradeAmount);
     if (!amount || amount <= 0) {
-      alert('Por favor, insira um valor válido maior que zero.');
+      MessageService.showError('Por favor, insira um valor válido maior que zero.');
       return;
     }
     
@@ -177,7 +178,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
 
   // Função para finalizar aliança militar
   const handleSignAlliance = () => {
-    alert(`Aliança militar com ${selectedCountry} assinada! Em caso de guerra, os países são obrigados a prestar assistência mútua.`);
+    MessageService.showSuccess(`Aliança militar com ${selectedCountry} assinada! Em caso de guerra, os países são obrigados a prestar assistência mútua.`);
     handleClosePopup();
   };
 
