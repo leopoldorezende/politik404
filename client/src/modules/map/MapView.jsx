@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './MapView.css';
-import Chokepoints from './Chokepoints';
+// import Chokepoints from './Chokepoints';
 
 import {
   loadCountriesData,
@@ -158,13 +158,13 @@ const MapView = ({ justClosedSidebar }) => {
       'case',
       // Meu país sempre em amarelo, independente se está selecionado ou não
       ['==', ['get', 'name_en'], myCountry], 'rgba(255, 213, 0, 0.9)',
-      // País selecionado em laranja (somente se não for meu país)
+      // País selecionado em roxo (somente se não for meu país)
       ['all', 
         ['==', ['get', 'name_en'], selectedCountry],
         ['!=', ['get', 'name_en'], myCountry]
-      ], 'rgba(255, 140, 0, 0.8)', // 0, 220, 160  CIANO
-      // Países de outros jogadores em roxo
-      ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(105, 65, 217, 0.9)',
+      ], 'rgba(105, 65, 217, 0.9)', // 0, 220, 160  CIANO
+      // Países de outros jogadores em laranja
+      ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(240, 120, 0, 0.8)',
       // Países disponíveis em branco transparente
       ['in', ['get', 'name_en'], ['literal', availableCountries]], 'rgba(255, 255, 255, 0.5)',
       // Países que não estão no jogo em cinza escuro transparente
@@ -176,12 +176,12 @@ const MapView = ({ justClosedSidebar }) => {
     const borderColorExpression = [
       'case',
       // Borda do meu país sempre em preto
-      ['==', ['get', 'name_en'], myCountry], 'rgba(0, 0, 0, 0.8)',
-      // Borda do país selecionado em laranja mais escuro (somente se não for meu país)
+      ['==', ['get', 'name_en'], myCountry], 'rgba(0, 0, 0, 1)',
+      // Borda do país selecionado em preto
       ['all', 
         ['==', ['get', 'name_en'], selectedCountry],
         ['!=', ['get', 'name_en'], myCountry]
-      ], 'rgba(255, 140, 0, 1)',
+      ], 'rgba(0, 0, 0, 0.8)',
       // Borda dos países de outros jogadores em preto
       ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(0, 0, 0, 0.8)',
       // Borda dos países disponíveis em cinza
@@ -320,7 +320,7 @@ const MapView = ({ justClosedSidebar }) => {
   return (
     <div className="map-container">
       <div ref={mapContainer} className="map" />
-      <Chokepoints map={map.current} />
+      {/* <Chokepoints map={map.current} /> */}
     </div>
   );
 };

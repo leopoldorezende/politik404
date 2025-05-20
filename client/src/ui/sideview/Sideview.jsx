@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import ChatPanel from '../../modules/chat/ChatPanel';
+import RankingPanel from '../../modules/ranking/RankingPanel';
 import CountryDetails from '../../modules/country/CountryDetails';
 import { setChatMode, markAsRead } from '../../modules/chat/chatState';
 import './Sideview.css';
@@ -109,15 +110,7 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
 
 
       <div id="ranking" className={`tab-content ${activeTab === 'ranking' ? 'active' : ''}`}>
-        <h4>Líderes:</h4>
-        <ul>
-        <li>1. Brasil <br /> usuário: email@gmail.com</li>
-        <li>2. Indonésia <br /> usuário:  email@gmail.com</li>
-        <li>3. Canadá <br /> usuário:  email@gmail.com</li>
-        <li>4. Japão <br /> usuário:  email@gmail.com</li>
-        <li>5. Nigéria <br /> usuário:  email@gmail.com</li>
-        <li>6. França <br /> usuário:  email@gmail.com</li>
-        </ul>
+        <RankingPanel />
       </div>
 
       {activeTab === 'chat' && (

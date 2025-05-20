@@ -1,0 +1,155 @@
+/* RankingPanel.css */
+
+.ranking-panel {
+  padding: 10px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.ranking-panel h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+
+.ranking-panel .ranking-header {
+  margin-bottom: 20px;
+}
+
+.ranking-panel .ranking-criteria {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.ranking-panel .criteria-label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.ranking-panel .criteria-list {
+  list-style: none;
+  padding-left: 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.ranking-panel .criteria-list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #aaa;
+}
+
+.ranking-panel .ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ranking-panel .ranking-item {
+  display: flex;
+  align-items: left;
+  padding: 12px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.05);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.ranking-panel .ranking-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.ranking-panel .ranking-item.top-ranked {
+  background-color: rgba(255, 215, 0, 0.1);
+  border-left: 3px solid #ffd700;
+}
+
+.ranking-panel .ranking-item.top-ranked:nth-child(1) {
+  background-color: rgba(255, 215, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+}
+
+.ranking-panel .ranking-position {
+  font-size: 20px;
+  font-weight: bold;
+  min-width: 40px;
+  text-align: left;
+  color: #aaa;
+}
+
+.ranking-panel .top-ranked .ranking-position {
+  color: #ffd700;
+}
+
+.ranking-panel .ranking-info {
+  flex: 1;
+}
+
+.ranking-panel .country-name {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.ranking-panel .top-ranked .country-name {
+  color: #ffd700;
+}
+
+.ranking-panel .player-name {
+  font-size: 13px;
+  color: #aaa;
+  margin-bottom: 3px;
+}
+
+.ranking-panel .trade-stats {
+  font-size: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.ranking-panel .score-count {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.ranking-panel .total-score {
+  font-size: 18px;
+  font-weight: bold;
+  color: #4caf50;
+  padding: 0 10px;
+}
+
+.ranking-panel .no-data {
+  display: flex;
+  justify-content: left;
+  align-items: left;
+  height: 200px;
+  color: #888;
+  font-style: italic;
+  text-align: left;
+}
+
+/* Responsividade */
+@media (max-width: 400px) {
+  .ranking-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ranking-position {
+    align-self: left;
+  }
+
+  .total-score {
+    align-self: flex-end;
+  }
+}

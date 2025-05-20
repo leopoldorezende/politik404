@@ -53,6 +53,9 @@
   │   │   │   │   ├── PoliticsPanel.css
   │   │   │   │   ├── PoliticsPanel.jsx  # Componente Painel de Política
   │   │   │   │   └── politicsState.js  # Estado político
+  │   │   │   ├── ranking
+  │   │   │   │   ├── RankingPanel.css
+  │   │   │   │   └── RankingPanel.jsx
   │   │   │   ├── room
   │   │   │   │   ├── RoomPage.css
   │   │   │   │   ├── RoomPage.jsx  # Tela de seleção de sala

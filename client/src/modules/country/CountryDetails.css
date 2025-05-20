@@ -13,7 +13,7 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   }
   
-  .player-name {
+  .country-details .player-name {
     font-size: 14px;
     color: rgb(68, 170, 105);
     margin-top: 0;
@@ -22,7 +22,7 @@
     text-align: center;
   }
   
-  .country-not-selected {
+  .country-details .country-not-selected {
     display: flex;
     height: calc(100vh - 150px);
     justify-content: center;
@@ -32,7 +32,7 @@
     font-style: italic;
   }
   
-  .country-info {
+  .country-details .country-info {
     display: flex;
     flex-direction: column;
   }
@@ -43,7 +43,7 @@
     font-size: 14px;
   }
   
-  .defense-section h4,
+  .country-details .defense-section h4,
   .borders-section h4,
   .economy-section h4 {
     margin-top: 0;
@@ -54,18 +54,18 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   
-  .economy-section p {
+  .country-details .economy-section p {
     margin: 5px 0;
     font-size: 14px;
   }
   
-  .defense-bars {
+  .country-details .defense-bars {
     display: flex;
     flex-direction: column;
     gap: 10px;
   }
   
-  .defense-stat {
+  .country-details .defense-stat {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -73,11 +73,11 @@
     font-size: 14px;
   }
   
-  .defense-stat span:first-child {
+  .country-details .defense-stat span:first-child {
     width: 80px;
   }
   
-  .progress-bar {
+  .country-details .progress-bar {
     height: 8px;
     flex-grow: 1;
     background-color: #eee;
@@ -85,35 +85,35 @@
     overflow: hidden;
   }
   
-  .progress-fill {
+  .country-details .progress-fill {
     height: 100%;
     background-color: #4caf50;
     border-radius: 4px;
   }
   
-  .nuclear-status {
+  .country-details .nuclear-status {
     margin-top: 10px;
     font-size: 14px;
   }
   
-  .status-yes {
+  .country-details .status-yes {
     color: #f44336;
     font-weight: bold;
     margin-left: 5px;
   }
   
-  .status-no {
+  .country-details .status-no {
     color: #4caf50;
     margin-left: 5px;
   }
   
-  .borders-list {
+  .country-details .borders-list {
     list-style: none;
     padding: 0;
     margin: 5px 0;
   }
   
-  .borders-list li {
+  .country-details .borders-list li {
     padding: 5px 0;
     font-size: 14px;
     display: flex;
@@ -123,19 +123,19 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   
-  .borders-list li:last-child {
+  .country-details .borders-list li:last-child {
     border-bottom: none;
   }
   
-  .borders-list li.enabled .border-status {
+  .country-details .borders-list li.enabled .border-status {
     color: #4caf50;
   }
   
-  .borders-list li.disabled .border-status {
+  .country-details .borders-list li.disabled .border-status {
     color: #f44336;
   }
   
-  .border-type {
+  .country-details .border-type {
     color: #aaa;
     font-style: italic;
     margin: 0 5px;
