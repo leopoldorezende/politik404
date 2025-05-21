@@ -175,7 +175,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     
     // Opcional: mostrar alerta para o usuário
     if (data.message) {
-      MessageService.showWarning(data.message, 5000);
+      MessageService.showWarning(data.message, 4000);
     }
   });
   
@@ -293,7 +293,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     
     MessageService.showInfo(
       `${originCountry} quer ${actionType} ${productName} (${value} bi USD)`,
-      10000 // 10 segundos
+      4000 // 10 segundos
     );
   });
   
@@ -307,12 +307,12 @@ export const setupSocketEvents = (socket, socketApi) => {
     if (accepted) {
       MessageService.showSuccess(
         `${targetCountry} aceitou sua proposta comercial!`,
-        8000
+        4000
       );
     } else {
       MessageService.showWarning(
         `${targetCountry} recusou sua proposta comercial.`,
-        8000
+        4000
       );
     }
   });
@@ -392,7 +392,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     
     if (!isSilentError) {
       // Mostrar erro via toast
-      MessageService.showError(message, 6000);
+      MessageService.showError(message, 4000);
       
       store.dispatch({
         type: 'error/socketError',
