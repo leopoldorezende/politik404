@@ -22,6 +22,16 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
   const [currentOption, setCurrentOption] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Novos estados para controle de cooldown das propostas
+  const [lastExportProposal, setLastExportProposal] = useState(0);
+  const [lastImportProposal, setLastImportProposal] = useState(0);
+  const [exportRemainingTime, setExportRemainingTime] = useState(0);
+  const [importRemainingTime, setImportRemainingTime] = useState(0);
+  const [countdownActive, setCountdownActive] = useState(false);
+  
+  // Constante para definir o tempo de cooldown (15 segundos)
+  const PROPOSAL_COOLDOWN = 15000; 
+  
   // Selecionar dados do Redux
   const myCountry = useSelector(state => state.game?.myCountry || '');
   const selectedCountry = useSelector(state => state.game?.selectedCountry || '');
@@ -74,6 +84,48 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
     };
   }, [currentOption, selectedCountry]);
 
+  // Efeito para atualizar os cronômetros de cooldown
+  useEffect(() => {
+    let timer;
+    
+    if (countdownActive) {
+      timer = setInterval(() => {
+        const now = Date.now();
+        
+        // Calcular o tempo restante para exportação
+        if (lastExportProposal > 0) {
+          const timeElapsed = now - lastExportProposal;
+          if (timeElapsed < PROPOSAL_COOLDOWN) {
+            setExportRemainingTime(Math.ceil((PROPOSAL_COOLDOWN - timeElapsed) / 1000));
+          } else {
+            setExportRemainingTime(0);
+          }
+        }
+        
+        // Calcular o tempo restante para importação
+        if (lastImportProposal > 0) {
+          const timeElapsed = now - lastImportProposal;
+          if (timeElapsed < PROPOSAL_COOLDOWN) {
+            setImportRemainingTime(Math.ceil((PROPOSAL_COOLDOWN - timeElapsed) / 1000));
+          } else {
+            setImportRemainingTime(0);
+          }
+        }
+        
+        // Se ambos os cronômetros chegarem a zero, podemos parar o intervalo
+        if ((lastExportProposal === 0 || now - lastExportProposal >= PROPOSAL_COOLDOWN) && 
+            (lastImportProposal === 0 || now - lastImportProposal >= PROPOSAL_COOLDOWN)) {
+          setCountdownActive(false);
+          clearInterval(timer);
+        }
+      }, 1000);
+    }
+    
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [countdownActive, lastExportProposal, lastImportProposal]);
+
   // Define the action menu options
   const menuOptions = {
     trade: ['import', 'export'],
@@ -116,6 +168,19 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
     }
   };
 
+  // Função para verificar se uma proposta está em cooldown
+  const isProposalInCooldown = (proposalType) => {
+    const now = Date.now();
+    
+    if (proposalType === 'export') {
+      return lastExportProposal > 0 && now - lastExportProposal < PROPOSAL_COOLDOWN;
+    } else if (proposalType === 'import') {
+      return lastImportProposal > 0 && now - lastImportProposal < PROPOSAL_COOLDOWN;
+    }
+    
+    return false;
+  };
+
   // Função para abrir popup
   const handleOpenPopup = (type, option) => {
     // Verificar se existe um país selecionado
@@ -133,6 +198,14 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
     setTradeType('commodity'); // reset para o valor padrão
     setTradeAmount(''); // limpar o valor anterior
     setIsSubmitting(false); // resetar estado de submissão
+    
+    // Se for uma proposta de comércio, verificar se há cooldown ativo
+    // e ativar o cronômetro se necessário
+    if (type === 'trade' && (option === 'export' || option === 'import')) {
+      if (isProposalInCooldown(option)) {
+        setCountdownActive(true);
+      }
+    }
   };
 
   // Função para fechar popup
@@ -163,6 +236,12 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       return;
     }
     
+    // Verificar se a proposta está em cooldown
+    if (isProposalInCooldown(currentOption)) {
+      MessageService.showWarning(`Aguarde ${currentOption === 'export' ? exportRemainingTime : importRemainingTime} segundos antes de enviar uma nova proposta de ${currentOption === 'export' ? 'exportação' : 'importação'}.`);
+      return;
+    }
+    
     // Desabilitar o botão enquanto processa
     setIsSubmitting(true);
     
@@ -174,6 +253,23 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       value: amount,
       originCountry: myCountry
     });
+    
+    // Registrar o timestamp da proposta enviada
+    const now = Date.now();
+    if (currentOption === 'export') {
+      setLastExportProposal(now);
+    } else if (currentOption === 'import') {
+      setLastImportProposal(now);
+    }
+    
+    // Ativar o cronômetro
+    setCountdownActive(true);
+    
+    // Fechar o popup após enviar a proposta
+    handleClosePopup();
+    
+    // Mostrar mensagem de confirmação
+    MessageService.showInfo(`Proposta de ${currentOption === 'export' ? 'exportação' : 'importação'} enviada para ${selectedCountry}.`);
   };
 
   // Função para finalizar aliança militar
@@ -292,7 +388,28 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       case 'trade':
         if (currentOption === 'export' || currentOption === 'import') {
           const isTargetControlledByPlayer = isCountryControlledByPlayer();
+          const inCooldown = isProposalInCooldown(currentOption);
+          const remainingTime = currentOption === 'export' ? exportRemainingTime : importRemainingTime;
           
+          // Renderizar mensagem de cooldown se necessário
+          if (inCooldown) {
+            return (
+              <div className="cooldown-message">
+                <p>
+                  Você precisa aguardar antes de enviar uma nova proposta de {currentOption === 'export' ? 'exportação' : 'importação'}.
+                </p>
+                <div className="cooldown-timer">
+                  <span className="material-icons">timer</span>
+                  <span className="countdown">{remainingTime} segundos</span>
+                </div>
+                <p>
+                  Por favor, aguarde o fim deste período de espera para enviar uma nova proposta comercial.
+                </p>
+              </div>
+            );
+          }
+          
+          // Renderizar o formulário normal se não estiver em cooldown
           return (
             <>
               <div className="popup-form-group">

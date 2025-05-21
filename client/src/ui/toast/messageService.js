@@ -18,31 +18,31 @@ const checkRef = () => {
 };
 
 // Exibir uma mensagem
-export const showMessage = (message, type = 'info', duration = 8000) => {
+export const showMessage = (message, type = 'info', duration = 5000) => {
   if (!checkRef()) return null;
   return messageRef.show(message, type, duration);
 };
 
 // Exibir uma mensagem de erro
-export const showError = (message, duration = 8000) => {
+export const showError = (message, duration = 5000) => {
   if (!checkRef()) return null;
   return messageRef.show(message, 'error', duration);
 };
 
 // Exibir uma mensagem de sucesso
-export const showSuccess = (message, duration = 8000) => {
+export const showSuccess = (message, duration = 5000) => {
   if (!checkRef()) return null;
   return messageRef.show(message, 'success', duration);
 };
 
 // Exibir uma mensagem de aviso
-export const showWarning = (message, duration = 8000) => {
+export const showWarning = (message, duration = 5000) => {
   if (!checkRef()) return null;
   return messageRef.show(message, 'warning', duration);
 };
 
 // Exibir uma mensagem de informação
-export const showInfo = (message, duration = 8000) => {
+export const showInfo = (message, duration = 5000) => {
   if (!checkRef()) return null;
   return messageRef.show(message, 'info', duration);
 };

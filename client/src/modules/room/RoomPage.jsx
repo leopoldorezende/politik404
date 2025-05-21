@@ -5,15 +5,19 @@ import './RoomPage.css';
 
 const RoomPage = () => {
   const [roomName, setRoomName] = useState('');
-  const [roomDuration, setRoomDuration] = useState('');
+  const [roomDuration, setRoomDuration] = useState('20'); // Valor padrão definido como 20 minutos
   const [isLoading, setIsLoading] = useState(false);
   const [joiningRoomName, setJoiningRoomName] = useState('');
   const [joinAttemptTime, setJoinAttemptTime] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [roomNameError, setRoomNameError] = useState('');
   
   const dispatch = useDispatch();
   const rooms = useSelector(state => state.rooms.rooms);
   const username = useSelector(state => state.auth.username);
+
+  // Opções de duração em minutos
+  const durationOptions = [5, 10, 20, 40, 60];
 
   // Atualizar o tempo a cada segundo
   useEffect(() => {
@@ -97,18 +101,41 @@ const RoomPage = () => {
     }
   }, [joiningRoomName, joinAttemptTime]);
 
-    const handleCreateRoom = () => {
+  // Handler para validar e atualizar o nome da sala
+  const handleRoomNameChange = (e) => {
+    const value = e.target.value;
+    
+    // Permitir apenas letras e números
+    if (value && !/^[a-zA-Z0-9]+$/.test(value)) {
+      setRoomNameError('Use apenas letras e números');
+    } else if (value && value.length < 3) {
+      setRoomNameError('Mínimo de 3 caracteres');
+    } else {
+      setRoomNameError('');
+    }
+    
+    // Remover caracteres especiais automaticamente
+    const sanitizedValue = value.replace(/[^a-zA-Z0-9]/g, '');
+    setRoomName(sanitizedValue);
+  };
+
+  const handleCreateRoom = () => {
+    // Verificar se há um erro ou se o nome não atende aos requisitos mínimos
+    if (roomNameError || roomName.length < 3) {
+      alert('Por favor, corrija o nome da sala. Use apenas letras e números, com no mínimo 3 caracteres.');
+      return;
+    }
     
     if (!roomName.trim() || !roomDuration) {
       alert('Por favor, preencha o nome da sala e a duração!');
       return;
     }
     
-    // Validar e usar valor padrão de 30 se não houver duração
-    const duration = roomDuration ? parseInt(roomDuration) : 30;
+    // Converter roomDuration para número
+    const duration = parseInt(roomDuration);
     
-    if (isNaN(duration) || duration < 1 || duration > 90) {
-      alert('Por favor, insira uma duração válida entre 1 e 90 minutos!');
+    if (isNaN(duration)) {
+      alert('Por favor, selecione uma duração válida!');
       return;
     }
     
@@ -120,7 +147,8 @@ const RoomPage = () => {
     
     // Limpar os campos de entrada
     setRoomName('');
-    setRoomDuration(''); // Adicione esta linha
+    setRoomNameError('');
+    // Não reseta duração para manter o último valor selecionado
     
     // Atualizar lista de salas após um delay
     setTimeout(() => {
@@ -149,7 +177,7 @@ const RoomPage = () => {
 
   // Handle Enter key press
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !isLoading) {
+    if (e.key === 'Enter' && !isLoading && !roomNameError && roomName.length >= 3) {
       handleCreateRoom();
     }
   };
@@ -190,29 +218,37 @@ const RoomPage = () => {
       </div>
       <div className="room-actions">
         <div>
-          <input
-            type="text"
-            id="room-name"
-            value={roomName}
-            onChange={(e) => setRoomName(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Nome da partida"
-            disabled={isLoading || joiningRoomName}
-          />
-          <input
-            type="number"
-            value={roomDuration}
-            onChange={(e) => setRoomDuration(parseInt(e.target.value))}
-            min="1"
-            max="90"
-            placeholder="Duração (minutos)"
-            disabled={isLoading || joiningRoomName}
-          />
+          <div className="input-with-error">
+            <input
+              type="text"
+              id="room-name"
+              value={roomName}
+              onChange={handleRoomNameChange}
+              onKeyPress={handleKeyPress}
+              placeholder="Nome da partida"
+              disabled={isLoading || joiningRoomName}
+            />
+            {roomNameError && <div className="input-error">{roomNameError}</div>}
+          </div>
+          <div className="select-with-icon">
+            <span className="material-icons">schedule</span>
+            <select
+              value={roomDuration}
+              onChange={(e) => setRoomDuration(e.target.value)}
+              disabled={isLoading || joiningRoomName}
+            >
+              {durationOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option} minutos
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <button 
           id="create-room-button" 
           onClick={handleCreateRoom}
-          disabled={isLoading || joiningRoomName || !roomName.trim()}
+          disabled={isLoading || joiningRoomName || !roomName.trim() || roomNameError || roomName.length < 3}
         >
           Criar Partida
         </button>

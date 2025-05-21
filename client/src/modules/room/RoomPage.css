@@ -1,4 +1,4 @@
-/* RoomSelectionScreen.css */
+/* RoomSelectionScreen.css - Versão melhorada */
 
 #room-selection-screen {
   position: absolute;
@@ -11,62 +11,186 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  color: #eee;
 }
 
 #room-selection-screen h2 {
   margin-bottom: 30px;
-  font-size: 28px;
+  font-size: 32px;
   text-align: center;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+.user-info {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 16px;
+  color: #9fadc3;
+}
+
+/* Container de criação de sala - redesenhado para melhor organização */
 .room-actions {
   width: 100%;
-  text-align: center;
-  padding: 0 20px 30px 20px;
+  text-align: left;
+  margin-bottom: 30px;
+  padding: 20px;
   box-sizing: border-box;
   display: flex;
-  justify-content: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .room-actions div {
-  width: 100%;
   display: flex;
   flex-direction: row;
   gap: 16px;
+  flex: 1;
 }
 
-.room-actions input {
-  max-width: 300px;
-  padding: 10px;
+.room-actions input,
+.room-actions select {
+  padding: 12px;
   font-size: 16px;
-  border-radius: 4px;
-  border: 0;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #eee;
+  background-color: rgba(255, 255, 255, 0.07);
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
+.room-actions input:focus,
+.room-actions select:focus {
+  outline: none;
+  border-color: rgba(0, 123, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
 .room-actions input:first-child {
   flex: 1;
 }
-.room-actions input:last-child {
+
+.room-actions #room-name {
+  min-width: 300px;
+  max-width: 600px;
+}
+
+/* Estilo para o container do input com mensagem de erro */
+.input-with-error {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-with-error input {
+  width: 100%;
+}
+
+.input-error {
+  position: absolute;
+  bottom: -22px;
+  left: 5px;
+  color: #ff6b6b;
+  font-size: 12px;
+  font-weight: 500;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 107, 107, 0.1);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+/* Container para o select com o ícone de relógio - versão melhorada */
+.select-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
   width: 170px;
   flex-shrink: 0;
 }
 
-.room-actions button {
-  min-width: 140px;
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
+.select-with-icon select {
+  width: 100%;
+  padding-left: 35px; /* Espaço para o ícone à esquerda */
+}
+
+/* Estilo para o ícone de relógio */
+.select-with-icon .material-icons {
+  position: absolute;
+  left: 10px;
+  font-size: 18px;
+  color: #9fadc3;
+  pointer-events: none; /* Para que o ícone não interfira com os cliques no select */
+  z-index: 1;
+}
+
+/* Estilos específicos para o select */
+.room-actions select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px top 50%;
+  padding-right: 30px;
   cursor: pointer;
 }
 
-.room-actions button:hover {
-  background-color: #0056b3;
+.room-actions select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
+.room-actions select option {
+  background-color: #2a3441;
+  color: #eee;
+  padding: 10px;
+}
+
+/* Botão de criação de sala melhorado */
+.room-actions button {
+  min-width: 140px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 10px rgba(0, 123, 255, 0.3);
+}
+
+.room-actions button:hover {
+  background-color: #0069d9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+}
+
+.room-actions button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
+}
+
+.room-actions button:disabled {
+  background-color: #5a6268;
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Contenedor de lista de salas melhorado */
 .room-list-container {
   position: relative;
   background: rgba(0, 0, 0, 0.2);
@@ -74,45 +198,56 @@
   padding: 20px;
   margin-bottom: 20px;
   box-sizing: border-box;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .room-list-container h3 {
   margin-top: 0;
-  margin-bottom: 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  padding-bottom: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+  font-size: 20px;
+  color: #fff;
 }
 
 #room-list {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  gap: 15px;
 }
 
+/* Cards de salas estilizados */
 .room-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.1);
-  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.08);
   padding: 15px;
-  border-radius: 5px;
-  transition: background 0.2s ease;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .room-item:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
 }
 
 /* Estilo para salas encerradas */
 .room-item.room-expired {
-  background: rgba(220, 53, 69, 0.1);
-  border: 1px solid rgba(220, 53, 69, 0.3);
-  opacity: 0.7;
+  background: rgba(220, 53, 69, 0.08);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  opacity: 0.8;
 }
 
 .room-item.room-expired:hover {
-  background: rgba(220, 53, 69, 0.15);
+  background: rgba(220, 53, 69, 0.12);
 }
 
 .room-item.room-expired .room-details h4 {
@@ -132,89 +267,164 @@
 
 .room-details {
   flex: 1;
+  padding-right: 15px;
 }
 
 .room-details h4 {
   display: block;
-  margin: 0 0 5px 0;
+  margin: 0 0 8px 0;
   font-size: 18px;
+  color: #e9ecef;
 }
 
 .room-details p {
-  margin: 3px 0;
+  margin: 5px 0;
   font-size: 14px;
+  color: #adb5bd;
 }
 
+/* Botão de entrada em sala melhorado */
 .join-room-btn {
-  padding: 8px 15px;
+  padding: 10px 20px;
   background-color: #007BFF;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 14px;
+  align-self: center;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(0, 123, 255, 0.3);
 }
 
 .join-room-btn:hover {
-  background-color: #0056b3;
+  background-color: #0069d9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+}
+
+.join-room-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
+}
+
+.join-room-btn:disabled {
+  background-color: #5a6268;
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .no-rooms {
   text-align: center;
-  padding: 20px;
+  padding: 30px;
   color: rgba(255, 255, 255, 0.5);
   font-style: italic;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  grid-column: 1 / -1;
 }
 
-/* Mobile responsiveness */
+/* Melhor suporte para diferentes tamanhos de tela */
+@media screen and (max-width: 1400px) {
+  #room-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media screen and (max-width: 1200px) {
   #room-selection-screen {
     left: 0%;
     width: 100%;
-  }
-  
-  .room-item {
-    flex-direction: column;
-    align-items: first baseline;
-    gap: 8px;
+    padding: 16px;
   }
   
   .room-actions {
     flex-direction: column;
-    align-items: center;
+    padding: 16px;
   }
   
-  .room-actions input {
+  .room-actions div {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .room-actions input,
+  .room-actions select,
+  .select-with-icon,
+  .input-with-error {
     width: 100%;
     max-width: 100%;
+  }
+  
+  .input-error {
+    position: static;
+    margin-top: 5px;
     margin-bottom: 10px;
+  }
+  
+  .room-actions button {
+    width: 100%;
+    margin-top: 10px;
   }
 }
 
-/* Loading Spinner de Tela Cheia */
+@media screen and (max-width: 768px) {
+  .room-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .room-details {
+    margin-bottom: 15px;
+    padding-right: 0;
+  }
+  
+  .join-room-btn {
+    width: 100%;
+  }
+  
+  #room-selection-screen h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .room-list-container {
+    padding: 15px;
+  }
+}
+
+/* Loading Spinner de Tela Cheia - versão melhorada */
 .full-screen-spinner {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.75);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 2000;
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(5px);
 }
 
 .spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid rgba(255, 255, 255, 0.3);
+  width: 60px;
+  height: 60px;
+  border: 5px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   border-top-color: #007bff;
+  border-left-color: #007bff;
   animation: spin 1s ease-in-out infinite;
   margin-bottom: 20px;
+  box-shadow: 0 0 20px rgba(0, 123, 255, 0.2);
 }
 
 @keyframes spin {
@@ -226,4 +436,6 @@
   font-size: 18px;
   text-align: center;
   margin-top: 10px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }

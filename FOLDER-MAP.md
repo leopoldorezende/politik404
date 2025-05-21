@@ -16,7 +16,13 @@
   │   │   ├── modules
   │   │   │   ├── actions
   │   │   │   │   ├── ActionMenu.css
-  │   │   │   │   └── ActionMenu.jsx
+  │   │   │   │   ├── ActionMenu.jsx
+  │   │   │   │   ├── ActionPopup.jsx
+  │   │   │   │   ├── hooks
+  │   │   │   │   │   └── useActionCooldown.js
+  │   │   │   │   └── popups
+  │   │   │   │       ├── AlliancePopup.jsx
+  │   │   │   │       └── TradePopup.jsx
   │   │   │   ├── auth
   │   │   │   │   ├── AuthPage.css
   │   │   │   │   ├── AuthPage.jsx  # Tela de autenticação/login
