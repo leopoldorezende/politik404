@@ -22,6 +22,7 @@
   │   │   │   │   │   └── useActionCooldown.js
   │   │   │   │   └── popups
   │   │   │   │       ├── AlliancePopup.jsx
+  │   │   │   │       ├── CooperationPopup.jsx
   │   │   │   │       └── TradePopup.jsx
   │   │   │   ├── auth
   │   │   │   │   ├── AuthPage.css
