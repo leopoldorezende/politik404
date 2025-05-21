@@ -158,20 +158,6 @@
   width: 90px;
   font-size: 13px;
 }
-
-/* Estilos específicos para labels de importação/exportação */
-.balance-label.trade-import {
-  color: #0f7a3c;
-  font-weight: bold;
-  width: 130px;
-}
-
-.balance-label.trade-export {
-  color: #a82112;
-  font-weight: bold;
-  width: 130px;
-}
-
 .balance-number {
   font-weight: bold;
   margin-right: 5px;
@@ -450,18 +436,6 @@
   opacity: 0.9;
   margin-bottom: 2px;
 }
-
-/* Special styles for imports/exports */
-.balance-label.trade-export {
-  color: #0f7a3c;
-  padding-left: 4px;
-}
-
-.balance-label.trade-import {
-  color: #a82112;
-  padding-left: 4px;
-}
-
 .balance-number {
   font-weight: bold;
   margin-right: 5px;

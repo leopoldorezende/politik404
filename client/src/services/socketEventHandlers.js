@@ -316,20 +316,7 @@ export const setupSocketEvents = (socket, socketApi) => {
       );
     }
   });
-  
-  // Handler para quando uma proposta é enviada com sucesso
-  socket.on('tradeProposalSent', (response) => {
-    console.log('Proposta de comércio enviada:', response);
-    
-    const { targetPlayer, message } = response;
-    
-    // Mostrar confirmação de envio
-    MessageService.showInfo(
-      `Proposta enviada para ${targetPlayer}`,
-      5000
-    );
-  });
-  
+
   // Confirmação de proposta processada (para quem respondeu)
   socket.on('tradeProposalProcessed', (response) => {
     console.log('Proposta de comércio processada:', response);

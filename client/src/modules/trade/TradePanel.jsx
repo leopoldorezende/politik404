@@ -156,7 +156,7 @@ const TradePanel = () => {
             {/* Importações de commodities */}
             {tradeStatistics.commodityImports > 0 && (
               <div className="balance-row">
-                <span className="balance-label trade-import">Importações:</span>
+                <span className="balance-label">Importações:</span>
                 <div className="balance-values-container">
                   <span className="balance-number positive">+{tradeStatistics.commodityImports.toFixed(1)} bi</span>
                 </div>
@@ -166,7 +166,7 @@ const TradePanel = () => {
             {/* Exportações de commodities */}
             {tradeStatistics.commodityExports > 0 && (
               <div className="balance-row">
-                <span className="balance-label trade-export">Exportações:</span>
+                <span className="balance-label">Exportações:</span>
                 <div className="balance-values-container">
                   <span className="balance-number negative">-{tradeStatistics.commodityExports.toFixed(1)} bi</span>
                 </div>
@@ -203,7 +203,7 @@ const TradePanel = () => {
             {/* Importações de manufaturas */}
             {tradeStatistics.manufactureImports > 0 && (
               <div className="balance-row">
-                <span className="balance-label trade-import">Importações:</span>
+                <span className="balance-label">Importações:</span>
                 <div className="balance-values-container">
                   <span className="balance-number positive">+{tradeStatistics.manufactureImports.toFixed(1)} bi</span>
                 </div>
@@ -213,7 +213,7 @@ const TradePanel = () => {
             {/* Exportações de manufaturas */}
             {tradeStatistics.manufactureExports > 0 && (
               <div className="balance-row">
-                <span className="balance-label trade-export">Exportações:</span>
+                <span className="balance-label">Exportações:</span>
                 <div className="balance-values-container">
                   <span className="balance-number negative">-{tradeStatistics.manufactureExports.toFixed(1)} bi</span>
                 </div>

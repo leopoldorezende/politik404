@@ -221,12 +221,6 @@ function setupEconomyHandlers(io, socket, gameState) {
         targetSocket.emit('tradeProposalReceived', tradeProposal);
         console.log(`Trade proposal sent to player ${targetPlayer}`);
         
-        // Informar o jogador que enviou que a proposta foi encaminhada
-        socket.emit('tradeProposalSent', {
-          proposalId,
-          targetPlayer,
-          message: `Proposal sent to ${targetPlayer}`
-        });
       } else {
         // Jogador alvo não está online
         socket.emit('error', 'Target player is not online');
