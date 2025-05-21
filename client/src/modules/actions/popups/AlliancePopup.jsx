@@ -25,6 +25,13 @@ const AlliancePopup = ({ selectedCountry, onClose }) => {
             assistência militar. A aliança fortalece a posição diplomática internacional de 
             ambos os países.
           </li>
+          <li>
+            Este acordo permite o livre trânsito de tropas e equipamentos militares entre 
+            os países signatários.
+          </li>
+          <li>
+            Uma aliança militar sinaliza o mais alto nível de cooperação em defesa entre nações.
+          </li>
         </ul>
       </div>
 

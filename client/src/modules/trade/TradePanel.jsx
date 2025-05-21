@@ -120,7 +120,7 @@ const TradePanel = () => {
       </div>
 
       <div className="trade-balance-section">
-        <h4>Balanço Comercial</h4>
+        <h4>Balanço da Produção</h4>
         
         <div className="balance-item">
           <div className="balance-header">
