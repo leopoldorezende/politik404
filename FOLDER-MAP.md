@@ -134,6 +134,7 @@
       ├── public
       │   └── data
       │       ├── countriesCoordinates.json
+      │       ├── countriesData-bkp.json
       │       └── countriesData.json
       ├── server.js  # Entry point do servidor
       └── shared

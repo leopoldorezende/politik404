@@ -66,6 +66,18 @@ class CountryStateManager {
   }
 
   /**
+   * Função auxiliar para obter valor numérico de propriedades que podem estar em formatos diferentes
+   * @param {any} property - Propriedade que pode ser número ou objeto com value
+   * @returns {number} - Valor numérico
+   */
+  getNumericValue(property) {
+    if (property === undefined || property === null) return 0;
+    if (typeof property === 'number') return property;
+    if (typeof property === 'object' && property.value !== undefined) return property.value;
+    return 0;
+  }
+
+  /**
    * Initialize the manager and load states from Redis
    */
   async initialize() {
@@ -185,7 +197,7 @@ class CountryStateManager {
    */
   updateDerivedEconomicIndicators(countryState) {
     const economy = countryState.economy;
-    const gdp = economy.gdp.value;
+    const gdp = this.getNumericValue(economy.gdp);
     
     // Garantir que os percentuais setoriais existam
     if (!economy.services || typeof economy.services.value !== 'number') {
@@ -388,36 +400,78 @@ class CountryStateManager {
     if (countryData) {
       // Set economy values
       if (countryData.economy) {
+        // GDP - adaptar para ambos formatos (objeto ou número)
         if (countryData.economy.gdp) {
-          state.economy.gdp = countryData.economy.gdp;
+          state.economy.gdp = { 
+            value: this.getNumericValue(countryData.economy.gdp), 
+            unit: 'bi USD' 
+          };
         } else {
           state.economy.gdp = { value: 100, unit: 'bi USD' };
         }
-        // Treasury set to 10% of GDP
-        state.economy.treasury = { 
-          value: state.economy.gdp.value * 0.1, 
-          unit: 'bi USD' 
-        };
+        
+        // Treasury - adaptar para ambos formatos (objeto ou número)
+        if (countryData.economy.treasury !== undefined) {
+          state.economy.treasury = { 
+            value: this.getNumericValue(countryData.economy.treasury), 
+            unit: 'bi USD' 
+          };
+        } else {
+          // Treasury set to 10% of GDP
+          state.economy.treasury = { 
+            value: state.economy.gdp.value * 0.1, 
+            unit: 'bi USD' 
+          };
+        }
         
         // Inicializar valores para a distribuição setorial
-        // Usar services como complemento se não estiver definido diretamente
+        
+        // Ler services - pode estar direto ou em objeto
+        if (countryData.economy.services !== undefined) {
+          if (typeof countryData.economy.services === 'object' && countryData.economy.services.gdpShare !== undefined) {
+            state.economy.services.value = countryData.economy.services.gdpShare;
+          } else if (typeof countryData.economy.services === 'object' && countryData.economy.services.value !== undefined) {
+            state.economy.services.value = countryData.economy.services.value;
+          } else if (typeof countryData.economy.services === 'number') {
+            state.economy.services.value = countryData.economy.services;
+          }
+        }
         
         // Ler commodities.gdpShare se disponível
-        if (countryData.economy.commodities && countryData.economy.commodities.gdpShare !== undefined) {
-          state.economy.commodities.value = countryData.economy.commodities.gdpShare;
-        } else if (countryData.economy.commodities && typeof countryData.economy.commodities === 'number') {
-          state.economy.commodities.value = countryData.economy.commodities;
+        if (countryData.economy.commodities) {
+          if (typeof countryData.economy.commodities === 'object' && countryData.economy.commodities.gdpShare !== undefined) {
+            state.economy.commodities.value = countryData.economy.commodities.gdpShare;
+          } else if (typeof countryData.economy.commodities === 'object' && countryData.economy.commodities.value !== undefined) {
+            state.economy.commodities.value = countryData.economy.commodities.value;
+          } else if (typeof countryData.economy.commodities === 'number') {
+            state.economy.commodities.value = countryData.economy.commodities;
+          }
         }
         
-        // Ler manufacturing.gdpShare se disponível (para manufaturas)
-        if (countryData.economy.manufacturing && countryData.economy.manufacturing.gdpShare !== undefined) {
-          state.economy.manufactures.value = countryData.economy.manufacturing.gdpShare;
-        } else if (countryData.economy.manufactures && typeof countryData.economy.manufactures === 'number') {
-          state.economy.manufactures.value = countryData.economy.manufactures;
+        // Ler manufactures.gdpShare se disponível (nova estrutura)
+        if (countryData.economy.manufactures) {
+          if (typeof countryData.economy.manufactures === 'object' && countryData.economy.manufactures.gdpShare !== undefined) {
+            state.economy.manufactures.value = countryData.economy.manufactures.gdpShare;
+          } else if (typeof countryData.economy.manufactures === 'object' && countryData.economy.manufactures.value !== undefined) {
+            state.economy.manufactures.value = countryData.economy.manufactures.value;
+          } else if (typeof countryData.economy.manufactures === 'number') {
+            state.economy.manufactures.value = countryData.economy.manufactures;
+          }
+        } else if (countryData.economy.manufacturing) {
+          // Compatibilidade com estrutura anterior (manufacturing)
+          if (typeof countryData.economy.manufacturing === 'object' && countryData.economy.manufacturing.gdpShare !== undefined) {
+            state.economy.manufactures.value = countryData.economy.manufacturing.gdpShare;
+          } else if (typeof countryData.economy.manufacturing === 'object' && countryData.economy.manufacturing.value !== undefined) {
+            state.economy.manufactures.value = countryData.economy.manufacturing.value;
+          } else if (typeof countryData.economy.manufacturing === 'number') {
+            state.economy.manufactures.value = countryData.economy.manufacturing;
+          }
         }
         
-        // Calcular serviços como residual (complemento para 100%)
-        state.economy.services.value = 100 - state.economy.commodities.value - state.economy.manufactures.value;
+        // Calcular serviços como residual se não foi definido
+        if (countryData.economy.services === undefined) {
+          state.economy.services.value = 100 - state.economy.commodities.value - state.economy.manufactures.value;
+        }
         
         // Garantir que a soma seja 100%
         const total = state.economy.services.value + state.economy.commodities.value + state.economy.manufactures.value;
@@ -440,17 +494,24 @@ class CountryStateManager {
           state.economy.commoditiesNeeds.percentValue = Math.round((domesticConsumption / gdpValue) * 100);
           state.economy.commoditiesNeeds.value = domesticConsumption;
         } else if (countryData.economy.commoditiesNeeds) {
-          state.economy.commoditiesNeeds.percentValue = countryData.economy.commoditiesNeeds;
+          state.economy.commoditiesNeeds.percentValue = this.getNumericValue(countryData.economy.commoditiesNeeds);
         }
         
-        if (countryData.economy.manufacturing && countryData.economy.manufacturing.domesticConsumption !== undefined) {
-          // Calcular como porcentagem do PIB
+        // Buscar necessidades de manufatura - nova estrutura ou estrutura anterior
+        if (countryData.economy.manufactures && countryData.economy.manufactures.domesticConsumption !== undefined) {
+          // Nova estrutura
+          const gdpValue = state.economy.gdp.value;
+          const domesticConsumption = countryData.economy.manufactures.domesticConsumption;
+          state.economy.manufacturesNeeds.percentValue = Math.round((domesticConsumption / gdpValue) * 100);
+          state.economy.manufacturesNeeds.value = domesticConsumption;
+        } else if (countryData.economy.manufacturing && countryData.economy.manufacturing.domesticConsumption !== undefined) {
+          // Estrutura anterior
           const gdpValue = state.economy.gdp.value;
           const domesticConsumption = countryData.economy.manufacturing.domesticConsumption;
           state.economy.manufacturesNeeds.percentValue = Math.round((domesticConsumption / gdpValue) * 100);
           state.economy.manufacturesNeeds.value = domesticConsumption;
         } else if (countryData.economy.manufacturesNeeds) {
-          state.economy.manufacturesNeeds.percentValue = countryData.economy.manufacturesNeeds;
+          state.economy.manufacturesNeeds.percentValue = this.getNumericValue(countryData.economy.manufacturesNeeds);
         }
         
         // Calcular valores absolutos de necessidades
@@ -464,16 +525,29 @@ class CountryStateManager {
       
       // Set defense values
       if (countryData.defense) {
-        state.defense.navy = countryData.defense.navy || 20;
-        state.defense.army = countryData.defense.army || 20;
-        state.defense.airforce = countryData.defense.airforce || 20;
+        state.defense.navy = this.getNumericValue(countryData.defense.navy) || 20;
+        state.defense.army = this.getNumericValue(countryData.defense.army) || 20;
+        state.defense.airforce = this.getNumericValue(countryData.defense.airforce) || 20;
       }
       
-      // Set politics values
+      // Set politics values - adaptado para nova estrutura
       if (countryData.politics) {
-        state.politics.parliament = countryData.politics.parliamentSupport || 50;
-        state.politics.media = countryData.politics.mediaSupport || 50;
-        state.politics.opposition = countryData.politics.opposition?.strength || 25;
+        state.politics.parliament = this.getNumericValue(countryData.politics.parliamentSupport) || 50;
+        state.politics.media = this.getNumericValue(countryData.politics.mediaSupport) || 50;
+        
+        // Protestos - pode ser número direto ou objeto
+        if (countryData.politics.protests !== undefined) {
+          state.politics.protests = this.getNumericValue(countryData.politics.protests);
+        }
+        
+        // Opposition - pode ser número direto ou objeto
+        if (countryData.politics.opposition !== undefined) {
+          if (typeof countryData.politics.opposition === 'object' && countryData.politics.opposition.strength !== undefined) {
+            state.politics.opposition = countryData.politics.opposition.strength;
+          } else {
+            state.politics.opposition = this.getNumericValue(countryData.politics.opposition);
+          }
+        }
       }
       
       // Set commerce values

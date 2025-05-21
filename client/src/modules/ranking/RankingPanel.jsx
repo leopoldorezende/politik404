@@ -17,7 +17,7 @@ const RankingPanel = () => {
   
   // Calcular o ranking quando os acordos comerciais ou jogadores mudam
   useEffect(() => {
-    if (!players.length || !Object.keys(countriesData).length) return;
+    if (!Object.keys(countriesData).length) return;
     
     // Mapeie os países para seus jogadores
     const countryPlayerMap = {};
@@ -41,14 +41,15 @@ const RankingPanel = () => {
       }
     });
     
-    // Contar acordos comerciais por país
+    // Inicializar scores para TODOS os países
     const countryScores = {};
     
-    // Inicializar scores para todos os países com jogadores
-    Object.keys(countryPlayerMap).forEach(country => {
+    // Inicializar todos os países dos dados do jogo (tanto IA quanto humanos)
+    Object.keys(countriesData).forEach(country => {
       countryScores[country] = {
         country,
-        player: countryPlayerMap[country],
+        player: countryPlayerMap[country] || null, // null para países de IA
+        isHuman: countryPlayerMap[country] ? true : false, // flag para identificar países de humanos
         tradeAgreements: 0,
         militaryAlliances: 0, // Preparado para o futuro
         totalScore: 0
@@ -106,6 +107,10 @@ const RankingPanel = () => {
               <span>2 pontos</span>
             </li>
             <li>
+              <span>Cooperação Estratégica</span>
+              <span>1 ponto</span>
+            </li>
+            <li>
               <span>Aliança Militar</span>
               <span>3 pontos</span>
             </li>
@@ -115,11 +120,19 @@ const RankingPanel = () => {
       
       <div className="ranking-list">
         {rankings.map((item, index) => (
-          <div key={item.country} className={`ranking-item ${index < 3 ? 'top-ranked' : ''}`}>
+          <div 
+            key={item.country} 
+            className={`ranking-item ${item.isHuman ? 'top-ranked' : ''}`}
+          >
             <div className="ranking-position">#{index + 1}</div>
             <div className="ranking-info">
               <div className="country-name">{item.country} / {item.totalScore} pts</div>
-              <div className="player-name">Jogador: {item.player}</div>
+              <div className="player-name">
+                {item.isHuman ? 
+                  `Jogador: ${item.player}` : 
+                  <span className="ai-controlled">Controlado pela IA</span>
+                }
+              </div>
               <div className="trade-stats">
                 <span className="score-count">{item.tradeAgreements} acordos comerciais</span>
                 {item.militaryAlliances > 0 && (

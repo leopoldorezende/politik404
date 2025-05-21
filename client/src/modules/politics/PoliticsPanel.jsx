@@ -10,15 +10,23 @@ const PoliticsPanel = () => {
   // Estados locais
   const [targetCountry, setTargetCountry] = useState('');
 
+  // Função para obter valor numérico de propriedade que pode estar em diferentes formatos
+  const getNumericValue = (property) => {
+    if (property === undefined || property === null) return 0;
+    if (typeof property === 'number') return property;
+    if (typeof property === 'object' && property.value !== undefined) return property.value;
+    return 0;
+  };
+
   // Formatação do status de aprovação
   const formatApprovalStatus = () => {
     // Dados de countriesData como fallback se approval não estiver disponível
     if (countriesData && countriesData[myCountry] && countriesData[myCountry].politics) {
       const politics = countriesData[myCountry].politics;
       return {
-        parliament: politics.parliamentSupport || 50,
-        media: politics.mediaSupport || 50,
-        popularity: politics.popularity || 50
+        parliament: getNumericValue(politics.parliamentSupport) || 50,
+        media: getNumericValue(politics.mediaSupport) || 50,
+        popularity: getNumericValue(countriesData[myCountry].economy?.popularity) || 50
       };
     }
     
@@ -30,11 +38,26 @@ const PoliticsPanel = () => {
     // Dados de countriesData como fallback se instability não estiver disponível
     if (countriesData && countriesData[myCountry] && countriesData[myCountry].politics) {
       const politics = countriesData[myCountry].politics;
-      const protestsValue = politics.protests ? politics.protests.value : 0;
+      
+      // Obter valor de protestos (pode ser um número direto ou um objeto com value)
+      let protestsValue = 0;
+      if (politics.protests !== undefined) {
+        protestsValue = getNumericValue(politics.protests);
+      }
+      
+      // Obter valor de força da oposição (pode ser um número direto ou um objeto com strength)
+      let oppositionStrength = 0;
+      if (politics.opposition !== undefined) {
+        if (typeof politics.opposition === 'object' && politics.opposition.strength !== undefined) {
+          oppositionStrength = politics.opposition.strength;
+        } else if (typeof politics.opposition === 'number') {
+          oppositionStrength = politics.opposition;
+        }
+      }
       
       return {
         protests: protestsValue,
-        opposition: politics.opposition ? politics.opposition.strength : 0
+        opposition: oppositionStrength
       };
     }
     

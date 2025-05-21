@@ -107,6 +107,12 @@
   margin-bottom: 3px;
 }
 
+/* Estilo para países controlados pela IA */
+.ranking-panel .ai-controlled {
+  font-style: italic;
+  color: #888;
+}
+
 .ranking-panel .trade-stats {
   font-size: 12px;
   display: flex;

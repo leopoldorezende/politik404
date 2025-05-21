@@ -47,6 +47,14 @@ const CountryState = ({ roomName, countryName }) => {
     }
   }, [room, dispatch]);
   
+  // Função para obter valor numérico de propriedade que pode estar em diferentes formatos
+  const getNumericValue = (property) => {
+    if (property === undefined || property === null) return 0;
+    if (typeof property === 'number') return property;
+    if (typeof property === 'object' && property.value !== undefined) return property.value;
+    return 0;
+  };
+  
   // Se não houver sala ou país selecionado, mostrar mensagem
   if (!room || !country) {
     return (
@@ -92,13 +100,13 @@ const CountryState = ({ roomName, countryName }) => {
         <div className="indicator">
           <span className="indicator-label">PIB:</span>
           <span className="indicator-value">
-            {countryState.economy.gdp.value} {countryState.economy.gdp.unit}
+            {getNumericValue(countryState.economy.gdp)} {typeof countryState.economy.gdp === 'object' ? countryState.economy.gdp.unit : 'bi USD'}
           </span>
         </div>
         <div className="indicator">
           <span className="indicator-label">Tesouro:</span>
           <span className="indicator-value">
-            {countryState.economy.treasury.value} {countryState.economy.treasury.unit}
+            {getNumericValue(countryState.economy.treasury)} {typeof countryState.economy.treasury === 'object' ? countryState.economy.treasury.unit : 'bi USD'}
           </span>
         </div>
         
@@ -106,8 +114,8 @@ const CountryState = ({ roomName, countryName }) => {
         {countryState.economy.commoditiesBalance && (
           <div className="indicator">
             <span className="indicator-label">Saldo de Commodities:</span>
-            <span className={`indicator-value ${countryState.economy.commoditiesBalance.value >= 0 ? 'positive' : 'negative'}`}>
-              {formatValueWithSign(countryState.economy.commoditiesBalance.value)}
+            <span className={`indicator-value ${getNumericValue(countryState.economy.commoditiesBalance) >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(getNumericValue(countryState.economy.commoditiesBalance))}
             </span>
           </div>
         )}
@@ -115,8 +123,8 @@ const CountryState = ({ roomName, countryName }) => {
         {countryState.economy.manufacturesBalance && (
           <div className="indicator">
             <span className="indicator-label">Saldo de Manufaturas:</span>
-            <span className={`indicator-value ${countryState.economy.manufacturesBalance.value >= 0 ? 'positive' : 'negative'}`}>
-              {formatValueWithSign(countryState.economy.manufacturesBalance.value)}
+            <span className={`indicator-value ${getNumericValue(countryState.economy.manufacturesBalance) >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(getNumericValue(countryState.economy.manufacturesBalance))}
             </span>
           </div>
         )}

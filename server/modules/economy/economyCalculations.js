@@ -59,32 +59,111 @@ function performEconomicCalculations(countryState, staticData, updates = {}) {
   
   // Apply any manual updates first
   if (updates.issueDebtBonds && updates.bondAmount > 0) {
+    // Verificar e adaptar estrutura do treasury (objeto ou número)
+    let currentTreasury = 0;
+    if (typeof updatedEconomy.treasury === 'object' && updatedEconomy.treasury.value !== undefined) {
+      currentTreasury = updatedEconomy.treasury.value;
+    } else if (typeof updatedEconomy.treasury === 'number') {
+      currentTreasury = updatedEconomy.treasury;
+    }
+    
+    // Verificar e adaptar estrutura do publicDebt (objeto ou número)
+    let currentPublicDebt = 0;
+    if (staticData.economy?.publicDebt) {
+      if (typeof staticData.economy.publicDebt === 'object' && staticData.economy.publicDebt.value !== undefined) {
+        currentPublicDebt = staticData.economy.publicDebt.value;
+      } else if (typeof staticData.economy.publicDebt === 'number') {
+        currentPublicDebt = staticData.economy.publicDebt;
+      }
+    }
+    
     const bondResult = issueDebtBonds(
-      updatedEconomy.treasury.value,
-      staticData.economy?.publicDebt?.value || 0,
+      currentTreasury,
+      currentPublicDebt,
       updates.bondAmount
     );
     
-    updatedEconomy.treasury.value = bondResult.treasury;
+    // Atualizar treasury conforme estrutura (objeto ou número)
+    if (typeof updatedEconomy.treasury === 'object') {
+      updatedEconomy.treasury.value = bondResult.treasury;
+    } else {
+      updatedEconomy.treasury = { value: bondResult.treasury, unit: 'bi USD' };
+    }
+    
     // Note: Public debt is stored in static data, we'll return it separately
     updates.publicDebtResult = bondResult.publicDebt;
   }
   
   // Calculate GDP growth based on employment
   if (staticData.economy?.unemployment !== undefined) {
+    // Verificar e adaptar estrutura do gdp (objeto ou número)
+    let currentGdp = 0;
+    if (typeof updatedEconomy.gdp === 'object' && updatedEconomy.gdp.value !== undefined) {
+      currentGdp = updatedEconomy.gdp.value;
+    } else if (typeof updatedEconomy.gdp === 'number') {
+      currentGdp = updatedEconomy.gdp;
+    }
+    
     const newGdp = calculateGdpGrowth(
-      updatedEconomy.gdp.value,
+      currentGdp,
       staticData.economy.unemployment
     );
     
-    updatedEconomy.gdp.value = newGdp;
+    // Atualizar gdp conforme estrutura (objeto ou número)
+    if (typeof updatedEconomy.gdp === 'object') {
+      updatedEconomy.gdp.value = newGdp;
+    } else {
+      updatedEconomy.gdp = { value: newGdp, unit: 'bi USD' };
+    }
   }
   
   // Recalcular a produção baseada no PIB atualizado
   if (updatedEconomy.services && updatedEconomy.commodities && updatedEconomy.manufactures) {
-    updatedEconomy.servicesOutput.value = Math.round((updatedEconomy.gdp.value * updatedEconomy.services.value / 100) * 100) / 100;
-    updatedEconomy.commoditiesOutput.value = Math.round((updatedEconomy.gdp.value * updatedEconomy.commodities.value / 100) * 100) / 100;
-    updatedEconomy.manufacturesOutput.value = Math.round((updatedEconomy.gdp.value * updatedEconomy.manufactures.value / 100) * 100) / 100;
+    // Obter valor do GDP com suporte para estrutura objeto ou número
+    let gdpValue = 0;
+    if (typeof updatedEconomy.gdp === 'object' && updatedEconomy.gdp.value !== undefined) {
+      gdpValue = updatedEconomy.gdp.value;
+    } else if (typeof updatedEconomy.gdp === 'number') {
+      gdpValue = updatedEconomy.gdp;
+    }
+    
+    // Obter percentuais dos setores com suporte para estrutura objeto ou número
+    let servicesValue = 0;
+    if (typeof updatedEconomy.services === 'object' && updatedEconomy.services.value !== undefined) {
+      servicesValue = updatedEconomy.services.value;
+    } else if (typeof updatedEconomy.services === 'number') {
+      servicesValue = updatedEconomy.services;
+    }
+    
+    let commoditiesValue = 0;
+    if (typeof updatedEconomy.commodities === 'object' && updatedEconomy.commodities.value !== undefined) {
+      commoditiesValue = updatedEconomy.commodities.value;
+    } else if (typeof updatedEconomy.commodities === 'number') {
+      commoditiesValue = updatedEconomy.commodities;
+    }
+    
+    let manufacturesValue = 0;
+    if (typeof updatedEconomy.manufactures === 'object' && updatedEconomy.manufactures.value !== undefined) {
+      manufacturesValue = updatedEconomy.manufactures.value;
+    } else if (typeof updatedEconomy.manufactures === 'number') {
+      manufacturesValue = updatedEconomy.manufactures;
+    }
+    
+    // Calcular outputs
+    updatedEconomy.servicesOutput = { 
+      value: Math.round((gdpValue * servicesValue / 100) * 100) / 100,
+      unit: 'bi USD'
+    };
+    
+    updatedEconomy.commoditiesOutput = { 
+      value: Math.round((gdpValue * commoditiesValue / 100) * 100) / 100,
+      unit: 'bi USD'
+    };
+    
+    updatedEconomy.manufacturesOutput = { 
+      value: Math.round((gdpValue * manufacturesValue / 100) * 100) / 100,
+      unit: 'bi USD'
+    };
   }
   
   // Aplicar impacto dos acordos comerciais, se fornecidos

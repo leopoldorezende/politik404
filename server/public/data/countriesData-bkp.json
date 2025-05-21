@@ -119,6 +119,310 @@
       }
     }
   },
+  "Nigeria": {
+    "name": "Nigeria",
+    "population": 223000000,
+    "hdi": 0.535,
+    "borders": [
+      { "country": "Benin", "type": "land", "enabled": true },
+      { "country": "Niger", "type": "land", "enabled": true },
+      { "country": "Chad", "type": "land", "enabled": true },
+      { "country": "Cameroon", "type": "land", "enabled": true }
+    ],
+    "defense": { 
+      "navy": 30, 
+      "airforce": 45, 
+      "army": 65, 
+      "missiles": 25, 
+      "nuclearCapability": false 
+    },
+    "politics": {
+      "parliamentSupport": 60,
+      "mediaSupport": 50,
+      "protests": 3.5,
+      "opposition": { 
+        "strength": 30, 
+        "foreignConnections": [] 
+      }
+    },
+    "economy": {
+      "popularity": 45,
+      "unemployment": 13.0,
+      "interestRate": 18.75,
+      "taxBurden": 5,
+      "publicServices": 12,
+      "treasury": 75,
+      "gdp": 477,
+      "gdpGrowth": 2.9,
+      "publicDebt": 110,
+      "publicDebtToGdp": 23.1,
+      "inflation": 21.0,
+      "creditRating": "B",  
+      "previousQuarterGDP": 470,
+      "quarterlyGrowth": 0.007,
+      "gdpHistory": [477],
+      "inflationHistory": [0.21],
+      "popularityHistory": [45],
+      "unemploymentHistory": [13.0],
+      "debtRecords": [],
+      "commodities": {
+        "value": 306,
+        "gdpShare": 64,
+        "domesticConsumption": 200
+      },
+      "manufactures": {
+        "value": 72,
+        "gdpShare": 15,
+        "domesticConsumption": 54 
+      },
+      "services": {
+        "value": 99,
+        "gdpShare": 21
+      }
+    }
+  },
+  "Egypt": {
+    "name": "Egypt",
+    "population": 112000000,
+    "hdi": 0.731,
+    "borders": [
+      { "country": "Libya", "type": "land", "enabled": true },
+      { "country": "Sudan", "type": "land", "enabled": true },
+      { "country": "Israel", "type": "land", "enabled": true },
+      { "country": "Saudi Arabia", "type": "sea", "enabled": true },
+      { "country": "Jordan", "type": "sea", "enabled": true }
+    ],
+    "defense": {
+      "navy": 55,
+      "airforce": 60,
+      "army": 70,
+      "missiles": 50,
+      "nuclearCapability": false
+    },
+    "politics": {
+      "parliamentSupport": 75,
+      "mediaSupport": 60,
+      "protests": 2.0,
+      "opposition": {
+        "strength": 28,
+        "foreignConnections": []
+      }
+    },
+    "economy": {
+      "popularity": 52,
+      "unemployment": 9.0,
+      "interestRate": 19.25,
+      "taxBurden": 14,
+      "publicServices": 18,
+      "treasury": 98,
+      "gdp": 387,
+      "gdpGrowth": 3.0,
+      "publicDebt": 164,
+      "publicDebtToGdp": 42.3,
+      "inflation": 30.0,
+      "creditRating": "AA",
+      "previousQuarterGDP": 387,
+      "quarterlyGrowth": 0.03,
+      "gdpHistory": [387],
+      "inflationHistory": [0.30],
+      "popularityHistory": [52],
+      "unemploymentHistory": [9.0],
+      "debtRecords": [],
+      "commodities": {
+        "value": 215,
+        "gdpShare": 55,
+        "domesticConsumption": 145
+      },
+      "manufactures": {
+        "value": 116,
+        "gdpShare": 30,
+        "domesticConsumption": 87
+      },
+      "services": {
+        "value": 58,
+        "gdpShare": 15
+      }
+    }
+  },
+  "Canada": {
+    "name": "Canada",
+    "population": 38000000,
+    "hdi": 0.929,
+    "borders": [
+      { "country": "United States", "type": "land", "enabled": true }
+    ],
+    "defense": {
+      "navy": 70,
+      "airforce": 65,
+      "army": 60,
+      "missiles": 50,
+      "nuclearCapability": false
+    },
+    "politics": {
+      "parliamentSupport": 60,
+      "mediaSupport": 55,
+      "protests": 3.2,
+      "opposition": {
+        "strength": 20,
+        "foreignConnections": []
+      }
+    },
+    "economy": {
+      "popularity": 65,
+      "unemployment": 5.5,
+      "interestRate": 4.5,
+      "taxBurden": 33,
+      "publicServices": 40,
+      "treasury": 200,
+      "gdp": 1800,
+      "gdpGrowth": 1.8,
+      "publicDebt": 1500,
+      "publicDebtToGdp": 83.0,
+      "inflation": 3.0,
+      "creditRating": "AA",
+      "previousQuarterGDP": 1800,
+      "quarterlyGrowth": 0.018,
+      "gdpHistory": [1800],
+      "inflationHistory": [0.03],
+      "popularityHistory": [65],
+      "unemploymentHistory": [5.5],
+      "debtRecords": [],
+      "commodities": {
+        "value": 1300,
+        "gdpShare": 15,
+        "domesticConsumption": 700
+      },
+      "manufactures": {
+        "value": 800,
+        "gdpShare": 10,
+        "domesticConsumption": 500
+      },
+      "services": {
+        "value": 1350,
+        "gdpShare": 75
+      }
+    }
+  },
+  "Japan": {
+    "name": "Japan",
+    "population": 124800000,
+    "hdi": 0.925,
+    "borders": [
+      { "country": "South Korea", "type": "sea", "enabled": true },
+      { "country": "Russia", "type": "sea", "enabled": true },
+      { "country": "China", "type": "sea", "enabled": true },
+      { "country": "Taiwan", "type": "sea", "enabled": true },
+      { "country": "United States", "type": "sea", "enabled": true }
+    ],
+    "defense": {
+      "navy": 60,
+      "airforce": 55,
+      "army": 50,
+      "missiles": 35,
+      "nuclearCapability": false
+    },
+    "politics": {
+      "parliamentSupport": 58,
+      "mediaSupport": 54,
+      "protests": 0.8,
+      "opposition": {
+        "strength": 15,
+        "foreignConnections": ["China", "Russia", "North Korea"]
+      }
+    },
+    "economy": {
+      "popularity": 50,
+      "unemployment": 2.6,
+      "interestRate": 0.5,
+      "taxBurden": 34,
+      "publicServices": 42,
+      "treasury": 1200,
+      "gdp": 4800,
+      "gdpGrowth": 1.2,
+      "publicDebt": 12480,
+      "publicDebtToGdp": 260.0,
+      "inflation": 2.5,
+      "creditRating": "AA",
+      "previousQuarterGDP": 4800,
+      "quarterlyGrowth": 0.012,
+      "gdpHistory": [4800],
+      "inflationHistory": [0.025],
+      "popularityHistory": [50],
+      "unemploymentHistory": [2.6],
+      "debtRecords": [],
+      "commodities": {
+        "value": 480,
+        "gdpShare": 10,
+        "domesticConsumption": 384
+      },
+      "manufactures": {
+        "value": 1680,
+        "gdpShare": 35,
+        "domesticConsumption": 1008
+      },
+      "services": {
+        "value": 2640,
+        "gdpShare": 55
+      }
+    }
+  },
+  "Australia": {
+    "name": "Australia",
+    "population": 26000000,
+    "hdi": 0.951,
+    "borders": [],
+    "defense": {
+      "navy": 60,
+      "airforce": 60,
+      "army": 50,
+      "missiles": 55,
+      "nuclearCapability": false
+    },
+    "politics": {
+      "parliamentSupport": 62,
+      "mediaSupport": 58,
+      "protests": 1.5,
+      "opposition": {
+        "strength": 25,
+        "foreignConnections": ["United States", "United Kingdom"]
+      }
+    },
+    "economy": {
+      "popularity": 60,
+      "unemployment": 3.6,
+      "interestRate": 4.35,
+      "taxBurden": 30,
+      "publicServices": 35,
+      "treasury": 120,
+      "gdp": 1700,
+      "gdpGrowth": 1.5,
+      "publicDebt": 950,
+      "publicDebtToGdp": 55.9,
+      "inflation": 3.2,
+      "creditRating": "AA",
+      "previousQuarterGDP": 1700,
+      "quarterlyGrowth": 0.015,
+      "gdpHistory": [1700],
+      "inflationHistory": [0.032],
+      "popularityHistory": [60],
+      "unemploymentHistory": [3.6],
+      "debtRecords": [],
+      "commodities": {
+        "value": 510,
+        "gdpShare": 30,
+        "domesticConsumption": 320
+      },
+      "manufactures": {
+        "value": 340,
+        "gdpShare": 20,
+        "domesticConsumption": 280
+      },
+      "services": {
+        "value": 850,
+        "gdpShare": 50
+      }
+    }
+  },
   "Indonesia": {
     "name": "Indonesia",
     "population": 277000000,
@@ -532,6 +836,69 @@
       }
     }
   },
+  "Turkey": {
+    "name": "Turkey",
+    "population": 86000000,
+    "hdi": 0.838,
+    "borders": [
+      { "country": "Greece", "type": "land", "enabled": true },
+      { "country": "Syria", "type": "land", "enabled": true },
+      { "country": "Iran", "type": "land", "enabled": true },
+      { "country": "Iraq", "type": "land", "enabled": true },
+      { "country": "Armenia", "type": "land", "enabled": true }
+    ],
+    "defense": {
+      "navy": 55,
+      "airforce": 65,
+      "army": 75,
+      "missiles": 60,
+      "nuclearCapability": false
+    },
+    "politics": {
+      "parliamentSupport": 63,
+      "mediaSupport": 48,
+      "protests": 2.7,
+      "opposition": {
+        "strength": 40,
+        "foreignConnections": ["Russia", "Qatar"]
+      }
+    },
+    "economy": {
+      "popularity": 50,
+      "unemployment": 9.5,
+      "interestRate": 45.0,
+      "taxBurden": 23,
+      "publicServices": 28,
+      "treasury": 80,
+      "gdp": 905,
+      "gdpGrowth": 4.3,
+      "publicDebt": 250,
+      "publicDebtToGdp": 27.6,
+      "inflation": 50.0,
+      "creditRating": "AA",
+      "previousQuarterGDP": 905,
+      "quarterlyGrowth": 0.043,
+      "gdpHistory": [905],
+      "inflationHistory": [0.5],
+      "popularityHistory": [50],
+      "unemploymentHistory": [9.5],
+      "debtRecords": [],
+      "commodities": {
+        "value": 316,
+        "gdpShare": 35,
+        "domesticConsumption": 230
+      },
+      "manufactures": {
+        "value": 362,
+        "gdpShare": 40,
+        "domesticConsumption": 290
+      },
+      "services": {
+        "value": 227,
+        "gdpShare": 25
+      }
+    }
+  },
   "Germany": {
     "name": "Germany",
     "population": 84000000,
@@ -592,6 +959,65 @@
       }
     }
   },
+  "France": {
+    "name": "France",
+    "population": 68000000,
+    "hdi": 0.903,
+    "borders": [
+      { "country": "Germany", "type": "land", "enabled": true },
+      { "country": "Italy", "type": "land", "enabled": true },
+      { "country": "Spain", "type": "land", "enabled": true },
+      { "country": "Belgium", "type": "land", "enabled": true }
+    ],
+    "defense": { 
+      "navy": 60, 
+      "airforce": 65, 
+      "army": 60, 
+      "missiles": 70,
+      "nuclearCapability": true
+    },
+    "politics": {
+      "parliamentSupport": 58,
+      "mediaSupport": 60,
+      "protests": 2.6,
+      "opposition": { "strength": 35, "foreignConnections": ["Germany", "Italy"] }
+    },
+    "economy": {
+      "popularity": 54, 
+      "unemployment": 7.5, 
+      "interestRate": 4.25, 
+      "taxBurden": 42, 
+      "publicServices": 46,
+      "treasury": 590, 
+      "gdp": 3600, 
+      "gdpGrowth": 1.3, 
+      "publicDebt": 3300, 
+      "publicDebtToGdp": 91.6, 
+      "inflation": 3.1,
+      "creditRating": "AA", 
+      "previousQuarterGDP": 3600, 
+      "quarterlyGrowth": 0.013,
+      "gdpHistory": [3600], 
+      "inflationHistory": [0.031], 
+      "popularityHistory": [54], 
+      "unemploymentHistory": [7.5], 
+      "debtRecords": [],
+      "commodities": { 
+        "value": 432, 
+        "gdpShare": 12, 
+        "domesticConsumption": 320
+      },
+      "manufactures": { 
+        "value": 1800, 
+        "gdpShare": 50, 
+        "domesticConsumption": 1350
+      },
+      "services": { 
+        "value": 1368, 
+        "gdpShare": 38 
+      }
+    }
+  },
   "Algeria": {
     "name": "Algeria",
     "population": 45000000,
@@ -647,6 +1073,123 @@
       "services": { 
         "value": 39, 
         "gdpShare": 20 
+      }
+    }
+  },
+  "Argentina": {
+    "name": "Argentina",
+    "population": 46000000,
+    "hdi": 0.849,
+    "borders": [
+      { "country": "Brazil", "type": "land", "enabled": true },
+      { "country": "Chile", "type": "land", "enabled": true },
+      { "country": "Paraguay", "type": "land", "enabled": true }
+    ],
+    "defense": { 
+      "navy": 30, 
+      "airforce": 40, 
+      "army": 50, 
+      "missiles": 20,
+      "nuclearCapability": false
+    },
+    "politics": {
+      "parliamentSupport": 52,
+      "mediaSupport": 43,
+      "protests": 3.5,
+      "opposition": { "strength": 44, "foreignConnections": ["Brazil", "China"] }
+    },
+    "economy": {
+      "popularity": 48, 
+      "unemployment": 10.8, 
+      "interestRate": 97.0, 
+      "taxBurden": 29, 
+      "publicServices": 25,
+      "treasury": 30, 
+      "gdp": 640, 
+      "gdpGrowth": -2.5, 
+      "publicDebt": 390, 
+      "publicDebtToGdp": 60.9, 
+      "inflation": 110.0,
+      "creditRating": "AA", 
+      "previousQuarterGDP": 640, 
+      "quarterlyGrowth": -0.025,
+      "gdpHistory": [640], 
+      "inflationHistory": [1.1], 
+      "popularityHistory": [48], 
+      "unemploymentHistory": [10.8], 
+      "debtRecords": [],
+      "commodities": { 
+        "value": 288, 
+        "gdpShare": 45, 
+        "domesticConsumption": 200
+      },
+      "manufactures": { 
+        "value": 224, 
+        "gdpShare": 35, 
+        "domesticConsumption": 180
+      },
+      "services": { 
+        "value": 128, 
+        "gdpShare": 20 
+      }
+    }
+  },
+  "Italy": {
+    "name": "Italy",
+    "population": 59000000,
+    "hdi": 0.895,
+    "borders": [
+      { "country": "France", "type": "land", "enabled": true },
+      { "country": "Switzerland", "type": "land", "enabled": true },
+      { "country": "Austria", "type": "land", "enabled": true },
+      { "country": "Slovenia", "type": "land", "enabled": true }
+    ],
+    "defense": { 
+      "navy": 50, 
+      "airforce": 60, 
+      "army": 55, 
+      "missiles": 45,
+      "nuclearCapability": false
+    },
+    "politics": {
+      "parliamentSupport": 53,
+      "mediaSupport": 52,
+      "protests": 2.2,
+      "opposition": { "strength": 32, "foreignConnections": ["France", "Germany"] }
+    },
+    "economy": {
+      "popularity": 52, 
+      "unemployment": 8.2, 
+      "interestRate": 4.3, 
+      "taxBurden": 40, 
+      "publicServices": 40,
+      "treasury": 420, 
+      "gdp": 3100, 
+      "gdpGrowth": 0.9, 
+      "publicDebt": 2900, 
+      "publicDebtToGdp": 93.5, 
+      "inflation": 2.9,
+      "creditRating": "AA", 
+      "previousQuarterGDP": 3100, 
+      "quarterlyGrowth": 0.009,
+      "gdpHistory": [3100], 
+      "inflationHistory": [0.029], 
+      "popularityHistory": [52], 
+      "unemploymentHistory": [8.2], 
+      "debtRecords": [],
+      "commodities": { 
+        "value": 465, 
+        "gdpShare": 15, 
+        "domesticConsumption": 360
+      },
+      "manufactures": { 
+        "value": 1550, 
+        "gdpShare": 50, 
+        "domesticConsumption": 1200
+      },
+      "services": { 
+        "value": 1085, 
+        "gdpShare": 35 
       }
     }
   },

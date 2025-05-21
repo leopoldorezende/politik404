@@ -116,15 +116,6 @@ function createTradeAgreement(io, gameState, roomName, agreementData) {
     timestamp: Date.now()
   });
   
-  // Notificar o criador especificamente que o acordo foi criado
-  const originSocketId = gameState.usernameToSocketId?.get(originPlayer);
-  if (originSocketId) {
-    const originSocket = io.sockets.sockets.get(originSocketId);
-    if (originSocket && originSocket.connected) {
-      originSocket.emit('tradeAgreementCreated', originAgreement);
-    }
-  }
-  
   return originAgreement;
 }
 

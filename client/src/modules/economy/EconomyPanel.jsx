@@ -135,6 +135,14 @@ const EconomyPanel = () => {
     );
   }
   
+  // Função para obter valor numérico de propriedade que pode estar em diferentes formatos
+  const getNumericValue = (property) => {
+    if (property === undefined || property === null) return 0;
+    if (typeof property === 'number') return property;
+    if (typeof property === 'object' && property.value !== undefined) return property.value;
+    return 0;
+  };
+  
   return (
     <div className="economy-panel">
       
@@ -154,7 +162,7 @@ const EconomyPanel = () => {
               onChange={(e) => handleInterestRateChange(e.target.value)}
             />
             <button 
-              disabled={staticEconomyData && interestRate === staticEconomyData.interestRate}
+              disabled={staticEconomyData && interestRate === getNumericValue(staticEconomyData.interestRate)}
             >
               Aplicar
             </button>
@@ -175,7 +183,7 @@ const EconomyPanel = () => {
               onChange={(e) => handleTaxRateChange(e.target.value)}
             />
             <button 
-              disabled={staticEconomyData && taxRate === staticEconomyData.taxBurden}
+              disabled={staticEconomyData && taxRate === getNumericValue(staticEconomyData.taxBurden)}
             >
               Aplicar
             </button>
@@ -196,7 +204,7 @@ const EconomyPanel = () => {
               onChange={(e) => handlePublicServicesChange(e.target.value)}
             />
             <button 
-              disabled={staticEconomyData && publicServices === staticEconomyData.publicServices}
+              disabled={staticEconomyData && publicServices === getNumericValue(staticEconomyData.publicServices)}
             >
               Aplicar
             </button>
@@ -248,16 +256,16 @@ const EconomyPanel = () => {
           <span>PIB:</span>
           {countryState?.economy ? (
             <>
-              {countryState.economy.gdp.value} {countryState.economy.gdp.unit}
-              <span className={`stat-value ${staticEconomyData?.gdpGrowth >= 0 ? 'positive' : 'negative'}`}>
-                {staticEconomyData?.gdpGrowth >= 0 ? '+' : ''}{staticEconomyData?.gdpGrowth || 0}%
+              {getNumericValue(countryState.economy.gdp)} {typeof countryState.economy.gdp === 'object' ? countryState.economy.gdp.unit : 'bi USD'}
+              <span className={`stat-value ${getNumericValue(staticEconomyData?.gdpGrowth) >= 0 ? 'positive' : 'negative'}`}>
+                {getNumericValue(staticEconomyData?.gdpGrowth) >= 0 ? '+' : ''}{getNumericValue(staticEconomyData?.gdpGrowth) || 0}%
               </span>
             </>
           ) : (
             <>
-              {staticEconomyData?.gdp?.value || 0} {staticEconomyData?.gdp?.unit || 'bilhões'}
-              <span className={`stat-value ${staticEconomyData?.gdpGrowth >= 0 ? 'positive' : 'negative'}`}>
-                {staticEconomyData?.gdpGrowth >= 0 ? '+' : ''}{staticEconomyData?.gdpGrowth || 0}%
+              {getNumericValue(staticEconomyData?.gdp)} {typeof staticEconomyData?.gdp === 'object' ? staticEconomyData?.gdp?.unit : 'bi USD'}
+              <span className={`stat-value ${getNumericValue(staticEconomyData?.gdpGrowth) >= 0 ? 'positive' : 'negative'}`}>
+                {getNumericValue(staticEconomyData?.gdpGrowth) >= 0 ? '+' : ''}{getNumericValue(staticEconomyData?.gdpGrowth) || 0}%
               </span>
             </>
           )}
@@ -266,14 +274,14 @@ const EconomyPanel = () => {
         <div className="stat-group">
           <div className="stat">
             <span className="stat-label">Inflação:</span>
-            <span className={`stat-value ${staticEconomyData?.inflation <= 3 ? 'positive' : 'negative'}`}>
-              {staticEconomyData?.inflation || 0}%
+            <span className={`stat-value ${getNumericValue(staticEconomyData?.inflation) <= 3 ? 'positive' : 'negative'}`}>
+              {getNumericValue(staticEconomyData?.inflation) || 0}%
             </span>
           </div>
           <div className="stat">
             <span className="stat-label">Desemprego:</span>
-            <span className={`stat-value ${staticEconomyData?.unemployment <= 5 ? 'positive' : 'negative'}`}>
-              {staticEconomyData?.unemployment || 0}%
+            <span className={`stat-value ${getNumericValue(staticEconomyData?.unemployment) <= 5 ? 'positive' : 'negative'}`}>
+              {getNumericValue(staticEconomyData?.unemployment) || 0}%
             </span>
           </div>
         </div>
@@ -284,20 +292,20 @@ const EconomyPanel = () => {
             <span className="stat-value">
               {countryState?.economy ? (
                 <>
-                  {countryState.economy.treasury.value} {countryState.economy.treasury.unit}
+                  {getNumericValue(countryState.economy.treasury)} {typeof countryState.economy.treasury === 'object' ? countryState.economy.treasury.unit : 'bi USD'}
                 </>
               ) : (
                 <>
-                  {staticEconomyData?.treasury?.value || 0} {staticEconomyData?.treasury?.unit || 'bilhões'}
+                  {getNumericValue(staticEconomyData?.treasury)} {typeof staticEconomyData?.treasury === 'object' ? staticEconomyData?.treasury?.unit : 'bi USD'}
                 </>
               )}
             </span>
           </div>
           <div className="stat">
             <span className="stat-label">Dívida Pública:</span>
-            <span className={`stat-value ${staticEconomyData?.publicDebtToGdp <= 60 ? 'positive' : 'negative'}`}>
-              {staticEconomyData?.publicDebt?.value || 0} {staticEconomyData?.publicDebt?.unit || 'bilhões'} 
-              ({staticEconomyData?.publicDebtToGdp || 0}% do PIB)
+            <span className={`stat-value ${getNumericValue(staticEconomyData?.publicDebtToGdp) <= 60 ? 'positive' : 'negative'}`}>
+              {getNumericValue(staticEconomyData?.publicDebt)} {typeof staticEconomyData?.publicDebt === 'object' ? staticEconomyData?.publicDebt?.unit : 'bi USD'} 
+              ({getNumericValue(staticEconomyData?.publicDebtToGdp) || 0}% do PIB)
             </span>
           </div>
         </div>
@@ -305,8 +313,8 @@ const EconomyPanel = () => {
         <div className="stat-group">
           <div className="stat">
             <span className="stat-label">Popularidade:</span>
-            <span className={`stat-value ${staticEconomyData?.popularity >= 50 ? 'positive' : 'negative'}`}>
-              {staticEconomyData?.popularity || 0}%
+            <span className={`stat-value ${getNumericValue(staticEconomyData?.popularity) >= 50 ? 'positive' : 'negative'}`}>
+              {getNumericValue(staticEconomyData?.popularity) || 0}%
             </span>
           </div>
         </div>

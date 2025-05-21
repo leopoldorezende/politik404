@@ -1,14 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { socketApi } from '../../services/socketClient';
 import './TradePanel.css';
 
 const TradePanel = () => {
-  
   // Estados Redux com fallbacks seguros
-  const myCountry = useSelector(state => state.game?.myCountry || 'Seu País');
+  const myCountry = useSelector(state => state.game?.myCountry);
   const players = useSelector(state => state.game?.players || []);
   const currentRoom = useSelector(state => state.rooms.currentRoom);
+  const countriesData = useSelector(state => state.game.countriesData);
+  
+  // Estado dinâmico do país do jogador
   const countryState = useSelector(state => {
     if (!currentRoom?.name || !myCountry) return null;
     return state.countryState?.roomStates?.[currentRoom.name]?.[myCountry] || null;
@@ -16,12 +18,10 @@ const TradePanel = () => {
   
   // Acordos comerciais do Redux
   const tradeAgreements = useSelector(state => state.trade?.tradeAgreements || []);
-  const tradeStats = useSelector(state => state.trade?.tradeStats || {
-    commodityImports: 0,
-    commodityExports: 0,
-    manufactureImports: 0,
-    manufactureExports: 0,
-  });
+  
+  // Estado local
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [needsRefresh, setNeedsRefresh] = useState(false);
   
   // Efeito para solicitar acordos comerciais ao montar o componente
   useEffect(() => {
@@ -29,29 +29,45 @@ const TradePanel = () => {
       // Solicitar lista atualizada de acordos comerciais
       socketApi.getTradeAgreements();
     }
-  }, [currentRoom]);
+  }, [currentRoom, needsRefresh]);
 
+  // Função para obter valor numérico de propriedade que pode estar em diferentes formatos
+  const getNumericValue = (property) => {
+    if (property === undefined || property === null) return 0;
+    if (typeof property === 'number') return property;
+    if (typeof property === 'object' && property.value !== undefined) return property.value;
+    return 0;
+  };
+  
   // Função para cancelar acordo comercial
   const handleCancelAgreement = (agreementId) => {
-    if (confirm('Tem certeza que deseja cancelar este acordo comercial?')) {
+    if (window.confirm('Tem certeza que deseja cancelar este acordo comercial?')) {
+      setIsSubmitting(true);
       socketApi.cancelTradeAgreement(agreementId);
+      
+      // Atualizar após um curto período para permitir que o servidor processe
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setNeedsRefresh(prev => !prev); // Toggle para forçar refresh
+      }, 1000);
     }
   };
   
-  // Formatar valor com sinal
+  // Formatar valor com sinal e arredondar para 1 casa decimal
   const formatValueWithSign = (value) => {
     if (value === undefined || value === null) return '0';
-    return (value >= 0 ? '+' : '') + value.toFixed(2) + ' bi';
+    const num = Number(value);
+    return (num >= 0 ? '+' : '') + num.toFixed(1) + ' bi';
   };
   
   // Formatar porcentagem
   const formatPercent = (value) => {
     if (value === undefined || value === null) return '0%';
-    return value + '%';
+    return Math.round(Number(value)) + '%';
   };
   
   // Versão minimalista quando não há país selecionado
-  if (!myCountry || myCountry === 'Seu País') {
+  if (!myCountry) {
     return (
       <div className="trade-panel">
         <h3>Comércio Internacional</h3>
@@ -75,8 +91,8 @@ const TradePanel = () => {
     agreement.originCountry === myCountry && agreement.country !== myCountry
   );
 
-  // Dados econômicos
-  const economy = countryState.economy;
+  // Dados econômicos - acessando de forma segura com fallbacks
+  const economy = countryState.economy || {};
   
   // Obter as estatísticas comerciais já calculadas pelo servidor
   const tradeStatistics = economy.tradeStats || {
@@ -88,7 +104,6 @@ const TradePanel = () => {
   
   return (
     <div className="trade-panel">
-
       <div className="trade-agreements-section">
         <h4>Acordos Comerciais</h4>
 
@@ -106,8 +121,9 @@ const TradePanel = () => {
                 <button 
                   className="action-btn danger"
                   onClick={() => handleCancelAgreement(agreement.id)}
+                  disabled={isSubmitting}
                 >
-                  Cancelar Acordo
+                  {isSubmitting ? 'Cancelando...' : 'Cancelar Acordo'}
                 </button>
               </div>
             ))}
@@ -125,24 +141,24 @@ const TradePanel = () => {
         <div className="balance-item">
           <div className="balance-header">
             <span className="balance-title">Commodities</span>
-            <div className={`balance-value ${economy.commoditiesBalance?.value >= 0 ? 'positive' : 'negative'}`}>
-              {formatValueWithSign(economy.commoditiesBalance?.value)}
+            <div className={`balance-value ${getNumericValue(economy.commoditiesBalance) >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(getNumericValue(economy.commoditiesBalance))}
             </div>
           </div>
           <div className="balance-details">
             <div className="balance-row">
               <span className="balance-label">Produção:</span>
               <div className="balance-values-container">
-                <span className="balance-number">{economy.commoditiesOutput?.value || 0} bi</span>
+                <span className="balance-number">{getNumericValue(economy.commoditiesOutput).toFixed(1)} bi</span>
               </div>
             </div>
             
             {/* Importações de commodities */}
             {tradeStatistics.commodityImports > 0 && (
               <div className="balance-row">
-                <span className="balance-label">Importações:</span>
+                <span className="balance-label trade-import">Importações:</span>
                 <div className="balance-values-container">
-                  <span className="balance-number positive">+{tradeStatistics.commodityImports.toFixed(2)} bi</span>
+                  <span className="balance-number positive">+{tradeStatistics.commodityImports.toFixed(1)} bi</span>
                 </div>
               </div>
             )}
@@ -150,9 +166,9 @@ const TradePanel = () => {
             {/* Exportações de commodities */}
             {tradeStatistics.commodityExports > 0 && (
               <div className="balance-row">
-                <span className="balance-label">Exportações:</span>
+                <span className="balance-label trade-export">Exportações:</span>
                 <div className="balance-values-container">
-                  <span className="balance-number negative">-{tradeStatistics.commodityExports.toFixed(2)} bi</span>
+                  <span className="balance-number negative">-{tradeStatistics.commodityExports.toFixed(1)} bi</span>
                 </div>
               </div>
             )}
@@ -160,9 +176,9 @@ const TradePanel = () => {
             <div className="balance-row">
               <span className="balance-label">Necessidade:</span>
               <div className="balance-values-container">
-                <span className="balance-number">{economy.commoditiesNeeds?.value || 0} bi</span>
+                <span className="balance-number">{getNumericValue(economy.commoditiesNeeds).toFixed(1)} bi</span>
                 <span className="balance-percent">
-                  ({Math.round(economy.commoditiesNeeds?.percentValue || 0)}% PIB)
+                  ({Math.round(getNumericValue(economy.commoditiesNeeds?.percentValue) || 0)}% PIB)
                 </span>
               </div>
             </div>
@@ -172,24 +188,24 @@ const TradePanel = () => {
         <div className="balance-item">
           <div className="balance-header">
             <span className="balance-title">Manufaturas</span>
-            <div className={`balance-value ${economy.manufacturesBalance?.value >= 0 ? 'positive' : 'negative'}`}>
-              {formatValueWithSign(economy.manufacturesBalance?.value)}
+            <div className={`balance-value ${getNumericValue(economy.manufacturesBalance) >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(getNumericValue(economy.manufacturesBalance))}
             </div>
           </div>
           <div className="balance-details">
             <div className="balance-row">
               <span className="balance-label">Produção:</span>
               <div className="balance-values-container">
-                <span className="balance-number">{economy.manufacturesOutput?.value || 0} bi</span>
+                <span className="balance-number">{getNumericValue(economy.manufacturesOutput).toFixed(1)} bi</span>
               </div>
             </div>
             
             {/* Importações de manufaturas */}
             {tradeStatistics.manufactureImports > 0 && (
               <div className="balance-row">
-                <span className="balance-label">Importações:</span>
+                <span className="balance-label trade-import">Importações:</span>
                 <div className="balance-values-container">
-                  <span className="balance-number positive">+{tradeStatistics.manufactureImports.toFixed(2)} bi</span>
+                  <span className="balance-number positive">+{tradeStatistics.manufactureImports.toFixed(1)} bi</span>
                 </div>
               </div>
             )}
@@ -197,9 +213,9 @@ const TradePanel = () => {
             {/* Exportações de manufaturas */}
             {tradeStatistics.manufactureExports > 0 && (
               <div className="balance-row">
-                <span className="balance-label">Exportações:</span>
+                <span className="balance-label trade-export">Exportações:</span>
                 <div className="balance-values-container">
-                  <span className="balance-number negative">-{tradeStatistics.manufactureExports.toFixed(2)} bi</span>
+                  <span className="balance-number negative">-{tradeStatistics.manufactureExports.toFixed(1)} bi</span>
                 </div>
               </div>
             )}
@@ -207,9 +223,9 @@ const TradePanel = () => {
             <div className="balance-row">
               <span className="balance-label">Necessidade:</span>
               <div className="balance-values-container">
-                <span className="balance-number">{economy.manufacturesNeeds?.value || 0} bi</span>
+                <span className="balance-number">{getNumericValue(economy.manufacturesNeeds).toFixed(1)} bi</span>
                 <span className="balance-percent">
-                  ({Math.round(economy.manufacturesNeeds?.percentValue || 0)}% PIB)
+                  ({Math.round(getNumericValue(economy.manufacturesNeeds?.percentValue) || 0)}% PIB)
                 </span>
               </div>
             </div>
@@ -223,43 +239,43 @@ const TradePanel = () => {
           <div className="sector-bar">
             <div className="sector-info">
               <span className="sector-label">Serviços:</span>
-              <span className="sector-value">{formatPercent(economy.services?.value)}</span>
+              <span className="sector-value">{formatPercent(getNumericValue(economy.services))}</span>
             </div>
             <div className="progress-container">
               <div 
                 className="progress-fill services" 
-                style={{ width: `${economy.services?.value || 0}%` }}
+                style={{ width: `${getNumericValue(economy.services)}%` }}
               ></div>
             </div>
-            <span className="sector-output">{economy.servicesOutput?.value || 0} bi</span>
+            <span className="sector-output">{getNumericValue(economy.servicesOutput).toFixed(1)} bi</span>
           </div>
           
           <div className="sector-bar">
             <div className="sector-info">
               <span className="sector-label">Commodities:</span>
-              <span className="sector-value">{formatPercent(economy.commodities?.value)}</span>
+              <span className="sector-value">{formatPercent(getNumericValue(economy.commodities))}</span>
             </div>
             <div className="progress-container">
               <div 
                 className="progress-fill commodities" 
-                style={{ width: `${economy.commodities?.value || 0}%` }}
+                style={{ width: `${getNumericValue(economy.commodities)}%` }}
               ></div>
             </div>
-            <span className="sector-output">{economy.commoditiesOutput?.value || 0} bi</span>
+            <span className="sector-output">{getNumericValue(economy.commoditiesOutput).toFixed(1)} bi</span>
           </div>
           
           <div className="sector-bar">
             <div className="sector-info">
               <span className="sector-label">Manufaturas:</span>
-              <span className="sector-value">{formatPercent(economy.manufactures?.value)}</span>
+              <span className="sector-value">{formatPercent(getNumericValue(economy.manufactures))}</span>
             </div>
             <div className="progress-container">
               <div 
                 className="progress-fill manufactures" 
-                style={{ width: `${economy.manufactures?.value || 0}%` }}
+                style={{ width: `${getNumericValue(economy.manufactures)}%` }}
               ></div>
             </div>
-            <span className="sector-output">{economy.manufacturesOutput?.value || 0} bi</span>
+            <span className="sector-output">{getNumericValue(economy.manufacturesOutput).toFixed(1)} bi</span>
           </div>
         </div>
       </div>

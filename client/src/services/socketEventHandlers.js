@@ -23,6 +23,9 @@ import {
   getMaxReconnectAttempts
 } from './socketConnection';
 
+// Import do serviço de mensagens para mostrar toasts
+import MessageService from '../ui/toast/messageService';
+
 // Configurar todos os eventos do socket
 export const setupSocketEvents = (socket, socketApi) => {
   if (!socket) return;
@@ -172,7 +175,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     
     // Opcional: mostrar alerta para o usuário
     if (data.message) {
-      alert(data.message);
+      MessageService.showWarning(data.message, 5000);
     }
   });
   
@@ -275,42 +278,56 @@ export const setupSocketEvents = (socket, socketApi) => {
     if (window.Audio) {
       try {
         const notificationSound = new Audio('/notification.mp3');
-        notificationSound.play();
+        notificationSound.play().catch(() => {
+          // Som não disponível, continuar normalmente
+        });
       } catch (error) {
-        console.error('Failed to play notification sound:', error);
+        console.debug('Som de notificação não disponível');
       }
     }
     
-    // Nova notificação visual para destacar o país que fez a proposta
-    // const { originCountry, type, product } = proposal;
-    // const productName = product === 'commodity' ? 'commodities' : 'manufaturas';
-    // const actionType = type === 'export' ? 'exportar para você' : 'importar de você';
+    // Mostrar toast de notificação da proposta recebida
+    const { originCountry, type, product, value } = proposal;
+    const productName = product === 'commodity' ? 'commodities' : 'manufaturas';
+    const actionType = type === 'export' ? 'exportar para você' : 'importar de você';
     
-    // Notificação visual (toast) com a proposta recebida
-    // if (MessageService && MessageService.showInfo) {
-    //   MessageService.showInfo(
-    //     `${originCountry} quer ${actionType} ${productName}.`,
-    //     15000 // 15 segundos
-    //   );
-    // }
-    
-    // Este evento é capturado pelo GamePage que exibe o componente TradeProposalPopup
-    // O componente TradeProposalPopup permitirá ao usuário aceitar ou recusar a proposta
-    // e então chamará socketApi.respondToTradeProposal com a decisão do usuário
+    MessageService.showInfo(
+      `${originCountry} quer ${actionType} ${productName} (${value} bi USD)`,
+      10000 // 10 segundos
+    );
   });
   
-  // Handler para receber resposta a uma proposta enviada
+  // Handler para receber resposta a uma proposta enviada (CORRIGIDO)
   socket.on('tradeProposalResponse', (response) => {
-    // console.log('Resposta à proposta de comércio recebida:', response);
+    console.log('Resposta à proposta de comércio recebida:', response);
     
-    // const { accepted, targetCountry, message } = response;
+    const { accepted, targetCountry, message } = response;
     
-    // Notificar o usuário sobre a resposta
-    // if (accepted) {
-    //   MessageService.showSuccess(`${targetCountry} aceitou sua proposta comercial!`);
-    // } else {
-    //   MessageService.showWarning(`${targetCountry} recusou sua proposta comercial.`);
-    // }
+    // Mostrar toast com a resposta
+    if (accepted) {
+      MessageService.showSuccess(
+        `${targetCountry} aceitou sua proposta comercial!`,
+        8000
+      );
+    } else {
+      MessageService.showWarning(
+        `${targetCountry} recusou sua proposta comercial.`,
+        8000
+      );
+    }
+  });
+  
+  // Handler para quando uma proposta é enviada com sucesso
+  socket.on('tradeProposalSent', (response) => {
+    console.log('Proposta de comércio enviada:', response);
+    
+    const { targetPlayer, message } = response;
+    
+    // Mostrar confirmação de envio
+    MessageService.showInfo(
+      `Proposta enviada para ${targetPlayer}`,
+      5000
+    );
   });
   
   // Confirmação de proposta processada (para quem respondeu)
@@ -320,23 +337,20 @@ export const setupSocketEvents = (socket, socketApi) => {
     const { accepted, message } = response;
     
     // Notificar o usuário sobre o processamento
-    // if (accepted) {
-    //   MessageService.showSuccess('Você aceitou a proposta comercial.');
-    // } else {
-    //   MessageService.showInfo('Você recusou a proposta comercial.');
-    // }
+    if (accepted) {
+      MessageService.showSuccess('Você aceitou a proposta comercial.');
+    } else {
+      MessageService.showInfo('Você recusou a proposta comercial.');
+    }
   });
-  
-  // Receber confirmação de que um acordo comercial foi criado
-  socket.on('tradeAgreementCreated', (agreement) => {
-    console.log('Acordo comercial criado:', agreement);
-    store.dispatch(addTradeAgreement(agreement));
-  });
-  
+
   // Receber confirmação de que um acordo comercial foi cancelado
   socket.on('tradeAgreementCancelled', (agreementId) => {
     console.log('Acordo comercial cancelado:', agreementId);
     store.dispatch(removeTradeAgreement(agreementId));
+    
+    // Mostrar toast de confirmação
+    MessageService.showInfo('Acordo comercial cancelado.', 4000);
   });
   
   // Receber lista atualizada de acordos comerciais
@@ -390,6 +404,9 @@ export const setupSocketEvents = (socket, socketApi) => {
                          message.includes('desconectado');
     
     if (!isSilentError) {
+      // Mostrar erro via toast
+      MessageService.showError(message, 6000);
+      
       store.dispatch({
         type: 'error/socketError',
         payload: message
