@@ -6,40 +6,34 @@ import {
   selectCountryDebtSummary,
   selectCountrySectoralBalance,
   initializeCountryEconomy,
-  updateEconomicParameters,
-  setAutoAdvance,
-  selectAutoAdvance,
-  selectAdvanceSpeed
+  updateEconomicParameters
 } from './advancedEconomySlice';
 import advancedEconomyService from './advancedEconomyService';
 import { showSuccess, showError } from '../../ui/toast/messageService';
+import Popup from '../../ui/popup/Popup';
 import './AdvancedEconomyPanel.css';
 
 const AdvancedEconomyPanel = () => {
   const dispatch = useDispatch();
   
-  // Dados do Redux
+  // Dados do Redux com verificações de segurança - APENAS DO PRÓPRIO PAÍS
   const myCountry = useSelector(state => state.game?.myCountry);
-  const currentRoom = useSelector(state => state.rooms.currentRoom);
-  const countriesData = useSelector(state => state.game.countriesData);
+  const currentRoom = useSelector(state => state.rooms?.currentRoom);
+  const countriesData = useSelector(state => state.game?.countriesData);
   
-  // Estados econômicos do país
+  // Estados econômicos APENAS do próprio país
   const countryEconomy = useSelector(state => 
-    selectCountryEconomy(state, currentRoom?.name, myCountry)
+    myCountry ? selectCountryEconomy(state, currentRoom?.name, myCountry) : null
   );
   const economicIndicators = useSelector(state => 
-    selectCountryEconomicIndicators(state, currentRoom?.name, myCountry)
+    myCountry ? selectCountryEconomicIndicators(state, currentRoom?.name, myCountry) : null
   );
   const debtSummary = useSelector(state => 
-    selectCountryDebtSummary(state, currentRoom?.name, myCountry)
+    myCountry ? selectCountryDebtSummary(state, currentRoom?.name, myCountry) : null
   );
   const sectoralBalance = useSelector(state => 
-    selectCountrySectoralBalance(state, currentRoom?.name, myCountry)
+    myCountry ? selectCountrySectoralBalance(state, currentRoom?.name, myCountry) : null
   );
-  
-  // Estados de controle
-  const autoAdvance = useSelector(selectAutoAdvance);
-  const advanceSpeed = useSelector(selectAdvanceSpeed);
   
   // Estados locais
   const [localParameters, setLocalParameters] = useState({
@@ -49,9 +43,9 @@ const AdvancedEconomyPanel = () => {
   });
   const [bondAmount, setBondAmount] = useState('');
   const [isIssuingBonds, setIsIssuingBonds] = useState(false);
-  const [showDebtDetails, setShowDebtDetails] = useState(false);
+  const [showDebtPopup, setShowDebtPopup] = useState(false);
   
-  // Inicializa economia quando componente monta
+  // Inicializa economia quando componente monta - APENAS PARA O PRÓPRIO PAÍS
   useEffect(() => {
     if (currentRoom?.name && myCountry && countriesData?.[myCountry] && !countryEconomy) {
       console.log('Initializing advanced economy for:', myCountry);
@@ -74,7 +68,7 @@ const AdvancedEconomyPanel = () => {
     }
   }, [countryEconomy]);
   
-  // Aplica mudanças nos parâmetros econômicos
+  // Aplica mudanças nos parâmetros econômicos - APENAS PARA O PRÓPRIO PAÍS
   const applyParameterChange = useCallback((parameter, value) => {
     if (!currentRoom?.name || !myCountry) return;
     
@@ -93,34 +87,7 @@ const AdvancedEconomyPanel = () => {
     }));
   }, [currentRoom?.name, myCountry, dispatch]);
   
-  // Avança um turno manualmente
-  const handleAdvanceTurn = useCallback(() => {
-    if (!currentRoom?.name || !myCountry) return;
-    
-    advancedEconomyService.advanceCountryTurn(currentRoom.name, myCountry);
-    showSuccess('Turno avançado com sucesso');
-  }, [currentRoom?.name, myCountry]);
-  
-  // Toggle auto-avanço
-  const handleToggleAutoAdvance = useCallback(() => {
-    if (!autoAdvance) {
-      if (!currentRoom?.name || !myCountry) return;
-      
-      advancedEconomyService.startAutoAdvance(
-        currentRoom.name, 
-        [myCountry], 
-        advanceSpeed
-      );
-      dispatch(setAutoAdvance(true));
-      showSuccess('Auto-avanço ativado');
-    } else {
-      advancedEconomyService.stopAutoAdvance();
-      dispatch(setAutoAdvance(false));
-      showSuccess('Auto-avanço desativado');
-    }
-  }, [autoAdvance, currentRoom?.name, myCountry, advanceSpeed, dispatch]);
-  
-  // Emite títulos de dívida
+  // Emite títulos de dívida - APENAS PARA O PRÓPRIO PAÍS
   const handleIssueBonds = useCallback(async () => {
     const amount = parseFloat(bondAmount);
     
@@ -183,11 +150,12 @@ const AdvancedEconomyPanel = () => {
     return '#dc3545';
   };
   
+  // RESTRIÇÃO: Só mostra dados se for o próprio país
   if (!myCountry) {
     return (
       <div className="advanced-economy-panel">
         <h3>Economia Avançada</h3>
-        <p>Selecione um país para ver os dados econômicos avançados.</p>
+        <p>Você precisa estar controlando um país para ver os dados econômicos avançados.</p>
       </div>
     );
   }
@@ -206,22 +174,8 @@ const AdvancedEconomyPanel = () => {
       <div className="panel-header">
         <h3>Economia Avançada - {myCountry}</h3>
         <div className="turn-info">
-          <span>Turno: {countryEconomy.turn}</span>
-          <div className="turn-controls">
-            <button 
-              className="btn-advance-turn"
-              onClick={handleAdvanceTurn}
-              disabled={autoAdvance}
-            >
-              Avançar Turno
-            </button>
-            <button 
-              className={`btn-auto-advance ${autoAdvance ? 'active' : ''}`}
-              onClick={handleToggleAutoAdvance}
-            >
-              {autoAdvance ? 'Parar Auto' : 'Auto Play'}
-            </button>
-          </div>
+          <span>Turno: {countryEconomy.turn || 0}</span>
+          {/* REMOVIDO: Controles manuais de turno - agora segue ciclo automático de 2s */}
         </div>
       </div>
       
@@ -231,7 +185,7 @@ const AdvancedEconomyPanel = () => {
           <div className="indicator">
             <label>PIB:</label>
             <span className="value">
-              {formatCurrency(economicIndicators?.gdp)} bi USD
+              {formatCurrency(economicIndicators?.gdp || countryEconomy.gdp)} bi USD
               {economicIndicators?.quarterlyGrowth !== undefined && (
                 <span className={`growth ${economicIndicators.quarterlyGrowth >= 0 ? 'positive' : 'negative'}`}>
                   ({formatValueWithSign(economicIndicators.quarterlyGrowth)}% trim.)
@@ -242,15 +196,15 @@ const AdvancedEconomyPanel = () => {
           
           <div className="indicator">
             <label>Tesouro:</label>
-            <span className="value">{formatCurrency(economicIndicators?.treasury)} bi USD</span>
+            <span className="value">{formatCurrency(economicIndicators?.treasury || countryEconomy.treasury)} bi USD</span>
           </div>
           
           <div className="indicator">
             <label>Dívida Pública:</label>
             <span className="value">
-              {formatCurrency(economicIndicators?.publicDebt)} bi USD
+              {formatCurrency(economicIndicators?.publicDebt || countryEconomy.publicDebt)} bi USD
               <span className="debt-ratio">
-                ({formatPercent(economicIndicators?.debtToGdpRatio)} do PIB)
+                ({formatPercent(economicIndicators?.debtToGdpRatio || (countryEconomy.publicDebt / countryEconomy.gdp * 100))} do PIB)
               </span>
             </span>
           </div>
@@ -259,22 +213,22 @@ const AdvancedEconomyPanel = () => {
         <div className="indicator-group">
           <div className="indicator">
             <label>Inflação:</label>
-            <span className={`value ${(economicIndicators?.inflation || 0) > 5 ? 'negative' : 'positive'}`}>
-              {formatPercent(economicIndicators?.inflation)}
+            <span className={`value ${(economicIndicators?.inflation || countryEconomy.inflation * 100) > 5 ? 'negative' : 'positive'}`}>
+              {formatPercent(economicIndicators?.inflation || countryEconomy.inflation * 100)}
             </span>
           </div>
           
           <div className="indicator">
             <label>Desemprego:</label>
-            <span className={`value ${(economicIndicators?.unemployment || 0) > 10 ? 'negative' : 'positive'}`}>
-              {formatPercent(economicIndicators?.unemployment)}
+            <span className={`value ${(economicIndicators?.unemployment || countryEconomy.unemployment) > 10 ? 'negative' : 'positive'}`}>
+              {formatPercent(economicIndicators?.unemployment || countryEconomy.unemployment)}
             </span>
           </div>
           
           <div className="indicator">
             <label>Popularidade:</label>
-            <span className={`value ${(economicIndicators?.popularity || 0) > 50 ? 'positive' : 'negative'}`}>
-              {formatPercent(economicIndicators?.popularity)}
+            <span className={`value ${(economicIndicators?.popularity || countryEconomy.popularity) > 50 ? 'positive' : 'negative'}`}>
+              {formatPercent(economicIndicators?.popularity || countryEconomy.popularity)}
             </span>
           </div>
         </div>
@@ -284,16 +238,16 @@ const AdvancedEconomyPanel = () => {
             <label>Classificação de Crédito:</label>
             <span 
               className="credit-rating" 
-              style={{ color: getCreditRatingColor(economicIndicators?.creditRating || 'A') }}
+              style={{ color: getCreditRatingColor(economicIndicators?.creditRating || countryEconomy.creditRating || 'A') }}
             >
-              {economicIndicators?.creditRating || 'A'}
+              {economicIndicators?.creditRating || countryEconomy.creditRating || 'A'}
             </span>
           </div>
           
           <div className="indicator">
             <label>Pode Emitir Dívida:</label>
-            <span className={`value ${economicIndicators?.canIssueDebt ? 'positive' : 'negative'}`}>
-              {economicIndicators?.canIssueDebt ? 'Sim' : 'Não'}
+            <span className={`value ${(economicIndicators?.canIssueDebt !== undefined ? economicIndicators.canIssueDebt : countryEconomy.canIssueDebt) ? 'positive' : 'negative'}`}>
+              {(economicIndicators?.canIssueDebt !== undefined ? economicIndicators.canIssueDebt : countryEconomy.canIssueDebt) ? 'Sim' : 'Não'}
             </span>
           </div>
         </div>
@@ -395,18 +349,18 @@ const AdvancedEconomyPanel = () => {
             step="0.1"
             value={bondAmount}
             onChange={(e) => setBondAmount(e.target.value)}
-            disabled={isIssuingBonds || !economicIndicators?.canIssueDebt}
+            disabled={isIssuingBonds || !(economicIndicators?.canIssueDebt !== undefined ? economicIndicators.canIssueDebt : countryEconomy.canIssueDebt)}
           />
           <button 
             className="btn-issue-bonds"
             onClick={handleIssueBonds}
-            disabled={isIssuingBonds || !bondAmount || !economicIndicators?.canIssueDebt}
+            disabled={isIssuingBonds || !bondAmount || !(economicIndicators?.canIssueDebt !== undefined ? economicIndicators.canIssueDebt : countryEconomy.canIssueDebt)}
           >
             {isIssuingBonds ? 'Emitindo...' : 'Emitir Títulos'}
           </button>
         </div>
         
-        {!economicIndicators?.canIssueDebt && (
+        {!(economicIndicators?.canIssueDebt !== undefined ? economicIndicators.canIssueDebt : countryEconomy.canIssueDebt) && (
           <div className="warning">
             <small>Não é possível emitir mais títulos devido à alta relação dívida/PIB ou baixa classificação de crédito.</small>
           </div>
@@ -416,64 +370,80 @@ const AdvancedEconomyPanel = () => {
           <small>
             • Títulos têm duração de 10 anos<br/>
             • Taxa de juros varia conforme classificação de crédito<br/>
-            • Pagamentos mensais são automáticos
+            • Pagamentos mensais são automáticos<br/>
+            • Os turnos avançam automaticamente a cada 2 segundos
           </small>
         </div>
       </div>
       
-      {/* Resumo de Dívidas */}
+      {/* Botão para abrir popup de dívidas */}
       {debtSummary && debtSummary.numberOfDebts > 0 && (
-        <div className="debt-summary">
-          <div className="debt-header" onClick={() => setShowDebtDetails(!showDebtDetails)}>
-            <h4>Resumo de Dívidas ({debtSummary.numberOfDebts} títulos)</h4>
-            <span className="toggle-icon">{showDebtDetails ? '▼' : '▶'}</span>
-          </div>
-          
-          <div className="debt-quick-info">
-            <div className="debt-metric">
-              <label>Pagamento Mensal:</label>
-              <span>{formatCurrency(debtSummary.totalMonthlyPayment)} bi USD</span>
-            </div>
-            <div className="debt-metric">
-              <label>Principal Restante:</label>
-              <span>{formatCurrency(debtSummary.principalRemaining)} bi USD</span>
-            </div>
-            <div className="debt-metric">
-              <label>Total Futuro:</label>
-              <span>{formatCurrency(debtSummary.totalFuturePayments)} bi USD</span>
-            </div>
-          </div>
-          
-          {showDebtDetails && (
-            <div className="debt-details">
-              <table className="debt-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Valor Original</th>
-                    <th>Restante</th>
-                    <th>Taxa</th>
-                    <th>Pagamento Mensal</th>
-                    <th>Parcelas Restantes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {countryEconomy.debtRecords.map((debt) => (
-                    <tr key={debt.id}>
-                      <td>{debt.id}</td>
-                      <td>{formatCurrency(debt.originalValue)}</td>
-                      <td>{formatCurrency(debt.remainingValue)}</td>
-                      <td>{formatPercent(debt.interestRate)}</td>
-                      <td>{formatCurrency(debt.monthlyPayment)}</td>
-                      <td>{debt.remainingInstallments}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <div className="debt-summary-button">
+          <button 
+            className="action-btn"
+            onClick={() => setShowDebtPopup(true)}
+          >
+            Ver Resumo de Dívidas ({debtSummary.numberOfDebts} títulos)
+          </button>
         </div>
       )}
+      
+      {/* Popup de Resumo de Dívidas */}
+      <Popup
+        isOpen={showDebtPopup}
+        onClose={() => setShowDebtPopup(false)}
+        title="Resumo de Dívidas"
+        size="large"
+      >
+        {debtSummary && (
+          <div className="debt-popup-content">
+            <div className="debt-quick-info">
+              <div className="debt-metric">
+                <label>Pagamento Mensal:</label>
+                <span>{formatCurrency(debtSummary.totalMonthlyPayment)} bi USD</span>
+              </div>
+              <div className="debt-metric">
+                <label>Principal Restante:</label>
+                <span>{formatCurrency(debtSummary.principalRemaining)} bi USD</span>
+              </div>
+              <div className="debt-metric">
+                <label>Total Futuro:</label>
+                <span>{formatCurrency(debtSummary.totalFuturePayments)} bi USD</span>
+              </div>
+            </div>
+            
+            {countryEconomy.debtRecords && countryEconomy.debtRecords.length > 0 && (
+              <div className="debt-details">
+                <h4>Detalhes dos Títulos</h4>
+                <table className="debt-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Valor Original</th>
+                      <th>Restante</th>
+                      <th>Taxa</th>
+                      <th>Pagamento Mensal</th>
+                      <th>Parcelas Restantes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {countryEconomy.debtRecords.map((debt) => (
+                      <tr key={debt.id}>
+                        <td>{debt.id}</td>
+                        <td>{formatCurrency(debt.originalValue)}</td>
+                        <td>{formatCurrency(debt.remainingValue)}</td>
+                        <td>{formatPercent(debt.interestRate)}</td>
+                        <td>{formatCurrency(debt.monthlyPayment)}</td>
+                        <td>{debt.remainingInstallments}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </Popup>
       
       {/* Balanço Setorial */}
       {sectoralBalance && (
