@@ -50,8 +50,7 @@
   │   │   │   │   ├── EconomyPanel.css
   │   │   │   │   ├── EconomyPanel.jsx  # Componente Painel de Economia
   │   │   │   │   ├── economyService.js
-  │   │   │   │   ├── economySlice.js
-  │   │   │   │   └── economyState.js  # Estado de economia
+  │   │   │   │   └── economySlice.js
   │   │   │   ├── game
   │   │   │   │   ├── GamePage.css
   │   │   │   │   ├── GamePage.jsx  # Tela principal do jogo
