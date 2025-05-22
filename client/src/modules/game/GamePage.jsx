@@ -8,6 +8,7 @@ import { loadCountriesData, loadCountriesCoordinates } from '../country/countryS
 import { setCountriesCoordinates } from './gameState';
 import { socketApi } from '../../services/socketClient';
 import TradeProposalPopup from '../trade/TradeProposalPopup';
+import DebtSummaryPopup from '../economy/DebtSummaryPopup';
 import MessageService from '../../ui/toast/messageService';
 import './GamePage.css';
 
@@ -26,6 +27,13 @@ const GamePage = () => {
   const [showTimeupPopup, setShowTimeupPopup] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [tradeProposal, setTradeProposal] = useState(null);
+  
+  // Estados para o popup de dívidas
+  const [showDebtPopup, setShowDebtPopup] = useState(false);
+  const [debtPopupData, setDebtPopupData] = useState({
+    debtSummary: null,
+    debtRecords: null
+  });
   
   // Atualizar o tempo a cada segundo
   useEffect(() => {
@@ -85,9 +93,27 @@ const GamePage = () => {
     };
   }, []);
   
-  // Função para fechar o popup de proposta
+  // Função para fechar o popup de proposta comercial
   const handleCloseTradeProposal = () => {
     setTradeProposal(null);
+  };
+  
+  // Função para abrir o popup de dívidas (callback do AdvancedEconomyPanel)
+  const handleOpenDebtPopup = (debtSummary, debtRecords) => {
+    setDebtPopupData({
+      debtSummary,
+      debtRecords
+    });
+    setShowDebtPopup(true);
+  };
+  
+  // Função para fechar o popup de dívidas
+  const handleCloseDebtPopup = () => {
+    setShowDebtPopup(false);
+    setDebtPopupData({
+      debtSummary: null,
+      debtRecords: null
+    });
   };
   
   // Obter países com jogadores humanos e seus nomes
@@ -318,6 +344,7 @@ const GamePage = () => {
         onClose={toggleSidetools} 
         isActive={sidetoolsActive}
         myCountry={myCountry}
+        onOpenDebtPopup={handleOpenDebtPopup}
       />
       
       <Sideview 
@@ -363,11 +390,19 @@ const GamePage = () => {
         </div>
       )}
       
-      {/* Popup de proposta de comércio */}
+      {/* Popup de proposta de comércio - z-index 1000 */}
       <TradeProposalPopup 
         proposal={tradeProposal}
         isOpen={tradeProposal !== null}
         onClose={handleCloseTradeProposal}
+      />
+      
+      {/* Popup de resumo de dívidas - z-index 2000 (maior que outros popups) */}
+      <DebtSummaryPopup
+        isOpen={showDebtPopup}
+        onClose={handleCloseDebtPopup}
+        debtSummary={debtPopupData.debtSummary}
+        debtRecords={debtPopupData.debtRecords}
       />
     </div>
   );

@@ -47,6 +47,8 @@
   │   │   │   ├── economy
   │   │   │   │   ├── AdvancedEconomyPanel.css
   │   │   │   │   ├── AdvancedEconomyPanel.jsx
+  │   │   │   │   ├── DebtSummaryPopup.css
+  │   │   │   │   ├── DebtSummaryPopup.jsx
   │   │   │   │   ├── EconomyPanel.css
   │   │   │   │   ├── EconomyPanel.jsx  # Componente Painel de Economia
   │   │   │   │   ├── advancedEconomyService.js

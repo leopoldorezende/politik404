@@ -1,0 +1,352 @@
+/* DebtSummaryPopup.css */
+
+.debt-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.debt-popup {
+  background: #1F262F;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 1200px;
+  max-height: 90vh;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+
+.debt-popup-header {
+  background: #2c3e50;
+  color: #fff;
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.debt-popup-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.close-debt-popup-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 32px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.close-debt-popup-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.debt-popup-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 30px;
+}
+
+.debt-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.debt-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.debt-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.debt-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #aaa;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.debt-card-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.debt-card-description {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.3;
+}
+
+.debt-details-section {
+  margin-bottom: 40px;
+}
+
+.debt-details-section h3 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 10px;
+}
+
+.debt-table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.debt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.debt-table th,
+.debt-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.debt-table th {
+  background-color: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  color: #fff;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.debt-table td {
+  color: #ccc;
+  white-space: nowrap;
+}
+
+.debt-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.debt-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.debt-info-section {
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.debt-info-section h4 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #3498db;
+}
+
+.debt-info-section ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.debt-info-section li {
+  position: relative;
+  margin-bottom: 8px;
+  padding-left: 20px;
+  color: #ccc;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.debt-info-section li:before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #3498db;
+  font-weight: bold;
+}
+
+.debt-popup-footer {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 20px 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: center;
+}
+
+.close-debt-btn {
+  background: #3498db;
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.close-debt-btn:hover {
+  background: #2980b9;
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .debt-popup {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .debt-popup-header {
+    padding: 15px 20px;
+  }
+  
+  .debt-popup-header h2 {
+    font-size: 20px;
+  }
+  
+  .debt-popup-content {
+    padding: 20px;
+  }
+  
+  .debt-summary-cards {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  
+  .debt-card {
+    padding: 15px;
+  }
+  
+  .debt-card-value {
+    font-size: 20px;
+  }
+  
+  .debt-table th,
+  .debt-table td {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  
+  .debt-info-section {
+    padding: 15px;
+  }
+  
+  .debt-popup-footer {
+    padding: 15px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .debt-popup {
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .debt-popup-overlay {
+    padding: 0;
+  }
+  
+  .debt-table-container {
+    font-size: 11px;
+  }
+  
+  .debt-table th,
+  .debt-table td {
+    padding: 6px 8px;
+  }
+}
+
+/* Scrollbar customization */
+.debt-popup-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.debt-popup-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.debt-popup-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.debt-popup-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.debt-table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.debt-table-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.debt-table-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.debt-table-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
