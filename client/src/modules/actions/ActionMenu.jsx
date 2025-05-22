@@ -27,7 +27,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
   const menuOptions = {
     trade: ['import', 'export'],
     alliance: ['cooperation', 'allince'],
-    hybrid: ['interference', 'disinformation'],
+    hybrid: ['interference', 'spy'],
     attack: ['sabotage', 'military']
   };
   
@@ -128,7 +128,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       handleOpenPopup('trade', option);
     } else if (option === 'cooperation' || option === 'military') {
       handleOpenPopup('alliance', option);
-    } else if (option === 'interference' || option === 'disinformation') {
+    } else if (option === 'interference' || option === 'spy') {
       handleOpenPopup('hybrid', option);
     } else if (option === 'sabotage' || option === 'military') {
       handleOpenPopup('attack', option);
@@ -160,16 +160,16 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       'export': 'Exportação',
       
       // Alliance options
-      'cooperation': 'Cooperação Estratégica',
-      'allince': 'Aliança Militar',
+      'cooperation': 'Cooperação Estratégica (Pode 1 - 3pts)',
+      'allince': 'Aliança Militar (Pode 1 - 4pts)',
       
       // Hybrid war options
-      'interference': 'Ingerência',
-      'disinformation': 'Desinformação',
+      'interference': 'Ingerência (financiar oposição / quebrar industria nacional / patrocinar desinformação)',
+      'spy': 'Espionagem (permite fazer ingerência)',
       
       // Attack options
-      'sabotage': 'Sabotagem',
-      'military': 'Guerra'
+      'sabotage': 'Sabotagem (rompe acordos comerciais)',
+      'military': 'Guerra (remove cards (de trade e interno) seu e do oponente nas medida do sucesso da guerra)'
     };
     
     return labels[option] || option;
