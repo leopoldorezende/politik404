@@ -25,14 +25,24 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
   const loading = useSelector(selectCountryStateLoading);
   const lastUpdated = useSelector(state => selectLastUpdated(state, currentRoom?.name));
   
-  // Estados locais
+  // Estados locais - MODIFICADO para incluir valores atuais aplicados
   const [localParameters, setLocalParameters] = useState({
+    interestRate: 8.0,
+    taxBurden: 40.0,
+    publicServices: 30.0
+  });
+  const [appliedParameters, setAppliedParameters] = useState({
     interestRate: 8.0,
     taxBurden: 40.0,
     publicServices: 30.0
   });
   const [bondAmount, setBondAmount] = useState('');
   const [isIssuingBonds, setIsIssuingBonds] = useState(false);
+  const [pendingUpdates, setPendingUpdates] = useState(new Set());
+  
+  // Estado para controlar as dívidas emitidas localmente
+  const [localDebtContracts, setLocalDebtContracts] = useState([]);
+  const [localPublicDebt, setLocalPublicDebt] = useState(0);
   
   // Assinar para atualizações quando o componente montar
   useEffect(() => {
@@ -45,6 +55,19 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
     }
   }, [currentRoom?.name, dispatch]);
   
+
+  // Calcular número de contratos de dívida - ATUALIZADO para usar contratos locais
+  const getNumberOfDebtContracts = useCallback((totalDebt) => {
+    // Se temos contratos locais, usar o número real
+    if (localDebtContracts.length > 0) {
+      return localDebtContracts.length;
+    }
+    
+    // Senão, usar cálculo baseado na dívida total
+    if (totalDebt <= 0) return 0;
+    return Math.min(3, Math.max(1, Math.floor(totalDebt / 50))); // 1 contrato a cada 50 bi
+  }, [localDebtContracts]);
+
   // Função para obter valor numérico de propriedade que pode estar em diferentes formatos
   const getNumericValue = useCallback((property) => {
     if (property === undefined || property === null) return 0;
@@ -119,38 +142,105 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
       creditRating: staticData.creditRating || 'A',
       publicDebt: getDynamicOrStatic(null, 'publicDebt', 0),
       
-      // Parâmetros de política (do JSON, alteráveis pelo jogador)
-      taxBurden: getDynamicOrStatic(null, 'taxBurden', 40),
-      publicServices: getDynamicOrStatic(null, 'publicServices', 30),
-      interestRate: getDynamicOrStatic(null, 'interestRate', 8),
+      // Parâmetros de política - MODIFICADO para usar valores aplicados primeiro
+      taxBurden: appliedParameters.taxBurden,
+      publicServices: appliedParameters.publicServices,
+      interestRate: appliedParameters.interestRate,
+      
+      // Usar dívida local se houver emissões recentes
+      publicDebt: localPublicDebt > 0 ? localPublicDebt : getDynamicOrStatic(null, 'publicDebt', 0),
     };
-  }, [myCountry, countriesData, countryState, getNumericValue, lastUpdated]);
+  }, [myCountry, countriesData, countryState, getNumericValue, lastUpdated, appliedParameters]);
   
-  // Sincronizar parâmetros locais com dados do JSON
+  // Sincronizar parâmetros locais com dados do JSON - APENAS NA INICIALIZAÇÃO
   useEffect(() => {
-    const economicData = getEconomicData();
-    if (economicData) {
-      setLocalParameters({
-        interestRate: economicData.interestRate,
-        taxBurden: economicData.taxBurden,
-        publicServices: economicData.publicServices
-      });
+    if (!myCountry || !countriesData?.[myCountry]) return;
+    
+    const staticData = countriesData[myCountry]?.economy || {};
+    
+    const initialParams = {
+      interestRate: getNumericValue(staticData.interestRate) || 8.0,
+      taxBurden: getNumericValue(staticData.taxBurden) || 40.0,
+      publicServices: getNumericValue(staticData.publicServices) || 30.0
+    };
+    
+    // Inicializar dívida local se ainda não foi inicializada
+    if (localPublicDebt === 0) {
+      const initialDebt = getNumericValue(staticData.publicDebt) || 0;
+      setLocalPublicDebt(initialDebt);
     }
-  }, [getEconomicData]);
+    
+    // Só atualiza se ainda não foram alterados
+    if (appliedParameters.interestRate === 8.0 && appliedParameters.taxBurden === 40.0 && appliedParameters.publicServices === 30.0) {
+      setLocalParameters(initialParams);
+      setAppliedParameters(initialParams);
+    }
+  }, [myCountry, countriesData, getNumericValue]); // Removido appliedParameters da dependência para evitar loop
   
-  // Aplicar mudanças nos parâmetros econômicos
-  const applyParameterChange = useCallback((parameter, value) => {
+  // Aplicar mudanças nos parâmetros econômicos - CORRIGIDO para persistir no servidor
+  const applyParameterChange = useCallback(async (parameter, value) => {
     if (!currentRoom?.name || !myCountry) return;
     
     const newValue = parseFloat(value);
     
-    setLocalParameters(prev => ({
-      ...prev,
-      [parameter]: newValue
-    }));
+    // Adicionar aos pending updates
+    setPendingUpdates(prev => new Set([...prev, parameter]));
     
-    showSuccess(`${parameter} alterado para ${newValue}`);
-  }, [currentRoom?.name, myCountry]);
+    try {
+      // Enviar para o servidor via socket
+      const socket = socketApi.getSocketInstance();
+      if (socket) {
+        socket.emit('updateEconomicParameter', {
+          roomName: currentRoom.name,
+          countryName: myCountry,
+          parameter: parameter,
+          value: newValue
+        });
+        
+        // Atualizar localmente imediatamente
+        setAppliedParameters(prev => ({
+          ...prev,
+          [parameter]: newValue
+        }));
+        
+        // Mostrar mensagem de sucesso
+        const parameterNames = {
+          interestRate: 'Taxa de Juros',
+          taxBurden: 'Carga Tributária', 
+          publicServices: 'Investimento Público'
+        };
+        
+        showSuccess(`${parameterNames[parameter]} alterada para ${newValue}${parameter !== 'interestRate' ? '%' : '%'}`);
+        
+        // Atualizar também os dados estáticos localmente para persistência (CORREÇÃO: criar cópia)
+        if (countriesData[myCountry] && countriesData[myCountry].economy) {
+          // Criar uma cópia mutável do objeto ao invés de modificar diretamente
+          const updatedCountryData = JSON.parse(JSON.stringify(countriesData[myCountry]));
+          updatedCountryData.economy[parameter] = newValue;
+          
+          // Atualizar o estado Redux com os novos dados
+          dispatch({
+            type: 'game/setCountriesData',
+            payload: {
+              ...countriesData,
+              [myCountry]: updatedCountryData
+            }
+          });
+        }
+      }
+    } catch (error) {
+      showError(`Erro ao atualizar ${parameter}: ${error.message}`);
+    } finally {
+      // Remover dos pending updates após um tempo
+      setTimeout(() => {
+        setPendingUpdates(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(parameter);
+          return newSet;
+        });
+      }, 1000);
+    }
+  }, [currentRoom?.name, myCountry, countriesData]);
   
   // Emitir títulos de dívida
   const handleIssueBonds = useCallback(async () => {
@@ -190,31 +280,101 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
     const handleDebtBondsIssued = (data) => {
       showSuccess(`Títulos emitidos com sucesso! Nova dívida: ${data.newPublicDebt} bi`);
       setIsIssuingBonds(false);
+      
+      // Atualizar dívida local imediatamente
+      setLocalPublicDebt(data.newPublicDebt);
+      
+      // Criar um novo contrato de dívida local
+      const newContract = {
+        id: `contract-${Date.now()}`,
+        originalValue: data.bondAmount,
+        remainingValue: data.bondAmount,
+        interestRate: 8 + (Math.random() * 4), // Simular taxa baseada no rating
+        monthlyPayment: data.bondAmount * 0.012, // Aproximação de pagamento mensal
+        remainingInstallments: 120, // 10 anos
+        issueDate: new Date()
+      };
+      
+      setLocalDebtContracts(prev => [...prev, newContract]);
+    };
+    
+    const handleParameterUpdated = (data) => {
+      // Confirmar que o parâmetro foi atualizado no servidor
+      if (data.countryName === myCountry && data.roomName === currentRoom?.name) {
+        console.log(`Parâmetro ${data.parameter} confirmado no servidor:`, data.value);
+        
+        // Remove from pending updates
+        setPendingUpdates(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(data.parameter);
+          return newSet;
+        });
+      }
     };
     
     socket.on('debtBondsIssued', handleDebtBondsIssued);
+    socket.on('economicParameterUpdated', handleParameterUpdated);
     
     return () => {
       socket.off('debtBondsIssued', handleDebtBondsIssued);
+      socket.off('economicParameterUpdated', handleParameterUpdated);
     };
-  }, []);
+  }, [myCountry, currentRoom?.name]);
   
-  // Função para abrir popup de dívidas
+  // Função para abrir popup de dívidas via callback - ATUALIZADO para usar dados locais
   const handleOpenDebtPopup = useCallback(() => {
-    if (onOpenDebtPopup) {
-      const economicData = getEconomicData();
-      if (economicData) {
-        const debtSummary = {
-          totalMonthlyPayment: 0,
-          principalRemaining: economicData.publicDebt,
-          totalFuturePayments: economicData.publicDebt * 1.1,
-          debtToGdpRatio: economicData.publicDebt / economicData.gdp,
-          numberOfDebts: economicData.publicDebt > 0 ? 1 : 0
-        };
-        onOpenDebtPopup(debtSummary, []);
+    const economicData = getEconomicData();
+    if (economicData && onOpenDebtPopup) {
+      // Usar contratos locais se existirem, senão simular baseado na dívida
+      let debtRecords = [];
+      let numberOfContracts = 0;
+      
+      if (localDebtContracts.length > 0) {
+        // Usar contratos reais armazenados localmente
+        debtRecords = localDebtContracts;
+        numberOfContracts = localDebtContracts.length;
+      } else {
+        // Simular contratos baseados na dívida total (para compatibilidade com dívidas existentes)
+        numberOfContracts = getNumberOfDebtContracts(economicData.publicDebt);
+        const totalDebt = economicData.publicDebt;
+        
+        if (totalDebt > 0) {
+          for (let i = 1; i <= numberOfContracts; i++) {
+            const contractValue = totalDebt / numberOfContracts;
+            const interestRate = 8 + (Math.random() * 4); // 8-12%
+            const monthlyRate = interestRate / 100 / 12;
+            const remainingInstallments = 120 - Math.floor(Math.random() * 24); // 96-120 parcelas restantes
+            const monthlyPayment = contractValue * monthlyRate * Math.pow(1 + monthlyRate, 120) / 
+                                  (Math.pow(1 + monthlyRate, 120) - 1);
+            
+            debtRecords.push({
+              id: `simulated-${Date.now()}-${i}`,
+              originalValue: contractValue,
+              remainingValue: contractValue * (remainingInstallments / 120),
+              interestRate: interestRate,
+              monthlyPayment: monthlyPayment,
+              remainingInstallments: remainingInstallments,
+              issueDate: new Date(Date.now() - (120 - remainingInstallments) * 30 * 24 * 60 * 60 * 1000)
+            });
+          }
+        }
       }
+      
+      // Criar resumo das dívidas
+      const debtSummary = {
+        totalMonthlyPayment: debtRecords.reduce((sum, debt) => sum + (debt.monthlyPayment || 0), 0),
+        principalRemaining: economicData.publicDebt,
+        totalFuturePayments: debtRecords.reduce((sum, debt) => 
+          sum + ((debt.monthlyPayment || 0) * (debt.remainingInstallments || 0)), 0
+        ),
+        debtToGdpRatio: (economicData.publicDebt / economicData.gdp) * 100,
+        numberOfDebts: numberOfContracts
+      };
+      
+      // Chamar o callback passando os dados para o GamePage
+      onOpenDebtPopup(debtSummary, debtRecords, economicData);
     }
-  }, [onOpenDebtPopup, getEconomicData]);
+  }, [getEconomicData, onOpenDebtPopup, localDebtContracts, getNumberOfDebtContracts]);
   
   // Formatadores
   const formatCurrency = (value) => {
@@ -240,13 +400,13 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
     return '#dc3545';
   };
   
+  
   // Obter dados econômicos
   const economicData = getEconomicData();
   
   if (!myCountry) {
     return (
       <div className="advanced-economy-panel">
-        <h3>Economia Avançada</h3>
         <p>Você precisa estar controlando um país para ver os dados econômicos avançados.</p>
       </div>
     );
@@ -255,23 +415,16 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
   if (loading || !economicData) {
     return (
       <div className="advanced-economy-panel">
-        <h3>Economia Avançada</h3>
         <p>Carregando dados econômicos...</p>
         {myCountry && <p><small>País: {myCountry}</small></p>}
       </div>
     );
   }
   
+  const numberOfContracts = getNumberOfDebtContracts(economicData.publicDebt);
+  
   return (
     <div className="advanced-economy-panel">
-      
-      {/* Indicador de última atualização */}
-      <div className="panel-header">
-        <h3>Economia Avançada</h3>
-        <div className="turn-info">
-          Última atualização: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'N/A'}
-        </div>
-      </div>
       
       {/* Indicadores Principais */}
       <div className="main-indicators">
@@ -332,7 +485,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
         </div>
       </div>
       
-      {/* Controles Econômicos */}
+      {/* Controles Econômicos - CORRIGIDO para mostrar valores aplicados */}
       <div className="economic-controls">
         <h4>Parâmetros Econômicos</h4>
         
@@ -352,9 +505,9 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             />
             <button 
               onClick={() => applyParameterChange('interestRate', localParameters.interestRate)}
-              disabled={localParameters.interestRate === economicData.interestRate}
+              disabled={localParameters.interestRate === appliedParameters.interestRate || pendingUpdates.has('interestRate')}
             >
-              Aplicar
+              {pendingUpdates.has('interestRate') ? 'Aplicando...' : 'Aplicar'}
             </button>
           </div>
         </div>
@@ -375,9 +528,9 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             />
             <button 
               onClick={() => applyParameterChange('taxBurden', localParameters.taxBurden)}
-              disabled={localParameters.taxBurden === economicData.taxBurden}
+              disabled={localParameters.taxBurden === appliedParameters.taxBurden || pendingUpdates.has('taxBurden')}
             >
-              Aplicar
+              {pendingUpdates.has('taxBurden') ? 'Aplicando...' : 'Aplicar'}
             </button>
           </div>
         </div>
@@ -398,9 +551,9 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             />
             <button 
               onClick={() => applyParameterChange('publicServices', localParameters.publicServices)}
-              disabled={localParameters.publicServices === economicData.publicServices}
+              disabled={localParameters.publicServices === appliedParameters.publicServices || pendingUpdates.has('publicServices')}
             >
-              Aplicar
+              {pendingUpdates.has('publicServices') ? 'Aplicando...' : 'Aplicar'}
             </button>
           </div>
         </div>
@@ -430,13 +583,13 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
           </button>
         </div>
         
-        {/* Botão para abrir popup de dívidas */}
+        {/* Botão para abrir popup de dívidas via callback */}
         {economicData.publicDebt > 0 && (
           <button 
             className="debt-summary-btn"
             onClick={handleOpenDebtPopup}
           >
-            Ver Dívidas ({formatCurrency(economicData.publicDebt)} bi)
+            Ver Dívidas ({numberOfContracts} {numberOfContracts === 1 ? 'contrato' : 'contratos'})
           </button>
         )}
       </div>
@@ -503,6 +656,9 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
           <div>📊 PIB atual: {formatCurrency(economicData.gdp)} bi</div>
           <div>💰 Tesouro atual: {formatCurrency(economicData.treasury)} bi</div>
           <div>⚖️ Balanços: Commodities {formatValueWithSign(economicData.commoditiesBalance)}, Manufaturas {formatValueWithSign(economicData.manufacturesBalance)}</div>
+          <div>📄 Contratos de dívida: {numberOfContracts} (Locais: {localDebtContracts.length})</div>
+          <div>💳 Dívida local: {formatCurrency(localPublicDebt)} bi</div>
+          <div>🔧 Parâmetros aplicados: Juros {appliedParameters.interestRate}%, Impostos {appliedParameters.taxBurden}%, Serviços {appliedParameters.publicServices}%</div>
           <div>🕐 Última atualização: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'N/A'}</div>
         </div>
       )}

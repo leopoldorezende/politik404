@@ -76,8 +76,8 @@
 
 .debt-summary-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
   margin-bottom: 40px;
 }
 
@@ -85,7 +85,7 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  padding: 20px;
+  padding: 8px;
   text-align: center;
   transition: transform 0.2s, box-shadow 0.2s;
   backdrop-filter: blur(10px);
@@ -107,7 +107,7 @@
 }
 
 .debt-card-value {
-  font-size: 24px;
+  font-size: 14px;
   font-weight: 700;
   color: #fff;
   margin-bottom: 8px;

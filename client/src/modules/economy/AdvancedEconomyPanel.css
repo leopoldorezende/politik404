@@ -11,25 +11,6 @@
   background: transparent;
 }
 
-/* Header */
-.advanced-economy-panel .panel-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 15px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 8px;
-  border: 1px solid rgba(52, 73, 94, 0.2);
-}
-
-.advanced-economy-panel .advanced-economy-panel .panel-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: #2c3e50;
-  text-align: center;
-}
 
 .advanced-economy-panel .advanced-economy-panel .turn-info {
   text-align: center;
@@ -434,7 +415,6 @@
     font-size: 11px;
   }
   
-  .advanced-economy-panel .panel-header,
   .advanced-economy-panel .main-indicators,
   .advanced-economy-panel .economic-controls,
   .advanced-economy-panel .bonds-section,
@@ -442,11 +422,7 @@
   .advanced-economy-panel .sectoral-balance {
     padding: 8px;
   }
-  
-  .advanced-economy-panel .panel-header h3 {
-    font-size: 14px;
-  }
-  
+
   .advanced-economy-panel .indicator {
     padding: 6px 8px;
     min-height: 32px;
@@ -530,11 +506,6 @@
 .advanced-economy-panel .debt-summary-section,
 .advanced-economy-panel .sectoral-balance {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Ajustes para melhor legibilidade */
-.advanced-economy-panel .panel-header {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .advanced-economy-panel .credit-rating {
