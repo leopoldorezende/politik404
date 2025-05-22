@@ -342,19 +342,18 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             <small>Não é possível emitir mais títulos</small>
           </div>
         )}
-      </div>
-      
-      {/* Botão para abrir popup de dívidas */}
-      {debtSummary && debtSummary.numberOfDebts > 0 && (
-        <div className="debt-summary-section">
+        
+        {/* Botão para abrir popup de dívidas */}
+        {debtSummary && debtSummary.numberOfDebts > 0 && (
           <button 
             className="debt-summary-btn"
             onClick={handleOpenDebtPopup}
           >
             Ver Dívidas ({debtSummary.numberOfDebts})
           </button>
-        </div>
-      )}
+        )}
+        
+      </div>
       
       {/* Balanço Setorial */}
       {sectoralBalance && (
