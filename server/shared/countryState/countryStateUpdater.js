@@ -1,14 +1,14 @@
 /**
  * countryStateUpdater.js
  * Manages periodic updates for country states
- * Handles economic cycles, trade impacts, and scheduled calculations
+ * FOCUSED ON CORRECTLY READING AND USING DATA FROM countriesData.json
  */
 
 import CountryEconomyCalculator from './countryEconomyCalculator.js';
 
 /**
  * Country State Updater
- * Manages periodic updates and economic cycles for all countries
+ * Ensures data from countriesData.json is properly loaded and used
  */
 class CountryStateUpdater {
   constructor(core) {
@@ -18,8 +18,9 @@ class CountryStateUpdater {
     this.saveInterval = null;
     this.updateCounter = 0;
     this.lastLogTime = 0;
-    this.logInterval = 60000; // 1 minute between logs
-    this.countryLogHistory = new Map(); // Store last log per country to avoid duplication
+    this.logInterval = 10000; // 10 seconds between summary logs
+    this.lastDataCheckTime = 0;
+    this.dataCheckInterval = 30000; // 30 seconds between data availability checks
   }
 
   /**
@@ -31,6 +32,11 @@ class CountryStateUpdater {
     // Stop existing intervals
     this.stopPeriodicUpdates();
     
+    console.log(`[ECONOMY] Starting periodic updates every ${updateIntervalMs}ms`);
+    
+    // First, check if we have access to countriesData
+    this.checkDataAvailability();
+    
     // Set up economic calculation interval
     this.updateInterval = setInterval(() => {
       this.performPeriodicEconomicUpdates();
@@ -41,7 +47,51 @@ class CountryStateUpdater {
       this.core.saveStatesToRedis();
     }, saveIntervalMs);
     
-    console.log(`CountryStateUpdater started with ${updateIntervalMs}ms update interval and ${saveIntervalMs}ms save interval`);
+    console.log(`[ECONOMY] CountryStateUpdater started - Updates: ${updateIntervalMs}ms, Saves: ${saveIntervalMs}ms`);
+  }
+
+  /**
+   * Check if countriesData.json is available and log its contents
+   */
+  checkDataAvailability() {
+    const gameState = global.gameState;
+    
+    if (!gameState) {
+      console.error('[ECONOMY] Global gameState is not available!');
+      return;
+    }
+    
+    if (!gameState.countriesData) {
+      console.error('[ECONOMY] gameState.countriesData is not available!');
+      return;
+    }
+    
+    const countries = Object.keys(gameState.countriesData);
+    console.log(`[ECONOMY] Found ${countries.length} countries in JSON data:`, countries);
+    
+    // Check a few countries for economy data
+    let countriesWithEconomy = 0;
+    const sampleCountries = countries.slice(0, 3);
+    
+    sampleCountries.forEach(countryName => {
+      const countryData = gameState.countriesData[countryName];
+      if (countryData && countryData.economy) {
+        countriesWithEconomy++;
+        console.log(`[ECONOMY] ${countryName} economy data:`, {
+          gdp: countryData.economy.gdp,
+          unemployment: countryData.economy.unemployment,
+          taxBurden: countryData.economy.taxBurden,
+          publicServices: countryData.economy.publicServices,
+          hasServices: !!countryData.economy.services,
+          hasCommodities: !!countryData.economy.commodities,
+          hasManufactures: !!(countryData.economy.manufactures || countryData.economy.manufacturing)
+        });
+      } else {
+        console.warn(`[ECONOMY] ${countryName} has no economy data in JSON`);
+      }
+    });
+    
+    console.log(`[ECONOMY] ${countriesWithEconomy} out of ${sampleCountries.length} sample countries have economy data`);
   }
 
   /**
@@ -51,30 +101,47 @@ class CountryStateUpdater {
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
       this.updateInterval = null;
+      console.log('[ECONOMY] Update interval stopped');
     }
     
     if (this.saveInterval) {
       clearInterval(this.saveInterval);
       this.saveInterval = null;
+      console.log('[ECONOMY] Save interval stopped');
     }
-    
-    console.log('CountryStateUpdater stopped');
   }
 
   /**
    * Perform periodic economic updates for all countries in all rooms
    */
   performPeriodicEconomicUpdates() {
+    const startTime = Date.now();
+    
+    // Check if global game state exists
     const gameState = global.gameState;
-    if (!gameState || !gameState.countriesData) return;
+    if (!gameState) {
+      console.warn('[ECONOMY] Global gameState not available');
+      return;
+    }
+    
+    if (!gameState.countriesData) {
+      console.warn('[ECONOMY] gameState.countriesData not available');
+      return;
+    }
     
     let totalUpdates = 0;
+    let totalCountries = 0;
+    let roomsWithPlayers = 0;
+    let countriesWithJSON = 0;
+    let countriesWithoutJSON = 0;
+    
     const roomNames = this.core.getAllRooms();
     
-    // Iterate through all rooms
+    // Process each room
     for (const roomName of roomNames) {
-      // Check if there are online players in the room
       const room = gameState.rooms.get(roomName);
+      
+      // Check if room has online players
       const hasOnlinePlayers = room && room.players && 
         room.players.some(p => typeof p === 'object' && p.isOnline);
       
@@ -82,68 +149,74 @@ class CountryStateUpdater {
         continue;
       }
       
-      let roomUpdates = 0;
+      roomsWithPlayers++;
       const countryNames = this.core.getAllCountriesInRoom(roomName);
+      totalCountries += countryNames.length;
       
-      // Iterate through all countries in the room
+      // Update each country in the room
       for (const countryName of countryNames) {
         const countryState = this.core.getCountryState(roomName, countryName);
-        const staticData = gameState.countriesData[countryName];
         
-        if (staticData && staticData.economy) {
-          // Check if there are trade agreements to consider in calculations
-          let tradeAgreements = [];
-          if (room && room.tradeAgreements && room.tradeAgreements.length > 0) {
-            tradeAgreements = room.tradeAgreements;
+        if (!countryState) {
+          continue;
+        }
+        
+        // Check if we have JSON data for this country
+        const countryJSONData = gameState.countriesData[countryName];
+        if (countryJSONData && countryJSONData.economy) {
+          countriesWithJSON++;
+        } else {
+          countriesWithoutJSON++;
+          // Log missing data occasionally
+          if (this.updateCounter % 30 === 0) {
+            console.warn(`[ECONOMY] No JSON economy data for ${countryName}`);
           }
+        }
+        
+        try {
+          // Get trade agreements for this room
+          const tradeAgreements = room.tradeAgreements || [];
           
-          // Perform economic calculations
+          // Perform economic update - pass the JSON data explicitly
           const updatedCountryState = this.economyCalculator.performEconomicUpdate(
             countryState,
-            staticData,
+            countryJSONData || { name: countryName }, // Pass JSON data or minimal fallback
             tradeAgreements
           );
           
           // Update the country state in core
           this.core.setCountryState(roomName, countryName, updatedCountryState);
           
-          roomUpdates++;
           totalUpdates++;
           
-          // Log detailed info only when there are agreements and only for countries with active trade
-          if (tradeAgreements.length > 0 && 
-              (countryState.economy.tradeStats?.commodityImports > 0 || 
-              countryState.economy.tradeStats?.commodityExports > 0 || 
-              countryState.economy.tradeStats?.manufactureImports > 0 || 
-              countryState.economy.tradeStats?.manufactureExports > 0)) {
-            
-            // Limit logs to not overwhelm console
-            const now = Date.now();
-            if (now - this.lastLogTime > this.logInterval) {
-              console.log(`[ECONOMY] Country ${countryName} trade balances updated:`, {
-                manufacturesBalance: countryState.economy.manufacturesBalance?.value,
-                commoditiesBalance: countryState.economy.commoditiesBalance?.value,
-                tradeStats: countryState.economy.tradeStats
-              });
-              this.lastLogTime = now;
-            }
-          }
+        } catch (error) {
+          console.error(`[ECONOMY] Error updating ${countryName} in ${roomName}:`, error.message);
         }
       }
       
-      if (roomUpdates > 0) {
-        // Update room timestamp
+      // Update room timestamp
+      if (countryNames.length > 0) {
         this.core.lastUpdated.set(roomName, Date.now());
       }
     }
     
-    // Simplified log - only every 60 seconds
+    // Increment global update counter
     this.updateCounter++;
     
-    if (this.updateCounter % 60 === 0) { // Every 60 cycles (2 minutes with 2s interval)
-      if (totalUpdates > 0) {
-        console.log(`[ECONOMY] 2-minute update: ${totalUpdates} total country updates across all rooms`);
-      }
+    // Log summary periodically
+    const now = Date.now();
+    if (now - this.lastLogTime > this.logInterval) {
+      const processingTime = now - startTime;
+      console.log(`[ECONOMY] Update #${this.updateCounter}: ${totalUpdates} countries updated in ${roomsWithPlayers} rooms (${processingTime}ms)`);
+      console.log(`[ECONOMY] Data status: ${countriesWithJSON} countries with JSON data, ${countriesWithoutJSON} without`);
+      console.log(`[ECONOMY] Calculator counter: ${this.economyCalculator.getUpdateCounter()}`);
+      this.lastLogTime = now;
+    }
+    
+    // Periodic data availability check
+    if (now - this.lastDataCheckTime > this.dataCheckInterval) {
+      this.checkDataAvailability();
+      this.lastDataCheckTime = now;
     }
   }
 
@@ -155,29 +228,42 @@ class CountryStateUpdater {
    * @returns {Object|null} - Updated country state or null if error
    */
   updateCountryEconomy(roomName, countryName, tradeAgreements = []) {
-    const gameState = global.gameState;
-    if (!gameState || !gameState.countriesData) return null;
-    
     const countryState = this.core.getCountryState(roomName, countryName);
-    const staticData = gameState.countriesData[countryName];
     
-    if (!countryState || !staticData) {
-      console.error(`Country data missing for ${countryName} in room ${roomName}`);
+    if (!countryState) {
+      console.error(`[ECONOMY] No country state for ${countryName} in ${roomName}`);
       return null;
     }
     
-    // Perform economic update
-    const updatedCountryState = this.economyCalculator.performEconomicUpdate(
-      countryState,
-      staticData,
-      tradeAgreements
-    );
+    // Get JSON data for this country
+    const gameState = global.gameState;
+    let countryJSONData = { name: countryName };
     
-    // Update the country state in core
-    this.core.setCountryState(roomName, countryName, updatedCountryState);
+    if (gameState && gameState.countriesData && gameState.countriesData[countryName]) {
+      countryJSONData = gameState.countriesData[countryName];
+      console.log(`[ECONOMY] Manual update for ${countryName} using JSON data`);
+    } else {
+      console.warn(`[ECONOMY] Manual update for ${countryName} - no JSON data available`);
+    }
     
-    console.log(`Updated economy state for ${countryName} in room ${roomName}`);
-    return updatedCountryState;
+    try {
+      // Perform economic update
+      const updatedCountryState = this.economyCalculator.performEconomicUpdate(
+        countryState,
+        countryJSONData,
+        tradeAgreements
+      );
+      
+      // Update the country state in core
+      this.core.setCountryState(roomName, countryName, updatedCountryState);
+      
+      console.log(`[ECONOMY] Manual update for ${countryName} completed`);
+      return updatedCountryState;
+      
+    } catch (error) {
+      console.error(`[ECONOMY] Error in manual update for ${countryName}:`, error.message);
+      return null;
+    }
   }
 
   /**
@@ -188,6 +274,7 @@ class CountryStateUpdater {
    * @returns {Object|null} - Updated country state or null if error
    */
   updateCountryEconomyForTrade(roomName, countryName, tradeAgreements) {
+    console.log(`[TRADE] Updating ${countryName} economy for trade changes`);
     return this.updateCountryEconomy(roomName, countryName, tradeAgreements);
   }
 
@@ -206,18 +293,52 @@ class CountryStateUpdater {
     const tradeAgreements = room.tradeAgreements || [];
     const { originCountry, country: targetCountry } = agreement;
     
-    // Update origin country economy
-    this.updateCountryEconomyForTrade(roomName, originCountry, tradeAgreements);
+    console.log(`[TRADE] Updating economies for agreement: ${originCountry} <-> ${targetCountry}`);
     
-    // Update target country economy
+    // Update both countries
+    this.updateCountryEconomyForTrade(roomName, originCountry, tradeAgreements);
     this.updateCountryEconomyForTrade(roomName, targetCountry, tradeAgreements);
   }
 
   /**
-   * Perform manual update cycle (useful for testing or immediate updates)
+   * Perform manual update cycle
    */
   performManualUpdate() {
+    console.log('[ECONOMY] Manual update triggered');
     this.performPeriodicEconomicUpdates();
+  }
+
+  /**
+   * Get detailed status including JSON data availability
+   * @returns {Object} - Detailed status
+   */
+  getDetailedStatus() {
+    const gameState = global.gameState;
+    let jsonDataStatus = 'Not available';
+    let countryCount = 0;
+    let economyDataCount = 0;
+    
+    if (gameState && gameState.countriesData) {
+      const countries = Object.keys(gameState.countriesData);
+      countryCount = countries.length;
+      economyDataCount = countries.filter(name => 
+        gameState.countriesData[name] && gameState.countriesData[name].economy
+      ).length;
+      jsonDataStatus = `${countryCount} countries, ${economyDataCount} with economy data`;
+    }
+    
+    return {
+      updateCounter: this.updateCounter,
+      economyCalculatorCounter: this.economyCalculator.getUpdateCounter(),
+      isUpdating: this.updateInterval !== null,
+      isSaving: this.saveInterval !== null,
+      totalRooms: this.core.getAllRooms().length,
+      jsonDataStatus,
+      countryCount,
+      economyDataCount,
+      lastLogTime: this.lastLogTime,
+      lastDataCheckTime: this.lastDataCheckTime
+    };
   }
 
   /**
@@ -230,7 +351,8 @@ class CountryStateUpdater {
       economyCalculatorCounter: this.economyCalculator.getUpdateCounter(),
       isUpdating: this.updateInterval !== null,
       isSaving: this.saveInterval !== null,
-      totalRooms: this.core.getAllRooms().length
+      totalRooms: this.core.getAllRooms().length,
+      lastLogTime: this.lastLogTime
     };
   }
 
@@ -241,7 +363,8 @@ class CountryStateUpdater {
     this.updateCounter = 0;
     this.economyCalculator.resetUpdateCounter();
     this.lastLogTime = 0;
-    this.countryLogHistory.clear();
+    this.lastDataCheckTime = 0;
+    console.log('[ECONOMY] Counters reset');
   }
 
   /**
@@ -257,7 +380,7 @@ class CountryStateUpdater {
    */
   cleanup() {
     this.stopPeriodicUpdates();
-    console.log('CountryStateUpdater cleanup completed');
+    console.log('[ECONOMY] CountryStateUpdater cleanup completed');
   }
 }
 

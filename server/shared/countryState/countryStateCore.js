@@ -1,7 +1,7 @@
 /**
  * countryStateCore.js
  * Core functionality for country state management
- * Handles basic state structure and persistence
+ * FOCUSED ON PROPER INITIALIZATION FROM countriesData.json
  */
 
 import redis from '../redisClient.js';
@@ -72,9 +72,9 @@ class CountryStateCore {
     try {
       await this.loadStatesFromRedis();
       this.initialized = true;
-      console.log('CountryStateCore initialized successfully');
+      console.log('[ECONOMY] CountryStateCore initialized successfully');
     } catch (error) {
-      console.error('Error initializing CountryStateCore:', error);
+      console.error('[ECONOMY] Error initializing CountryStateCore:', error);
     }
   }
 
@@ -104,12 +104,12 @@ class CountryStateCore {
           this.lastUpdated.set(roomName, Date.now());
         }
         
-        console.log(`Loaded ${this.roomStates.size} room states from Redis`);
+        console.log(`[ECONOMY] Loaded ${this.roomStates.size} room states from Redis`);
       } else {
-        console.log('No country states found in Redis');
+        console.log('[ECONOMY] No country states found in Redis');
       }
     } catch (error) {
-      console.error('Error loading country states from Redis:', error);
+      console.error('[ECONOMY] Error loading country states from Redis:', error);
     }
   }
 
@@ -120,9 +120,9 @@ class CountryStateCore {
     try {
       const serialized = Object.fromEntries(this.roomStates);
       await redis.set('country_states', JSON.stringify(serialized));
-      console.log(`Saved ${this.roomStates.size} room states to Redis`);
+      console.log(`[ECONOMY] Saved ${this.roomStates.size} room states to Redis`);
     } catch (error) {
-      console.error('Error saving country states to Redis:', error);
+      console.error('[ECONOMY] Error saving country states to Redis:', error);
     }
   }
 
@@ -190,49 +190,81 @@ class CountryStateCore {
   }
 
   /**
-   * Initialize a new room with country states
+   * Initialize a new room with country states FROM JSON DATA
    * @param {string} roomName - Name of the room
-   * @param {Object} countries - Country data object with country names as keys
+   * @param {Object} countries - Country data object from countriesData.json
    */
   initializeRoom(roomName, countries) {
-    if (!this.roomStates.has(roomName)) {
-      const countryStates = {};
-      
-      for (const countryName of Object.keys(countries)) {
-        countryStates[countryName] = this.generateCountryState(countryName, countries[countryName]);
-      }
-      
-      this.roomStates.set(roomName, countryStates);
-      this.lastUpdated.set(roomName, Date.now());
-      
-      console.log(`Initialized room ${roomName} with ${Object.keys(countryStates).length} countries`);
+    if (this.roomStates.has(roomName)) {
+      console.log(`[ECONOMY] Room ${roomName} already initialized, skipping`);
+      return;
     }
+    
+    console.log(`[ECONOMY] Initializing room ${roomName} with JSON data`);
+    console.log(`[ECONOMY] Available countries in JSON:`, Object.keys(countries));
+    
+    const countryStates = {};
+    let countriesInitialized = 0;
+    let countriesWithEconomyData = 0;
+    
+    for (const [countryName, countryData] of Object.entries(countries)) {
+      console.log(`[ECONOMY] Initializing ${countryName}...`);
+      
+      // Generate country state from JSON data
+      const countryState = this.generateCountryStateFromJSON(countryName, countryData);
+      countryStates[countryName] = countryState;
+      countriesInitialized++;
+      
+      // Check if this country had economy data
+      if (countryData && countryData.economy) {
+        countriesWithEconomyData++;
+        console.log(`[ECONOMY] ${countryName} initialized with JSON economy data - GDP: ${countryState.economy.gdp.value}`);
+      } else {
+        console.warn(`[ECONOMY] ${countryName} initialized with default values (no JSON economy data)`);
+      }
+    }
+    
+    this.roomStates.set(roomName, countryStates);
+    this.lastUpdated.set(roomName, Date.now());
+    
+    console.log(`[ECONOMY] Room ${roomName} initialized with ${countriesInitialized} countries`);
+    console.log(`[ECONOMY] ${countriesWithEconomyData} countries had JSON economy data, ${countriesInitialized - countriesWithEconomyData} used defaults`);
   }
 
   /**
-   * Generate a country state with default values based on country data
+   * Generate a country state with data from JSON (countriesData.json)
    * @param {string} countryName - Name of the country
-   * @param {Object} countryData - Base country data
+   * @param {Object} countryData - Country data from JSON
    * @returns {Object} - Complete country state with indicators
    */
-  generateCountryState(countryName, countryData) {
+  generateCountryStateFromJSON(countryName, countryData) {
+    console.log(`[ECONOMY] Generating state for ${countryName} from JSON data`);
+    
+    // Start with default structure
     const state = JSON.parse(JSON.stringify(DEFAULT_INDICATORS));
     
+    // Check if we have economy data in the JSON
     if (countryData && countryData.economy) {
-      // GDP
-      if (countryData.economy.gdp) {
+      console.log(`[ECONOMY] ${countryName} has economy data in JSON:`, Object.keys(countryData.economy));
+      
+      const jsonEconomy = countryData.economy;
+      
+      // GDP from JSON
+      if (jsonEconomy.gdp !== undefined) {
         state.economy.gdp = { 
-          value: this.getNumericValue(countryData.economy.gdp), 
+          value: this.getNumericValue(jsonEconomy.gdp), 
           unit: 'bi USD' 
         };
+        console.log(`[ECONOMY] ${countryName} GDP from JSON: ${state.economy.gdp.value}`);
       } else {
-        state.economy.gdp = { value: 100, unit: 'bi USD' };
+        state.economy.gdp = { value: 100 + Math.random() * 50, unit: 'bi USD' };
+        console.log(`[ECONOMY] ${countryName} using random GDP: ${state.economy.gdp.value}`);
       }
       
-      // Treasury
-      if (countryData.economy.treasury !== undefined) {
+      // Treasury from JSON
+      if (jsonEconomy.treasury !== undefined) {
         state.economy.treasury = { 
-          value: this.getNumericValue(countryData.economy.treasury), 
+          value: this.getNumericValue(jsonEconomy.treasury), 
           unit: 'bi USD' 
         };
       } else {
@@ -242,77 +274,111 @@ class CountryStateCore {
         };
       }
       
-      // Sectoral distribution
-      if (countryData.economy.services !== undefined) {
-        if (typeof countryData.economy.services === 'object' && countryData.economy.services.gdpShare !== undefined) {
-          state.economy.services.value = countryData.economy.services.gdpShare;
-        } else if (typeof countryData.economy.services === 'object' && countryData.economy.services.value !== undefined) {
-          state.economy.services.value = countryData.economy.services.value;
-        } else if (typeof countryData.economy.services === 'number') {
-          state.economy.services.value = countryData.economy.services;
-        }
-      }
+      // Sectoral distribution from JSON
+      this.setSectoralDistributionFromJSON(state.economy, jsonEconomy, countryName);
       
-      if (countryData.economy.commodities) {
-        if (typeof countryData.economy.commodities === 'object' && countryData.economy.commodities.gdpShare !== undefined) {
-          state.economy.commodities.value = countryData.economy.commodities.gdpShare;
-        } else if (typeof countryData.economy.commodities === 'object' && countryData.economy.commodities.value !== undefined) {
-          state.economy.commodities.value = countryData.economy.commodities.value;
-        } else if (typeof countryData.economy.commodities === 'number') {
-          state.economy.commodities.value = countryData.economy.commodities;
-        }
-      }
-      
-      if (countryData.economy.manufactures) {
-        if (typeof countryData.economy.manufactures === 'object' && countryData.economy.manufactures.gdpShare !== undefined) {
-          state.economy.manufactures.value = countryData.economy.manufactures.gdpShare;
-        } else if (typeof countryData.economy.manufactures === 'object' && countryData.economy.manufactures.value !== undefined) {
-          state.economy.manufactures.value = countryData.economy.manufactures.value;
-        } else if (typeof countryData.economy.manufactures === 'number') {
-          state.economy.manufactures.value = countryData.economy.manufactures;
-        }
-      } else if (countryData.economy.manufacturing) {
-        // Compatibility with previous structure
-        if (typeof countryData.economy.manufacturing === 'object' && countryData.economy.manufacturing.gdpShare !== undefined) {
-          state.economy.manufactures.value = countryData.economy.manufacturing.gdpShare;
-        } else if (typeof countryData.economy.manufacturing === 'object' && countryData.economy.manufacturing.value !== undefined) {
-          state.economy.manufactures.value = countryData.economy.manufacturing.value;
-        } else if (typeof countryData.economy.manufacturing === 'number') {
-          state.economy.manufactures.value = countryData.economy.manufacturing;
-        }
-      }
-      
-      // Ensure total is 100%
-      if (countryData.economy.services === undefined) {
-        state.economy.services.value = 100 - state.economy.commodities.value - state.economy.manufactures.value;
-      }
-      
-      const total = state.economy.services.value + state.economy.commodities.value + state.economy.manufactures.value;
-      if (total !== 100) {
-        state.economy.services.value += (100 - total);
-      }
-      
-      // Calculate absolute values
+      // Calculate sectoral outputs
       this.updateSectoralOutputs(state);
-      this.updateInternalNeeds(state, countryData);
+      
+      // Set internal needs from JSON
+      this.updateInternalNeedsFromJSON(state, jsonEconomy, countryName);
+      
+      // Calculate initial balances
+      this.updateSectoralBalances(state);
+      
+    } else {
+      console.warn(`[ECONOMY] ${countryName} has no economy data in JSON, using defaults`);
+      
+      // Use completely default values
+      state.economy.gdp = { value: 100 + Math.random() * 50, unit: 'bi USD' };
+      state.economy.treasury = { value: state.economy.gdp.value * 0.1, unit: 'bi USD' };
+      
+      this.updateSectoralOutputs(state);
+      this.updateInternalNeeds(state, {});
       this.updateSectoralBalances(state);
     }
     
-    // Set defense values
-    if (countryData.defense) {
+    // Set defense values from JSON or defaults
+    this.setDefenseFromJSON(state, countryData, countryName);
+    
+    // Set politics values from JSON or defaults
+    this.setPoliticsFromJSON(state, countryData, countryName);
+    
+    // Set commerce values
+    state.commerce.exports = 15;
+    state.commerce.imports = 15;
+    
+    console.log(`[ECONOMY] ${countryName} state generated - GDP: ${state.economy.gdp.value}, Treasury: ${state.economy.treasury.value}`);
+    
+    return state;
+  }
+
+  /**
+   * Set sectoral distribution from JSON data
+   * @param {Object} economy - Economy object
+   * @param {Object} jsonEconomy - Economy data from JSON
+   * @param {string} countryName - Country name
+   */
+  setSectoralDistributionFromJSON(economy, jsonEconomy, countryName) {
+    // Services
+    if (jsonEconomy.services !== undefined) {
+      economy.services.value = this.getNumericValue(jsonEconomy.services);
+    }
+    
+    // Commodities
+    if (jsonEconomy.commodities !== undefined) {
+      economy.commodities.value = this.getNumericValue(jsonEconomy.commodities);
+    }
+    
+    // Manufactures (could be 'manufactures' or 'manufacturing')
+    if (jsonEconomy.manufactures !== undefined) {
+      economy.manufactures.value = this.getNumericValue(jsonEconomy.manufactures);
+    } else if (jsonEconomy.manufacturing !== undefined) {
+      economy.manufactures.value = this.getNumericValue(jsonEconomy.manufacturing);
+    }
+    
+    // Ensure total is 100%
+    const total = economy.services.value + economy.commodities.value + economy.manufactures.value;
+    if (Math.abs(total - 100) > 1) {
+      console.log(`[ECONOMY] ${countryName} sectoral total was ${total}%, adjusting to 100%`);
+      const adjustment = (100 - total) / 3;
+      economy.services.value += adjustment;
+      economy.commodities.value += adjustment;
+      economy.manufactures.value += adjustment;
+    }
+    
+    console.log(`[ECONOMY] ${countryName} sectors from JSON: Services ${economy.services.value}%, Commodities ${economy.commodities.value}%, Manufactures ${economy.manufactures.value}%`);
+  }
+
+  /**
+   * Set defense values from JSON
+   * @param {Object} state - Country state
+   * @param {Object} countryData - Country data from JSON
+   * @param {string} countryName - Country name
+   */
+  setDefenseFromJSON(state, countryData, countryName) {
+    if (countryData && countryData.defense) {
       state.defense.navy = this.getNumericValue(countryData.defense.navy) || 20;
       state.defense.army = this.getNumericValue(countryData.defense.army) || 20;
       state.defense.airforce = this.getNumericValue(countryData.defense.airforce) || 20;
+      console.log(`[ECONOMY] ${countryName} defense from JSON: Navy ${state.defense.navy}, Army ${state.defense.army}, Air ${state.defense.airforce}`);
+    } else {
+      state.defense.navy = 20;
+      state.defense.army = 20;
+      state.defense.airforce = 20;
     }
-    
-    // Set politics values
-    if (countryData.politics) {
+  }
+
+  /**
+   * Set politics values from JSON
+   * @param {Object} state - Country state
+   * @param {Object} countryData - Country data from JSON
+   * @param {string} countryName - Country name
+   */
+  setPoliticsFromJSON(state, countryData, countryName) {
+    if (countryData && countryData.politics) {
       state.politics.parliament = this.getNumericValue(countryData.politics.parliamentSupport) || 50;
       state.politics.media = this.getNumericValue(countryData.politics.mediaSupport) || 50;
-      
-      if (countryData.politics.protests !== undefined) {
-        state.politics.protests = this.getNumericValue(countryData.politics.protests);
-      }
       
       if (countryData.politics.opposition !== undefined) {
         if (typeof countryData.politics.opposition === 'object' && countryData.politics.opposition.strength !== undefined) {
@@ -321,13 +387,9 @@ class CountryStateCore {
           state.politics.opposition = this.getNumericValue(countryData.politics.opposition);
         }
       }
+      
+      console.log(`[ECONOMY] ${countryName} politics from JSON: Parliament ${state.politics.parliament}, Media ${state.politics.media}, Opposition ${state.politics.opposition}`);
     }
-    
-    // Set commerce values
-    state.commerce.exports = 15;
-    state.commerce.imports = 15;
-    
-    return state;
   }
 
   /**
@@ -343,36 +405,50 @@ class CountryStateCore {
   }
 
   /**
-   * Update internal needs based on country data
+   * Update internal needs from JSON data
    * @param {Object} state - Country state
-   * @param {Object} countryData - Original country data
+   * @param {Object} jsonEconomy - Economy data from JSON
+   * @param {string} countryName - Country name
+   */
+  updateInternalNeedsFromJSON(state, jsonEconomy, countryName) {
+    const gdpValue = state.economy.gdp.value;
+    
+    // Commodities needs from JSON
+    if (jsonEconomy.commodities && jsonEconomy.commodities.domesticConsumption !== undefined) {
+      const domesticConsumption = jsonEconomy.commodities.domesticConsumption;
+      state.economy.commoditiesNeeds.percentValue = Math.round((domesticConsumption / gdpValue) * 100);
+      state.economy.commoditiesNeeds.value = domesticConsumption;
+      console.log(`[ECONOMY] ${countryName} commodities needs from JSON: ${domesticConsumption} (${state.economy.commoditiesNeeds.percentValue}% of GDP)`);
+    } else {
+      state.economy.commoditiesNeeds.percentValue = 30;
+      state.economy.commoditiesNeeds.value = parseFloat((gdpValue * 0.30).toFixed(2));
+    }
+    
+    // Manufactures needs from JSON
+    if (jsonEconomy.manufactures && jsonEconomy.manufactures.domesticConsumption !== undefined) {
+      const domesticConsumption = jsonEconomy.manufactures.domesticConsumption;
+      state.economy.manufacturesNeeds.percentValue = Math.round((domesticConsumption / gdpValue) * 100);
+      state.economy.manufacturesNeeds.value = domesticConsumption;
+      console.log(`[ECONOMY] ${countryName} manufactures needs from JSON: ${domesticConsumption} (${state.economy.manufacturesNeeds.percentValue}% of GDP)`);
+    } else if (jsonEconomy.manufacturing && jsonEconomy.manufacturing.domesticConsumption !== undefined) {
+      const domesticConsumption = jsonEconomy.manufacturing.domesticConsumption;
+      state.economy.manufacturesNeeds.percentValue = Math.round((domesticConsumption / gdpValue) * 100);
+      state.economy.manufacturesNeeds.value = domesticConsumption;
+      console.log(`[ECONOMY] ${countryName} manufacturing needs from JSON: ${domesticConsumption} (${state.economy.manufacturesNeeds.percentValue}% of GDP)`);
+    } else {
+      state.economy.manufacturesNeeds.percentValue = 45;
+      state.economy.manufacturesNeeds.value = parseFloat((gdpValue * 0.45).toFixed(2));
+    }
+  }
+
+  /**
+   * Update internal needs with default calculation
+   * @param {Object} state - Country state
+   * @param {Object} countryData - Country data
    */
   updateInternalNeeds(state, countryData) {
     const gdpValue = state.economy.gdp.value;
     
-    // Update commodities needs
-    if (countryData.economy.commodities && countryData.economy.commodities.domesticConsumption !== undefined) {
-      const domesticConsumption = countryData.economy.commodities.domesticConsumption;
-      state.economy.commoditiesNeeds.percentValue = Math.round((domesticConsumption / gdpValue) * 100);
-      state.economy.commoditiesNeeds.value = domesticConsumption;
-    } else if (countryData.economy.commoditiesNeeds) {
-      state.economy.commoditiesNeeds.percentValue = this.getNumericValue(countryData.economy.commoditiesNeeds);
-    }
-    
-    // Update manufactures needs
-    if (countryData.economy.manufactures && countryData.economy.manufactures.domesticConsumption !== undefined) {
-      const domesticConsumption = countryData.economy.manufactures.domesticConsumption;
-      state.economy.manufacturesNeeds.percentValue = Math.round((domesticConsumption / gdpValue) * 100);
-      state.economy.manufacturesNeeds.value = domesticConsumption;
-    } else if (countryData.economy.manufacturing && countryData.economy.manufacturing.domesticConsumption !== undefined) {
-      const domesticConsumption = countryData.economy.manufacturing.domesticConsumption;
-      state.economy.manufacturesNeeds.percentValue = Math.round((domesticConsumption / gdpValue) * 100);
-      state.economy.manufacturesNeeds.value = domesticConsumption;
-    } else if (countryData.economy.manufacturesNeeds) {
-      state.economy.manufacturesNeeds.percentValue = this.getNumericValue(countryData.economy.manufacturesNeeds);
-    }
-    
-    // Calculate absolute values of needs
     state.economy.commoditiesNeeds.value = parseFloat((gdpValue * state.economy.commoditiesNeeds.percentValue / 100).toFixed(2));
     state.economy.manufacturesNeeds.value = parseFloat((gdpValue * state.economy.manufacturesNeeds.percentValue / 100).toFixed(2));
   }
@@ -396,7 +472,7 @@ class CountryStateCore {
     this.lastUpdated.delete(roomName);
     
     if (removed) {
-      console.log(`Removed room ${roomName} from country states`);
+      console.log(`[ECONOMY] Removed room ${roomName} from country states`);
     }
     
     return removed;
@@ -434,7 +510,7 @@ class CountryStateCore {
    */
   cleanup() {
     this.saveStatesToRedis();
-    console.log('CountryStateCore cleanup completed');
+    console.log('[ECONOMY] CountryStateCore cleanup completed');
   }
 }
 

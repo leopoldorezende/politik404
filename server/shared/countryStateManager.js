@@ -93,24 +93,18 @@ class CountryStateManager {
         const room = gameState.rooms.get(roomName);
         const tradeAgreements = room?.tradeAgreements || [];
         
-        // Update derived indicators
-        this.economyCalculator.updateDerivedEconomicIndicators(updatedState);
-        
-        // Apply trade impact if there are agreements
-        if (tradeAgreements.length > 0) {
-          const tradeImpact = this.economyCalculator.calculateTradeImpact(
-            updatedState.economy, 
-            tradeAgreements, 
-            countryName
-          );
-          this.economyCalculator.applyTradeImpactToBalances(updatedState.economy, tradeImpact);
-        }
+        // CORRIGIDO: Use o método correto da classe CountryEconomyCalculator
+        const updatedCountryState = this.economyCalculator.performEconomicUpdate(
+          updatedState,
+          staticData,
+          tradeAgreements
+        );
         
         // Update the state in core
-        this.core.setCountryState(roomName, countryName, updatedState);
+        this.core.setCountryState(roomName, countryName, updatedCountryState);
         
         // Log for debugging trade balances only on relevant changes
-        const economy = updatedState.economy;
+        const economy = updatedCountryState.economy;
         const hasTradeActivity = economy.tradeStats && (
           economy.tradeStats.commodityImports > 0 || 
           economy.tradeStats.commodityExports > 0 || 
@@ -135,6 +129,8 @@ class CountryStateManager {
             }
           }
         }
+        
+        return updatedCountryState;
       }
     }
     
