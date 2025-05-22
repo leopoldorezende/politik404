@@ -56,16 +56,10 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
   }, [currentRoom?.name, dispatch]);
   
 
-  // Calcular número de contratos de dívida - ATUALIZADO para usar contratos locais
-  const getNumberOfDebtContracts = useCallback((totalDebt) => {
-    // Se temos contratos locais, usar o número real
-    if (localDebtContracts.length > 0) {
-      return localDebtContracts.length;
-    }
-    
-    // Senão, usar cálculo baseado na dívida total
-    if (totalDebt <= 0) return 0;
-    return Math.min(3, Math.max(1, Math.floor(totalDebt / 50))); // 1 contrato a cada 50 bi
+  // Calcular número de contratos de dívida - ATUALIZADO para usar apenas contratos locais
+  const getNumberOfDebtContracts = useCallback(() => {
+    // Usar apenas contratos reais armazenados localmente
+    return localDebtContracts.length;
   }, [localDebtContracts]);
 
   // Função para obter valor numérico de propriedade que pode estar em diferentes formatos
@@ -164,11 +158,8 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
       publicServices: getNumericValue(staticData.publicServices) || 30.0
     };
     
-    // Inicializar dívida local se ainda não foi inicializada
-    if (localPublicDebt === 0) {
-      const initialDebt = getNumericValue(staticData.publicDebt) || 0;
-      setLocalPublicDebt(initialDebt);
-    }
+    // REMOVIDO: Inicialização da dívida local com dados estáticos
+    // Para que apenas contratos reais sejam considerados
     
     // Só atualiza se ainda não foram alterados
     if (appliedParameters.interestRate === 8.0 && appliedParameters.taxBurden === 40.0 && appliedParameters.publicServices === 30.0) {
@@ -321,49 +312,18 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
     };
   }, [myCountry, currentRoom?.name]);
   
-  // Função para abrir popup de dívidas via callback - ATUALIZADO para usar dados locais
+  // Função para abrir popup de dívidas via callback - ATUALIZADO para usar apenas contratos locais
   const handleOpenDebtPopup = useCallback(() => {
     const economicData = getEconomicData();
     if (economicData && onOpenDebtPopup) {
-      // Usar contratos locais se existirem, senão simular baseado na dívida
-      let debtRecords = [];
-      let numberOfContracts = 0;
+      // MODIFICADO: Usar apenas contratos reais armazenados localmente
+      const debtRecords = localDebtContracts;
+      const numberOfContracts = localDebtContracts.length;
       
-      if (localDebtContracts.length > 0) {
-        // Usar contratos reais armazenados localmente
-        debtRecords = localDebtContracts;
-        numberOfContracts = localDebtContracts.length;
-      } else {
-        // Simular contratos baseados na dívida total (para compatibilidade com dívidas existentes)
-        numberOfContracts = getNumberOfDebtContracts(economicData.publicDebt);
-        const totalDebt = economicData.publicDebt;
-        
-        if (totalDebt > 0) {
-          for (let i = 1; i <= numberOfContracts; i++) {
-            const contractValue = totalDebt / numberOfContracts;
-            const interestRate = 8 + (Math.random() * 4); // 8-12%
-            const monthlyRate = interestRate / 100 / 12;
-            const remainingInstallments = 120 - Math.floor(Math.random() * 24); // 96-120 parcelas restantes
-            const monthlyPayment = contractValue * monthlyRate * Math.pow(1 + monthlyRate, 120) / 
-                                  (Math.pow(1 + monthlyRate, 120) - 1);
-            
-            debtRecords.push({
-              id: `simulated-${Date.now()}-${i}`,
-              originalValue: contractValue,
-              remainingValue: contractValue * (remainingInstallments / 120),
-              interestRate: interestRate,
-              monthlyPayment: monthlyPayment,
-              remainingInstallments: remainingInstallments,
-              issueDate: new Date(Date.now() - (120 - remainingInstallments) * 30 * 24 * 60 * 60 * 1000)
-            });
-          }
-        }
-      }
-      
-      // Criar resumo das dívidas
+      // Criar resumo das dívidas baseado apenas em contratos reais
       const debtSummary = {
         totalMonthlyPayment: debtRecords.reduce((sum, debt) => sum + (debt.monthlyPayment || 0), 0),
-        principalRemaining: economicData.publicDebt,
+        principalRemaining: debtRecords.reduce((sum, debt) => sum + (debt.remainingValue || 0), 0),
         totalFuturePayments: debtRecords.reduce((sum, debt) => 
           sum + ((debt.monthlyPayment || 0) * (debt.remainingInstallments || 0)), 0
         ),
@@ -374,7 +334,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
       // Chamar o callback passando os dados para o GamePage
       onOpenDebtPopup(debtSummary, debtRecords, economicData);
     }
-  }, [getEconomicData, onOpenDebtPopup, localDebtContracts, getNumberOfDebtContracts]);
+  }, [getEconomicData, onOpenDebtPopup, localDebtContracts]);
   
   // Formatadores
   const formatCurrency = (value) => {
@@ -421,7 +381,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
     );
   }
   
-  const numberOfContracts = getNumberOfDebtContracts(economicData.publicDebt);
+  const numberOfContracts = getNumberOfDebtContracts();
   
   return (
     <div className="advanced-economy-panel">
@@ -583,8 +543,8 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
           </button>
         </div>
         
-        {/* Botão para abrir popup de dívidas via callback */}
-        {economicData.publicDebt > 0 && (
+        {/* MODIFICADO: Botão só aparece se houver contratos reais */}
+        {numberOfContracts > 0 && (
           <button 
             className="debt-summary-btn"
             onClick={handleOpenDebtPopup}

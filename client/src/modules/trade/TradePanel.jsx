@@ -180,7 +180,7 @@ const TradePanel = () => {
             )}
             
             <div className="balance-row">
-              <span className="balance-label">Necessidade:</span>
+              <span className="balance-label">Consumo:</span>
               <div className="balance-values-container">
                 <span className="balance-number">{getNumericValue(economy.commoditiesNeeds).toFixed(1)} bi</span>
                 <span className="balance-percent">
@@ -227,7 +227,7 @@ const TradePanel = () => {
             )}
             
             <div className="balance-row">
-              <span className="balance-label">Necessidade:</span>
+              <span className="balance-label">Consumo:</span>
               <div className="balance-values-container">
                 <span className="balance-number">{getNumericValue(economy.manufacturesNeeds).toFixed(1)} bi</span>
                 <span className="balance-percent">
