@@ -45,8 +45,12 @@
   │   │   │   │   ├── defensePanel.css
   │   │   │   │   └── defenseState.js  # Estado militar
   │   │   │   ├── economy
+  │   │   │   │   ├── AdvancedEconomyPanel.css
+  │   │   │   │   ├── AdvancedEconomyPanel.jsx
   │   │   │   │   ├── EconomyPanel.css
   │   │   │   │   ├── EconomyPanel.jsx  # Componente Painel de Economia
+  │   │   │   │   ├── advancedEconomyService.js
+  │   │   │   │   ├── advancedEconomySlice.js
   │   │   │   │   └── economyState.js  # Estado de economia
   │   │   │   ├── game
   │   │   │   │   ├── GamePage.css
@@ -138,6 +142,14 @@
       │       └── countriesData.json
       ├── server.js  # Entry point do servidor
       └── shared
+          ├── advancedDebtManagement.js
+          ├── advancedEconomyCalculations.js
+          ├── countryState
+          │   ├── countryEconomyCalculator.js
+          │   ├── countryStateConfig.js
+          │   ├── countryStateCore.js
+          │   ├── countryStateUpdater.js
+          │   └── index.js  # Criação e combinação dos reducers
           ├── countryStateManager.js
           ├── firebaseAdmin.js
           ├── gameStateUtils.js  # Utilitários de estado para o jogo

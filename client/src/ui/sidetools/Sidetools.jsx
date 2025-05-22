@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import EconomyPanel from '../../modules/economy/EconomyPanel';
+import AdvancedEconomyPanel from '../../modules/economy/AdvancedEconomyPanel';
 import PoliticsPanel from '../../modules/politics/PoliticsPanel';
 import TradePanel from '../../modules/trade/TradePanel';
 import DefensePanel from '../../modules/defense/DefensePanel';
@@ -54,7 +54,7 @@ const Sidetools = ({ onClose, isActive, myCountry }) => {
       <div className="tab-contents">
         {/* Painel de Economia - Usando nosso novo componente */}
         <div className={`tab-content ${activeTab === 'economy' ? 'active' : ''}`}>
-          <EconomyPanel />
+          <AdvancedEconomyPanel />
         </div>
         
         {/* Painel de Política - Usando nosso novo componente */}
