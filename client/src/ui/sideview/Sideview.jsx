@@ -122,12 +122,14 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
       <div id="info" className={`tab-content ${activeTab === 'info' ? 'active' : ''}`}>
         <h4>Países:</h4>
         <p>
-          O jogo possui 30 nações ativas que participam do confronto global por expansão de mercados.
+          O jogo possui 12 nações ativas que participam do confronto por influência global.
         </p>
-        <h4>Objetivo:</h4>
-        <p>
-          Expandir seu mercado para o exterior e atrapalhar a expansão de mercados dos outros países. O cálculo base de evolução de mercado é o crescimento percentual de comércio.
-        </p>
+        <h4>Objetivos:</h4>
+        <ul>
+          <li>1. Fazer o maior número de acordos econômicos e militares.</li>
+          <li>2. Forçar rompimento de acordos de países concorrentes.</li>
+          <li>3. Sobreviver enquanto líder da sua nação.</li>
+        </ul>
 
         <h4>Informações da Partida</h4>
         <div id="room-details">

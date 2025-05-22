@@ -73,16 +73,19 @@ const PoliticsPanel = () => {
         <div className="domestic-actions">
           <div className="action-buttons">
             <button className="action-btn">
-              Propaganda Patriótica
+              Acordos Políticos
             </button>
+            <p>(tentar / comprar) tempo de carência 30s</p>
             
             <button className="action-btn">
-              Reprimir Protestos
+              Lobby Empresarial
             </button>
+            <p>(tentar / comprar) tempo de carência 30s</p>
             
             <button className="action-btn">
-              Subornar Parlamento
+              Mídias Aliadas
             </button>
+            <p>(tentar / comprar) tempo de carência 30s</p>
           </div>
         </div>
 
