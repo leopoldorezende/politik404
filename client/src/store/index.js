@@ -5,7 +5,7 @@ import gameReducer from '../modules/game/gameState';
 import chatReducer from '../modules/chat/chatState';
 import countryStateReducer from '../modules/country/countryStateSlice';
 import tradeReducer from '../modules/trade/tradeState';
-import advancedEconomyReducer from '../modules/economy/advancedEconomySlice';
+import advancedEconomyReducer from '../modules/economy/economySlice';
 import socketMiddleware from './socketReduxMiddleware';
 
 export const store = configureStore({

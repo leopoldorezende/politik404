@@ -195,16 +195,14 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       'alliance': 'Alianças e Cooperação',
       'hybrid': 'Guerra Híbrida',
       'attack': 'Operações Militares',
-      'map': 'Ver País Selecionado'
+      'map': 'Ver País Selecionado',
+      'politicalPact': 'Pacto Político',
+      'businessPartnership': 'Parceria Empresarial',
+      'mediaControl': 'Controle de Mídia'
     };
-    
+              
     return titles[action] || '';
   };
-
-  // Se o país selecionado é o próprio país do jogador, não renderizar o ActionMenu
-  if (isOwnCountrySelected) {
-    return null;
-  }
 
   return (
     <>
@@ -223,53 +221,92 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
             ))}
           </div>
         )}
+      
+      
 
         {/* Ícones de ação */}
-        <div className="action-icons">
-          <button 
-            className={`action-icon ${activeMenu === 'trade' ? 'active' : ''}`}
-            onClick={() => handleIconClick('trade')}
-            title={getActionTitle('trade')}
-          >
-            <span className="material-icons">{getActionIcon('trade')}</span>
-          </button>
-          
-          {/* Botão de Alianças com menu suspenso */}
-          <button 
-            className={`action-icon ${activeMenu === 'alliance' ? 'active' : ''}`}
-            onClick={() => handleIconClick('alliance')}
-            title={getActionTitle('alliance')}
-          >
-            <span className="material-icons">{getActionIcon('alliance')}</span>
-          </button>
-          
-          <button 
-            className={`action-icon ${activeMenu === 'hybrid' ? 'active' : ''}`}
-            onClick={() => handleIconClick('hybrid')}
-            title={getActionTitle('hybrid')}
-          >
-            <span className="material-icons">{getActionIcon('hybrid')}</span>
-          </button>
-          
-          <button 
-            className={`action-icon ${activeMenu === 'attack' ? 'active' : ''}`}
-            onClick={() => handleIconClick('attack')}
-            title={getActionTitle('attack')}
-          >
-            <span className="material-icons">{getActionIcon('attack')}</span>
-          </button>
-          
-          {/* Ícone do mapa para abrir sideview com informações do país - apenas no mobile */}
-          {isMobile && (
+
+        {isOwnCountrySelected ? (
+
+          <div className="action-icons">
             <button 
-              className="action-icon"
-              onClick={() => handleIconClick('map')}
-              title={getActionTitle('map')}
+              className={`action-icon ${activeMenu === 'politicalPact' ? 'active' : ''}`}
+              // onClick={() => handleIconClick('politicalPact')}
+              title={getActionTitle('politicalPact')}
             >
-              <span className="material-icons">{getActionIcon('map')}</span>
+              <span className="material-icons">gavel</span>
             </button>
-          )}
-        </div>
+            
+            {/* Botão de Alianças com menu suspenso */}
+            <button 
+              className={`action-icon ${activeMenu === 'businessPartnership' ? 'active' : ''}`}
+              // onClick={() => handleIconClick('businessPartnership')}
+              title={getActionTitle('businessPartnership')}
+            >
+              <span className="material-icons">corporate_fare</span>
+            </button>
+            
+            <button 
+              className={`action-icon ${activeMenu === 'mediaControl' ? 'active' : ''}`}
+              // onClick={() => handleIconClick('mediaControl')}
+              title={getActionTitle('mediaControl')}
+            >
+              <span className="material-icons">connected_tv</span>
+            </button>
+          </div>
+            
+        ) : (
+
+
+          <div className="action-icons">
+            <button 
+              className={`action-icon ${activeMenu === 'trade' ? 'active' : ''}`}
+              onClick={() => handleIconClick('trade')}
+              title={getActionTitle('trade')}
+            >
+              <span className="material-icons">{getActionIcon('trade')}</span>
+            </button>
+            
+            {/* Botão de Alianças com menu suspenso */}
+            <button 
+              className={`action-icon ${activeMenu === 'alliance' ? 'active' : ''}`}
+              onClick={() => handleIconClick('alliance')}
+              title={getActionTitle('alliance')}
+            >
+              <span className="material-icons">{getActionIcon('alliance')}</span>
+            </button>
+            
+            <button 
+              className={`action-icon ${activeMenu === 'hybrid' ? 'active' : ''}`}
+              onClick={() => handleIconClick('hybrid')}
+              title={getActionTitle('hybrid')}
+            >
+              <span className="material-icons">{getActionIcon('hybrid')}</span>
+            </button>
+            
+            <button 
+              className={`action-icon ${activeMenu === 'attack' ? 'active' : ''}`}
+              onClick={() => handleIconClick('attack')}
+              title={getActionTitle('attack')}
+            >
+              <span className="material-icons">{getActionIcon('attack')}</span>
+            </button>
+            
+            {/* Ícone do mapa para abrir sideview com informações do país - apenas no mobile */}
+            {isMobile && (
+              <button 
+                className="action-icon"
+                onClick={() => handleIconClick('map')}
+                title={getActionTitle('map')}
+              >
+                <span className="material-icons">{getActionIcon('map')}</span>
+              </button>
+            )}
+          </div>
+
+        )}
+
+       
       </div>
       
       {/* Popup unificado para todas as ações */}

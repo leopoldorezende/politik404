@@ -14,7 +14,7 @@ import {
   issueBonds as issueBondsAction,
   processDebtPayments as processDebtPaymentsAction,
   selectCountryEconomy
-} from './advancedEconomySlice';
+} from './economySlice';
 
 // Importar funções de cálculo do servidor (assumindo que estarão disponíveis no cliente)
 // Em uma implementação real, essas funções viriam do servidor via API

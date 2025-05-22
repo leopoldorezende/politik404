@@ -156,8 +156,15 @@ const MapView = ({ justClosedSidebar }) => {
     // Expressão de cores
     const fillColorExpression = [
       'case',
-      // Meu país sempre em amarelo, independente se está selecionado ou não
-      ['==', ['get', 'name_en'], myCountry], 'rgba(255, 213, 0, 0.9)',
+      // Meu país e selecionado → amarelo mais claro (quase dourado)
+      ['all',
+        ['==', ['get', 'name_en'], myCountry],
+        ['==', ['get', 'name_en'], selectedCountry]
+      ], 'rgba(238, 195, 0, 0.9)',
+
+      // Meu país (não selecionado) → amarelo padrão
+      ['==', ['get', 'name_en'], myCountry], 'rgba(255, 232, 116, 0.9)',
+
       // País selecionado em roxo (somente se não for meu país)
       ['all', 
         ['==', ['get', 'name_en'], selectedCountry],

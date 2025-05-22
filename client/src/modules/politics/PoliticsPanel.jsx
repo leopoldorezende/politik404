@@ -84,7 +84,7 @@ const PoliticsPanel = () => {
               Controle de Mídia
             </button>
                   
-            (tentar / comprar) tempo de carência 30s
+            (tentar / subornar) tempo de carência 30s
 
           </div>
         </div>

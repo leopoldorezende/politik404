@@ -45,14 +45,12 @@
   │   │   │   │   ├── defensePanel.css
   │   │   │   │   └── defenseState.js  # Estado militar
   │   │   │   ├── economy
-  │   │   │   │   ├── AdvancedEconomyPanel.css
-  │   │   │   │   ├── AdvancedEconomyPanel.jsx
   │   │   │   │   ├── DebtSummaryPopup.css
   │   │   │   │   ├── DebtSummaryPopup.jsx
   │   │   │   │   ├── EconomyPanel.css
   │   │   │   │   ├── EconomyPanel.jsx  # Componente Painel de Economia
-  │   │   │   │   ├── advancedEconomyService.js
-  │   │   │   │   ├── advancedEconomySlice.js
+  │   │   │   │   ├── economyService.js
+  │   │   │   │   ├── economySlice.js
   │   │   │   │   └── economyState.js  # Estado de economia
   │   │   │   ├── game
   │   │   │   │   ├── GamePage.css

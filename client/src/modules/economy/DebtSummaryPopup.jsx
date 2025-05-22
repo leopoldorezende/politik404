@@ -151,10 +151,7 @@ const DebtSummaryPopup = ({
           <div className="debt-info-section">
             <h4>Informações sobre Títulos da Dívida Pública</h4>
             <ul>
-              <li>Os títulos têm duração padrão de 10 anos (120 parcelas mensais)</li>
               <li>A taxa de juros varia conforme a classificação de crédito do país</li>
-              <li>Países com dívida alta pagam taxas de juros mais elevadas</li>
-              <li>Os pagamentos mensais são automáticos e deduzidos do Tesouro</li>
               <li>Se o Tesouro for insuficiente, títulos de emergência podem ser emitidos</li>
               <li>A relação dívida/PIB não pode ultrapassar 120% para novas emissões</li>
             </ul>
