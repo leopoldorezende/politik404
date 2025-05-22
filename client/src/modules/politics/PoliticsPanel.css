@@ -22,7 +22,7 @@
 
 /* Domestic actions section */
 .domestic-actions {
-  margin-bottom: 20px;
+  margin-bottom: 8px;
   background-color: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
   padding: 12px;
@@ -31,16 +31,15 @@
 .action-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 0;
   margin-top: 8px;
 }
 
 /* Approval section */
 .approval-section {
-  margin-bottom: 20px;
   background-color: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
-  padding: 12px;
+  padding: 0 12px;
 }
 
 .approval-bars {

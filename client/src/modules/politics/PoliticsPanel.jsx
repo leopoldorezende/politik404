@@ -73,19 +73,19 @@ const PoliticsPanel = () => {
         <div className="domestic-actions">
           <div className="action-buttons">
             <button className="action-btn">
-              Acordos Políticos
+              Pacto Político
             </button>
-            <p>(tentar / comprar) tempo de carência 30s</p>
             
             <button className="action-btn">
-              Lobby Empresarial
+              Financiar Indústria
             </button>
-            <p>(tentar / comprar) tempo de carência 30s</p>
             
             <button className="action-btn">
-              Mídias Aliadas
+              Mídia Patrocinada
             </button>
-            <p>(tentar / comprar) tempo de carência 30s</p>
+                  
+            (tentar / comprar) tempo de carência 30s
+
           </div>
         </div>
 

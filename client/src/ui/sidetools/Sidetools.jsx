@@ -29,18 +29,18 @@ const Sidetools = ({ onClose, isActive, myCountry, onOpenDebtPopup }) => {
           <span className="material-icons">monetization_on</span>
         </div>
         <div 
-          className={`tab ${activeTab === 'politics' ? 'active' : ''}`}
-          onClick={() => setActiveTab('politics')}
-          title="Política"
-        >
-          <span className="material-icons">account_balance</span>
-        </div>
-        <div 
           className={`tab ${activeTab === 'trade' ? 'active' : ''}`}
           onClick={() => setActiveTab('trade')}
           title="Comércio"
         >
           <span className="material-icons">directions_boat</span>
+        </div>
+        <div 
+          className={`tab ${activeTab === 'politics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('politics')}
+          title="Política"
+        >
+          <span className="material-icons">account_balance</span>
         </div>
         <div 
           className={`tab ${activeTab === 'defense' ? 'active' : ''}`}

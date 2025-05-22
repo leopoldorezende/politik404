@@ -63,6 +63,17 @@ const DefensePanel = () => {
         <h4>Forças Armadas</h4>
         
         <div className="defense-bars">
+          Aqui vem os cards de:
+          <br />
+          - Alianças
+          <br />
+          - Cooperação
+          <br />
+          - Espionagem mútua (sua e da Cooperação)
+          <br />
+          - Dados das ingerências
+
+
           <div className="defense-stat">
             <span>Exército:</span>
             <div className="progress-bar">
@@ -139,43 +150,6 @@ const DefensePanel = () => {
         </button>
       </div>
   
-      <br />
-      <div className="war-section">
-        <h4>Ações de Guerra</h4>
-        
-        <div className="form-group">
-          <label>País Alvo:</label>
-          <select 
-            value={targetCountry} 
-            onChange={(e) => setTargetCountry(e.target.value)}
-          >
-            <option value="">Selecione um país</option>
-            {getAvailableTargets().map((country, index) => (
-              <option key={index} value={country}>{country}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="form-group">
-          <label>Estratégia:</label>
-          <select 
-            value={warStrategy} 
-            onChange={(e) => setWarStrategy(e.target.value)}
-          >
-            <option value="attack">Ataque Bélico</option>
-            <option value="sabotage">Sabotagem Comercial</option>
-            <option value="regime">Mudança de Regime</option>
-            <option value="disinformation">Desinformação</option>
-          </select>
-        </div>
-        
-        <button 
-          className="action-btn danger" 
-          disabled={!targetCountry}
-        >
-          Iniciar Ação
-        </button>
-      </div>
     </div>
   );
 };

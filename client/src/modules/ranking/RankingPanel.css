@@ -14,15 +14,12 @@
   text-align: left;
 }
 
-.ranking-panel .ranking-header {
-  margin-bottom: 20px;
-}
-
 .ranking-panel .ranking-criteria {
   background-color: rgba(0, 0, 0, 0.15);
   border-radius: 6px;
   padding: 10px;
   font-size: 14px;
+  margin-top: 20px;;
 }
 
 .ranking-panel .criteria-label {

@@ -104,6 +104,7 @@ const TradePanel = () => {
   
   return (
     <div className="trade-panel">
+      
       <div className="trade-agreements-section">
         <h4>Acordos Comerciais</h4>
 
@@ -114,16 +115,21 @@ const TradePanel = () => {
                 key={`${agreement.id}-${index}`} 
                 className={`trade-card ${agreement.type}`}
               >
-                <h4>{agreement.country}</h4>
-                <p>Tipo: {agreement.type === 'export' ? 'Exportação' : 'Importação'}</p>
-                <p>Produto: {agreement.product === 'commodity' ? 'Commodities' : 'Manufatura'}</p>
-                <p>Valor: {agreement.value} bi USD</p>
+                <p>
+                  <b>{agreement.country}</b>
+                  <br />
+                  {agreement.type === 'export' ? 'Exportação' : 'Importação'} <span>de </span>
+                  {agreement.product === 'commodity' ? 'Commodities' : 'Manufatura'}
+                  <br />
+                  <b>{agreement.value}</b> bi USD
+                </p>
                 <button 
-                  className="action-btn danger"
+                  className="action-btn cancel"
                   onClick={() => handleCancelAgreement(agreement.id)}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Cancelando...' : 'Cancelar Acordo'}
+                  ✕
+                  {/* {isSubmitting ? '...' : '✕'} */}
                 </button>
               </div>
             ))}
@@ -232,7 +238,7 @@ const TradePanel = () => {
           </div>
         </div>
       </div>
-
+{/* 
       <div className="sectoral-distribution-section">
         <h4>Distribuição Setorial do PIB</h4>
         <div className="distribution-bars">
@@ -278,14 +284,14 @@ const TradePanel = () => {
             <span className="sector-output">{getNumericValue(economy.manufacturesOutput).toFixed(1)} bi</span>
           </div>
         </div>
-      </div>
-      
+      </div> */}
+{/*       
       <div className="trade-benefits">
         <h4>Benefícios do Comércio Internacional</h4>
         <p>Importar produtos que você não produz em quantidade suficiente ajuda a suprir demandas internas e fortalecer a economia.</p>
         <p>Exportar produtos excedentes aumenta o PIB e permite acumulação de capital estrangeiro.</p>
         <p>Acordos comerciais inteligentes podem reduzir a inflação e estimular setores estratégicos da economia.</p>
-      </div>
+      </div> */}
     </div>
   );
 };

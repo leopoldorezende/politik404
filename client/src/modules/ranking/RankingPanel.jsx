@@ -92,31 +92,7 @@ const RankingPanel = () => {
   
   return (
     <div className="ranking-panel">
-      <h3>Ranking de Países</h3>
       
-      <div className="ranking-header">
-        <div className="ranking-criteria">
-          Para cada:
-          <ul className="criteria-list">
-            <li>
-              <span>Acordo de Importação</span>
-              <span>1 ponto</span>
-            </li>
-            <li>
-              <span>Acordo de Exportação</span>
-              <span>2 pontos</span>
-            </li>
-            <li>
-              <span>Cooperação Estratégica</span>
-              <span>1 ponto</span>
-            </li>
-            <li>
-              <span>Aliança Militar</span>
-              <span>3 pontos</span>
-            </li>
-          </ul>
-        </div>
-      </div>
       
       <div className="ranking-list">
         {rankings.map((item, index) => (
@@ -143,6 +119,35 @@ const RankingPanel = () => {
           </div>
         ))}
       </div>
+
+
+      <div className="ranking-criteria">
+        <ul className="criteria-list">
+          <li>
+            <span>
+              Acordo de Importação <br />
+              Cooperação Estratégica
+            </span>
+            <span>1 ponto</span>
+          </li>
+          <li>
+            <span>
+              Acordo de Exportação<br />
+              Pacto Político
+              </span>
+            <span>2 pontos</span>
+          </li>
+          <li>
+            <span>
+              Aliança Militar<br />
+              Pacto Político
+            </span>
+            <span>3 pontos</span>
+          </li>
+        </ul>
+      </div>
+
+
     </div>
   );
 };

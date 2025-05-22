@@ -149,7 +149,7 @@ const ChatPanel = ({ hasUnreadMessagesFrom }) => {
 
   return (
     <div className="chat-section">
-      <h4 id="you">Você: {username}</h4>
+      {/* <h4 id="you">Você: {username}</h4> */}
       <ul id="player-list">
         <li 
           className={`chat-option ${currentChatMode === 'public' ? 'active' : ''}`}
@@ -175,9 +175,9 @@ const ChatPanel = ({ hasUnreadMessagesFrom }) => {
         ))}
       </ul>
       <div id="chat-container">
-        <div id="chat-header">
+        {/* <div id="chat-header">
           {currentChatMode === 'public' ? 'Chat Público' : `Chat Privado com ${currentChatMode}`}
-        </div>
+        </div> */}
         <div id="chat-messages" ref={messagesRef}>
           {displayMessages.map((msg, index) => {
             // Extrair o nome do usuário da mensagem (sem a parte do país)
