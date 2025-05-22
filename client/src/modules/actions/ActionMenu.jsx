@@ -160,8 +160,8 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       'export': 'Exportação',
       
       // Alliance options
-      'cooperation': 'Cooperação Estratégica (Pode 1 - 3pts) Compartilha dados de espionagem ',
-      'allince': 'Aliança Militar (Pode 1 - 4pts)',
+      'cooperation': 'Cooperação Estratégica (Pode 1 - 4pts) Compartilha dados de espionagem ',
+      'allince': 'Aliança Militar (Pode 1 - 5pts)',
       
       // Hybrid war options
       'interference': 'Ingerência (pega pra si os cards políticos do país)',

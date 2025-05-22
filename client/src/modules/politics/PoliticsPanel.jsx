@@ -77,11 +77,11 @@ const PoliticsPanel = () => {
             </button>
             
             <button className="action-btn">
-              Financiar Indústria
+              Parceria Empresarial
             </button>
             
             <button className="action-btn">
-              Mídia Patrocinada
+              Controle de Mídia
             </button>
                   
             (tentar / comprar) tempo de carência 30s

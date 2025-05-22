@@ -125,24 +125,41 @@ const RankingPanel = () => {
         <ul className="criteria-list">
           <li>
             <span>
-              Acordo de Importação <br />
-              Cooperação Estratégica
+              Acordo de Importação
             </span>
             <span>1 ponto</span>
           </li>
+          <hr />
           <li>
             <span>
-              Acordo de Exportação<br />
-              Pacto Político
+              Acordo de Exportação
               </span>
             <span>2 pontos</span>
           </li>
+          <hr />
           <li>
             <span>
-              Aliança Militar<br />
               Pacto Político
+              <br />
+              Parceria Empresarial
+              <br />
+              Controle de Mídia
             </span>
             <span>3 pontos</span>
+          </li>
+          <hr />
+          <li>
+            <span>
+              Cooperação Estratégica
+            </span>
+            <span>4 pontos</span>
+          </li>
+          <hr />
+          <li>
+            <span>
+              Aliança Militar
+            </span>
+            <span>5 pontos</span>
           </li>
         </ul>
       </div>
