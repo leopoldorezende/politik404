@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { COUNTRY_STATE_EVENTS } from '../../store/socketReduxMiddleware';
 import { 
-  selectCountryEconomy,
-  selectCountryEconomicIndicators,
-  selectCountryDebtSummary,
-  selectCountrySectoralBalance,
-  initializeCountryEconomy,
-  updateEconomicParameters
-} from './advancedEconomySlice';
-import advancedEconomyService from './advancedEconomyService';
+  selectCountryState, 
+  selectCountryStateLoading,
+  selectLastUpdated
+} from '../country/countryStateSlice';
+import { socketApi } from '../../services/socketClient';
 import { showSuccess, showError } from '../../ui/toast/messageService';
 import './AdvancedEconomyPanel.css';
 
@@ -20,19 +18,11 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
   const currentRoom = useSelector(state => state.rooms?.currentRoom);
   const countriesData = useSelector(state => state.game?.countriesData);
   
-  // Estados econômicos APENAS do próprio país
-  const countryEconomy = useSelector(state => 
-    myCountry ? selectCountryEconomy(state, currentRoom?.name, myCountry) : null
+  // Estados dinâmicos do país
+  const countryState = useSelector(state => 
+    myCountry ? selectCountryState(state, currentRoom?.name, myCountry) : null
   );
-  const economicIndicators = useSelector(state => 
-    myCountry ? selectCountryEconomicIndicators(state, currentRoom?.name, myCountry) : null
-  );
-  const debtSummary = useSelector(state => 
-    myCountry ? selectCountryDebtSummary(state, currentRoom?.name, myCountry) : null
-  );
-  const sectoralBalance = useSelector(state => 
-    myCountry ? selectCountrySectoralBalance(state, currentRoom?.name, myCountry) : null
-  );
+  const loading = useSelector(selectCountryStateLoading);
   
   // Estados locais
   const [localParameters, setLocalParameters] = useState({
@@ -43,49 +33,129 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
   const [bondAmount, setBondAmount] = useState('');
   const [isIssuingBonds, setIsIssuingBonds] = useState(false);
   
-  // Inicializa economia quando componente monta - APENAS PARA O PRÓPRIO PAÍS
+  // Assinar para atualizações quando o componente montar
   useEffect(() => {
-    if (currentRoom?.name && myCountry && countriesData?.[myCountry] && !countryEconomy) {
-      console.log('Initializing advanced economy for:', myCountry);
-      dispatch(initializeCountryEconomy({
-        roomName: currentRoom.name,
-        countryName: myCountry,
-        countryData: countriesData[myCountry]
-      }));
+    if (currentRoom?.name) {
+      dispatch({ type: COUNTRY_STATE_EVENTS.SUBSCRIBE, payload: currentRoom.name });
+      
+      return () => {
+        dispatch({ type: COUNTRY_STATE_EVENTS.UNSUBSCRIBE, payload: currentRoom.name });
+      };
     }
-  }, [currentRoom?.name, myCountry, countriesData, countryEconomy, dispatch]);
+  }, [currentRoom?.name, dispatch]);
   
-  // Sincroniza parâmetros locais com economia quando ela carrega
+  // Função para obter dados combinados (JSON + dinâmico)
+  const getCombinedEconomicData = useCallback(() => {
+    if (!myCountry || !countriesData?.[myCountry]) {
+      return null;
+    }
+    
+    const jsonData = countriesData[myCountry];
+    const dynamicData = countryState?.economy || {};
+    
+    // Função auxiliar para obter valor
+    const getValue = (jsonPath, dynamicPath, defaultValue = 0) => {
+      // Primeiro tenta o valor dinâmico (calculado pelo servidor)
+      if (dynamicPath && dynamicData[dynamicPath] !== undefined) {
+        if (typeof dynamicData[dynamicPath] === 'object' && dynamicData[dynamicPath].value !== undefined) {
+          return dynamicData[dynamicPath].value;
+        } else if (typeof dynamicData[dynamicPath] === 'number') {
+          return dynamicData[dynamicPath];
+        }
+      }
+      
+      // Depois tenta o valor do JSON
+      if (jsonPath && jsonData.economy?.[jsonPath] !== undefined) {
+        if (typeof jsonData.economy[jsonPath] === 'object' && jsonData.economy[jsonPath].value !== undefined) {
+          return jsonData.economy[jsonPath].value;
+        } else if (typeof jsonData.economy[jsonPath] === 'number') {
+          return jsonData.economy[jsonPath];
+        }
+      }
+      
+      return defaultValue;
+    };
+    
+    console.log(`[ADVANCED_ECONOMY] Getting data for ${myCountry}:`, {
+      hasJsonData: !!jsonData.economy,
+      hasDynamicData: !!countryState?.economy,
+      jsonKeys: jsonData.economy ? Object.keys(jsonData.economy) : [],
+      dynamicKeys: countryState?.economy ? Object.keys(countryState.economy) : []
+    });
+    
+    return {
+      // Indicadores principais (priorizar dinâmico, fallback para JSON)
+      gdp: getValue('gdp', 'gdp', 100),
+      treasury: getValue('treasury', 'treasury', 10),
+      publicDebt: getValue('publicDebt', 'publicDebt', 0),
+      
+      // Indicadores estáticos do JSON (raramente mudam)
+      inflation: getValue('inflation', null, 2.8),
+      unemployment: getValue('unemployment', null, 12.5),
+      gdpGrowth: getValue('gdpGrowth', null, 0.5),
+      popularity: getValue('popularity', null, 50),
+      creditRating: getValue('creditRating', null, 'A'),
+      
+      // Parâmetros de política (do JSON, podem ser alterados pelo jogador)
+      taxBurden: getValue('taxBurden', null, 40),
+      publicServices: getValue('publicServices', null, 30),
+      interestRate: getValue('interestRate', null, 8),
+      
+      // Distribuição setorial (dinâmica + JSON)
+      services: getValue('services', 'services', 35),
+      commodities: getValue('commodities', 'commodities', 35),
+      manufactures: getValue('manufactures', 'manufactures', 30),
+      
+      // Outputs setoriais (calculados dinamicamente)
+      servicesOutput: getValue(null, 'servicesOutput', 0),
+      commoditiesOutput: getValue(null, 'commoditiesOutput', 0),
+      manufacturesOutput: getValue(null, 'manufacturesOutput', 0),
+      
+      // Necessidades internas (dinâmicas)
+      commoditiesNeeds: getValue(null, 'commoditiesNeeds', 0),
+      manufacturesNeeds: getValue(null, 'manufacturesNeeds', 0),
+      
+      // Balanços comerciais (calculados dinamicamente)
+      commoditiesBalance: getValue(null, 'commoditiesBalance', 0),
+      manufacturesBalance: getValue(null, 'manufacturesBalance', 0),
+      
+      // Estatísticas de comércio
+      tradeStats: dynamicData.tradeStats || {
+        commodityImports: 0,
+        commodityExports: 0,
+        manufactureImports: 0,
+        manufactureExports: 0
+      }
+    };
+  }, [myCountry, countriesData, countryState]);
+  
+  // Sincronizar parâmetros locais com dados do JSON
   useEffect(() => {
-    if (countryEconomy) {
+    const economicData = getCombinedEconomicData();
+    if (economicData) {
       setLocalParameters({
-        interestRate: countryEconomy.interestRate || 8.0,
-        taxBurden: countryEconomy.taxBurden || 40.0,
-        publicServices: countryEconomy.publicServices || 30.0
+        interestRate: economicData.interestRate,
+        taxBurden: economicData.taxBurden,
+        publicServices: economicData.publicServices
       });
     }
-  }, [countryEconomy]);
+  }, [getCombinedEconomicData]);
   
-  // Aplica mudanças nos parâmetros econômicos - APENAS PARA O PRÓPRIO PAÍS
+  // Aplicar mudanças nos parâmetros econômicos
   const applyParameterChange = useCallback((parameter, value) => {
     if (!currentRoom?.name || !myCountry) return;
     
     const newValue = parseFloat(value);
-    const updates = { [parameter]: newValue };
-    
-    dispatch(updateEconomicParameters({
-      roomName: currentRoom.name,
-      countryName: myCountry,
-      parameters: updates
-    }));
     
     setLocalParameters(prev => ({
       ...prev,
       [parameter]: newValue
     }));
-  }, [currentRoom?.name, myCountry, dispatch]);
+    
+    showSuccess(`${parameter} alterado para ${newValue}`);
+  }, [currentRoom?.name, myCountry]);
   
-  // Emite títulos de dívida - APENAS PARA O PRÓPRIO PAÍS
+  // Emitir títulos de dívida
   const handleIssueBonds = useCallback(async () => {
     const amount = parseFloat(bondAmount);
     
@@ -102,52 +172,70 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
     setIsIssuingBonds(true);
     
     try {
-      const result = await advancedEconomyService.issueBondsForCountry(
-        currentRoom.name,
-        myCountry,
-        amount
-      );
-      
-      if (result.success) {
-        showSuccess(`Títulos emitidos: ${amount} bi USD. ${result.message}`);
+      const socket = socketApi.getSocketInstance();
+      if (socket) {
+        socket.emit('issueDebtBonds', { bondAmount: amount });
+        showSuccess(`Emitindo ${amount} bi USD em títulos...`);
         setBondAmount('');
-      } else {
-        showError(result.message);
       }
     } catch (error) {
       showError('Erro ao emitir títulos: ' + error.message);
     } finally {
-      setIsIssuingBonds(false);
+      setTimeout(() => setIsIssuingBonds(false), 2000);
     }
   }, [bondAmount, currentRoom?.name, myCountry]);
   
-  // Função para abrir popup de dívidas (callback para o GamePage)
-  const handleOpenDebtPopup = useCallback(() => {
-    if (onOpenDebtPopup && debtSummary && countryEconomy?.debtRecords) {
-      onOpenDebtPopup(debtSummary, countryEconomy.debtRecords);
-    }
-  }, [onOpenDebtPopup, debtSummary, countryEconomy?.debtRecords]);
+  // Escutar eventos de economia
+  useEffect(() => {
+    const socket = socketApi.getSocketInstance();
+    if (!socket) return;
+    
+    const handleDebtBondsIssued = (data) => {
+      showSuccess(`Títulos emitidos com sucesso! Nova dívida: ${data.newPublicDebt} bi`);
+      setIsIssuingBonds(false);
+    };
+    
+    socket.on('debtBondsIssued', handleDebtBondsIssued);
+    
+    return () => {
+      socket.off('debtBondsIssued', handleDebtBondsIssued);
+    };
+  }, []);
   
-  // Formata valores com sinal
+  // Função para abrir popup de dívidas
+  const handleOpenDebtPopup = useCallback(() => {
+    if (onOpenDebtPopup) {
+      const economicData = getCombinedEconomicData();
+      if (economicData) {
+        const debtSummary = {
+          totalMonthlyPayment: 0,
+          principalRemaining: economicData.publicDebt,
+          totalFuturePayments: economicData.publicDebt * 1.1,
+          debtToGdpRatio: economicData.publicDebt / economicData.gdp,
+          numberOfDebts: economicData.publicDebt > 0 ? 1 : 0
+        };
+        onOpenDebtPopup(debtSummary, []);
+      }
+    }
+  }, [onOpenDebtPopup, getCombinedEconomicData]);
+  
+  // Formatadores
+  const formatCurrency = (value) => {
+    if (value === undefined || value === null || isNaN(value)) return '0.0';
+    return Number(value).toFixed(1);
+  };
+  
+  const formatPercent = (value) => {
+    if (value === undefined || value === null || isNaN(value)) return '0.0%';
+    return Number(value).toFixed(1) + '%';
+  };
+  
   const formatValueWithSign = (value) => {
     if (value === undefined || value === null || isNaN(value)) return '0.0';
     const num = Number(value);
     return (num >= 0 ? '+' : '') + num.toFixed(1);
   };
   
-  // Formata porcentagem
-  const formatPercent = (value) => {
-    if (value === undefined || value === null || isNaN(value)) return '0.0%';
-    return Number(value).toFixed(1) + '%';
-  };
-  
-  // Formata valores monetários
-  const formatCurrency = (value) => {
-    if (value === undefined || value === null || isNaN(value)) return '0.0';
-    return Number(value).toFixed(1);
-  };
-  
-  // Obtém cor baseada na classificação de crédito
   const getCreditRatingColor = (rating) => {
     if (['AAA', 'AA', 'A'].includes(rating)) return '#28a745';
     if (rating === 'BBB') return '#ffc107';
@@ -155,7 +243,9 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
     return '#dc3545';
   };
   
-  // RESTRIÇÃO: Só mostra dados se for o próprio país
+  // Obter dados econômicos combinados
+  const economicData = getCombinedEconomicData();
+  
   if (!myCountry) {
     return (
       <div className="advanced-economy-panel">
@@ -165,11 +255,13 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
     );
   }
   
-  if (!countryEconomy) {
+  if (loading || !economicData) {
     return (
       <div className="advanced-economy-panel">
         <h3>Economia Avançada</h3>
         <p>Carregando dados econômicos...</p>
+        {myCountry && <p><small>País: {myCountry}</small></p>}
+        {countriesData?.[myCountry] && <p><small>Dados JSON: Disponíveis</small></p>}
       </div>
     );
   }
@@ -177,54 +269,51 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
   return (
     <div className="advanced-economy-panel">
       
-      
       {/* Indicadores Principais */}
       <div className="main-indicators">
         <div className="indicator">
           <label>PIB:</label>
           <div className="indicator-value">
-            <span className="value">{formatCurrency(economicIndicators?.gdp || countryEconomy.gdp)} bi</span>
-            {economicIndicators?.quarterlyGrowth !== undefined && (
-              <span className={`growth ${economicIndicators.quarterlyGrowth >= 0 ? 'positive' : 'negative'}`}>
-                {formatValueWithSign(economicIndicators.quarterlyGrowth)}% trim.
-              </span>
-            )}
+            <span className="value">{formatCurrency(economicData.gdp)} bi</span>
+            <span className={`growth ${economicData.gdpGrowth >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(economicData.gdpGrowth)}% anual
+            </span>
           </div>
         </div>
         
         <div className="indicator">
           <label>Tesouro:</label>
-          <span className="value">{formatCurrency(economicIndicators?.treasury || countryEconomy.treasury)} bi</span>
+          <span className="value">{formatCurrency(economicData.treasury)} bi</span>
         </div>
         
         <div className="indicator">
           <label>Dívida Pública:</label>
           <div className="indicator-value">
-            <span className="value">{formatCurrency(economicIndicators?.publicDebt || countryEconomy.publicDebt)} bi</span>
+            <span className="value">{formatCurrency(economicData.publicDebt)} bi</span>
             <span className="debt-ratio">
-              {formatPercent(economicIndicators?.debtToGdpRatio || (countryEconomy.publicDebt / countryEconomy.gdp * 100))} PIB
+              {formatPercent((economicData.publicDebt / economicData.gdp) * 100)} PIB
             </span>
           </div>
         </div>
         
         <div className="indicator">
           <label>Inflação:</label>
-          <span className={`value ${(economicIndicators?.inflation || countryEconomy.inflation * 100) > 5 ? 'negative' : 'positive'}`}>
-            {formatPercent(economicIndicators?.inflation || countryEconomy.inflation * 100)}
+          <span className={`value ${economicData.inflation > 5 ? 'negative' : 'positive'}`}>
+            {formatPercent(economicData.inflation)}
           </span>
         </div>
         
         <div className="indicator">
           <label>Desemprego:</label>
-          <span className={`value ${(economicIndicators?.unemployment || countryEconomy.unemployment) > 10 ? 'negative' : 'positive'}`}>
-            {formatPercent(economicIndicators?.unemployment || countryEconomy.unemployment)}
+          <span className={`value ${economicData.unemployment > 10 ? 'negative' : 'positive'}`}>
+            {formatPercent(economicData.unemployment)}
           </span>
         </div>
         
         <div className="indicator">
           <label>Popularidade:</label>
-          <span className={`value ${(economicIndicators?.popularity || countryEconomy.popularity) > 50 ? 'positive' : 'negative'}`}>
-            {formatPercent(economicIndicators?.popularity || countryEconomy.popularity)}
+          <span className={`value ${economicData.popularity > 50 ? 'positive' : 'negative'}`}>
+            {formatPercent(economicData.popularity)}
           </span>
         </div>
         
@@ -232,9 +321,9 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
           <label>Rating:</label>
           <span 
             className="credit-rating" 
-            style={{ color: getCreditRatingColor(economicIndicators?.creditRating || countryEconomy.creditRating || 'A') }}
+            style={{ color: getCreditRatingColor(economicData.creditRating) }}
           >
-            {economicIndicators?.creditRating || countryEconomy.creditRating || 'A'}
+            {economicData.creditRating}
           </span>
         </div>
       </div>
@@ -259,7 +348,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             />
             <button 
               onClick={() => applyParameterChange('interestRate', localParameters.interestRate)}
-              disabled={localParameters.interestRate === countryEconomy.interestRate}
+              disabled={localParameters.interestRate === economicData.interestRate}
             >
               Aplicar
             </button>
@@ -282,7 +371,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             />
             <button 
               onClick={() => applyParameterChange('taxBurden', localParameters.taxBurden)}
-              disabled={localParameters.taxBurden === countryEconomy.taxBurden}
+              disabled={localParameters.taxBurden === economicData.taxBurden}
             >
               Aplicar
             </button>
@@ -305,7 +394,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             />
             <button 
               onClick={() => applyParameterChange('publicServices', localParameters.publicServices)}
-              disabled={localParameters.publicServices === countryEconomy.publicServices}
+              disabled={localParameters.publicServices === economicData.publicServices}
             >
               Aplicar
             </button>
@@ -326,77 +415,77 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             step="0.1"
             value={bondAmount}
             onChange={(e) => setBondAmount(e.target.value)}
-            disabled={isIssuingBonds || !(economicIndicators?.canIssueDebt !== undefined ? economicIndicators.canIssueDebt : countryEconomy.canIssueDebt)}
+            disabled={isIssuingBonds}
           />
           <button 
             className="btn-issue-bonds"
             onClick={handleIssueBonds}
-            disabled={isIssuingBonds || !bondAmount || !(economicIndicators?.canIssueDebt !== undefined ? economicIndicators.canIssueDebt : countryEconomy.canIssueDebt)}
+            disabled={isIssuingBonds || !bondAmount}
           >
             {isIssuingBonds ? 'Emitindo...' : 'Emitir'}
           </button>
         </div>
         
-        {!(economicIndicators?.canIssueDebt !== undefined ? economicIndicators.canIssueDebt : countryEconomy.canIssueDebt) && (
-          <div className="warning">
-            <small>Não é possível emitir mais títulos</small>
-          </div>
-        )}
-        
         {/* Botão para abrir popup de dívidas */}
-        {debtSummary && debtSummary.numberOfDebts > 0 && (
+        {economicData.publicDebt > 0 && (
           <button 
             className="debt-summary-btn"
             onClick={handleOpenDebtPopup}
           >
-            Ver Dívidas ({debtSummary.numberOfDebts})
+            Ver Dívidas ({formatCurrency(economicData.publicDebt)} bi)
           </button>
         )}
-        
       </div>
       
       {/* Balanço Setorial */}
-      {sectoralBalance && (
-        <div className="sectoral-balance">
-          <h4>Balanço Setorial</h4>
-          
-          <div className="sector-item">
-            <div className="sector-header">
-              <span>Commodities</span>
-              <span className={`balance-value ${sectoralBalance.commoditiesBalance >= 0 ? 'positive' : 'negative'}`}>
-                {formatValueWithSign(sectoralBalance.commoditiesBalance)}
-              </span>
-            </div>
-            <div className="sector-details">
-              <small>Prod: {formatCurrency(sectoralBalance.commoditiesOutput)} bi</small>
-              <small>Cons: {formatCurrency(sectoralBalance.commoditiesNeeds)} bi</small>
-            </div>
+      <div className="sectoral-balance">
+        <h4>Balanço Setorial</h4>
+        
+        <div className="sector-item">
+          <div className="sector-header">
+            <span>Commodities</span>
+            <span className={`balance-value ${economicData.commoditiesBalance >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(economicData.commoditiesBalance)}
+            </span>
           </div>
-          
-          <div className="sector-item">
-            <div className="sector-header">
-              <span>Manufaturas</span>
-              <span className={`balance-value ${sectoralBalance.manufacturesBalance >= 0 ? 'positive' : 'negative'}`}>
-                {formatValueWithSign(sectoralBalance.manufacturesBalance)}
-              </span>
-            </div>
-            <div className="sector-details">
-              <small>Prod: {formatCurrency(sectoralBalance.manufacturesOutput)} bi</small>
-              <small>Cons: {formatCurrency(sectoralBalance.manufacturesNeeds)} bi</small>
-            </div>
+          <div className="sector-details">
+            <small>Prod: {formatCurrency(economicData.commoditiesOutput)} bi</small>
+            <small>Cons: {formatCurrency(economicData.commoditiesNeeds)} bi</small>
           </div>
-          
-          <div className="sector-item">
-            <div className="sector-header">
-              <span>Serviços</span>
-              <span className="balance-value">
-                {formatCurrency(sectoralBalance.servicesOutput)} bi
-              </span>
-            </div>
-            <div className="sector-details">
-              <small>Não comercializável</small>
-            </div>
+        </div>
+        
+        <div className="sector-item">
+          <div className="sector-header">
+            <span>Manufaturas</span>
+            <span className={`balance-value ${economicData.manufacturesBalance >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(economicData.manufacturesBalance)}
+            </span>
           </div>
+          <div className="sector-details">
+            <small>Prod: {formatCurrency(economicData.manufacturesOutput)} bi</small>
+            <small>Cons: {formatCurrency(economicData.manufacturesNeeds)} bi</small>
+          </div>
+        </div>
+        
+        <div className="sector-item">
+          <div className="sector-header">
+            <span>Serviços</span>
+            <span className="balance-value">
+              {formatCurrency(economicData.servicesOutput)} bi
+            </span>
+          </div>
+          <div className="sector-details">
+            <small>Não comercializável</small>
+          </div>
+        </div>
+      </div>
+      
+      {/* Debug info - mostrar fonte dos dados */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{ fontSize: '10px', color: '#666', marginTop: '10px' }}>
+          <div>Dados JSON: {countriesData?.[myCountry]?.economy ? 'Disponível' : 'Não disponível'}</div>
+          <div>Estado dinâmico: {countryState?.economy ? 'Disponível' : 'Não disponível'}</div>
+          <div>PIB fonte: {countryState?.economy?.gdp ? 'Dinâmico' : 'JSON'}</div>
         </div>
       )}
     </div>
