@@ -142,7 +142,6 @@
       ├── server.js  # Entry point do servidor
       └── shared
           ├── advancedDebtManagement.js
-          ├── advancedEconomyCalculations.js
           ├── countryState
           │   ├── countryEconomyCalculator.js
           │   ├── countryStateConfig.js

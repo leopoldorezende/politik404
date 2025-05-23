@@ -1,9 +1,18 @@
 /**
  * economyHandlers.js
  * Socket.io handlers for economic operations
+ * ENHANCED WITH ADVANCED DEBT MANAGEMENT SYSTEM
  */
 
-import { performEconomicCalculations } from './economyCalculations.js';
+import { 
+  performEconomicCalculations,
+  issueDebtBonds,
+  issueEmergencyBonds,
+  processMonthlyDebtPayments,
+  updateTotalPublicDebt,
+  canIssueMoreDebt,
+  ECONOMIC_CONSTANTS
+} from './economyCalculations.js';
 import countryStateManager from '../../shared/countryStateManager.js';
 import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/gameStateUtils.js';
 import { 
@@ -24,7 +33,7 @@ let periodicUpdatesInitialized = false;
  * @param {Object} gameState - Global game state
  */
 function setupEconomyHandlers(io, socket, gameState) {
-  console.log('Economy handlers initialized');
+  console.log('Economy handlers initialized with advanced debt system');
   
   // Set up periodic economic updates only once
   if (!periodicUpdatesInitialized) {
@@ -33,7 +42,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     console.log('Periodic trade updates initialized (first-time setup)');
   }
 
-  // Handle debt bond issuance
+  // Enhanced debt bond issuance handler
   socket.on('issueDebtBonds', (data) => {
     const username = socket.username;
     
@@ -65,7 +74,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     }
     
     // Validate bond amount
-    const { bondAmount } = data;
+    const { bondAmount, isEmergency = false } = data;
     if (!bondAmount || bondAmount <= 0 || bondAmount > 1000) {
       socket.emit('error', 'Invalid bond amount. Must be between 0 and 1000 billions');
       return;
@@ -85,41 +94,322 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Perform economic calculations
-    const calculationResult = performEconomicCalculations(
-      currentState,
-      staticData,
-      { issueDebtBonds: true, bondAmount }
-    );
+    // Prepare enhanced economy state for debt issuance
+    const economy = currentState.economy || {};
+    const economyStateForDebt = {
+      treasury: economy.treasury?.value || 0,
+      publicDebt: economy.publicDebt || staticData.economy?.publicDebt?.value || 0,
+      gdp: economy.gdp?.value || 100,
+      interestRate: staticData.economy?.interestRate || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE,
+      creditRating: staticData.economy?.creditRating || 'A',
+      canIssueDebt: true,
+      debtRecords: economy.debtRecords || [],
+      nextDebtId: economy.nextDebtId || 1
+    };
     
-    // Update country state with new economy values
-    countryStateManager.updateCountryState(
-      roomName,
-      userCountry,
-      'economy',
-      calculationResult.economy
-    );
-    
-    // Update public debt in static data (note: this is a simplification)
-    // In a real game, public debt would also be part of the dynamic state
-    if (calculationResult.publicDebtResult !== null && staticData.economy) {
-      staticData.economy.publicDebt = {
-        value: calculationResult.publicDebtResult,
-        unit: 'bi USD'
-      };
-      
-      // Recalculate debt-to-GDP ratio
-      const gdpValue = calculationResult.economy.gdp.value;
-      staticData.economy.publicDebtToGdp = Math.round((calculationResult.publicDebtResult / gdpValue) * 100);
+    // Check if the country can issue more debt
+    if (!canIssueMoreDebt(economyStateForDebt)) {
+      socket.emit('error', 'Cannot issue more debt. Debt-to-GDP ratio would exceed 120% or country is in default.');
+      return;
     }
     
-    console.log(`${username} issued ${bondAmount} billion in debt bonds for ${userCountry}`);
+    // Issue bonds using the enhanced system
+    const bondResult = issueDebtBonds(economyStateForDebt, bondAmount, isEmergency);
     
-    // Send success response
-    socket.emit('debtBondsIssued', {
-      bondAmount,
-      newTreasury: calculationResult.economy.treasury.value,
-      newPublicDebt: calculationResult.publicDebtResult
+    if (bondResult.success) {
+      // Update country state with new debt information
+      const updatedEconomy = {
+        ...economy,
+        treasury: { value: bondResult.updatedEconomy.treasury, unit: 'bi USD' },
+        publicDebt: bondResult.updatedEconomy.publicDebt,
+        debtRecords: bondResult.updatedEconomy.debtRecords,
+        nextDebtId: bondResult.updatedEconomy.nextDebtId
+      };
+      
+      // Update the country state
+      countryStateManager.updateCountryState(roomName, userCountry, 'economy', updatedEconomy);
+      
+      console.log(`${username} issued ${bondAmount} billion in ${isEmergency ? 'emergency ' : ''}debt bonds for ${userCountry} at ${bondResult.newDebt.interestRate.toFixed(2)}% rate`);
+      
+      // Send enhanced success response with detailed debt information
+      socket.emit('debtBondsIssued', {
+        success: true,
+        bondAmount,
+        newTreasury: bondResult.updatedEconomy.treasury,
+        newPublicDebt: bondResult.updatedEconomy.publicDebt,
+        effectiveInterestRate: bondResult.newDebt.interestRate,
+        monthlyPayment: bondResult.newDebt.monthlyPayment,
+        remainingInstallments: bondResult.newDebt.remainingInstallments,
+        creditRating: economyStateForDebt.creditRating,
+        isEmergency: isEmergency,
+        message: bondResult.message,
+        debtContract: bondResult.newDebt
+      });
+    } else {
+      console.log(`${username} failed to issue debt bonds for ${userCountry}: ${bondResult.message}`);
+      socket.emit('error', bondResult.message);
+    }
+  });
+
+  // Handler for emergency bond issuance
+  socket.on('issueEmergencyBonds', (data) => {
+    const username = socket.username;
+    
+    if (!username) {
+      socket.emit('error', 'User not authenticated');
+      return;
+    }
+    
+    // Get current room
+    const roomName = getCurrentRoom(socket, gameState);
+    if (!roomName) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+    
+    // Get user's country
+    const userRoomKey = `${username}:${roomName}`;
+    const userCountry = gameState.userRoomCountries.get(userRoomKey);
+    
+    if (!userCountry) {
+      socket.emit('error', 'No country assigned');
+      return;
+    }
+    
+    const { requiredAmount } = data;
+    if (!requiredAmount || requiredAmount <= 0) {
+      socket.emit('error', 'Invalid required amount for emergency bonds');
+      return;
+    }
+    
+    // Get current country state
+    const currentState = countryStateManager.getCountryState(roomName, userCountry);
+    const staticData = gameState.countriesData[userCountry];
+    
+    if (!currentState || !staticData) {
+      socket.emit('error', 'Country data not found');
+      return;
+    }
+    
+    // Prepare economy state for emergency bond issuance
+    const economy = currentState.economy || {};
+    const economyStateForDebt = {
+      treasury: economy.treasury?.value || 0,
+      publicDebt: economy.publicDebt || staticData.economy?.publicDebt?.value || 0,
+      gdp: economy.gdp?.value || 100,
+      interestRate: staticData.economy?.interestRate || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE,
+      creditRating: staticData.economy?.creditRating || 'A',
+      canIssueDebt: true,
+      debtRecords: economy.debtRecords || [],
+      nextDebtId: economy.nextDebtId || 1
+    };
+    
+    // Issue emergency bonds
+    const emergencyResult = issueEmergencyBonds(economyStateForDebt, requiredAmount);
+    
+    if (emergencyResult.success) {
+      // Update country state
+      const updatedEconomy = {
+        ...economy,
+        treasury: { value: emergencyResult.updatedEconomy.treasury, unit: 'bi USD' },
+        publicDebt: emergencyResult.updatedEconomy.publicDebt,
+        debtRecords: emergencyResult.updatedEconomy.debtRecords,
+        nextDebtId: emergencyResult.updatedEconomy.nextDebtId
+      };
+      
+      countryStateManager.updateCountryState(roomName, userCountry, 'economy', updatedEconomy);
+      
+      console.log(`${username} issued emergency bonds for ${userCountry}: ${emergencyResult.message}`);
+      
+      socket.emit('emergencyBondsIssued', {
+        success: true,
+        requiredAmount,
+        actualAmount: emergencyResult.updatedEconomy.treasury - economyStateForDebt.treasury,
+        newTreasury: emergencyResult.updatedEconomy.treasury,
+        newPublicDebt: emergencyResult.updatedEconomy.publicDebt,
+        message: emergencyResult.message
+      });
+    } else {
+      console.log(`${username} failed to issue emergency bonds for ${userCountry}: ${emergencyResult.message}`);
+      socket.emit('error', emergencyResult.message);
+    }
+  });
+
+  // Handler for debt payment processing (monthly)
+  socket.on('processDebtPayments', () => {
+    const username = socket.username;
+    
+    if (!username) {
+      socket.emit('error', 'User not authenticated');
+      return;
+    }
+    
+    // Get current room
+    const roomName = getCurrentRoom(socket, gameState);
+    if (!roomName) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+    
+    // Get user's country
+    const userRoomKey = `${username}:${roomName}`;
+    const userCountry = gameState.userRoomCountries.get(userRoomKey);
+    
+    if (!userCountry) {
+      socket.emit('error', 'No country assigned');
+      return;
+    }
+    
+    // Get current country state
+    const currentState = countryStateManager.getCountryState(roomName, userCountry);
+    if (!currentState) {
+      socket.emit('error', 'Country state not found');
+      return;
+    }
+    
+    const economy = currentState.economy || {};
+    const debtRecords = economy.debtRecords || [];
+    const currentTreasury = economy.treasury?.value || 0;
+    
+    // Process monthly debt payments
+    const paymentResult = processMonthlyDebtPayments(debtRecords, currentTreasury);
+    
+    // Update country state with payment results
+    const updatedEconomy = {
+      ...economy,
+      treasury: { value: paymentResult.remainingCash, unit: 'bi USD' },
+      debtRecords: paymentResult.updatedDebts,
+      publicDebt: paymentResult.updatedDebts.reduce((total, debt) => total + debt.remainingValue, 0)
+    };
+    
+    countryStateManager.updateCountryState(roomName, userCountry, 'economy', updatedEconomy);
+    
+    console.log(`${username} processed debt payments for ${userCountry}: ${paymentResult.totalPayment.toFixed(2)} bi paid`);
+    
+    // If treasury goes negative, automatically issue emergency bonds
+    if (paymentResult.remainingCash < 0) {
+      const requiredAmount = Math.abs(paymentResult.remainingCash) + 10; // Add buffer
+      
+      // Prepare for emergency bond issuance
+      const staticData = gameState.countriesData[userCountry];
+      const economyStateForDebt = {
+        treasury: paymentResult.remainingCash,
+        publicDebt: updatedEconomy.publicDebt,
+        gdp: economy.gdp?.value || 100,
+        interestRate: staticData?.economy?.interestRate || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE,
+        creditRating: staticData?.economy?.creditRating || 'A',
+        canIssueDebt: true,
+        debtRecords: paymentResult.updatedDebts,
+        nextDebtId: economy.nextDebtId || 1
+      };
+      
+      const emergencyResult = issueEmergencyBonds(economyStateForDebt, requiredAmount);
+      
+      if (emergencyResult.success) {
+        // Update again with emergency bonds
+        const finalEconomy = {
+          ...updatedEconomy,
+          treasury: { value: emergencyResult.updatedEconomy.treasury, unit: 'bi USD' },
+          publicDebt: emergencyResult.updatedEconomy.publicDebt,
+          debtRecords: emergencyResult.updatedEconomy.debtRecords,
+          nextDebtId: emergencyResult.updatedEconomy.nextDebtId
+        };
+        
+        countryStateManager.updateCountryState(roomName, userCountry, 'economy', finalEconomy);
+        
+        socket.emit('debtPaymentProcessed', {
+          ...paymentResult,
+          emergencyBondsIssued: true,
+          emergencyAmount: requiredAmount,
+          finalTreasury: emergencyResult.updatedEconomy.treasury,
+          message: `Debt payments processed. ${emergencyResult.message}`
+        });
+      } else {
+        socket.emit('debtPaymentProcessed', {
+          ...paymentResult,
+          emergencyBondsIssued: false,
+          treasuryDeficit: true,
+          message: 'Debt payments processed but treasury is insufficient. Emergency bonds could not be issued.'
+        });
+      }
+    } else {
+      socket.emit('debtPaymentProcessed', {
+        ...paymentResult,
+        emergencyBondsIssued: false,
+        message: 'Debt payments processed successfully.'
+      });
+    }
+  });
+
+  // Handler for getting debt summary with enhanced information
+  socket.on('getDebtSummary', () => {
+    const username = socket.username;
+    
+    if (!username) {
+      socket.emit('error', 'User not authenticated');
+      return;
+    }
+    
+    // Get current room
+    const roomName = getCurrentRoom(socket, gameState);
+    if (!roomName) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+    
+    // Get user's country
+    const userRoomKey = `${username}:${roomName}`;
+    const userCountry = gameState.userRoomCountries.get(userRoomKey);
+    
+    if (!userCountry) {
+      socket.emit('error', 'No country assigned');
+      return;
+    }
+    
+    // Get current country state
+    const currentState = countryStateManager.getCountryState(roomName, userCountry);
+    if (!currentState) {
+      socket.emit('error', 'Country state not found');
+      return;
+    }
+    
+    const economy = currentState.economy || {};
+    const debtRecords = economy.debtRecords || [];
+    
+    // Calculate comprehensive debt summary
+    const debtSummary = updateTotalPublicDebt(debtRecords);
+    const totalMonthlyPayment = debtRecords.reduce((sum, debt) => sum + debt.monthlyPayment, 0);
+    const averageInterestRate = debtRecords.length > 0 ? 
+      debtRecords.reduce((sum, debt) => sum + (debt.interestRate * debt.remainingValue), 0) / 
+      debtRecords.reduce((sum, debt) => sum + debt.remainingValue, 0) : 0;
+    
+    const gdp = economy.gdp?.value || 100;
+    const currentPublicDebt = economy.publicDebt || 0;
+    
+    socket.emit('debtSummaryResponse', {
+      totalPublicDebt: currentPublicDebt,
+      principalRemaining: debtSummary.principalRemaining,
+      totalFuturePayments: debtSummary.totalDebtWithInterest,
+      totalMonthlyPayment,
+      averageInterestRate,
+      numberOfContracts: debtRecords.length,
+      debtToGdpRatio: (currentPublicDebt / gdp) * 100,
+      canIssueMoreDebt: canIssueMoreDebt({ 
+        publicDebt: currentPublicDebt, 
+        gdp: gdp, 
+        canIssueDebt: true 
+      }),
+      debtRecords: debtRecords.map(debt => ({
+        id: debt.id,
+        originalValue: debt.originalValue,
+        remainingValue: debt.remainingValue,
+        interestRate: debt.interestRate,
+        monthlyPayment: debt.monthlyPayment,
+        remainingInstallments: debt.remainingInstallments,
+        issueDate: debt.issueDate,
+        isEmergency: debt.isEmergency || false,
+        creditRating: debt.creditRating || 'A'
+      }))
     });
   });
 
@@ -318,13 +608,6 @@ function setupEconomyHandlers(io, socket, gameState) {
         originPlayer: proposal.originPlayer || null // O país IA não tem jogador associado
       });
       
-      // Notificar o jogador que aceitou
-      // socket.emit('tradeProposalProcessed', {
-      //   proposalId,
-      //   accepted: true,
-      //   message: `You accepted the trade proposal from ${proposal.originCountry}`
-      // });
-      
       // Se não for uma proposta de IA, notificar o jogador humano que enviou a proposta
       if (!isAIControlledProposal) {
         const originSocketId = gameState.usernameToSocketId?.get(proposal.originPlayer);
@@ -341,13 +624,6 @@ function setupEconomyHandlers(io, socket, gameState) {
       }
     } else {
       console.log(`Trade proposal ${proposalId} rejected by ${username}`);
-      
-      // Notificar o jogador que rejeitou
-      // socket.emit('tradeProposalProcessed', {
-      //   proposalId,
-      //   accepted: false,
-      //   message: 'You rejected the trade proposal'
-      // });
       
       // Se não for uma proposta de IA, notificar o jogador humano que enviou a proposta
       if (!isAIControlledProposal) {
