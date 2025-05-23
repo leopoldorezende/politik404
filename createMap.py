@@ -105,7 +105,6 @@ def main():
         'AuthPage.jsx': 'Tela de autenticação/login',
         'GamePage.jsx': 'Tela principal do jogo',
         'RoomPage.jsx': 'Tela de seleção de sala',
-        'index.js': 'Criação e combinação dos reducers',
         'socketMiddleware.js': 'Middleware para Socket.io',
         'Sideview.jsx': 'Layout da sidebar direita Sideview',
         'Sidetools.jsx': 'Layout da sidebar esquerda Sidetools',

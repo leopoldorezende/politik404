@@ -79,7 +79,7 @@
   │   │   │   ├── socketConnection.js
   │   │   │   └── socketEventHandlers.js
   │   │   ├── store
-  │   │   │   ├── index.js  # Criação e combinação dos reducers
+  │   │   │   ├── index.js
   │   │   │   └── socketReduxMiddleware.js
   │   │   └── ui
   │   │       ├── popup
@@ -119,9 +119,9 @@
       │   │   ├── economyCalculations.js
       │   │   ├── economyHandlers.js
       │   │   ├── economyUpdateService.js
-      │   │   ├── index.js  # Criação e combinação dos reducers
+      │   │   ├── index.js
       │   │   └── tradeAgreementService.js
-      │   ├── index.js  # Criação e combinação dos reducers
+      │   ├── index.js
       │   ├── player
       │   │   ├── playerHandlers.js  # Handlers para jogadores
       │   │   ├── playerRoomHandlers.js  # Handlers para jogadores na sala
@@ -145,7 +145,7 @@
           │   ├── countryStateConfig.js
           │   ├── countryStateCore.js
           │   ├── countryStateUpdater.js
-          │   └── index.js  # Criação e combinação dos reducers
+          │   └── index.js
           ├── countryStateManager.js
           ├── firebaseAdmin.js
           ├── gameStateUtils.js  # Utilitários de estado para o jogo
