@@ -13,9 +13,9 @@ import MessageService from '../../ui/toast/messageService';
 import './EconomyPanel.css';
 
 /**
- * EconomyPanel.jsx (Otimizado)
- * Apenas exibe dados do servidor e envia comandos
- * Não faz cálculos próprios, usa dados do cache Redux
+ * EconomyPanel.jsx (Corrigido)
+ * Interface principal para controle econômico
+ * Sincronizada com dados do countryStateManager do servidor
  */
 const EconomyPanel = ({ onOpenDebtPopup }) => {
   const dispatch = useDispatch();
@@ -41,7 +41,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   // ESTADO LOCAL (apenas para UI, não para dados)
   // ======================================================================
   
-  // Parâmetros locais (antes de aplicar)
+  // Parâmetros locais (antes de aplicar) - CORRIGIDO: Inicializa com dados do servidor
   const [localParameters, setLocalParameters] = useState({
     interestRate: 8.0,
     taxBurden: 40.0,
@@ -54,17 +54,25 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   const [pendingUpdates, setPendingUpdates] = useState(new Set());
   
   // ======================================================================
-  // SINCRONIZAÇÃO COM DADOS DO SERVIDOR
+  // SINCRONIZAÇÃO COM DADOS DO SERVIDOR (CORRIGIDA)
   // ======================================================================
   
   // Sincronizar parâmetros locais com dados vindos do servidor
   useEffect(() => {
     if (economicIndicators) {
-      setLocalParameters({
+      const newParams = {
         interestRate: economicIndicators.interestRate || 8.0,
         taxBurden: economicIndicators.taxBurden || 40.0,
         publicServices: economicIndicators.publicServices || 30.0
-      });
+      };
+      
+      // Só atualiza se os valores realmente mudaram para evitar loops
+      if (JSON.stringify(newParams) !== JSON.stringify(localParameters)) {
+        setLocalParameters(newParams);
+        
+        // Limpar pending updates quando dados do servidor chegam
+        setPendingUpdates(new Set());
+      }
     }
   }, [economicIndicators?.interestRate, economicIndicators?.taxBurden, economicIndicators?.publicServices]);
   
@@ -80,16 +88,36 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }, [currentRoom?.name, dispatch]);
   
   // ======================================================================
-  // HANDLERS DE COMANDOS (enviam para servidor)
+  // HANDLERS DE COMANDOS (CORRIGIDOS - enviam eventos corretos)
   // ======================================================================
   
   /**
-   * Aplica mudança de parâmetro econômico (envia comando ao servidor)
+   * CORRIGIDO: Aplica mudança de parâmetro econômico
    */
   const applyParameterChange = useCallback(async (parameter, value) => {
     if (!currentRoom?.name || !myCountry) return;
     
     const newValue = parseFloat(value);
+    
+    // Validações
+    if (isNaN(newValue)) {
+      MessageService.showError('Valor inválido');
+      return;
+    }
+    
+    let min = 0, max = 100;
+    if (parameter === 'interestRate') {
+      max = 25;
+    } else if (parameter === 'taxBurden') {
+      max = 60;
+    } else if (parameter === 'publicServices') {
+      max = 60;
+    }
+    
+    if (newValue < min || newValue > max) {
+      MessageService.showError(`Valor deve estar entre ${min}% e ${max}%`);
+      return;
+    }
     
     // Marcar como pendente
     setPendingUpdates(prev => new Set([...prev, parameter]));
@@ -97,7 +125,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     try {
       const socket = socketApi.getSocketInstance();
       if (socket) {
-        // COMANDO: Enviar para servidor processar
+        // CORRIGIDO: Usar evento correto que existe no servidor
         socket.emit('updateEconomicParameter', {
           roomName: currentRoom.name,
           countryName: myCountry,
@@ -105,30 +133,23 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           value: newValue
         });
         
-        const parameterNames = {
-          interestRate: 'Taxa de Juros',
-          taxBurden: 'Carga Tributária', 
-          publicServices: 'Investimento Público'
-        };
-        
-        MessageService.showSuccess(`${parameterNames[parameter]} alterada para ${newValue}%`);
+        console.log(`[ECONOMY] Enviando atualização: ${parameter} = ${newValue}% para ${myCountry}`);
       }
     } catch (error) {
+      console.error(`Erro ao atualizar ${parameter}:`, error);
       MessageService.showError(`Erro ao atualizar ${parameter}: ${error.message}`);
-    } finally {
-      // Remover dos pending após um tempo
-      setTimeout(() => {
-        setPendingUpdates(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(parameter);
-          return newSet;
-        });
-      }, 1000);
+      
+      // Remover dos pending em caso de erro
+      setPendingUpdates(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(parameter);
+        return newSet;
+      });
     }
   }, [currentRoom?.name, myCountry]);
   
   /**
-   * Emite títulos de dívida (envia comando ao servidor)
+   * CORRIGIDO: Emite títulos de dívida
    */
   const handleIssueBonds = useCallback(async () => {
     const amount = parseFloat(bondAmount);
@@ -148,60 +169,111 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     try {
       const socket = socketApi.getSocketInstance();
       if (socket) {
-        // COMANDO: Enviar para servidor processar
-        socket.emit('issueDebtBonds', { bondAmount: amount });
-        MessageService.showSuccess(`Emitindo ${amount} bi USD em títulos...`);
+        // CORRIGIDO: Usar evento correto que existe no servidor
+        socket.emit('issueDebtBonds', { 
+          bondAmount: amount,
+          isEmergency: false
+        });
+        
+        console.log(`[ECONOMY] Emitindo ${amount} bi USD em títulos para ${myCountry}`);
         setBondAmount('');
       }
     } catch (error) {
+      console.error('Erro ao emitir títulos:', error);
       MessageService.showError('Erro ao emitir títulos: ' + error.message);
-    } finally {
-      setTimeout(() => setIsIssuingBonds(false), 2000);
+      setIsIssuingBonds(false);
     }
   }, [bondAmount, currentRoom?.name, myCountry]);
   
   /**
-   * Abre popup de dívidas (usa dados do Redux)
+   * CORRIGIDO: Abre popup de dívidas com dados corretos
    */
   const handleOpenDebtPopup = useCallback(() => {
     if (economicIndicators && debtSummary && onOpenDebtPopup) {
+      console.log('[ECONOMY] Abrindo popup de dívidas:', { debtSummary, economicIndicators });
+      
       // Usar dados vindos do servidor via Redux
       onOpenDebtPopup(debtSummary, debtSummary.contracts || [], economicIndicators);
+    } else {
+      console.warn('[ECONOMY] Dados insuficientes para abrir popup de dívidas:', { 
+        hasEconomicIndicators: !!economicIndicators, 
+        hasDebtSummary: !!debtSummary,
+        hasCallback: !!onOpenDebtPopup 
+      });
+      MessageService.showWarning('Aguardando dados de dívida...');
     }
   }, [economicIndicators, debtSummary, onOpenDebtPopup]);
   
   // ======================================================================
-  // EVENTOS DO SERVIDOR
+  // EVENTOS DO SERVIDOR (CORRIGIDOS)
   // ======================================================================
   
   useEffect(() => {
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
     
+    // CORRIGIDO: Handler para confirmação de emissão de títulos
     const handleDebtBondsIssued = (data) => {
-      MessageService.showSuccess(`Títulos emitidos! Nova dívida: ${data.newPublicDebt} bi`);
+      console.log('[ECONOMY] Títulos emitidos confirmados:', data);
+      
+      const { success, bondAmount: issuedAmount, newTreasury, newPublicDebt, message } = data;
+      
+      if (success) {
+        MessageService.showSuccess(`Títulos emitidos: ${issuedAmount} bi USD`, 4000);
+      } else {
+        MessageService.showError(message || 'Falha na emissão de títulos');
+      }
+      
       setIsIssuingBonds(false);
     };
     
+    // CORRIGIDO: Handler para confirmação de parâmetros
     const handleParameterUpdated = (data) => {
-      if (data.countryName === myCountry && data.roomName === currentRoom?.name) {
-        console.log(`Parâmetro ${data.parameter} confirmado no servidor:`, data.value);
-        
+      console.log('[ECONOMY] Parâmetro confirmado:', data);
+      
+      const { countryName, roomName, parameter, value } = data;
+      
+      // Só processar se for para o país atual
+      if (countryName === myCountry && roomName === currentRoom?.name) {
         // Remover dos pending updates
         setPendingUpdates(prev => {
           const newSet = new Set(prev);
-          newSet.delete(data.parameter);
+          newSet.delete(parameter);
           return newSet;
         });
+        
+        // Atualizar parâmetro local se necessário
+        setLocalParameters(prev => ({
+          ...prev,
+          [parameter]: value
+        }));
       }
     };
     
+    // CORRIGIDO: Handler para títulos de emergência
+    const handleEmergencyBonds = (data) => {
+      console.log('[ECONOMY] Títulos de emergência:', data);
+      
+      const { success, message } = data;
+      
+      if (success) {
+        MessageService.showWarning(`Emergência: ${message}`, 6000);
+      } else {
+        MessageService.showError(message || 'Falha na emissão de títulos de emergência');
+      }
+      
+      setIsIssuingBonds(false);
+    };
+    
+    // Registrar handlers
     socket.on('debtBondsIssued', handleDebtBondsIssued);
     socket.on('economicParameterUpdated', handleParameterUpdated);
+    socket.on('emergencyBondsIssued', handleEmergencyBonds);
     
     return () => {
       socket.off('debtBondsIssued', handleDebtBondsIssued);
       socket.off('economicParameterUpdated', handleParameterUpdated);
+      socket.off('emergencyBondsIssued', handleEmergencyBonds);
     };
   }, [myCountry, currentRoom?.name]);
   
@@ -235,7 +307,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }), []);
   
   // ======================================================================
-  // CHECKS DE EXIBIÇÃO
+  // VALIDAÇÕES E CHECKS (CORRIGIDOS)
   // ======================================================================
   
   if (!myCountry) {
@@ -251,9 +323,29 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       <div className="advanced-economy-panel">
         <p>Carregando dados econômicos...</p>
         {myCountry && <p><small>País: {myCountry}</small></p>}
+        {currentRoom && <p><small>Sala: {currentRoom.name}</small></p>}
       </div>
     );
   }
+  
+  // ======================================================================
+  // VALIDAÇÕES DE VALORES (ADICIONADAS)
+  // ======================================================================
+  
+  // Verificar se há valores inválidos e mostrar fallbacks
+  const safeIndicators = {
+    gdp: economicIndicators.gdp || 100,
+    treasury: economicIndicators.treasury || 10,
+    publicDebt: economicIndicators.publicDebt || 0,
+    inflation: economicIndicators.inflation || 0,
+    unemployment: economicIndicators.unemployment || 0,
+    popularity: economicIndicators.popularity || 50,
+    creditRating: economicIndicators.creditRating || 'A',
+    interestRate: economicIndicators.interestRate || 8.0,
+    taxBurden: economicIndicators.taxBurden || 40.0,
+    publicServices: economicIndicators.publicServices || 30.0,
+    gdpGrowth: economicIndicators.gdpGrowth || 0
+  };
   
   // ======================================================================
   // RENDER
@@ -267,46 +359,48 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         <div className="indicator">
           <label>PIB:</label>
           <div className="indicator-value">
-            <span className="value">{formatters.currency(economicIndicators.gdp)} bi</span>
-            <span className={`growth ${economicIndicators.gdpGrowth >= 0 ? 'positive' : 'negative'}`}>
-              {formatters.valueWithSign(economicIndicators.gdpGrowth)}% anual
+            <span className="value">{formatters.currency(safeIndicators.gdp)} bi</span>
+            <span className={`growth ${safeIndicators.gdpGrowth >= 0 ? 'positive' : 'negative'}`}>
+              {formatters.valueWithSign(safeIndicators.gdpGrowth)}% anual
             </span>
           </div>
         </div>
         
         <div className="indicator">
           <label>Tesouro:</label>
-          <span className="value">{formatters.currency(economicIndicators.treasury)} bi</span>
+          <span className={`value ${safeIndicators.treasury >= 0 ? '' : 'negative'}`}>
+            {formatters.currency(safeIndicators.treasury)} bi
+          </span>
         </div>
         
         <div className="indicator">
           <label>Dívida Pública:</label>
           <div className="indicator-value">
-            <span className="value">{formatters.currency(economicIndicators.publicDebt)} bi</span>
+            <span className="value">{formatters.currency(safeIndicators.publicDebt)} bi</span>
             <span className="debt-ratio">
-              {formatters.percent((economicIndicators.publicDebt / economicIndicators.gdp) * 100)} PIB
+              {formatters.percent((safeIndicators.publicDebt / safeIndicators.gdp) * 100)} PIB
             </span>
           </div>
         </div>
         
         <div className="indicator">
           <label>Inflação:</label>
-          <span className={`value ${economicIndicators.inflation > 5 ? 'negative' : 'positive'}`}>
-            {formatters.percent(economicIndicators.inflation)}
+          <span className={`value ${safeIndicators.inflation > 5 ? 'negative' : 'positive'}`}>
+            {formatters.percent(safeIndicators.inflation)}
           </span>
         </div>
         
         <div className="indicator">
           <label>Desemprego:</label>
-          <span className={`value ${economicIndicators.unemployment > 10 ? 'negative' : 'positive'}`}>
-            {formatters.percent(economicIndicators.unemployment)}
+          <span className={`value ${safeIndicators.unemployment > 10 ? 'negative' : 'positive'}`}>
+            {formatters.percent(safeIndicators.unemployment)}
           </span>
         </div>
         
         <div className="indicator">
           <label>Popularidade:</label>
-          <span className={`value ${economicIndicators.popularity > 50 ? 'positive' : 'negative'}`}>
-            {formatters.percent(economicIndicators.popularity)}
+          <span className={`value ${safeIndicators.popularity > 50 ? 'positive' : 'negative'}`}>
+            {formatters.percent(safeIndicators.popularity)}
           </span>
         </div>
         
@@ -314,14 +408,14 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           <label>Rating:</label>
           <span 
             className="credit-rating" 
-            style={{ color: formatters.creditRatingColor(economicIndicators.creditRating) }}
+            style={{ color: formatters.creditRatingColor(safeIndicators.creditRating) }}
           >
-            {economicIndicators.creditRating}
+            {safeIndicators.creditRating}
           </span>
         </div>
       </div>
       
-      {/* Controles Econômicos (comandos para servidor) */}
+      {/* Controles Econômicos (CORRIGIDOS) */}
       <div className="economic-controls">
         <h4>Parâmetros Econômicos</h4>
         
@@ -338,10 +432,14 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
                 ...prev,
                 interestRate: parseFloat(e.target.value)
               }))}
+              disabled={pendingUpdates.has('interestRate')}
             />
             <button 
               onClick={() => applyParameterChange('interestRate', localParameters.interestRate)}
-              disabled={localParameters.interestRate === economicIndicators.interestRate || pendingUpdates.has('interestRate')}
+              disabled={
+                Math.abs(localParameters.interestRate - safeIndicators.interestRate) < 0.1 || 
+                pendingUpdates.has('interestRate')
+              }
             >
               {pendingUpdates.has('interestRate') ? 'Aplicando...' : 'Aplicar'}
             </button>
@@ -361,10 +459,14 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
                 ...prev,
                 taxBurden: parseFloat(e.target.value)
               }))}
+              disabled={pendingUpdates.has('taxBurden')}
             />
             <button 
               onClick={() => applyParameterChange('taxBurden', localParameters.taxBurden)}
-              disabled={localParameters.taxBurden === economicIndicators.taxBurden || pendingUpdates.has('taxBurden')}
+              disabled={
+                Math.abs(localParameters.taxBurden - safeIndicators.taxBurden) < 0.1 || 
+                pendingUpdates.has('taxBurden')
+              }
             >
               {pendingUpdates.has('taxBurden') ? 'Aplicando...' : 'Aplicar'}
             </button>
@@ -384,10 +486,14 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
                 ...prev,
                 publicServices: parseFloat(e.target.value)
               }))}
+              disabled={pendingUpdates.has('publicServices')}
             />
             <button 
               onClick={() => applyParameterChange('publicServices', localParameters.publicServices)}
-              disabled={localParameters.publicServices === economicIndicators.publicServices || pendingUpdates.has('publicServices')}
+              disabled={
+                Math.abs(localParameters.publicServices - safeIndicators.publicServices) < 0.1 || 
+                pendingUpdates.has('publicServices')
+              }
             >
               {pendingUpdates.has('publicServices') ? 'Aplicando...' : 'Aplicar'}
             </button>
@@ -395,7 +501,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         </div>
       </div>
       
-      {/* Emissão de Títulos (comando para servidor) */}
+      {/* Emissão de Títulos (CORRIGIDA) */}
       <div className="bonds-section">
         <h4>Títulos da Dívida Pública</h4>
         
@@ -413,13 +519,22 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           <button 
             className="btn-issue-bonds"
             onClick={handleIssueBonds}
-            disabled={isIssuingBonds || !bondAmount}
+            disabled={isIssuingBonds || !bondAmount || parseFloat(bondAmount) <= 0}
           >
             {isIssuingBonds ? 'Emitindo...' : 'Emitir'}
           </button>
         </div>
         
-        {/* Botão de resumo de dívidas (dados do Redux) */}
+        {/* Informação sobre capacidade de endividamento */}
+        {safeIndicators.publicDebt > 0 && (
+          <div className="debt-info">
+            <small>
+              Capacidade: {formatters.percent(Math.max(0, 120 - (safeIndicators.publicDebt / safeIndicators.gdp) * 100))} restante
+            </small>
+          </div>
+        )}
+        
+        {/* Botão de resumo de dívidas (CORRIGIDO) */}
         {debtSummary && debtSummary.numberOfContracts > 0 && (
           <button 
             className="debt-summary-btn"
@@ -430,14 +545,23 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         )}
       </div>
       
-      {/* Debug info em desenvolvimento */}
+      {/* Debug info em desenvolvimento (CORRIGIDA) */}
       {process.env.NODE_ENV === 'development' && lastUpdated && (
-        <div style={{ fontSize: '10px', color: '#666', marginTop: '10px', padding: '8px', background: 'rgba(255,255,255,0.1)' }}>
-          <div>✅ Dados do servidor via Redux Cache</div>
-          <div>💰 PIB: {formatters.currency(economicIndicators.gdp)} bi | Tesouro: {formatters.currency(economicIndicators.treasury)} bi</div>
-          <div>📄 Contratos: {debtSummary?.numberOfContracts || 0}</div>
-          <div>🔧 Parâmetros: Juros {economicIndicators.interestRate}% | Impostos {economicIndicators.taxBurden}% | Serviços {economicIndicators.publicServices}%</div>
+        <div style={{ 
+          fontSize: '10px', 
+          color: '#666', 
+          marginTop: '10px', 
+          padding: '8px', 
+          background: 'rgba(255,255,255,0.1)',
+          borderRadius: '4px'
+        }}>
+          <div>✅ Dados sincronizados com countryStateManager</div>
+          <div>💰 PIB: {formatters.currency(safeIndicators.gdp)} | Tesouro: {formatters.currency(safeIndicators.treasury)}</div>
+          <div>📊 Inflação: {formatters.percent(safeIndicators.inflation)} | Desemprego: {formatters.percent(safeIndicators.unemployment)} | Rating: {safeIndicators.creditRating}</div>
+          <div>📄 Dívidas: {debtSummary?.numberOfContracts || 0} contratos</div>
+          <div>🔧 Parâmetros: Juros {formatters.percent(safeIndicators.interestRate)} | Impostos {formatters.percent(safeIndicators.taxBurden)} | Serviços {formatters.percent(safeIndicators.publicServices)}</div>
           <div>🕐 Última atualização: {new Date(lastUpdated).toLocaleTimeString()}</div>
+          <div>🔄 Pending: {pendingUpdates.size > 0 ? Array.from(pendingUpdates).join(', ') : 'Nenhum'}</div>
         </div>
       )}
     </div>

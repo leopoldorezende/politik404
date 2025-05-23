@@ -7,6 +7,8 @@ import {
   initializeCountryStates,
   updateSingleCountryState,
   updateCountryStates,
+  updateEconomicParameters,
+  updateCountryDebt,
   resetState as resetCountryState
 } from '../modules/country/countryStateSlice';
 import {
@@ -37,7 +39,6 @@ export const setupSocketEvents = (socket, socketApi) => {
   if (!socket) return;
   
   // Remover listeners anteriores se existirem para evitar duplicação
-  // CORRIGIDO: usar off() para remover listeners específicos
   const eventsToClean = [
     'connect', 'disconnect', 'connect_error', 'authenticated', 'authenticationIgnored',
     'roomsList', 'roomJoined', 'roomLeft', 'roomCreated', 'roomDeleted',
@@ -46,6 +47,9 @@ export const setupSocketEvents = (socket, socketApi) => {
     'countryStatesUpdated', 'countryState', 'countryStateUpdated',
     'tradeProposalReceived', 'tradeProposalResponse', 'tradeProposalProcessed',
     'tradeAgreementCancelled', 'tradeAgreementsList', 'tradeAgreementUpdated',
+    // NOVOS: Eventos econômicos
+    'debtBondsIssued', 'emergencyBondsIssued', 'debtPaymentProcessed', 'debtSummaryResponse',
+    'economicParameterUpdated', 'economicUpdate',
     'error', 'pong'
   ];
   
@@ -66,7 +70,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     setReconnectAttempts(0);
     setIsJoiningRoom(false);
     
-    // Reautenticar automaticamente se houver um usuário guardado - CORRIGIDO
+    // Reautenticar automaticamente se houver um usuário guardado
     const username = sessionStorage.getItem('username');
     if (username && !isAuthenticated && !authenticationInProgress) {
       console.log('Reautenticando usuário após conexão:', username);
@@ -310,35 +314,230 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
   
   // ======================================================================
-  // EVENTOS DE ESTADO DE PAÍS
+  // EVENTOS DE ESTADO DE PAÍS (CORRIGIDOS)
   // ======================================================================
 
   socket.on('countryStatesInitialized', (data) => {
     console.log('Estados de países inicializados:', data);
-    store.dispatch(initializeCountryStates(data));
+    
+    // CORRIGIDO: Garantir que os dados sejam formatados corretamente para o Redux
+    const { roomName, states, timestamp } = data;
+    
+    if (roomName && states) {
+      store.dispatch(initializeCountryStates({
+        roomName,
+        states,
+        timestamp: timestamp || Date.now()
+      }));
+      
+      console.log(`[ECONOMY] Inicializados ${Object.keys(states).length} países na sala ${roomName}`);
+    }
   });
 
   socket.on('countryStatesUpdated', (data) => {
-    store.dispatch(updateCountryStates(data));
+    const { roomName, states, timestamp } = data;
+    
+    if (roomName && states) {
+      store.dispatch(updateCountryStates({
+        roomName,
+        states,
+        timestamp: timestamp || Date.now()
+      }));
+      
+      // Log apenas ocasionalmente para evitar spam
+      if (Date.now() % 10000 < 2000) { // A cada ~10 segundos
+        console.log(`[ECONOMY] Estados atualizados para sala ${roomName}: ${Object.keys(states).length} países`);
+      }
+    }
   });
 
   socket.on('countryState', (data) => {
-    console.log('Estado de país recebido:', data);
+    console.log('Estado de país específico recebido:', data);
+    
+    const { roomName, countryName, state, timestamp } = data;
+    
+    if (roomName && countryName && state) {
+      store.dispatch(updateSingleCountryState({
+        roomName,
+        countryName,
+        countryData: state,
+        timestamp: timestamp || Date.now()
+      }));
+    }
   });
 
   socket.on('countryStateUpdated', (data) => {
     console.log('Estado de país atualizado:', data);
-    store.dispatch(updateSingleCountryState({
-      roomName: data.roomName,
-      countryName: data.countryName,
-      category: data.category,
-      updates: data.state[data.category],
-      timestamp: data.timestamp
-    }));
+    
+    const { roomName, countryName, category, state, timestamp } = data;
+    
+    if (roomName && countryName && state) {
+      // Se é atualização de economia, usar o estado completo
+      if (category === 'economy') {
+        store.dispatch(updateSingleCountryState({
+          roomName,
+          countryName,
+          countryData: { economy: state[category] },
+          timestamp: timestamp || Date.now()
+        }));
+      } else {
+        // Para outras categorias, atualizar categoria específica
+        store.dispatch(updateSingleCountryState({
+          roomName,
+          countryName,
+          countryData: { [category]: state[category] },
+          timestamp: timestamp || Date.now()
+        }));
+      }
+    }
   });
   
   // ======================================================================
-  // EVENTOS DE COMÉRCIO
+  // NOVOS EVENTOS ECONÔMICOS (ADICIONADOS)
+  // ======================================================================
+  
+  // Handler para confirmação de emissão de títulos
+  socket.on('debtBondsIssued', (data) => {
+    console.log('Títulos de dívida emitidos:', data);
+    
+    const { success, bondAmount, newTreasury, newPublicDebt, message } = data;
+    
+    if (success) {
+      MessageService.showSuccess(`Títulos emitidos: ${bondAmount} bi USD`, 4000);
+      
+      // Atualizar dados de dívida no Redux se disponível
+      const currentRoom = store.getState().rooms.currentRoom;
+      const myCountry = store.getState().game.myCountry;
+      
+      if (currentRoom?.name && myCountry) {
+        store.dispatch(updateCountryDebt({
+          roomName: currentRoom.name,
+          countryName: myCountry,
+          debtData: {
+            treasury: { value: newTreasury, unit: 'bi USD' },
+            publicDebt: newPublicDebt,
+            debtRecords: data.debtContract ? [data.debtContract] : undefined
+          },
+          timestamp: Date.now()
+        }));
+      }
+    } else {
+      MessageService.showError(message || 'Falha na emissão de títulos');
+    }
+  });
+  
+  // Handler para emissão de títulos de emergência
+  socket.on('emergencyBondsIssued', (data) => {
+    console.log('Títulos de emergência emitidos:', data);
+    
+    const { success, message, newTreasury, newPublicDebt } = data;
+    
+    if (success) {
+      MessageService.showWarning(`Emergência: ${message}`, 6000);
+      
+      // Atualizar dados no Redux
+      const currentRoom = store.getState().rooms.currentRoom;
+      const myCountry = store.getState().game.myCountry;
+      
+      if (currentRoom?.name && myCountry) {
+        store.dispatch(updateCountryDebt({
+          roomName: currentRoom.name,
+          countryName: myCountry,
+          debtData: {
+            treasury: { value: newTreasury, unit: 'bi USD' },
+            publicDebt: newPublicDebt
+          },
+          timestamp: Date.now()
+        }));
+      }
+    } else {
+      MessageService.showError(message || 'Falha na emissão de títulos de emergência');
+    }
+  });
+  
+  // Handler para confirmação de atualização de parâmetros econômicos
+  socket.on('economicParameterUpdated', (data) => {
+    console.log('Parâmetro econômico atualizado:', data);
+    
+    const { roomName, countryName, parameter, value, message } = data;
+    
+    // Atualizar no Redux
+    if (roomName && countryName) {
+      store.dispatch(updateEconomicParameters({
+        roomName,
+        countryName,
+        parameters: { [parameter]: value },
+        timestamp: Date.now()
+      }));
+    }
+    
+    // Mostrar confirmação se for para o país do usuário atual
+    const myCountry = store.getState().game.myCountry;
+    if (countryName === myCountry) {
+      const parameterNames = {
+        interestRate: 'Taxa de Juros',
+        taxBurden: 'Carga Tributária', 
+        publicServices: 'Investimento Público'
+      };
+      
+      const parameterName = parameterNames[parameter] || parameter;
+      MessageService.showSuccess(`${parameterName} alterada para ${value}%`);
+    }
+  });
+  
+  // Handler para resumo de dívidas
+  socket.on('debtSummaryResponse', (data) => {
+    console.log('Resumo de dívidas recebido:', data);
+    
+    const currentRoom = store.getState().rooms.currentRoom;
+    const myCountry = store.getState().game.myCountry;
+    
+    if (currentRoom?.name && myCountry) {
+      store.dispatch(updateCountryDebt({
+        roomName: currentRoom.name,
+        countryName: myCountry,
+        debtData: {
+          debtRecords: data.debtRecords,
+          numberOfDebtContracts: data.numberOfContracts,
+          totalMonthlyPayment: data.totalMonthlyPayment,
+          principalRemaining: data.principalRemaining
+        },
+        timestamp: Date.now()
+      }));
+    }
+  });
+  
+  // Handler para processamento de pagamentos de dívida
+  socket.on('debtPaymentProcessed', (data) => {
+    console.log('Pagamentos de dívida processados:', data);
+    
+    const { totalPayment, remainingCash, emergencyBondsIssued, message } = data;
+    
+    if (emergencyBondsIssued) {
+      MessageService.showWarning(`Pagamentos processados. ${message}`, 6000);
+    } else {
+      MessageService.showInfo(`Pagamentos processados: ${totalPayment.toFixed(2)} bi USD`, 4000);
+    }
+    
+    // Atualizar dados no Redux
+    const currentRoom = store.getState().rooms.currentRoom;
+    const myCountry = store.getState().game.myCountry;
+    
+    if (currentRoom?.name && myCountry) {
+      store.dispatch(updateCountryDebt({
+        roomName: currentRoom.name,
+        countryName: myCountry,
+        debtData: {
+          treasury: { value: remainingCash, unit: 'bi USD' },
+          debtRecords: data.updatedDebts || []
+        },
+        timestamp: Date.now()
+      }));
+    }
+  });
+  
+  // ======================================================================
+  // EVENTOS DE COMÉRCIO (MANTIDOS)
   // ======================================================================
   
   // Handler para receber uma proposta de comércio (para o destinatário)
@@ -368,7 +567,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     );
   });
   
-  // Handler para receber resposta a uma proposta enviada (CORRIGIDO)
+  // Handler para receber resposta a uma proposta enviada
   socket.on('tradeProposalResponse', (response) => {
     console.log('Resposta à proposta de comércio recebida:', response);
     
@@ -466,7 +665,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     const isSilentError = message.includes('já está em uso') || 
                          message.includes('autenticação') || 
                          message.includes('desconectado') ||
-                         message.includes('já está autenticado'); // Adicionar este caso
+                         message.includes('já está autenticado');
     
     if (!isSilentError) {
       // Mostrar erro via toast
@@ -480,7 +679,7 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
   
   // ======================================================================
-  // PING/PONG PARA MANTER CONEXÃO ATIVA - MELHORADO
+  // PING/PONG PARA MANTER CONEXÃO ATIVA
   // ======================================================================
   
   // Ping mais inteligente - só envia se estiver autenticado e conectado

@@ -1,7 +1,7 @@
 /**
  * economyHandlers.js
  * Socket.io handlers for economic operations
- * ENHANCED WITH ADVANCED DEBT MANAGEMENT SYSTEM
+ * CORRIGIDO: Integração completa com countryStateManager centralizado
  */
 
 import { 
@@ -33,7 +33,7 @@ let periodicUpdatesInitialized = false;
  * @param {Object} gameState - Global game state
  */
 function setupEconomyHandlers(io, socket, gameState) {
-  console.log('Economy handlers initialized with advanced debt system');
+  console.log('Economy handlers initialized with countryStateManager integration');
   
   // Set up periodic economic updates only once
   if (!periodicUpdatesInitialized) {
@@ -42,7 +42,108 @@ function setupEconomyHandlers(io, socket, gameState) {
     console.log('Periodic trade updates initialized (first-time setup)');
   }
 
-  // Enhanced debt bond issuance handler
+  // ======================================================================
+  // NOVO: Handler para atualização de parâmetros econômicos
+  // ======================================================================
+  
+  socket.on('updateEconomicParameter', (data) => {
+    const username = socket.username;
+    
+    if (!username) {
+      socket.emit('error', 'User not authenticated');
+      return;
+    }
+    
+    // Get current room
+    const roomName = getCurrentRoom(socket, gameState);
+    if (!roomName) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+    
+    // Get user's country
+    const userRoomKey = `${username}:${roomName}`;
+    const userCountry = gameState.userRoomCountries.get(userRoomKey);
+    
+    if (!userCountry) {
+      socket.emit('error', 'No country assigned');
+      return;
+    }
+    
+    const { parameter, value } = data;
+    
+    // Validar parâmetro
+    const validParameters = ['interestRate', 'taxBurden', 'publicServices'];
+    if (!validParameters.includes(parameter)) {
+      socket.emit('error', 'Invalid economic parameter');
+      return;
+    }
+    
+    // Validar valor
+    if (typeof value !== 'number' || isNaN(value)) {
+      socket.emit('error', 'Invalid parameter value');
+      return;
+    }
+    
+    // Validar ranges
+    let min = 0, max = 100;
+    if (parameter === 'interestRate') {
+      max = 25;
+    } else if (parameter === 'taxBurden' || parameter === 'publicServices') {
+      max = 60;
+    }
+    
+    if (value < min || value > max) {
+      socket.emit('error', `${parameter} must be between ${min}% and ${max}%`);
+      return;
+    }
+    
+    try {
+      // CORRIGIDO: Usar o countryStateManager centralizado
+      const updatedState = countryStateManager.updateEconomicParameter(
+        roomName, 
+        userCountry, 
+        parameter, 
+        value
+      );
+      
+      if (updatedState) {
+        console.log(`[ECONOMY] ${username} updated ${parameter} to ${value}% for ${userCountry}`);
+        
+        // NOVO: Emitir confirmação para o cliente
+        socket.emit('economicParameterUpdated', {
+          roomName,
+          countryName: userCountry,
+          parameter,
+          value,
+          success: true,
+          message: `${parameter} updated to ${value}%`
+        });
+        
+        // NOVO: Notificar outros jogadores na sala sobre mudanças econômicas significativas
+        if (parameter === 'interestRate') {
+          socket.to(roomName).emit('economicNews', {
+            type: 'interestRate',
+            country: userCountry,
+            value,
+            message: `${userCountry} changed interest rate to ${value}%`
+          });
+        }
+        
+      } else {
+        socket.emit('error', 'Failed to update economic parameter');
+      }
+      
+    } catch (error) {
+      console.error(`Error updating economic parameter for ${userCountry}:`, error);
+      socket.emit('error', 'Internal error updating economic parameter');
+    }
+  });
+
+  // ======================================================================
+  // CORRIGIDO: Handler para emissão de títulos usando countryStateManager
+  // ======================================================================
+  
   socket.on('issueDebtBonds', (data) => {
     const username = socket.username;
     
@@ -80,78 +181,130 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Get current country state
-    const currentState = countryStateManager.getCountryState(roomName, userCountry);
-    if (!currentState) {
-      socket.emit('error', 'Country state not found');
-      return;
-    }
-    
-    // Get static country data
-    const staticData = gameState.countriesData[userCountry];
-    if (!staticData) {
-      socket.emit('error', 'Country data not found');
-      return;
-    }
-    
-    // Prepare enhanced economy state for debt issuance
-    const economy = currentState.economy || {};
-    const economyStateForDebt = {
-      treasury: economy.treasury?.value || 0,
-      publicDebt: economy.publicDebt || staticData.economy?.publicDebt?.value || 0,
-      gdp: economy.gdp?.value || 100,
-      interestRate: staticData.economy?.interestRate || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE,
-      creditRating: staticData.economy?.creditRating || 'A',
-      canIssueDebt: true,
-      debtRecords: economy.debtRecords || [],
-      nextDebtId: economy.nextDebtId || 1
-    };
-    
-    // Check if the country can issue more debt
-    if (!canIssueMoreDebt(economyStateForDebt)) {
-      socket.emit('error', 'Cannot issue more debt. Debt-to-GDP ratio would exceed 120% or country is in default.');
-      return;
-    }
-    
-    // Issue bonds using the enhanced system
-    const bondResult = issueDebtBonds(economyStateForDebt, bondAmount, isEmergency);
-    
-    if (bondResult.success) {
-      // Update country state with new debt information
-      const updatedEconomy = {
-        ...economy,
-        treasury: { value: bondResult.updatedEconomy.treasury, unit: 'bi USD' },
-        publicDebt: bondResult.updatedEconomy.publicDebt,
-        debtRecords: bondResult.updatedEconomy.debtRecords,
-        nextDebtId: bondResult.updatedEconomy.nextDebtId
-      };
+    try {
+      // CORRIGIDO: Usar o countryStateManager centralizado
+      const bondResult = countryStateManager.issueDebtBonds(
+        roomName,
+        userCountry,
+        bondAmount
+      );
       
-      // Update the country state
-      countryStateManager.updateCountryState(roomName, userCountry, 'economy', updatedEconomy);
+      if (bondResult.success) {
+        console.log(`[ECONOMY] ${username} issued ${bondAmount} billion in debt bonds for ${userCountry}`);
+        
+        // CORRIGIDO: Enviar resposta detalhada
+        socket.emit('debtBondsIssued', {
+          success: true,
+          bondAmount,
+          newTreasury: bondResult.newTreasury,
+          newPublicDebt: bondResult.newPublicDebt,
+          effectiveInterestRate: bondResult.effectiveRate,
+          message: bondResult.message,
+          debtContract: bondResult.newContract
+        });
+        
+        // NOVO: Notificar outros jogadores sobre emissão significativa
+        if (bondAmount >= 50) {
+          socket.to(roomName).emit('economicNews', {
+            type: 'debtIssuance',
+            country: userCountry,
+            amount: bondAmount,
+            message: `${userCountry} issued ${bondAmount} billion in government bonds`
+          });
+        }
+        
+      } else {
+        console.log(`[ECONOMY] ${username} failed to issue debt bonds for ${userCountry}: ${bondResult.message}`);
+        socket.emit('error', bondResult.message);
+      }
       
-      console.log(`${username} issued ${bondAmount} billion in ${isEmergency ? 'emergency ' : ''}debt bonds for ${userCountry} at ${bondResult.newDebt.interestRate.toFixed(2)}% rate`);
-      
-      // Send enhanced success response with detailed debt information
-      socket.emit('debtBondsIssued', {
-        success: true,
-        bondAmount,
-        newTreasury: bondResult.updatedEconomy.treasury,
-        newPublicDebt: bondResult.updatedEconomy.publicDebt,
-        effectiveInterestRate: bondResult.newDebt.interestRate,
-        monthlyPayment: bondResult.newDebt.monthlyPayment,
-        remainingInstallments: bondResult.newDebt.remainingInstallments,
-        creditRating: economyStateForDebt.creditRating,
-        isEmergency: isEmergency,
-        message: bondResult.message,
-        debtContract: bondResult.newDebt
-      });
-    } else {
-      console.log(`${username} failed to issue debt bonds for ${userCountry}: ${bondResult.message}`);
-      socket.emit('error', bondResult.message);
+    } catch (error) {
+      console.error(`Error issuing debt bonds for ${userCountry}:`, error);
+      socket.emit('error', 'Internal error processing bond issuance');
     }
   });
 
-  // Handler for emergency bond issuance
+  // ======================================================================
+  // CORRIGIDO: Handler para obter resumo de dívidas usando countryStateManager
+  // ======================================================================
+  
+  socket.on('getDebtSummary', () => {
+    const username = socket.username;
+    
+    if (!username) {
+      socket.emit('error', 'User not authenticated');
+      return;
+    }
+    
+    // Get current room
+    const roomName = getCurrentRoom(socket, gameState);
+    if (!roomName) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+    
+    // Get user's country
+    const userRoomKey = `${username}:${roomName}`;
+    const userCountry = gameState.userRoomCountries.get(userRoomKey);
+    
+    if (!userCountry) {
+      socket.emit('error', 'No country assigned');
+      return;
+    }
+    
+    try {
+      // CORRIGIDO: Usar o countryStateManager centralizado
+      const debtSummary = countryStateManager.getDebtSummary(roomName, userCountry);
+      
+      // Obter dados econômicos atuais
+      const currentState = countryStateManager.getCountryState(roomName, userCountry);
+      const economy = currentState?.economy || {};
+      
+      const gdp = economy.gdp?.value || 100;
+      const currentPublicDebt = economy.publicDebt || 0;
+      
+      // CORRIGIDO: Calcular médias ponderadas corretas
+      let averageInterestRate = 0;
+      if (debtSummary.contracts.length > 0) {
+        const totalInterest = debtSummary.contracts.reduce((sum, debt) => 
+          sum + (debt.interestRate * debt.remainingValue), 0
+        );
+        const totalBalance = debtSummary.contracts.reduce((sum, debt) => 
+          sum + debt.remainingValue, 0
+        );
+        averageInterestRate = totalBalance > 0 ? totalInterest / totalBalance : 0;
+      }
+      
+      socket.emit('debtSummaryResponse', {
+        totalPublicDebt: currentPublicDebt,
+        principalRemaining: debtSummary.principalRemaining,
+        totalFuturePayments: debtSummary.totalFuturePayments,
+        totalMonthlyPayment: debtSummary.totalMonthlyPayment,
+        averageInterestRate,
+        numberOfContracts: debtSummary.numberOfContracts,
+        debtToGdpRatio: (currentPublicDebt / gdp) * 100,
+        canIssueMoreDebt: (currentPublicDebt / gdp) <= 1.2,
+        debtRecords: debtSummary.contracts.map(debt => ({
+          id: debt.id,
+          originalValue: debt.originalValue,
+          remainingValue: debt.remainingValue,
+          interestRate: debt.interestRate,
+          monthlyPayment: debt.monthlyPayment,
+          remainingInstallments: debt.remainingInstallments,
+          issueDate: debt.issueDate
+        }))
+      });
+      
+    } catch (error) {
+      console.error(`Error getting debt summary for ${userCountry}:`, error);
+      socket.emit('error', 'Internal error getting debt summary');
+    }
+  });
+
+  // ======================================================================
+  // MANTIDO: Handler para títulos de emergência
+  // ======================================================================
+  
   socket.on('issueEmergencyBonds', (data) => {
     const username = socket.username;
     
@@ -182,60 +335,49 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Get current country state
-    const currentState = countryStateManager.getCountryState(roomName, userCountry);
-    const staticData = gameState.countriesData[userCountry];
-    
-    if (!currentState || !staticData) {
-      socket.emit('error', 'Country data not found');
-      return;
-    }
-    
-    // Prepare economy state for emergency bond issuance
-    const economy = currentState.economy || {};
-    const economyStateForDebt = {
-      treasury: economy.treasury?.value || 0,
-      publicDebt: economy.publicDebt || staticData.economy?.publicDebt?.value || 0,
-      gdp: economy.gdp?.value || 100,
-      interestRate: staticData.economy?.interestRate || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE,
-      creditRating: staticData.economy?.creditRating || 'A',
-      canIssueDebt: true,
-      debtRecords: economy.debtRecords || [],
-      nextDebtId: economy.nextDebtId || 1
-    };
-    
-    // Issue emergency bonds
-    const emergencyResult = issueEmergencyBonds(economyStateForDebt, requiredAmount);
-    
-    if (emergencyResult.success) {
-      // Update country state
-      const updatedEconomy = {
-        ...economy,
-        treasury: { value: emergencyResult.updatedEconomy.treasury, unit: 'bi USD' },
-        publicDebt: emergencyResult.updatedEconomy.publicDebt,
-        debtRecords: emergencyResult.updatedEconomy.debtRecords,
-        nextDebtId: emergencyResult.updatedEconomy.nextDebtId
-      };
+    try {
+      // Usar issueDebtBonds com flag de emergência
+      const bondResult = countryStateManager.issueDebtBonds(
+        roomName,
+        userCountry,
+        requiredAmount
+      );
       
-      countryStateManager.updateCountryState(roomName, userCountry, 'economy', updatedEconomy);
+      if (bondResult.success) {
+        console.log(`[ECONOMY] ${username} issued emergency bonds for ${userCountry}: ${bondResult.message}`);
+        
+        socket.emit('emergencyBondsIssued', {
+          success: true,
+          requiredAmount,
+          actualAmount: bondResult.bondAmount,
+          newTreasury: bondResult.newTreasury,
+          newPublicDebt: bondResult.newPublicDebt,
+          message: `Emergency bonds issued: ${bondResult.message}`
+        });
+        
+        // Notificar sala sobre emissão de emergência
+        socket.to(roomName).emit('economicNews', {
+          type: 'emergencyBonds',
+          country: userCountry,
+          amount: bondResult.bondAmount,
+          message: `${userCountry} issued emergency bonds due to financial crisis`
+        });
+        
+      } else {
+        console.log(`[ECONOMY] ${username} failed to issue emergency bonds for ${userCountry}: ${bondResult.message}`);
+        socket.emit('error', bondResult.message);
+      }
       
-      console.log(`${username} issued emergency bonds for ${userCountry}: ${emergencyResult.message}`);
-      
-      socket.emit('emergencyBondsIssued', {
-        success: true,
-        requiredAmount,
-        actualAmount: emergencyResult.updatedEconomy.treasury - economyStateForDebt.treasury,
-        newTreasury: emergencyResult.updatedEconomy.treasury,
-        newPublicDebt: emergencyResult.updatedEconomy.publicDebt,
-        message: emergencyResult.message
-      });
-    } else {
-      console.log(`${username} failed to issue emergency bonds for ${userCountry}: ${emergencyResult.message}`);
-      socket.emit('error', emergencyResult.message);
+    } catch (error) {
+      console.error(`Error issuing emergency bonds for ${userCountry}:`, error);
+      socket.emit('error', 'Internal error processing emergency bond issuance');
     }
   });
 
-  // Handler for debt payment processing (monthly)
+  // ======================================================================
+  // HANDLER PARA PROCESSAMENTO DE PAGAMENTOS (SIMPLIFICADO)
+  // ======================================================================
+  
   socket.on('processDebtPayments', () => {
     const username = socket.username;
     
@@ -244,175 +386,18 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Get current room
-    const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Not in a room');
-      return;
-    }
-    
-    // Get user's country
-    const userRoomKey = `${username}:${roomName}`;
-    const userCountry = gameState.userRoomCountries.get(userRoomKey);
-    
-    if (!userCountry) {
-      socket.emit('error', 'No country assigned');
-      return;
-    }
-    
-    // Get current country state
-    const currentState = countryStateManager.getCountryState(roomName, userCountry);
-    if (!currentState) {
-      socket.emit('error', 'Country state not found');
-      return;
-    }
-    
-    const economy = currentState.economy || {};
-    const debtRecords = economy.debtRecords || [];
-    const currentTreasury = economy.treasury?.value || 0;
-    
-    // Process monthly debt payments
-    const paymentResult = processMonthlyDebtPayments(debtRecords, currentTreasury);
-    
-    // Update country state with payment results
-    const updatedEconomy = {
-      ...economy,
-      treasury: { value: paymentResult.remainingCash, unit: 'bi USD' },
-      debtRecords: paymentResult.updatedDebts,
-      publicDebt: paymentResult.updatedDebts.reduce((total, debt) => total + debt.remainingValue, 0)
-    };
-    
-    countryStateManager.updateCountryState(roomName, userCountry, 'economy', updatedEconomy);
-    
-    console.log(`${username} processed debt payments for ${userCountry}: ${paymentResult.totalPayment.toFixed(2)} bi paid`);
-    
-    // If treasury goes negative, automatically issue emergency bonds
-    if (paymentResult.remainingCash < 0) {
-      const requiredAmount = Math.abs(paymentResult.remainingCash) + 10; // Add buffer
-      
-      // Prepare for emergency bond issuance
-      const staticData = gameState.countriesData[userCountry];
-      const economyStateForDebt = {
-        treasury: paymentResult.remainingCash,
-        publicDebt: updatedEconomy.publicDebt,
-        gdp: economy.gdp?.value || 100,
-        interestRate: staticData?.economy?.interestRate || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE,
-        creditRating: staticData?.economy?.creditRating || 'A',
-        canIssueDebt: true,
-        debtRecords: paymentResult.updatedDebts,
-        nextDebtId: economy.nextDebtId || 1
-      };
-      
-      const emergencyResult = issueEmergencyBonds(economyStateForDebt, requiredAmount);
-      
-      if (emergencyResult.success) {
-        // Update again with emergency bonds
-        const finalEconomy = {
-          ...updatedEconomy,
-          treasury: { value: emergencyResult.updatedEconomy.treasury, unit: 'bi USD' },
-          publicDebt: emergencyResult.updatedEconomy.publicDebt,
-          debtRecords: emergencyResult.updatedEconomy.debtRecords,
-          nextDebtId: emergencyResult.updatedEconomy.nextDebtId
-        };
-        
-        countryStateManager.updateCountryState(roomName, userCountry, 'economy', finalEconomy);
-        
-        socket.emit('debtPaymentProcessed', {
-          ...paymentResult,
-          emergencyBondsIssued: true,
-          emergencyAmount: requiredAmount,
-          finalTreasury: emergencyResult.updatedEconomy.treasury,
-          message: `Debt payments processed. ${emergencyResult.message}`
-        });
-      } else {
-        socket.emit('debtPaymentProcessed', {
-          ...paymentResult,
-          emergencyBondsIssued: false,
-          treasuryDeficit: true,
-          message: 'Debt payments processed but treasury is insufficient. Emergency bonds could not be issued.'
-        });
-      }
-    } else {
-      socket.emit('debtPaymentProcessed', {
-        ...paymentResult,
-        emergencyBondsIssued: false,
-        message: 'Debt payments processed successfully.'
-      });
-    }
-  });
-
-  // Handler for getting debt summary with enhanced information
-  socket.on('getDebtSummary', () => {
-    const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'User not authenticated');
-      return;
-    }
-    
-    // Get current room
-    const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Not in a room');
-      return;
-    }
-    
-    // Get user's country
-    const userRoomKey = `${username}:${roomName}`;
-    const userCountry = gameState.userRoomCountries.get(userRoomKey);
-    
-    if (!userCountry) {
-      socket.emit('error', 'No country assigned');
-      return;
-    }
-    
-    // Get current country state
-    const currentState = countryStateManager.getCountryState(roomName, userCountry);
-    if (!currentState) {
-      socket.emit('error', 'Country state not found');
-      return;
-    }
-    
-    const economy = currentState.economy || {};
-    const debtRecords = economy.debtRecords || [];
-    
-    // Calculate comprehensive debt summary
-    const debtSummary = updateTotalPublicDebt(debtRecords);
-    const totalMonthlyPayment = debtRecords.reduce((sum, debt) => sum + debt.monthlyPayment, 0);
-    const averageInterestRate = debtRecords.length > 0 ? 
-      debtRecords.reduce((sum, debt) => sum + (debt.interestRate * debt.remainingValue), 0) / 
-      debtRecords.reduce((sum, debt) => sum + debt.remainingValue, 0) : 0;
-    
-    const gdp = economy.gdp?.value || 100;
-    const currentPublicDebt = economy.publicDebt || 0;
-    
-    socket.emit('debtSummaryResponse', {
-      totalPublicDebt: currentPublicDebt,
-      principalRemaining: debtSummary.principalRemaining,
-      totalFuturePayments: debtSummary.totalDebtWithInterest,
-      totalMonthlyPayment,
-      averageInterestRate,
-      numberOfContracts: debtRecords.length,
-      debtToGdpRatio: (currentPublicDebt / gdp) * 100,
-      canIssueMoreDebt: canIssueMoreDebt({ 
-        publicDebt: currentPublicDebt, 
-        gdp: gdp, 
-        canIssueDebt: true 
-      }),
-      debtRecords: debtRecords.map(debt => ({
-        id: debt.id,
-        originalValue: debt.originalValue,
-        remainingValue: debt.remainingValue,
-        interestRate: debt.interestRate,
-        monthlyPayment: debt.monthlyPayment,
-        remainingInstallments: debt.remainingInstallments,
-        issueDate: debt.issueDate,
-        isEmergency: debt.isEmergency || false,
-        creditRating: debt.creditRating || 'A'
-      }))
+    // Este processo é automático no countryStateManager
+    // Apenas retornar o status atual
+    socket.emit('debtPaymentProcessed', {
+      message: 'Debt payments are processed automatically by the economic system',
+      automatic: true
     });
   });
 
+  // ======================================================================
+  // MANTIDOS: Handlers de comércio com melhorias
+  // ======================================================================
+  
   // Handler para envio de propostas de comércio
   socket.on('sendTradeProposal', (proposal) => {
     const username = socket.username;
@@ -495,7 +480,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       }
     }
     
-    console.log(`Trade proposal from ${originCountry} to ${targetCountry}. Target is ${isPlayerControlled ? 'player-controlled' : 'AI-controlled'}`);
+    console.log(`[TRADE] Proposal from ${originCountry} to ${targetCountry}. Target is ${isPlayerControlled ? 'player-controlled' : 'AI-controlled'}`);
     
     if (isPlayerControlled) {
       // País alvo é controlado por um jogador
@@ -509,7 +494,7 @@ function setupEconomyHandlers(io, socket, gameState) {
         
         // Enviar proposta para o jogador alvo
         targetSocket.emit('tradeProposalReceived', tradeProposal);
-        console.log(`Trade proposal sent to player ${targetPlayer}`);
+        console.log(`[TRADE] Proposal sent to player ${targetPlayer}`);
         
       } else {
         // Jogador alvo não está online
@@ -527,7 +512,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       
       setTimeout(() => {
         if (aiDecision.accepted) {
-          console.log(`AI-controlled country ${targetCountry} accepted trade proposal from ${originCountry}: ${aiDecision.reason}`);
+          console.log(`[TRADE] AI-controlled ${targetCountry} accepted proposal from ${originCountry}: ${aiDecision.reason}`);
           
           // Criar acordo comercial
           createTradeAgreement(io, gameState, roomName, {
@@ -547,7 +532,7 @@ function setupEconomyHandlers(io, socket, gameState) {
             message: `${targetCountry} accepted your trade proposal`
           });
         } else {
-          console.log(`AI-controlled country ${targetCountry} rejected trade proposal from ${originCountry}: ${aiDecision.reason}`);
+          console.log(`[TRADE] AI-controlled ${targetCountry} rejected proposal from ${originCountry}: ${aiDecision.reason}`);
           
           // Notificar jogador que enviou que a proposta foi rejeitada
           socket.emit('tradeProposalResponse', {
@@ -596,16 +581,16 @@ function setupEconomyHandlers(io, socket, gameState) {
     const isAIControlledProposal = !isCountryControlledByHuman(gameState, roomName, proposal.originCountry);
     
     if (accepted) {
-      console.log(`Trade proposal ${proposalId} accepted by ${username}`);
+      console.log(`[TRADE] Proposal ${proposalId} accepted by ${username}`);
       
-      // Criar acordo comercial
+      // Criar acordo comercial usando countryStateManager integrado
       createTradeAgreement(io, gameState, roomName, {
         type: proposal.type,
         product: proposal.product,
         country: proposal.targetCountry,
         value: proposal.value,
         originCountry: proposal.originCountry,
-        originPlayer: proposal.originPlayer || null // O país IA não tem jogador associado
+        originPlayer: proposal.originPlayer || null
       });
       
       // Se não for uma proposta de IA, notificar o jogador humano que enviou a proposta
@@ -623,7 +608,7 @@ function setupEconomyHandlers(io, socket, gameState) {
         }
       }
     } else {
-      console.log(`Trade proposal ${proposalId} rejected by ${username}`);
+      console.log(`[TRADE] Proposal ${proposalId} rejected by ${username}`);
       
       // Se não for uma proposta de IA, notificar o jogador humano que enviou a proposta
       if (!isAIControlledProposal) {
@@ -645,7 +630,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     delete socket.tradeProposal;
   });
 
-  // Handler para criação de acordos comerciais (ainda mantido para compatibilidade)
+  // Handler para criação de acordos comerciais (compatibilidade)
   socket.on('createTradeAgreement', (data) => {
     const username = socket.username;
     
@@ -671,22 +656,22 @@ function setupEconomyHandlers(io, socket, gameState) {
     const { type, product, country, value } = data;
     
     if (!type || !product || !country || !value) {
-      socket.emit('error', 'Faltam detalhes obrigatórios do acordo');
+      socket.emit('error', 'Missing required agreement details');
       return;
     }
 
     if (type !== 'import' && type !== 'export') {
-      socket.emit('error', 'Tipo de comércio inválido. Deve ser "import" ou "export"');
+      socket.emit('error', 'Invalid trade type. Must be "import" or "export"');
       return;
     }
 
     if (product !== 'commodity' && product !== 'manufacture') {
-      socket.emit('error', 'Tipo de produto inválido. Deve ser "commodity" ou "manufacture"');
+      socket.emit('error', 'Invalid product type. Must be "commodity" or "manufacture"');
       return;
     }
 
     if (value <= 0 || value > 1000) {
-      socket.emit('error', 'Valor de comércio inválido. Deve estar entre 0 e 1000 bilhões');
+      socket.emit('error', 'Invalid trade value. Must be between 0 and 1000 billions');
       return;
     }
     
@@ -705,7 +690,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Criar o acordo comercial
+    // Criar o acordo comercial (isso atualizará automaticamente as economias via countryStateManager)
     const agreement = createTradeAgreement(io, gameState, roomName, {
       type,
       product,
@@ -716,7 +701,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     });
     
     if (agreement) {
-      console.log(`${username} created a trade agreement: ${type} ${product} with ${country}`);
+      console.log(`[TRADE] ${username} created agreement: ${type} ${product} with ${country}`);
     } else {
       socket.emit('error', 'Failed to create trade agreement');
     }
@@ -748,8 +733,12 @@ function setupEconomyHandlers(io, socket, gameState) {
     const userRoomKey = `${username}:${roomName}`;
     const userCountry = gameState.userRoomCountries.get(userRoomKey);
     
-    // Cancelar o acordo comercial
-    cancelTradeAgreement(io, gameState, roomName, agreementId, userCountry, socket);
+    // Cancelar o acordo comercial (isso atualizará automaticamente as economias)
+    const success = cancelTradeAgreement(io, gameState, roomName, agreementId, userCountry, socket);
+    
+    if (success) {
+      console.log(`[TRADE] ${username} cancelled trade agreement ${agreementId}`);
+    }
   });
   
   // Handler para obter acordos comerciais ativos
