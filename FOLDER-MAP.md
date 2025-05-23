@@ -95,59 +95,59 @@
   │   │           ├── Toast.css
   │   │           ├── Toast.jsx
   │   │           └── messageService.js
-  │   ├── v1.md
   │   └── vite.config.js  # Configuração do Vite
   ├── eslint.config.js  # Configuração do lint para os dois ambientes client e server
   ├── package.json  # Dependências e scripts principais (monorepo)
-  └── server
-      ├── keys
-      │   └── firebase-admin.json
-      ├── middlewares
-      │   └── socketServerMiddleware.js
-      ├── modules
-      │   ├── ai
-      │   │   └── aiCountryController.js
-      │   ├── auth
-      │   │   ├── authHandlers.js  # Handlers de autenticação
-      │   │   └── google.js
-      │   ├── chat
-      │   │   └── chatHandlers.js  # Handlers do chat
-      │   ├── country
-      │   │   ├── countryAssignment.js  # Atribuições de países
-      │   │   ├── countryStateHandlers.js
-      │   │   └── countryUtils.js  # Utilitários para países
-      │   ├── economy
-      │   │   ├── economyCalculations.js
-      │   │   ├── economyHandlers.js
-      │   │   ├── economyUpdateService.js
-      │   │   ├── index.js
-      │   │   └── tradeAgreementService.js
-      │   ├── index.js
-      │   ├── player
-      │   │   ├── playerHandlers.js  # Handlers para jogadores
-      │   │   ├── playerRoomHandlers.js  # Handlers para jogadores na sala
-      │   │   ├── playerStateManager.js  # Gerencia estado dos jogadores
-      │   │   └── playerUtils.js  # Funções utilitárias
-      │   └── room
-      │       ├── roomExpirationManager.js
-      │       ├── roomManagement.js  # Gerenciamento de sala
-      │       └── roomNotifications.js  # Notificações da Sala
-      ├── package.json  # Dependências e scripts principais (monorepo)
-      ├── public
-      │   └── data
-      │       ├── countriesCoordinates.json
-      │       ├── countriesData-bkp.json
-      │       └── countriesData.json
-      ├── server.js  # Entry point do servidor
-      └── shared
-          ├── advancedDebtManagement.js
-          ├── countryState
-          │   ├── countryEconomyCalculator.js
-          │   ├── countryStateConfig.js
-          │   ├── countryStateCore.js
-          │   ├── countryStateUpdater.js
-          │   └── index.js
-          ├── countryStateManager.js
-          ├── firebaseAdmin.js
-          ├── gameStateUtils.js  # Utilitários de estado para o jogo
-          └── redisClient.js  # Infraestrutura do Redis
+  ├── server
+  │   ├── keys
+  │   │   └── firebase-admin.json
+  │   ├── middlewares
+  │   │   └── socketServerMiddleware.js
+  │   ├── modules
+  │   │   ├── ai
+  │   │   │   └── aiCountryController.js
+  │   │   ├── auth
+  │   │   │   ├── authHandlers.js  # Handlers de autenticação
+  │   │   │   └── google.js
+  │   │   ├── chat
+  │   │   │   └── chatHandlers.js  # Handlers do chat
+  │   │   ├── country
+  │   │   │   ├── countryAssignment.js  # Atribuições de países
+  │   │   │   ├── countryStateHandlers.js
+  │   │   │   └── countryUtils.js  # Utilitários para países
+  │   │   ├── economy
+  │   │   │   ├── economyCalculations.js
+  │   │   │   ├── economyHandlers.js
+  │   │   │   ├── economyUpdateService.js
+  │   │   │   ├── index.js
+  │   │   │   └── tradeAgreementService.js
+  │   │   ├── index.js
+  │   │   ├── player
+  │   │   │   ├── playerHandlers.js  # Handlers para jogadores
+  │   │   │   ├── playerRoomHandlers.js  # Handlers para jogadores na sala
+  │   │   │   ├── playerStateManager.js  # Gerencia estado dos jogadores
+  │   │   │   └── playerUtils.js  # Funções utilitárias
+  │   │   └── room
+  │   │       ├── roomExpirationManager.js
+  │   │       ├── roomManagement.js  # Gerenciamento de sala
+  │   │       └── roomNotifications.js  # Notificações da Sala
+  │   ├── package.json  # Dependências e scripts principais (monorepo)
+  │   ├── public
+  │   │   └── data
+  │   │       ├── countriesCoordinates.json
+  │   │       ├── countriesData-bkp.json
+  │   │       └── countriesData.json
+  │   ├── server.js  # Entry point do servidor
+  │   └── shared
+  │       ├── advancedDebtManagement.js
+  │       ├── countryState
+  │       │   ├── countryEconomyCalculator.js
+  │       │   ├── countryStateConfig.js
+  │       │   ├── countryStateCore.js
+  │       │   ├── countryStateUpdater.js
+  │       │   └── index.js
+  │       ├── countryStateManager.js
+  │       ├── firebaseAdmin.js
+  │       ├── gameStateUtils.js  # Utilitários de estado para o jogo
+  │       └── redisClient.js  # Infraestrutura do Redis
+  └── v2.md
