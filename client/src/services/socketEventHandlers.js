@@ -15,15 +15,6 @@ import {
   resetTradeState,
   updateStats
 } from '../modules/trade/tradeState';
-import {
-  initializeCountryEconomy,
-  updateEconomicParameters,
-  issueBonds as issueBondsAction,
-  processDebtPayments as processDebtPaymentsAction,
-  updateCreditRating,
-  setError as setEconomyError,
-  clearError as clearEconomyError
-} from '../modules/economy/economySlice';
 import { 
   setReconnectAttempts, 
   incrementReconnectAttempts,
@@ -35,12 +26,36 @@ import {
 // Import do serviço de mensagens para mostrar toasts
 import MessageService from '../ui/toast/messageService';
 
+// Variáveis para controlar autenticação e evitar spam
+let lastAuthTime = 0;
+let isAuthenticated = false;
+let authenticationInProgress = false;
+const AUTH_COOLDOWN = 2000; // 2 segundos entre autenticações
+
 // Configurar todos os eventos do socket
 export const setupSocketEvents = (socket, socketApi) => {
   if (!socket) return;
   
   // Remover listeners anteriores se existirem para evitar duplicação
-  socket.removeAllListeners();
+  // CORRIGIDO: usar off() para remover listeners específicos
+  const eventsToClean = [
+    'connect', 'disconnect', 'connect_error', 'authenticated', 'authenticationIgnored',
+    'roomsList', 'roomJoined', 'roomLeft', 'roomCreated', 'roomDeleted',
+    'chatMessage', 'chatHistory', 'playersList', 'playerOnlineStatus',
+    'countryAssigned', 'stateRestored', 'countryStatesInitialized',
+    'countryStatesUpdated', 'countryState', 'countryStateUpdated',
+    'tradeProposalReceived', 'tradeProposalResponse', 'tradeProposalProcessed',
+    'tradeAgreementCancelled', 'tradeAgreementsList', 'tradeAgreementUpdated',
+    'error', 'pong'
+  ];
+  
+  eventsToClean.forEach(eventName => {
+    socket.off(eventName);
+  });
+  
+  // Reset de variáveis de controle
+  isAuthenticated = false;
+  authenticationInProgress = false;
   
   // ======================================================================
   // EVENTOS BASE DO SOCKET
@@ -51,21 +66,29 @@ export const setupSocketEvents = (socket, socketApi) => {
     setReconnectAttempts(0);
     setIsJoiningRoom(false);
     
-    // Reautenticar automaticamente se houver um usuário guardado
+    // Reautenticar automaticamente se houver um usuário guardado - CORRIGIDO
     const username = sessionStorage.getItem('username');
-    if (username) {
+    if (username && !isAuthenticated && !authenticationInProgress) {
       console.log('Reautenticando usuário após conexão:', username);
       
-      // MODIFICAR: Verificar se não foi enviado muito recentemente
-      const lastAuthTime = sessionStorage.getItem('lastAuthTime');
       const now = Date.now();
       
-      if (!lastAuthTime || (now - parseInt(lastAuthTime)) > 1000) {
-        sessionStorage.setItem('lastAuthTime', now.toString());
+      // Verificar cooldown de autenticação
+      if (now - lastAuthTime >= AUTH_COOLDOWN) {
+        lastAuthTime = now;
+        authenticationInProgress = true;
         
         setTimeout(() => {
-          socket.emit('authenticate', username, { clientSessionId: sessionStorage.getItem('clientSessionId') });
-        }, 300);
+          if (!isAuthenticated && authenticationInProgress) {
+            console.log('Enviando autenticação para:', username);
+            socket.emit('authenticate', username, { 
+              clientSessionId: sessionStorage.getItem('clientSessionId'),
+              reconnect: true
+            });
+          }
+        }, 500); // Aguardar meio segundo para estabilizar
+      } else {
+        console.log('Autenticação em cooldown, aguardando...');
       }
     }
   });
@@ -73,30 +96,44 @@ export const setupSocketEvents = (socket, socketApi) => {
   socket.io.on("reconnect_attempt", (attempt) => {
     console.log(`Tentativa de reconexão #${attempt}`);
     setReconnectAttempts(attempt);
+    
+    // Reset de autenticação em tentativas de reconexão
+    isAuthenticated = false;
+    authenticationInProgress = false;
   });
   
   socket.io.on("reconnect", (attempt) => {
     console.log(`Reconectado com sucesso após ${attempt} tentativas`);
     setIsJoiningRoom(false);
     
+    // Reset de variáveis de autenticação
+    isAuthenticated = false;
+    authenticationInProgress = false;
+    
     const username = sessionStorage.getItem('username');
     if (username) {
       console.log('Reautenticando após reconexão:', username);
       
-      // ADICIONAR: Aguardar um pouco mais e verificar se não foi feito recentemente
-      const lastReconnectAuth = sessionStorage.getItem('lastReconnectAuth');
       const now = Date.now();
-      
-      if (!lastReconnectAuth || (now - parseInt(lastReconnectAuth)) > 5000) {
-        sessionStorage.setItem('lastReconnectAuth', now.toString());
+      if (now - lastAuthTime >= AUTH_COOLDOWN) {
+        lastAuthTime = now;
+        authenticationInProgress = true;
         
         setTimeout(() => {
-          socket.emit('authenticate', username, { clientSessionId: sessionStorage.getItem('clientSessionId') });
+          if (!isAuthenticated && authenticationInProgress) {
+            socket.emit('authenticate', username, { 
+              clientSessionId: sessionStorage.getItem('clientSessionId'),
+              reconnect: true
+            });
+          }
           
+          // Solicitar lista de salas após autenticação
           setTimeout(() => {
-            socket.emit('getRooms');
-          }, 500);
-        }, 1000); // Aguardar mais tempo
+            if (isAuthenticated) {
+              socket.emit('getRooms');
+            }
+          }, 1000);
+        }, 1500); // Aguardar mais tempo após reconexão
       }
     }
   });
@@ -105,6 +142,10 @@ export const setupSocketEvents = (socket, socketApi) => {
     console.error('Erro de conexão ao socket:', error.message);
     incrementReconnectAttempts();
     setIsJoiningRoom(false);
+    
+    // Reset de autenticação em erro
+    isAuthenticated = false;
+    authenticationInProgress = false;
     
     if (incrementReconnectAttempts() >= getMaxReconnectAttempts()) {
       console.error(`Falha após ${getMaxReconnectAttempts()} tentativas. Desistindo.`);
@@ -118,6 +159,10 @@ export const setupSocketEvents = (socket, socketApi) => {
   socket.on('disconnect', (reason) => {
     console.log('Desconectado do servidor. Motivo:', reason);
     setIsJoiningRoom(false);
+    
+    // Reset de autenticação ao desconectar
+    isAuthenticated = false;
+    authenticationInProgress = false;
     
     if (reason === 'io server disconnect' || reason === 'transport close') {
       setTimeout(() => {
@@ -134,17 +179,34 @@ export const setupSocketEvents = (socket, socketApi) => {
   socket.on('authenticated', (data) => {
     console.log('Autenticação bem-sucedida:', data);
     
+    // Marcar como autenticado para evitar spam
+    isAuthenticated = true;
+    authenticationInProgress = false;
+    
     const pendingRoom = sessionStorage.getItem('pendingRoom');
     if (pendingRoom && !getIsJoiningRoom()) {
       setTimeout(() => {
         console.log('Retomando entrada na sala após autenticação:', pendingRoom);
         socketApi.joinRoom(pendingRoom);
-      }, 500);
+      }, 1000); // Aguardar mais tempo após autenticação
     } else {
       setTimeout(() => {
+        console.log('Solicitando lista de salas após autenticação');
         socket.emit('getRooms');
-      }, 300);
+      }, 500);
     }
+  });
+  
+  // Handler para evitar múltiplas autenticações
+  socket.on('authenticationIgnored', (data) => {
+    console.log('Autenticação ignorada pelo servidor:', data);
+    isAuthenticated = true;
+    authenticationInProgress = false;
+    
+    // Ainda assim, solicitar salas se necessário
+    setTimeout(() => {
+      socket.emit('getRooms');
+    }, 500);
   });
   
   socket.on('roomsList', (rooms) => {
@@ -276,212 +338,6 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
   
   // ======================================================================
-  // EVENTOS DE ECONOMIA AVANÇADA
-  // ======================================================================
-  
-  // Evento para títulos de dívida emitidos com sistema avançado
-  socket.on('debtBondsIssued', (data) => {
-    console.log('Títulos de dívida emitidos (sistema avançado):', data);
-    
-    if (data.success) {
-      // Mostrar notificação de sucesso com detalhes avançados
-      const emergencyText = data.isEmergency ? ' de emergência' : '';
-      const ratingText = data.creditRating ? ` (Rating: ${data.creditRating})` : '';
-      
-      MessageService.showSuccess(
-        `Títulos${emergencyText} emitidos: ${data.bondAmount} bi USD` +
-        `\nTaxa: ${data.effectiveInterestRate?.toFixed(2)}%${ratingText}` +
-        `\nParcela mensal: ${data.monthlyPayment?.toFixed(2)} bi USD`,
-        6000
-      );
-      
-      // Atualizar estado da economia no Redux
-      const currentRoom = store.getState().rooms?.currentRoom;
-      const myCountry = store.getState().game?.myCountry;
-      
-      if (currentRoom?.name && myCountry) {
-        // Disparar ação para atualizar dívidas no Redux
-        store.dispatch(issueBondsAction({
-          roomName: currentRoom.name,
-          countryName: myCountry,
-          bondData: {
-            success: true,
-            bondAmount: data.bondAmount,
-            newTreasury: data.newTreasury,
-            newPublicDebt: data.newPublicDebt,
-            effectiveInterestRate: data.effectiveInterestRate,
-            monthlyPayment: data.monthlyPayment,
-            remainingInstallments: data.remainingInstallments,
-            creditRating: data.creditRating,
-            isEmergency: data.isEmergency,
-            debtContract: data.debtContract
-          }
-        }));
-        
-        // Atualizar rating de crédito se fornecido
-        if (data.creditRating) {
-          store.dispatch(updateCreditRating({
-            roomName: currentRoom.name,
-            countryName: myCountry,
-            creditRating: data.creditRating
-          }));
-        }
-        
-        // Limpar erros econômicos
-        store.dispatch(clearEconomyError());
-      }
-    } else {
-      MessageService.showError(data.message || 'Falha na emissão de títulos', 4000);
-      store.dispatch(setEconomyError(data.message || 'Falha na emissão de títulos'));
-    }
-  });
-  
-  // Evento para títulos de emergência emitidos
-  socket.on('emergencyBondsIssued', (data) => {
-    console.log('Títulos de emergência emitidos:', data);
-    
-    if (data.success) {
-      MessageService.showWarning(
-        `Títulos de emergência emitidos: ${data.actualAmount?.toFixed(2)} bi USD` +
-        `\nMotivo: Caixa insuficiente (${data.requiredAmount?.toFixed(2)} bi necessários)`,
-        8000
-      );
-      
-      // Atualizar estado no Redux
-      const currentRoom = store.getState().rooms?.currentRoom;
-      const myCountry = store.getState().game?.myCountry;
-      
-      if (currentRoom?.name && myCountry) {
-        store.dispatch(issueBondsAction({
-          roomName: currentRoom.name,
-          countryName: myCountry,
-          bondData: {
-            success: true,
-            bondAmount: data.actualAmount,
-            newTreasury: data.newTreasury,
-            newPublicDebt: data.newPublicDebt,
-            isEmergency: true
-          }
-        }));
-      }
-    } else {
-      MessageService.showError(
-        `Falha na emissão de títulos de emergência: ${data.message}`,
-        6000
-      );
-    }
-  });
-  
-  // Evento para pagamentos de dívida processados
-  socket.on('debtPaymentProcessed', (data) => {
-    console.log('Pagamentos de dívida processados:', data);
-    
-    const currentRoom = store.getState().rooms?.currentRoom;
-    const myCountry = store.getState().game?.myCountry;
-    
-    if (currentRoom?.name && myCountry) {
-      // Atualizar dados de pagamento no Redux
-      store.dispatch(processDebtPaymentsAction({
-        roomName: currentRoom.name,
-        countryName: myCountry,
-        paymentResults: {
-          totalPayment: data.totalPayment,
-          interestPayment: data.interestPayment,
-          principalPayment: data.principalPayment,
-          updatedDebts: data.updatedDebts,
-          remainingCash: data.remainingCash || data.finalTreasury
-        }
-      }));
-    }
-    
-    // Mostrar notificação baseada no resultado
-    if (data.emergencyBondsIssued) {
-      MessageService.showWarning(
-        `Pagamentos processados: ${data.totalPayment?.toFixed(2)} bi USD` +
-        `\nTítulos de emergência emitidos: ${data.emergencyAmount?.toFixed(2)} bi USD`,
-        6000
-      );
-    } else if (data.treasuryDeficit) {
-      MessageService.showError(
-        `Pagamentos processados mas caixa insuficiente!` +
-        `\nPagamento: ${data.totalPayment?.toFixed(2)} bi USD`,
-        5000
-      );
-    } else {
-      MessageService.showSuccess(
-        `Pagamentos de dívida processados: ${data.totalPayment?.toFixed(2)} bi USD` +
-        `\nJuros: ${data.interestPayment?.toFixed(2)} bi | Principal: ${data.principalPayment?.toFixed(2)} bi`,
-        4000
-      );
-    }
-  });
-  
-  // Evento para resumo de dívidas (resposta ao getDebtSummary)
-  socket.on('debtSummaryResponse', (data) => {
-    console.log('Resumo de dívidas recebido:', data);
-    
-    // Armazenar no sessionStorage para uso no popup
-    sessionStorage.setItem('debtSummaryData', JSON.stringify(data));
-    
-    // Disparar evento customizado para notificar componentes
-    window.dispatchEvent(new CustomEvent('debtSummaryReceived', { detail: data }));
-  });
-  
-  // Evento para parâmetros econômicos atualizados
-  socket.on('economicParameterUpdated', (data) => {
-    console.log('Parâmetro econômico atualizado:', data);
-    
-    const currentRoom = store.getState().rooms?.currentRoom;
-    const myCountry = store.getState().game?.myCountry;
-    
-    // Verificar se a atualização é para o país atual
-    if (data.countryName === myCountry && data.roomName === currentRoom?.name) {
-      // Atualizar parâmetro no Redux
-      store.dispatch(updateEconomicParameters({
-        roomName: data.roomName,
-        countryName: data.countryName,
-        parameters: {
-          [data.parameter]: data.value
-        }
-      }));
-      
-      // Mostrar confirmação
-      const parameterNames = {
-        interestRate: 'Taxa de Juros',
-        taxBurden: 'Carga Tributária',
-        publicServices: 'Investimento Público'
-      };
-      
-      const parameterName = parameterNames[data.parameter] || data.parameter;
-      const unit = data.parameter === 'interestRate' ? '%' : '%';
-      
-      MessageService.showSuccess(
-        `${parameterName} atualizada: ${data.value}${unit}`,
-        3000
-      );
-    }
-  });
-  
-  // Evento para inicialização de economia avançada
-  socket.on('advancedEconomyInitialized', (data) => {
-    console.log('Economia avançada inicializada:', data);
-    
-    const { roomName, countryName, economyData } = data;
-    
-    // Inicializar economia no Redux
-    store.dispatch(initializeCountryEconomy({
-      roomName,
-      countryName,
-      countryData: economyData
-    }));
-    
-    MessageService.showInfo(
-      `Sistema econômico avançado ativado para ${countryName}`,
-      4000
-    );
-  });
-  
-  // ======================================================================
   // EVENTOS DE COMÉRCIO
   // ======================================================================
   
@@ -508,7 +364,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     
     MessageService.showInfo(
       `${originCountry} quer ${actionType} ${productName} (${value} bi USD)`,
-      4000 // 4 segundos
+      4000
     );
   });
   
@@ -596,6 +452,12 @@ export const setupSocketEvents = (socket, socketApi) => {
   socket.on('error', (message) => {
     console.error('Erro do socket:', message);
     
+    // Reset de autenticação em caso de erro de autenticação
+    if (message.includes('autenticação') || message.includes('authentication')) {
+      isAuthenticated = false;
+      authenticationInProgress = false;
+    }
+    
     if (message.includes('sala') || message.includes('room')) {
       setIsJoiningRoom(false);
       sessionStorage.removeItem('pendingRoom');
@@ -603,7 +465,8 @@ export const setupSocketEvents = (socket, socketApi) => {
     
     const isSilentError = message.includes('já está em uso') || 
                          message.includes('autenticação') || 
-                         message.includes('desconectado');
+                         message.includes('desconectado') ||
+                         message.includes('já está autenticado'); // Adicionar este caso
     
     if (!isSilentError) {
       // Mostrar erro via toast
@@ -616,10 +479,29 @@ export const setupSocketEvents = (socket, socketApi) => {
     }
   });
   
-  // Força ping a cada 30 segundos para manter a conexão ativa
-  setInterval(() => {
-    if (socket.connected) {
+  // ======================================================================
+  // PING/PONG PARA MANTER CONEXÃO ATIVA - MELHORADO
+  // ======================================================================
+  
+  // Ping mais inteligente - só envia se estiver autenticado e conectado
+  const pingInterval = setInterval(() => {
+    if (socket.connected && isAuthenticated) {
       socket.emit('ping', Date.now());
     }
-  }, 30000);
+  }, 30000); // A cada 30 segundos
+  
+  // Limpar intervalo quando o socket for desconectado
+  socket.on('disconnect', () => {
+    if (pingInterval) {
+      clearInterval(pingInterval);
+    }
+  });
+  
+  // Adicionar handler para pong (opcional, para debugging)
+  socket.on('pong', (timestamp) => {
+    const latency = Date.now() - timestamp;
+    if (latency > 1000) { // Log apenas se latência for alta
+      console.log(`Socket latency: ${latency}ms`);
+    }
+  });
 };
