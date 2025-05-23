@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { COUNTRY_STATE_EVENTS } from '../../store/socketReduxMiddleware';
 import { 
-  selectCountryEconomy,
   selectCountryEconomicIndicators,
   selectCountryDebtSummary,
   selectCountryStateLoading,
@@ -41,7 +40,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   // ESTADO LOCAL (apenas para UI, não para dados)
   // ======================================================================
   
-  // Parâmetros locais (antes de aplicar) - CORRIGIDO: Inicializa com dados do servidor
+  // Parâmetros locais (antes de aplicar) - inicializa com dados do servidor
   const [localParameters, setLocalParameters] = useState({
     interestRate: 8.0,
     taxBurden: 40.0,
@@ -54,7 +53,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   const [pendingUpdates, setPendingUpdates] = useState(new Set());
   
   // ======================================================================
-  // SINCRONIZAÇÃO COM DADOS DO SERVIDOR (CORRIGIDA)
+  // SINCRONIZAÇÃO COM DADOS DO SERVIDOR
   // ======================================================================
   
   // Sincronizar parâmetros locais com dados vindos do servidor
@@ -88,11 +87,11 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }, [currentRoom?.name, dispatch]);
   
   // ======================================================================
-  // HANDLERS DE COMANDOS (CORRIGIDOS - enviam eventos corretos)
+  // HANDLERS DE COMANDOS
   // ======================================================================
   
   /**
-   * CORRIGIDO: Aplica mudança de parâmetro econômico
+   * Aplica mudança de parâmetro econômico
    */
   const applyParameterChange = useCallback(async (parameter, value) => {
     if (!currentRoom?.name || !myCountry) return;
@@ -125,10 +124,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     try {
       const socket = socketApi.getSocketInstance();
       if (socket) {
-        // CORRIGIDO: Usar evento correto que existe no servidor
         socket.emit('updateEconomicParameter', {
-          roomName: currentRoom.name,
-          countryName: myCountry,
           parameter: parameter,
           value: newValue
         });
@@ -149,7 +145,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }, [currentRoom?.name, myCountry]);
   
   /**
-   * CORRIGIDO: Emite títulos de dívida
+   * Emite títulos de dívida
    */
   const handleIssueBonds = useCallback(async () => {
     const amount = parseFloat(bondAmount);
@@ -169,7 +165,6 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     try {
       const socket = socketApi.getSocketInstance();
       if (socket) {
-        // CORRIGIDO: Usar evento correto que existe no servidor
         socket.emit('issueDebtBonds', { 
           bondAmount: amount,
           isEmergency: false
@@ -186,7 +181,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }, [bondAmount, currentRoom?.name, myCountry]);
   
   /**
-   * CORRIGIDO: Abre popup de dívidas com dados corretos
+   * Abre popup de dívidas com dados corretos
    */
   const handleOpenDebtPopup = useCallback(() => {
     if (economicIndicators && debtSummary && onOpenDebtPopup) {
@@ -205,63 +200,49 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }, [economicIndicators, debtSummary, onOpenDebtPopup]);
   
   // ======================================================================
-  // EVENTOS DO SERVIDOR (CORRIGIDOS)
+  // EVENTOS DO SERVIDOR
   // ======================================================================
   
   useEffect(() => {
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
     
-    // CORRIGIDO: Handler para confirmação de emissão de títulos
+    // Handler para confirmação de emissão de títulos
     const handleDebtBondsIssued = (data) => {
       console.log('[ECONOMY] Títulos emitidos confirmados:', data);
       
-      const { success, bondAmount: issuedAmount, newTreasury, newPublicDebt, message } = data;
+      const { success, message } = data;
       
       if (success) {
-        MessageService.showSuccess(`Títulos emitidos: ${issuedAmount} bi USD`, 4000);
+        // MessageService já é tratado no socketEventHandlers
+        console.log('[ECONOMY] Títulos emitidos com sucesso');
       } else {
-        MessageService.showError(message || 'Falha na emissão de títulos');
+        console.log('[ECONOMY] Falha na emissão:', message);
       }
       
       setIsIssuingBonds(false);
     };
     
-    // CORRIGIDO: Handler para confirmação de parâmetros
+    // Handler para confirmação de parâmetros
     const handleParameterUpdated = (data) => {
       console.log('[ECONOMY] Parâmetro confirmado:', data);
       
-      const { countryName, roomName, parameter, value } = data;
+      const { countryName, parameter } = data;
       
       // Só processar se for para o país atual
-      if (countryName === myCountry && roomName === currentRoom?.name) {
+      if (countryName === myCountry) {
         // Remover dos pending updates
         setPendingUpdates(prev => {
           const newSet = new Set(prev);
           newSet.delete(parameter);
           return newSet;
         });
-        
-        // Atualizar parâmetro local se necessário
-        setLocalParameters(prev => ({
-          ...prev,
-          [parameter]: value
-        }));
       }
     };
     
-    // CORRIGIDO: Handler para títulos de emergência
+    // Handler para títulos de emergência
     const handleEmergencyBonds = (data) => {
       console.log('[ECONOMY] Títulos de emergência:', data);
-      
-      const { success, message } = data;
-      
-      if (success) {
-        MessageService.showWarning(`Emergência: ${message}`, 6000);
-      } else {
-        MessageService.showError(message || 'Falha na emissão de títulos de emergência');
-      }
-      
       setIsIssuingBonds(false);
     };
     
@@ -275,7 +256,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       socket.off('economicParameterUpdated', handleParameterUpdated);
       socket.off('emergencyBondsIssued', handleEmergencyBonds);
     };
-  }, [myCountry, currentRoom?.name]);
+  }, [myCountry]);
   
   // ======================================================================
   // UTILITÁRIOS DE FORMATAÇÃO (memoizados)
@@ -307,7 +288,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }), []);
   
   // ======================================================================
-  // VALIDAÇÕES E CHECKS (CORRIGIDOS)
+  // VALIDAÇÕES E CHECKS
   // ======================================================================
   
   if (!myCountry) {
@@ -329,10 +310,9 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }
   
   // ======================================================================
-  // VALIDAÇÕES DE VALORES (ADICIONADAS)
+  // DADOS SEGUROS COM FALLBACKS
   // ======================================================================
   
-  // Verificar se há valores inválidos e mostrar fallbacks
   const safeIndicators = {
     gdp: economicIndicators.gdp || 100,
     treasury: economicIndicators.treasury || 10,
@@ -361,7 +341,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           <div className="indicator-value">
             <span className="value">{formatters.currency(safeIndicators.gdp)} bi</span>
             <span className={`growth ${safeIndicators.gdpGrowth >= 0 ? 'positive' : 'negative'}`}>
-              {formatters.valueWithSign(safeIndicators.gdpGrowth)}% anual
+              {formatters.valueWithSign(safeIndicators.gdpGrowth)}%
             </span>
           </div>
         </div>
@@ -415,7 +395,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         </div>
       </div>
       
-      {/* Controles Econômicos (CORRIGIDOS) */}
+      {/* Controles Econômicos */}
       <div className="economic-controls">
         <h4>Parâmetros Econômicos</h4>
         
@@ -501,7 +481,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         </div>
       </div>
       
-      {/* Emissão de Títulos (CORRIGIDA) */}
+      {/* Emissão de Títulos */}
       <div className="bonds-section">
         <h4>Títulos da Dívida Pública</h4>
         
@@ -534,7 +514,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           </div>
         )}
         
-        {/* Botão de resumo de dívidas (CORRIGIDO) */}
+        {/* Botão de resumo de dívidas */}
         {debtSummary && debtSummary.numberOfContracts > 0 && (
           <button 
             className="debt-summary-btn"
@@ -545,7 +525,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         )}
       </div>
       
-      {/* Debug info em desenvolvimento (CORRIGIDA) */}
+      {/* Debug info em desenvolvimento */}
       {process.env.NODE_ENV === 'development' && lastUpdated && (
         <div style={{ 
           fontSize: '10px', 

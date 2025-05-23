@@ -47,9 +47,9 @@ export const setupSocketEvents = (socket, socketApi) => {
     'countryStatesUpdated', 'countryState', 'countryStateUpdated',
     'tradeProposalReceived', 'tradeProposalResponse', 'tradeProposalProcessed',
     'tradeAgreementCancelled', 'tradeAgreementsList', 'tradeAgreementUpdated',
-    // NOVOS: Eventos econômicos
-    'debtBondsIssued', 'emergencyBondsIssued', 'debtPaymentProcessed', 'debtSummaryResponse',
-    'economicParameterUpdated', 'economicUpdate',
+    // Eventos econômicos
+    'debtBondsIssued', 'emergencyBondsIssued', 'debtSummaryResponse',
+    'economicParameterUpdated',
     'error', 'pong'
   ];
   
@@ -314,13 +314,12 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
   
   // ======================================================================
-  // EVENTOS DE ESTADO DE PAÍS (CORRIGIDOS)
+  // EVENTOS DE ESTADO DE PAÍS (CORRIGIDOS PARA REFLETIR DADOS DO SERVIDOR)
   // ======================================================================
 
   socket.on('countryStatesInitialized', (data) => {
-    console.log('Estados de países inicializados:', data);
+    console.log('[ECONOMY] Estados de países inicializados:', data);
     
-    // CORRIGIDO: Garantir que os dados sejam formatados corretamente para o Redux
     const { roomName, states, timestamp } = data;
     
     if (roomName && states) {
@@ -330,7 +329,7 @@ export const setupSocketEvents = (socket, socketApi) => {
         timestamp: timestamp || Date.now()
       }));
       
-      console.log(`[ECONOMY] Inicializados ${Object.keys(states).length} países na sala ${roomName}`);
+      console.log(`[ECONOMY] Dados econômicos carregados: ${Object.keys(states).length} países na sala ${roomName}`);
     }
   });
 
@@ -343,16 +342,11 @@ export const setupSocketEvents = (socket, socketApi) => {
         states,
         timestamp: timestamp || Date.now()
       }));
-      
-      // Log apenas ocasionalmente para evitar spam
-      if (Date.now() % 10000 < 2000) { // A cada ~10 segundos
-        console.log(`[ECONOMY] Estados atualizados para sala ${roomName}: ${Object.keys(states).length} países`);
-      }
     }
   });
 
   socket.on('countryState', (data) => {
-    console.log('Estado de país específico recebido:', data);
+    console.log('[ECONOMY] Estado de país específico recebido:', data);
     
     const { roomName, countryName, state, timestamp } = data;
     
@@ -367,45 +361,34 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
 
   socket.on('countryStateUpdated', (data) => {
-    console.log('Estado de país atualizado:', data);
+    console.log('[ECONOMY] Estado de país atualizado:', data);
     
     const { roomName, countryName, category, state, timestamp } = data;
     
     if (roomName && countryName && state) {
-      // Se é atualização de economia, usar o estado completo
-      if (category === 'economy') {
-        store.dispatch(updateSingleCountryState({
-          roomName,
-          countryName,
-          countryData: { economy: state[category] },
-          timestamp: timestamp || Date.now()
-        }));
-      } else {
-        // Para outras categorias, atualizar categoria específica
-        store.dispatch(updateSingleCountryState({
-          roomName,
-          countryName,
-          countryData: { [category]: state[category] },
-          timestamp: timestamp || Date.now()
-        }));
-      }
+      store.dispatch(updateSingleCountryState({
+        roomName,
+        countryName,
+        countryData: state,
+        timestamp: timestamp || Date.now()
+      }));
     }
   });
   
   // ======================================================================
-  // NOVOS EVENTOS ECONÔMICOS (ADICIONADOS)
+  // EVENTOS ECONÔMICOS ESPECÍFICOS
   // ======================================================================
   
   // Handler para confirmação de emissão de títulos
   socket.on('debtBondsIssued', (data) => {
-    console.log('Títulos de dívida emitidos:', data);
+    console.log('[ECONOMY] Títulos de dívida emitidos:', data);
     
-    const { success, bondAmount, newTreasury, newPublicDebt, message } = data;
+    const { success, bondAmount, newTreasury, newPublicDebt, message, debtContract } = data;
     
     if (success) {
       MessageService.showSuccess(`Títulos emitidos: ${bondAmount} bi USD`, 4000);
       
-      // Atualizar dados de dívida no Redux se disponível
+      // Atualizar dados econômicos no Redux
       const currentRoom = store.getState().rooms.currentRoom;
       const myCountry = store.getState().game.myCountry;
       
@@ -416,7 +399,7 @@ export const setupSocketEvents = (socket, socketApi) => {
           debtData: {
             treasury: { value: newTreasury, unit: 'bi USD' },
             publicDebt: newPublicDebt,
-            debtRecords: data.debtContract ? [data.debtContract] : undefined
+            debtRecords: debtContract ? [debtContract] : []
           },
           timestamp: Date.now()
         }));
@@ -428,7 +411,7 @@ export const setupSocketEvents = (socket, socketApi) => {
   
   // Handler para emissão de títulos de emergência
   socket.on('emergencyBondsIssued', (data) => {
-    console.log('Títulos de emergência emitidos:', data);
+    console.log('[ECONOMY] Títulos de emergência emitidos:', data);
     
     const { success, message, newTreasury, newPublicDebt } = data;
     
@@ -457,37 +440,36 @@ export const setupSocketEvents = (socket, socketApi) => {
   
   // Handler para confirmação de atualização de parâmetros econômicos
   socket.on('economicParameterUpdated', (data) => {
-    console.log('Parâmetro econômico atualizado:', data);
+    console.log('[ECONOMY] Parâmetro econômico atualizado:', data);
     
-    const { roomName, countryName, parameter, value, message } = data;
+    const { roomName, countryName, parameter, value, success } = data;
     
-    // Atualizar no Redux
-    if (roomName && countryName) {
+    if (success && roomName && countryName) {
       store.dispatch(updateEconomicParameters({
         roomName,
         countryName,
         parameters: { [parameter]: value },
         timestamp: Date.now()
       }));
-    }
-    
-    // Mostrar confirmação se for para o país do usuário atual
-    const myCountry = store.getState().game.myCountry;
-    if (countryName === myCountry) {
-      const parameterNames = {
-        interestRate: 'Taxa de Juros',
-        taxBurden: 'Carga Tributária', 
-        publicServices: 'Investimento Público'
-      };
       
-      const parameterName = parameterNames[parameter] || parameter;
-      MessageService.showSuccess(`${parameterName} alterada para ${value}%`);
+      // Mostrar confirmação se for para o país do usuário atual
+      const myCountry = store.getState().game.myCountry;
+      if (countryName === myCountry) {
+        const parameterNames = {
+          interestRate: 'Taxa de Juros',
+          taxBurden: 'Carga Tributária', 
+          publicServices: 'Investimento Público'
+        };
+        
+        const parameterName = parameterNames[parameter] || parameter;
+        MessageService.showSuccess(`${parameterName} alterada para ${value}%`);
+      }
     }
   });
   
   // Handler para resumo de dívidas
   socket.on('debtSummaryResponse', (data) => {
-    console.log('Resumo de dívidas recebido:', data);
+    console.log('[ECONOMY] Resumo de dívidas recebido:', data);
     
     const currentRoom = store.getState().rooms.currentRoom;
     const myCountry = store.getState().game.myCountry;
@@ -497,39 +479,10 @@ export const setupSocketEvents = (socket, socketApi) => {
         roomName: currentRoom.name,
         countryName: myCountry,
         debtData: {
-          debtRecords: data.debtRecords,
-          numberOfDebtContracts: data.numberOfContracts,
-          totalMonthlyPayment: data.totalMonthlyPayment,
-          principalRemaining: data.principalRemaining
-        },
-        timestamp: Date.now()
-      }));
-    }
-  });
-  
-  // Handler para processamento de pagamentos de dívida
-  socket.on('debtPaymentProcessed', (data) => {
-    console.log('Pagamentos de dívida processados:', data);
-    
-    const { totalPayment, remainingCash, emergencyBondsIssued, message } = data;
-    
-    if (emergencyBondsIssued) {
-      MessageService.showWarning(`Pagamentos processados. ${message}`, 6000);
-    } else {
-      MessageService.showInfo(`Pagamentos processados: ${totalPayment.toFixed(2)} bi USD`, 4000);
-    }
-    
-    // Atualizar dados no Redux
-    const currentRoom = store.getState().rooms.currentRoom;
-    const myCountry = store.getState().game.myCountry;
-    
-    if (currentRoom?.name && myCountry) {
-      store.dispatch(updateCountryDebt({
-        roomName: currentRoom.name,
-        countryName: myCountry,
-        debtData: {
-          treasury: { value: remainingCash, unit: 'bi USD' },
-          debtRecords: data.updatedDebts || []
+          debtRecords: data.debtRecords || [],
+          numberOfDebtContracts: data.numberOfContracts || 0,
+          totalMonthlyPayment: data.totalMonthlyPayment || 0,
+          principalRemaining: data.principalRemaining || 0
         },
         timestamp: Date.now()
       }));
@@ -537,7 +490,7 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
   
   // ======================================================================
-  // EVENTOS DE COMÉRCIO (MANTIDOS)
+  // EVENTOS DE COMÉRCIO
   // ======================================================================
   
   // Handler para receber uma proposta de comércio (para o destinatário)
@@ -571,7 +524,7 @@ export const setupSocketEvents = (socket, socketApi) => {
   socket.on('tradeProposalResponse', (response) => {
     console.log('Resposta à proposta de comércio recebida:', response);
     
-    const { accepted, targetCountry, message } = response;
+    const { accepted, targetCountry } = response;
     
     // Mostrar toast com a resposta
     if (accepted) {
@@ -591,7 +544,7 @@ export const setupSocketEvents = (socket, socketApi) => {
   socket.on('tradeProposalProcessed', (response) => {
     console.log('Proposta de comércio processada:', response);
     
-    const { accepted, message } = response;
+    const { accepted } = response;
     
     // Notificar o usuário sobre o processamento
     if (accepted) {

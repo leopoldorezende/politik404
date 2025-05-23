@@ -95,6 +95,7 @@
   │   │           ├── Toast.css
   │   │           ├── Toast.jsx
   │   │           └── messageService.js
+  │   ├── v1.md
   │   └── vite.config.js  # Configuração do Vite
   ├── eslint.config.js  # Configuração do lint para os dois ambientes client e server
   ├── package.json  # Dependências e scripts principais (monorepo)

@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 /**
  * countryStateSlice.js (Corrigido)
  * Cache otimizado para dados econômicos vindos do servidor
- * Garante que os indicadores da interface reflitam os cálculos do servidor
+ * Foca apenas em armazenar e acessar dados, sem recálculos desnecessários
  */
 
 const initialState = {
@@ -194,7 +194,6 @@ export const {
 
 /**
  * Função auxiliar para extrair valores numéricos de propriedades que podem estar em diferentes formatos
- * Centraliza a lógica para evitar repetição nos seletores
  */
 const getNumericValue = (property) => {
   if (property === undefined || property === null) return 0;
@@ -204,7 +203,7 @@ const getNumericValue = (property) => {
 };
 
 // ======================================================================
-// SELETORES OTIMIZADOS (com memoização automática)
+// SELETORES BÁSICOS (com memoização automática)
 // ======================================================================
 
 /**
@@ -262,21 +261,32 @@ export const selectAvailableCountries = (state, roomName) => {
 };
 
 // ======================================================================
-// SELETORES DERIVADOS CORRIGIDOS (para funcionalidades específicas)
+// SELETORES PRINCIPAIS (usados pelos componentes)
 // ======================================================================
 
 /**
- * CORRIGIDO: Obtém resumo de dívidas de um país (baseado nos dados do servidor)
+ * Obtém resumo de dívidas de um país (dados diretos do servidor)
  */
 export const selectCountryDebtSummary = (state, roomName, countryName) => {
   const economy = selectCountryEconomy(state, roomName, countryName);
   if (!economy) return null;
   
-  // Usar dados vindos diretamente do countryStateManager
-  const contracts = economy.debtContracts || economy.debtRecords || [];
-  const numberOfContracts = economy.numberOfDebtContracts || economy.numberOfContracts || contracts.length;
+  // Usar dados que vêm diretamente do servidor
+  const contracts = economy.debtRecords || [];
+  const numberOfContracts = economy.numberOfDebtContracts || contracts.length || 0;
   
-  // Se não há contratos, retorna resumo vazio
+  // Se o servidor já enviou dados calculados, usar esses
+  if (economy.totalMonthlyPayment !== undefined || economy.principalRemaining !== undefined) {
+    return {
+      totalMonthlyPayment: economy.totalMonthlyPayment || 0,
+      principalRemaining: economy.principalRemaining || getNumericValue(economy.publicDebt) || 0,
+      totalFuturePayments: economy.totalFuturePayments || 0,
+      numberOfContracts,
+      contracts
+    };
+  }
+  
+  // Fallback: calcular apenas se não há dados do servidor
   if (contracts.length === 0) {
     return {
       totalMonthlyPayment: 0,
@@ -287,9 +297,9 @@ export const selectCountryDebtSummary = (state, roomName, countryName) => {
     };
   }
   
-  // Calcular resumo baseado nos contratos
+  // Cálculo simples apenas se necessário
   const totalMonthlyPayment = contracts.reduce((sum, debt) => sum + (debt.monthlyPayment || 0), 0);
-  const principalRemaining = contracts.reduce((sum, debt) => sum + (debt.remainingValue || debt.originalValue || 0), 0);
+  const principalRemaining = contracts.reduce((sum, debt) => sum + (debt.remainingValue || 0), 0);
   const totalFuturePayments = contracts.reduce((sum, debt) => 
     sum + ((debt.monthlyPayment || 0) * (debt.remainingInstallments || 0)), 0
   );
@@ -304,59 +314,22 @@ export const selectCountryDebtSummary = (state, roomName, countryName) => {
 };
 
 /**
- * CORRIGIDO: Obtém balanços setoriais de um país (dados calculados pelo servidor)
- */
-export const selectCountrySectoralBalance = (state, roomName, countryName) => {
-  const economy = selectCountryEconomy(state, roomName, countryName);
-  if (!economy) return null;
-  
-  return {
-    commoditiesBalance: getNumericValue(economy.commoditiesBalance),
-    manufacturesBalance: getNumericValue(economy.manufacturesBalance),
-    commoditiesOutput: getNumericValue(economy.commoditiesOutput),
-    manufacturesOutput: getNumericValue(economy.manufacturesOutput),
-    servicesOutput: getNumericValue(economy.servicesOutput),
-    commoditiesNeeds: getNumericValue(economy.commoditiesNeeds),
-    manufacturesNeeds: getNumericValue(economy.manufacturesNeeds),
-    // Estatísticas de comércio calculadas pelo servidor
-    tradeStats: economy.tradeStats || {
-      commodityImports: 0,
-      commodityExports: 0,
-      manufactureImports: 0,
-      manufactureExports: 0
-    }
-  };
-};
-
-/**
- * CORRIGIDO: Obtém indicadores econômicos principais (dados avançados do servidor)
+ * Obtém indicadores econômicos principais (dados do servidor)
  */
 export const selectCountryEconomicIndicators = (state, roomName, countryName) => {
   const economy = selectCountryEconomy(state, roomName, countryName);
   if (!economy) return null;
   
-  // Calcular crescimento do PIB se histórico estiver disponível
-  let gdpGrowth = 0;
-  if (economy.gdpHistory && economy.gdpHistory.length >= 2) {
-    const currentGdp = economy.gdpHistory[economy.gdpHistory.length - 1];
-    const previousGdp = economy.gdpHistory[economy.gdpHistory.length - 2];
-    if (previousGdp > 0) {
-      gdpGrowth = ((currentGdp - previousGdp) / previousGdp) * 100;
-    }
-  } else if (economy.quarterlyGrowth !== undefined) {
-    gdpGrowth = economy.quarterlyGrowth * 100; // Converter para porcentagem
-  }
-  
   return {
     // Indicadores básicos
     gdp: getNumericValue(economy.gdp),
     treasury: getNumericValue(economy.treasury),
-    publicDebt: getNumericValue(economy.publicDebt) || 0,
+    publicDebt: getNumericValue(economy.publicDebt),
     
-    // Indicadores avançados calculados pelo servidor
-    inflation: (getNumericValue(economy.inflation) || 0) * 100, // Converter para porcentagem
-    unemployment: getNumericValue(economy.unemployment) || 0,
-    popularity: getNumericValue(economy.popularity) || 50,
+    // Indicadores avançados (já calculados pelo servidor)
+    inflation: getNumericValue(economy.inflation),
+    unemployment: getNumericValue(economy.unemployment),
+    popularity: getNumericValue(economy.popularity),
     creditRating: economy.creditRating || 'A',
     
     // Parâmetros econômicos
@@ -364,58 +337,18 @@ export const selectCountryEconomicIndicators = (state, roomName, countryName) =>
     taxBurden: getNumericValue(economy.taxBurden) || 40.0,
     publicServices: getNumericValue(economy.publicServices) || 30.0,
     
-    // Crescimento calculado
-    gdpGrowth: gdpGrowth,
+    // Crescimento (já calculado pelo servidor)
+    gdpGrowth: getNumericValue(economy.quarterlyGrowth) * 100 || 0,
     
     // Indicadores adicionais se disponíveis
     previousQuarterGDP: getNumericValue(economy.previousQuarterGDP),
     quarterlyGrowth: getNumericValue(economy.quarterlyGrowth),
     
-    // Histórico se disponível (para gráficos futuros)
+    // Histórico (para gráficos futuros)
     gdpHistory: economy.gdpHistory || [],
     inflationHistory: economy.inflationHistory || [],
     popularityHistory: economy.popularityHistory || [],
     unemploymentHistory: economy.unemploymentHistory || []
-  };
-};
-
-/**
- * NOVO: Obtém distribuição setorial de um país
- */
-export const selectCountrySectoralDistribution = (state, roomName, countryName) => {
-  const economy = selectCountryEconomy(state, roomName, countryName);
-  if (!economy) return null;
-  
-  return {
-    services: getNumericValue(economy.services),
-    commodities: getNumericValue(economy.commodities),
-    manufactures: getNumericValue(economy.manufactures),
-    servicesOutput: getNumericValue(economy.servicesOutput),
-    commoditiesOutput: getNumericValue(economy.commoditiesOutput),
-    manufacturesOutput: getNumericValue(economy.manufacturesOutput)
-  };
-};
-
-/**
- * NOVO: Obtém dados de necessidades internas de um país
- */
-export const selectCountryInternalNeeds = (state, roomName, countryName) => {
-  const economy = selectCountryEconomy(state, roomName, countryName);
-  if (!economy) return null;
-  
-  return {
-    commoditiesNeeds: {
-      value: getNumericValue(economy.commoditiesNeeds),
-      percentValue: getNumericValue(economy.commoditiesNeeds?.percentValue) || 
-                   (economy.commoditiesNeeds?.value && economy.gdp?.value ? 
-                    (economy.commoditiesNeeds.value / economy.gdp.value) * 100 : 30)
-    },
-    manufacturesNeeds: {
-      value: getNumericValue(economy.manufacturesNeeds),
-      percentValue: getNumericValue(economy.manufacturesNeeds?.percentValue) || 
-                   (economy.manufacturesNeeds?.value && economy.gdp?.value ? 
-                    (economy.manufacturesNeeds.value / economy.gdp.value) * 100 : 45)
-    }
   };
 };
 
