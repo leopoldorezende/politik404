@@ -1,65 +1,72 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { COUNTRY_STATE_EVENTS } from '../../store/socketReduxMiddleware';
 import { 
-  selectCountryState, 
+  selectCountryEconomy,
+  selectCountryEconomicIndicators,
+  selectCountryDebtSummary,
   selectCountryStateLoading,
   selectLastUpdated
 } from '../country/countryStateSlice';
-import { 
-  selectCountryEconomy,
-  selectCountryEconomicIndicators,
-  selectCountryDebtSummary
-} from '../economy/economySlice';
 import { socketApi } from '../../services/socketClient';
 import MessageService from '../../ui/toast/messageService';
 import './EconomyPanel.css';
 
-const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
+/**
+ * EconomyPanel.jsx (Otimizado)
+ * Apenas exibe dados do servidor e envia comandos
+ * Não faz cálculos próprios, usa dados do cache Redux
+ */
+const EconomyPanel = ({ onOpenDebtPopup }) => {
   const dispatch = useDispatch();
   
-  // Dados do Redux com verificações de segurança - APENAS DO PRÓPRIO PAÍS
+  // ======================================================================
+  // DADOS DO REDUX (fonte única de verdade)
+  // ======================================================================
+  
   const myCountry = useSelector(state => state.game?.myCountry);
   const currentRoom = useSelector(state => state.rooms?.currentRoom);
-  const countriesData = useSelector(state => state.game?.countriesData);
   
-  // Estados dinâmicos do país - FONTE PRINCIPAL DOS DADOS EM TEMPO REAL
-  const countryState = useSelector(state => 
-    myCountry ? selectCountryState(state, currentRoom?.name, myCountry) : null
-  );
-  const loading = useSelector(selectCountryStateLoading);
-  const lastUpdated = useSelector(state => selectLastUpdated(state, currentRoom?.name));
-  
-  // Estados da economia avançada (Redux)
-  const advancedEconomy = useSelector(state => 
-    selectCountryEconomy(state, currentRoom?.name, myCountry)
-  );
+  // Dados econômicos vindos do servidor (via Redux cache)
   const economicIndicators = useSelector(state => 
     selectCountryEconomicIndicators(state, currentRoom?.name, myCountry)
   );
   const debtSummary = useSelector(state => 
     selectCountryDebtSummary(state, currentRoom?.name, myCountry)
   );
+  const loading = useSelector(selectCountryStateLoading);
+  const lastUpdated = useSelector(state => selectLastUpdated(state, currentRoom?.name));
   
-  // Estados locais para controles
+  // ======================================================================
+  // ESTADO LOCAL (apenas para UI, não para dados)
+  // ======================================================================
+  
+  // Parâmetros locais (antes de aplicar)
   const [localParameters, setLocalParameters] = useState({
     interestRate: 8.0,
     taxBurden: 40.0,
     publicServices: 30.0
   });
-  const [appliedParameters, setAppliedParameters] = useState({
-    interestRate: 8.0,
-    taxBurden: 40.0,
-    publicServices: 30.0
-  });
+  
+  // Controle de UI
   const [bondAmount, setBondAmount] = useState('');
   const [isIssuingBonds, setIsIssuingBonds] = useState(false);
-  const [isEmergencyBonds, setIsEmergencyBonds] = useState(false);
   const [pendingUpdates, setPendingUpdates] = useState(new Set());
   
-  // Estado para armazenar dados de dívidas detalhados
-  const [detailedDebtData, setDetailedDebtData] = useState(null);
-  const [showAdvancedIndicators, setShowAdvancedIndicators] = useState(true);
+  // ======================================================================
+  // SINCRONIZAÇÃO COM DADOS DO SERVIDOR
+  // ======================================================================
+  
+  // Sincronizar parâmetros locais com dados vindos do servidor
+  useEffect(() => {
+    if (economicIndicators) {
+      setLocalParameters({
+        interestRate: economicIndicators.interestRate || 8.0,
+        taxBurden: economicIndicators.taxBurden || 40.0,
+        publicServices: economicIndicators.publicServices || 30.0
+      });
+    }
+  }, [economicIndicators?.interestRate, economicIndicators?.taxBurden, economicIndicators?.publicServices]);
   
   // Assinar para atualizações quando o componente montar
   useEffect(() => {
@@ -71,148 +78,26 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
       };
     }
   }, [currentRoom?.name, dispatch]);
-
-  // Escutar eventos de resumo de dívidas
-  useEffect(() => {
-    const handleDebtSummaryReceived = (event) => {
-      setDetailedDebtData(event.detail);
-    };
-
-    window.addEventListener('debtSummaryReceived', handleDebtSummaryReceived);
-    
-    return () => {
-      window.removeEventListener('debtSummaryReceived', handleDebtSummaryReceived);
-    };
-  }, []);
-
-  // Função para obter valor numérico de propriedade que pode estar em diferentes formatos
-  const getNumericValue = useCallback((property) => {
-    if (property === undefined || property === null) return 0;
-    if (typeof property === 'number') return property;
-    if (typeof property === 'object' && property.value !== undefined) return property.value;
-    return 0;
-  }, []);
   
-  // Função para obter dados econômicos - INTEGRADA COM SISTEMA AVANÇADO
-  const getEconomicData = useCallback(() => {
-    if (!myCountry || !countriesData?.[myCountry]) {
-      return null;
-    }
-    
-    const staticData = countriesData[myCountry]?.economy || {};
-    const dynamicData = countryState?.economy || {};
-    
-    // Função auxiliar que prioriza dados dinâmicos sobre estáticos
-    const getDynamicOrStatic = (dynamicKey, staticKey, defaultValue = 0) => {
-      // Primeiro tenta o valor dinâmico
-      if (dynamicKey && dynamicData[dynamicKey] !== undefined && dynamicData[dynamicKey] !== null) {
-        const dynamicValue = getNumericValue(dynamicData[dynamicKey]);
-        if (dynamicValue !== 0 || dynamicData[dynamicKey] === 0) { // Aceita zero explícito
-          return dynamicValue;
-        }
-      }
-      
-      // Depois tenta o valor estático
-      if (staticKey && staticData[staticKey] !== undefined && staticData[staticKey] !== null) {
-        return getNumericValue(staticData[staticKey]);
-      }
-      
-      return defaultValue;
-    };
-    
-    // Base economic data
-    const baseData = {
-      // DADOS DINÂMICOS (atualizados pelo servidor a cada 2s)
-      gdp: getDynamicOrStatic('gdp', 'gdp', 100),
-      treasury: getDynamicOrStatic('treasury', 'treasury', 10),
-      
-      // Distribuição setorial (dinâmica)
-      services: getDynamicOrStatic('services', 'services', 35),
-      commodities: getDynamicOrStatic('commodities', 'commodities', 35),
-      manufactures: getDynamicOrStatic('manufactures', 'manufactures', 30),
-      
-      // Outputs setoriais (calculados dinamicamente pelo servidor)
-      servicesOutput: getDynamicOrStatic('servicesOutput', null, 0),
-      commoditiesOutput: getDynamicOrStatic('commoditiesOutput', null, 0),
-      manufacturesOutput: getDynamicOrStatic('manufacturesOutput', null, 0),
-      
-      // Necessidades internas (calculadas dinamicamente)
-      commoditiesNeeds: getDynamicOrStatic('commoditiesNeeds', null, 0),
-      manufacturesNeeds: getDynamicOrStatic('manufacturesNeeds', null, 0),
-      
-      // Balanços comerciais (calculados dinamicamente com acordos comerciais)
-      commoditiesBalance: getDynamicOrStatic('commoditiesBalance', null, 0),
-      manufacturesBalance: getDynamicOrStatic('manufacturesBalance', null, 0),
-      
-      // Estatísticas de comércio (calculadas pelo servidor)
-      tradeStats: dynamicData.tradeStats || {
-        commodityImports: 0,
-        commodityExports: 0,
-        manufactureImports: 0,
-        manufactureExports: 0
-      },
-      
-      // Parâmetros de política econômica
-      taxBurden: appliedParameters.taxBurden,
-      publicServices: appliedParameters.publicServices,
-      interestRate: appliedParameters.interestRate,
-      
-      // Dívida pública
-      publicDebt: getDynamicOrStatic('publicDebt', 'publicDebt', 0),
-      debtRecords: dynamicData.debtRecords || [],
-    };
-
-    // Advanced economic indicators from dynamic calculations
-    const advancedData = {
-      // INDICADORES AVANÇADOS (calculados pelo servidor)
-      inflation: getDynamicOrStatic('inflation', 'inflation', 2.8),
-      unemployment: getDynamicOrStatic('unemployment', 'unemployment', 12.5),
-      gdpGrowth: getDynamicOrStatic('quarterlyGrowth', 'gdpGrowth', 0.5),
-      popularity: getDynamicOrStatic('popularity', 'popularity', 50),
-      creditRating: dynamicData.creditRating || staticData.creditRating || 'A',
-      
-      // Históricos econômicos
-      gdpHistory: dynamicData.gdpHistory || [baseData.gdp],
-      inflationHistory: dynamicData.inflationHistory || [baseData.inflation / 100],
-      popularityHistory: dynamicData.popularityHistory || [baseData.popularity],
-      unemploymentHistory: dynamicData.unemploymentHistory || [baseData.unemployment],
-    };
-
-    return { ...baseData, ...advancedData };
-  }, [myCountry, countriesData, countryState, getNumericValue, lastUpdated, appliedParameters]);
+  // ======================================================================
+  // HANDLERS DE COMANDOS (enviam para servidor)
+  // ======================================================================
   
-  // Sincronizar parâmetros locais com dados do JSON - APENAS NA INICIALIZAÇÃO
-  useEffect(() => {
-    if (!myCountry || !countriesData?.[myCountry]) return;
-    
-    const staticData = countriesData[myCountry]?.economy || {};
-    
-    const initialParams = {
-      interestRate: getNumericValue(staticData.interestRate) || 8.0,
-      taxBurden: getNumericValue(staticData.taxBurden) || 40.0,
-      publicServices: getNumericValue(staticData.publicServices) || 30.0
-    };
-    
-    // Só atualiza se ainda não foram alterados
-    if (appliedParameters.interestRate === 8.0 && appliedParameters.taxBurden === 40.0 && appliedParameters.publicServices === 30.0) {
-      setLocalParameters(initialParams);
-      setAppliedParameters(initialParams);
-    }
-  }, [myCountry, countriesData, getNumericValue]);
-  
-  // Aplicar mudanças nos parâmetros econômicos
+  /**
+   * Aplica mudança de parâmetro econômico (envia comando ao servidor)
+   */
   const applyParameterChange = useCallback(async (parameter, value) => {
     if (!currentRoom?.name || !myCountry) return;
     
     const newValue = parseFloat(value);
     
-    // Adicionar aos pending updates
+    // Marcar como pendente
     setPendingUpdates(prev => new Set([...prev, parameter]));
     
     try {
-      // Enviar para o servidor via socket
       const socket = socketApi.getSocketInstance();
       if (socket) {
+        // COMANDO: Enviar para servidor processar
         socket.emit('updateEconomicParameter', {
           roomName: currentRoom.name,
           countryName: myCountry,
@@ -220,25 +105,18 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
           value: newValue
         });
         
-        // Atualizar localmente imediatamente
-        setAppliedParameters(prev => ({
-          ...prev,
-          [parameter]: newValue
-        }));
-        
-        // Mostrar mensagem de sucesso
         const parameterNames = {
           interestRate: 'Taxa de Juros',
           taxBurden: 'Carga Tributária', 
           publicServices: 'Investimento Público'
         };
         
-        MessageService.showSuccess(`${parameterNames[parameter]} alterada para ${newValue}${parameter !== 'interestRate' ? '%' : '%'}`);
+        MessageService.showSuccess(`${parameterNames[parameter]} alterada para ${newValue}%`);
       }
     } catch (error) {
       MessageService.showError(`Erro ao atualizar ${parameter}: ${error.message}`);
     } finally {
-      // Remover dos pending updates após um tempo
+      // Remover dos pending após um tempo
       setTimeout(() => {
         setPendingUpdates(prev => {
           const newSet = new Set(prev);
@@ -249,7 +127,9 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
     }
   }, [currentRoom?.name, myCountry]);
   
-  // Emitir títulos de dívida com sistema avançado
+  /**
+   * Emite títulos de dívida (envia comando ao servidor)
+   */
   const handleIssueBonds = useCallback(async () => {
     const amount = parseFloat(bondAmount);
     
@@ -268,100 +148,105 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
     try {
       const socket = socketApi.getSocketInstance();
       if (socket) {
-        socket.emit('issueDebtBonds', { 
-          bondAmount: amount,
-          isEmergency: isEmergencyBonds
-        });
-        
-        const bondType = isEmergencyBonds ? 'títulos de emergência' : 'títulos';
-        MessageService.showSuccess(`Emitindo ${amount} bi USD em ${bondType}...`);
+        // COMANDO: Enviar para servidor processar
+        socket.emit('issueDebtBonds', { bondAmount: amount });
+        MessageService.showSuccess(`Emitindo ${amount} bi USD em títulos...`);
         setBondAmount('');
-        setIsEmergencyBonds(false);
       }
     } catch (error) {
       MessageService.showError('Erro ao emitir títulos: ' + error.message);
     } finally {
       setTimeout(() => setIsIssuingBonds(false), 2000);
     }
-  }, [bondAmount, currentRoom?.name, myCountry, isEmergencyBonds]);
-
-  // Solicitar resumo detalhado de dívidas
-  const handleGetDebtSummary = useCallback(() => {
-    const socket = socketApi.getSocketInstance();
-    if (socket) {
-      socket.emit('getDebtSummary');
-    }
-  }, []);
+  }, [bondAmount, currentRoom?.name, myCountry]);
   
-  // Função para abrir popup de dívidas com dados avançados
+  /**
+   * Abre popup de dívidas (usa dados do Redux)
+   */
   const handleOpenDebtPopup = useCallback(() => {
-    const economicData = getEconomicData();
-    if (economicData && onOpenDebtPopup) {
-      // Solicitar dados detalhados do servidor
-      handleGetDebtSummary();
-      
-      // Usar dados locais como fallback
-      const debtRecords = economicData.debtRecords || [];
-      const numberOfContracts = debtRecords.length;
-      
-      // Criar resumo das dívidas
-      const fallbackDebtSummary = {
-        totalMonthlyPayment: debtRecords.reduce((sum, debt) => sum + (debt.monthlyPayment || 0), 0),
-        principalRemaining: debtRecords.reduce((sum, debt) => sum + (debt.remainingValue || debt.originalValue || 0), 0),
-        totalFuturePayments: debtRecords.reduce((sum, debt) => 
-          sum + ((debt.monthlyPayment || 0) * (debt.remainingInstallments || 0)), 0
-        ),
-        debtToGdpRatio: (economicData.publicDebt / economicData.gdp) * 100,
-        numberOfDebts: numberOfContracts,
-        averageInterestRate: numberOfContracts > 0 ? 
-          debtRecords.reduce((sum, debt) => sum + (debt.interestRate || 0), 0) / numberOfContracts : 0
-      };
-      
-      // Usar dados detalhados se disponíveis, senão usar fallback
-      const finalDebtSummary = detailedDebtData || fallbackDebtSummary;
-      const finalDebtRecords = detailedDebtData?.debtRecords || debtRecords;
-      
-      // Chamar o callback passando os dados para o GamePage
-      onOpenDebtPopup(finalDebtSummary, finalDebtRecords, economicData);
+    if (economicIndicators && debtSummary && onOpenDebtPopup) {
+      // Usar dados vindos do servidor via Redux
+      onOpenDebtPopup(debtSummary, debtSummary.contracts || [], economicIndicators);
     }
-  }, [getEconomicData, onOpenDebtPopup, detailedDebtData, handleGetDebtSummary]);
+  }, [economicIndicators, debtSummary, onOpenDebtPopup]);
   
-  // Formatadores
-  const formatCurrency = (value) => {
-    if (value === undefined || value === null || isNaN(value)) return '0.0';
-    return Number(value).toFixed(1);
-  };
+  // ======================================================================
+  // EVENTOS DO SERVIDOR
+  // ======================================================================
   
-  const formatPercent = (value) => {
-    if (value === undefined || value === null || isNaN(value)) return '0.0%';
-    return Number(value).toFixed(1) + '%';
-  };
+  useEffect(() => {
+    const socket = socketApi.getSocketInstance();
+    if (!socket) return;
+    
+    const handleDebtBondsIssued = (data) => {
+      MessageService.showSuccess(`Títulos emitidos! Nova dívida: ${data.newPublicDebt} bi`);
+      setIsIssuingBonds(false);
+    };
+    
+    const handleParameterUpdated = (data) => {
+      if (data.countryName === myCountry && data.roomName === currentRoom?.name) {
+        console.log(`Parâmetro ${data.parameter} confirmado no servidor:`, data.value);
+        
+        // Remover dos pending updates
+        setPendingUpdates(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(data.parameter);
+          return newSet;
+        });
+      }
+    };
+    
+    socket.on('debtBondsIssued', handleDebtBondsIssued);
+    socket.on('economicParameterUpdated', handleParameterUpdated);
+    
+    return () => {
+      socket.off('debtBondsIssued', handleDebtBondsIssued);
+      socket.off('economicParameterUpdated', handleParameterUpdated);
+    };
+  }, [myCountry, currentRoom?.name]);
   
-  const formatValueWithSign = (value) => {
-    if (value === undefined || value === null || isNaN(value)) return '0.0';
-    const num = Number(value);
-    return (num >= 0 ? '+' : '') + num.toFixed(1);
-  };
+  // ======================================================================
+  // UTILITÁRIOS DE FORMATAÇÃO (memoizados)
+  // ======================================================================
   
-  const getCreditRatingColor = (rating) => {
-    if (['AAA', 'AA', 'A'].includes(rating)) return '#28a745';
-    if (rating === 'BBB') return '#ffc107';
-    if (['BB', 'B'].includes(rating)) return '#fd7e14';
-    return '#dc3545';
-  };
-
-  // Obter dados econômicos
-  const economicData = getEconomicData();
+  const formatters = useMemo(() => ({
+    currency: (value) => {
+      if (value === undefined || value === null || isNaN(value)) return '0.0';
+      return Number(value).toFixed(1);
+    },
+    
+    percent: (value) => {
+      if (value === undefined || value === null || isNaN(value)) return '0.0%';
+      return Number(value).toFixed(1) + '%';
+    },
+    
+    valueWithSign: (value) => {
+      if (value === undefined || value === null || isNaN(value)) return '0.0';
+      const num = Number(value);
+      return (num >= 0 ? '+' : '') + num.toFixed(1);
+    },
+    
+    creditRatingColor: (rating) => {
+      if (['AAA', 'AA', 'A'].includes(rating)) return '#28a745';
+      if (rating === 'BBB') return '#ffc107';
+      if (['BB', 'B'].includes(rating)) return '#fd7e14';
+      return '#dc3545';
+    }
+  }), []);
+  
+  // ======================================================================
+  // CHECKS DE EXIBIÇÃO
+  // ======================================================================
   
   if (!myCountry) {
     return (
       <div className="advanced-economy-panel">
-        <p>Você precisa estar controlando um país para ver os dados econômicos avançados.</p>
+        <p>Você precisa estar controlando um país para ver os dados econômicos.</p>
       </div>
     );
   }
   
-  if (loading || !economicData) {
+  if (loading || !economicIndicators) {
     return (
       <div className="advanced-economy-panel">
         <p>Carregando dados econômicos...</p>
@@ -370,83 +255,78 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
     );
   }
   
-  const numberOfContracts = economicData.debtRecords?.length || 0;
+  // ======================================================================
+  // RENDER
+  // ======================================================================
   
   return (
     <div className="advanced-economy-panel">
       
-      {/* Indicadores Principais */}
+      {/* Indicadores Principais (dados do servidor) */}
       <div className="main-indicators">
         <div className="indicator">
           <label>PIB:</label>
           <div className="indicator-value">
-            <span className="value">{formatCurrency(economicData.gdp)} bi</span>
-            <span className={`growth ${economicData.gdpGrowth >= 0 ? 'positive' : 'negative'}`}>
-              {formatValueWithSign(economicData.gdpGrowth)}% trimestre
+            <span className="value">{formatters.currency(economicIndicators.gdp)} bi</span>
+            <span className={`growth ${economicIndicators.gdpGrowth >= 0 ? 'positive' : 'negative'}`}>
+              {formatters.valueWithSign(economicIndicators.gdpGrowth)}% anual
             </span>
           </div>
         </div>
         
         <div className="indicator">
           <label>Tesouro:</label>
-          <span className={`value ${economicData.treasury >= 0 ? 'positive' : 'negative'}`}>
-            {formatCurrency(economicData.treasury)} bi
-          </span>
+          <span className="value">{formatters.currency(economicIndicators.treasury)} bi</span>
         </div>
         
         <div className="indicator">
           <label>Dívida Pública:</label>
           <div className="indicator-value">
-            <span className="value">{formatCurrency(economicData.publicDebt)} bi</span>
+            <span className="value">{formatters.currency(economicIndicators.publicDebt)} bi</span>
             <span className="debt-ratio">
-              {formatPercent((economicData.publicDebt / economicData.gdp) * 100)} PIB
+              {formatters.percent((economicIndicators.publicDebt / economicIndicators.gdp) * 100)} PIB
             </span>
           </div>
+        </div>
+        
+        <div className="indicator">
+          <label>Inflação:</label>
+          <span className={`value ${economicIndicators.inflation > 5 ? 'negative' : 'positive'}`}>
+            {formatters.percent(economicIndicators.inflation)}
+          </span>
+        </div>
+        
+        <div className="indicator">
+          <label>Desemprego:</label>
+          <span className={`value ${economicIndicators.unemployment > 10 ? 'negative' : 'positive'}`}>
+            {formatters.percent(economicIndicators.unemployment)}
+          </span>
+        </div>
+        
+        <div className="indicator">
+          <label>Popularidade:</label>
+          <span className={`value ${economicIndicators.popularity > 50 ? 'positive' : 'negative'}`}>
+            {formatters.percent(economicIndicators.popularity)}
+          </span>
+        </div>
+        
+        <div className="indicator credit-indicator">
+          <label>Rating:</label>
+          <span 
+            className="credit-rating" 
+            style={{ color: formatters.creditRatingColor(economicIndicators.creditRating) }}
+          >
+            {economicIndicators.creditRating}
+          </span>
         </div>
       </div>
-
-      {/* Indicadores Avançados - NOVO */}
-      {showAdvancedIndicators && (
-        <div className="main-indicators">
-          <div className="indicator">
-            <label>Inflação:</label>
-            <span className={`value ${economicData.inflation > 5 ? 'negative' : 'positive'}`}>
-              {formatPercent(economicData.inflation)}
-            </span>
-          </div>
-          
-          <div className="indicator">
-            <label>Desemprego:</label>
-            <span className={`value ${economicData.unemployment > 10 ? 'negative' : 'positive'}`}>
-              {formatPercent(economicData.unemployment)}
-            </span>
-          </div>
-          
-          <div className="indicator">
-            <label>Popularidade:</label>
-            <span className={`value ${economicData.popularity > 50 ? 'positive' : 'negative'}`}>
-              {formatPercent(economicData.popularity)}
-            </span>
-          </div>
-          
-          <div className="indicator credit-indicator">
-            <label>Rating:</label>
-            <span 
-              className="credit-rating" 
-              style={{ color: getCreditRatingColor(economicData.creditRating) }}
-            >
-              {economicData.creditRating}
-            </span>
-          </div>
-        </div>
-      )}
       
-      {/* Controles Econômicos */}
+      {/* Controles Econômicos (comandos para servidor) */}
       <div className="economic-controls">
         <h4>Parâmetros Econômicos</h4>
         
         <div className="control-group">
-          <label>Taxa de Juros: {formatPercent(localParameters.interestRate)}</label>
+          <label>Taxa de Juros: {formatters.percent(localParameters.interestRate)}</label>
           <div className="slider-container">
             <input
               type="range"
@@ -461,7 +341,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             />
             <button 
               onClick={() => applyParameterChange('interestRate', localParameters.interestRate)}
-              disabled={localParameters.interestRate === appliedParameters.interestRate || pendingUpdates.has('interestRate')}
+              disabled={localParameters.interestRate === economicIndicators.interestRate || pendingUpdates.has('interestRate')}
             >
               {pendingUpdates.has('interestRate') ? 'Aplicando...' : 'Aplicar'}
             </button>
@@ -469,7 +349,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
         </div>
         
         <div className="control-group">
-          <label>Carga Tributária: {formatPercent(localParameters.taxBurden)}</label>
+          <label>Carga Tributária: {formatters.percent(localParameters.taxBurden)}</label>
           <div className="slider-container">
             <input
               type="range"
@@ -484,7 +364,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             />
             <button 
               onClick={() => applyParameterChange('taxBurden', localParameters.taxBurden)}
-              disabled={localParameters.taxBurden === appliedParameters.taxBurden || pendingUpdates.has('taxBurden')}
+              disabled={localParameters.taxBurden === economicIndicators.taxBurden || pendingUpdates.has('taxBurden')}
             >
               {pendingUpdates.has('taxBurden') ? 'Aplicando...' : 'Aplicar'}
             </button>
@@ -492,7 +372,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
         </div>
         
         <div className="control-group">
-          <label>Investimento Público: {formatPercent(localParameters.publicServices)}</label>
+          <label>Investimento Público: {formatters.percent(localParameters.publicServices)}</label>
           <div className="slider-container">
             <input
               type="range"
@@ -507,7 +387,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             />
             <button 
               onClick={() => applyParameterChange('publicServices', localParameters.publicServices)}
-              disabled={localParameters.publicServices === appliedParameters.publicServices || pendingUpdates.has('publicServices')}
+              disabled={localParameters.publicServices === economicIndicators.publicServices || pendingUpdates.has('publicServices')}
             >
               {pendingUpdates.has('publicServices') ? 'Aplicando...' : 'Aplicar'}
             </button>
@@ -515,7 +395,7 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
         </div>
       </div>
       
-      {/* Emissão de Títulos AVANÇADA */}
+      {/* Emissão de Títulos (comando para servidor) */}
       <div className="bonds-section">
         <h4>Títulos da Dívida Pública</h4>
         
@@ -530,81 +410,38 @@ const AdvancedEconomyPanel = ({ onOpenDebtPopup }) => {
             onChange={(e) => setBondAmount(e.target.value)}
             disabled={isIssuingBonds}
           />
-          
-          {/* Checkbox para títulos de emergência */}
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-            <input
-              type="checkbox"
-              checked={isEmergencyBonds}
-              onChange={(e) => setIsEmergencyBonds(e.target.checked)}
-              disabled={isIssuingBonds}
-            />
-            Emergência (taxa maior)
-          </label>
-          
           <button 
             className="btn-issue-bonds"
             onClick={handleIssueBonds}
             disabled={isIssuingBonds || !bondAmount}
           >
-            {isIssuingBonds ? 'Emitindo...' : 
-             isEmergencyBonds ? 'Emitir Emergência' : 'Emitir'}
+            {isIssuingBonds ? 'Emitindo...' : 'Emitir'}
           </button>
         </div>
         
-        {/* Informações sobre taxa de juros */}
-        <div style={{ fontSize: '11px', color: '#666', marginTop: '8px', textAlign: 'center' }}>
-          Taxa base: {formatPercent(economicData.interestRate)} | Rating: {economicData.creditRating}
-          {isEmergencyBonds && <div style={{ color: '#e74c3c' }}>⚠️ Títulos de emergência têm taxa maior</div>}
-        </div>
-        
-        {/* Botão de resumo de dívidas */}
-        {numberOfContracts > 0 && (
+        {/* Botão de resumo de dívidas (dados do Redux) */}
+        {debtSummary && debtSummary.numberOfContracts > 0 && (
           <button 
             className="debt-summary-btn"
             onClick={handleOpenDebtPopup}
           >
-            Ver Dívidas ({numberOfContracts} {numberOfContracts === 1 ? 'contrato' : 'contratos'})
+            Ver Dívidas ({debtSummary.numberOfContracts} {debtSummary.numberOfContracts === 1 ? 'contrato' : 'contratos'})
           </button>
         )}
       </div>
-
-      {/* Toggle para indicadores avançados */}
-      <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-        <button 
-          style={{ 
-            background: 'none', 
-            border: '1px solid rgba(52, 73, 94, 0.3)', 
-            color: '#2c3e50', 
-            padding: '4px 8px', 
-            borderRadius: '4px', 
-            fontSize: '10px',
-            cursor: 'pointer'
-          }}
-          onClick={() => setShowAdvancedIndicators(!showAdvancedIndicators)}
-        >
-          {showAdvancedIndicators ? '🔽 Ocultar Avançados' : '🔼 Mostrar Avançados'}
-        </button>
-      </div>
       
-      {/* Status de atualização em tempo real */}
-      <div style={{ 
-        fontSize: '10px', 
-        color: '#7f8c8d', 
-        textAlign: 'center', 
-        marginTop: '10px',
-        padding: '6px',
-        background: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: '4px'
-      }}>
-        🔄 Atualizando em tempo real
-        <br />
-        <span style={{ fontSize: '9px' }}>
-          Última atualização: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'N/A'}
-        </span>
-      </div>
+      {/* Debug info em desenvolvimento */}
+      {process.env.NODE_ENV === 'development' && lastUpdated && (
+        <div style={{ fontSize: '10px', color: '#666', marginTop: '10px', padding: '8px', background: 'rgba(255,255,255,0.1)' }}>
+          <div>✅ Dados do servidor via Redux Cache</div>
+          <div>💰 PIB: {formatters.currency(economicIndicators.gdp)} bi | Tesouro: {formatters.currency(economicIndicators.treasury)} bi</div>
+          <div>📄 Contratos: {debtSummary?.numberOfContracts || 0}</div>
+          <div>🔧 Parâmetros: Juros {economicIndicators.interestRate}% | Impostos {economicIndicators.taxBurden}% | Serviços {economicIndicators.publicServices}%</div>
+          <div>🕐 Última atualização: {new Date(lastUpdated).toLocaleTimeString()}</div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default AdvancedEconomyPanel;
+export default EconomyPanel;

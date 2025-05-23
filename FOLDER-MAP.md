@@ -48,9 +48,7 @@
   │   │   │   │   ├── DebtSummaryPopup.css
   │   │   │   │   ├── DebtSummaryPopup.jsx
   │   │   │   │   ├── EconomyPanel.css
-  │   │   │   │   ├── EconomyPanel.jsx  # Componente Painel de Economia
-  │   │   │   │   ├── economyService.js
-  │   │   │   │   └── economySlice.js
+  │   │   │   │   └── EconomyPanel.jsx  # Componente Painel de Economia
   │   │   │   ├── game
   │   │   │   │   ├── GamePage.css
   │   │   │   │   ├── GamePage.jsx  # Tela principal do jogo

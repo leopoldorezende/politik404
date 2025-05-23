@@ -1,7 +1,7 @@
 /**
- * countryStateManager.js (Modular Version)
- * Main manager that coordinates all country state modules
- * Provides a unified interface while delegating to specialized modules
+ * countryStateManager.js (Otimizado)
+ * Centralizador único de todos os cálculos econômicos
+ * Fonte única de verdade para estados de países
  */
 
 import CountryStateCore from './countryState/countryStateCore.js';
@@ -9,8 +9,7 @@ import CountryEconomyCalculator from './countryState/countryEconomyCalculator.js
 import CountryStateUpdater from './countryState/countryStateUpdater.js';
 
 /**
- * Modular Country State Manager
- * Coordinates between core state management, economic calculations, and periodic updates
+ * Manager Centralizado - Única Fonte de Verdade para Economia
  */
 class CountryStateManager {
   constructor() {
@@ -18,6 +17,13 @@ class CountryStateManager {
     this.economyCalculator = new CountryEconomyCalculator();
     this.updater = new CountryStateUpdater(this.core);
     this.initialized = false;
+    
+    // Cache para parâmetros econômicos aplicados
+    this.appliedParameters = new Map(); // countryKey -> {interestRate, taxBurden, publicServices}
+    
+    // Contratos de dívida por país
+    this.debtContracts = new Map(); // countryKey -> [contracts]
+    this.nextDebtId = 1;
   }
 
   /**
@@ -27,14 +33,10 @@ class CountryStateManager {
     if (this.initialized) return;
     
     try {
-      // Initialize core first
       await this.core.initialize();
-      
-      // Start periodic updates
       this.updater.startPeriodicUpdates();
-      
       this.initialized = true;
-      console.log('CountryStateManager (modular) initialized successfully');
+      console.log('CountryStateManager (otimizado) initialized successfully');
     } catch (error) {
       console.error('Error initializing CountryStateManager:', error);
       throw error;
@@ -45,200 +47,272 @@ class CountryStateManager {
   // CORE STATE MANAGEMENT (delegated to CountryStateCore)
   // ======================================================================
 
-  /**
-   * Get all country states for a specific room
-   * @param {string} roomName - Name of the room
-   * @returns {Object} - Country states for the room
-   */
   getRoomCountryStates(roomName) {
     return this.core.getRoomCountryStates(roomName);
   }
 
-  /**
-   * Get a specific country's state in a room
-   * @param {string} roomName - Name of the room
-   * @param {string} countryName - Name of the country
-   * @returns {Object} - Country state or null if not found
-   */
   getCountryState(roomName, countryName) {
     return this.core.getCountryState(roomName, countryName);
   }
 
-  /**
-   * Set a country's state in a room
-   * @param {string} roomName - Name of the room
-   * @param {string} countryName - Name of the country
-   * @param {Object} state - Country state
-   */
   setCountryState(roomName, countryName, state) {
     this.core.setCountryState(roomName, countryName, state);
   }
 
   /**
-   * Update a country's state indicators
-   * @param {string} roomName - Name of the room
-   * @param {string} countryName - Name of the country
-   * @param {string} category - Indicator category (economy, defense, commerce, politics)
-   * @param {Object} updates - Object with indicator updates
-   * @returns {Object} - Updated country state
+   * CENTRALIZADO: Atualiza estado do país E recalcula economia
+   * Esta é a função principal que centraliza todos os cálculos
    */
   updateCountryState(roomName, countryName, category, updates) {
     const updatedState = this.core.updateCountryState(roomName, countryName, category, updates);
     
-    // If updating economy, perform derived calculations
-    if (category === 'economy' && updatedState) {
-      const gameState = global.gameState;
-      if (gameState && gameState.countriesData && gameState.countriesData[countryName]) {
-        const staticData = gameState.countriesData[countryName];
-        const room = gameState.rooms.get(roomName);
-        const tradeAgreements = room?.tradeAgreements || [];
-        
-        // CORRIGIDO: Use o método correto da classe CountryEconomyCalculator
-        const updatedCountryState = this.economyCalculator.performEconomicUpdate(
-          updatedState,
-          staticData,
-          tradeAgreements
-        );
-        
-        // Update the state in core
-        this.core.setCountryState(roomName, countryName, updatedCountryState);
-        
-        // Log for debugging trade balances only on relevant changes
-        const economy = updatedCountryState.economy;
-        const hasTradeActivity = economy.tradeStats && (
-          economy.tradeStats.commodityImports > 0 || 
-          economy.tradeStats.commodityExports > 0 || 
-          economy.tradeStats.manufactureImports > 0 || 
-          economy.tradeStats.manufactureExports > 0
-        );
-        
-        if (hasTradeActivity) {
-          const now = Date.now();
-          const countryLogKey = `${roomName}:${countryName}`;
-          const lastLogTime = this.updater.countryLogHistory?.get(countryLogKey) || 0;
-          
-          if (now - lastLogTime > 60000) { // One minute between logs for same country
-            console.log(`[CountryStateManager] Trade balance updated for ${countryName} in room ${roomName}:`, {
-              manufacturesBalance: economy.manufacturesBalance?.value,
-              commoditiesBalance: economy.commoditiesBalance?.value,
-              tradeStats: economy.tradeStats
-            });
-            
-            if (this.updater.countryLogHistory) {
-              this.updater.countryLogHistory.set(countryLogKey, now);
-            }
-          }
-        }
-        
-        return updatedCountryState;
-      }
+    if (!updatedState) return null;
+    
+    // Se atualizou economia OU parâmetros, recalcula tudo
+    if (category === 'economy' || this.isEconomicParameter(updates)) {
+      this.performCompleteEconomicCalculation(roomName, countryName);
     }
     
     return updatedState;
   }
 
   /**
-   * Initialize a new room with country states
-   * @param {string} roomName - Name of the room
-   * @param {Object} countries - Country data object with country names as keys
+   * NOVO: Centraliza TODOS os cálculos econômicos em um só lugar
+   * Esta função substitui a lógica espalhada
    */
+  performCompleteEconomicCalculation(roomName, countryName) {
+    const countryState = this.getCountryState(roomName, countryName);
+    if (!countryState) return null;
+
+    // 1. Obter dados estáticos do JSON
+    const gameState = global.gameState;
+    const staticData = gameState?.countriesData?.[countryName] || { name: countryName };
+    
+    // 2. Obter acordos comerciais
+    const room = gameState?.rooms?.get(roomName);
+    const tradeAgreements = room?.tradeAgreements || [];
+    
+    // 3. Obter parâmetros aplicados
+    const countryKey = `${countryName}:${roomName}`;
+    const appliedParams = this.appliedParameters.get(countryKey) || this.getDefaultParameters(staticData);
+    
+    // 4. Obter contratos de dívida
+    const debtContracts = this.debtContracts.get(countryKey) || [];
+    
+    // 5. CÁLCULO COMPLETO usando o calculador
+    const updatedCountryState = this.economyCalculator.performEconomicUpdate(
+      countryState,
+      { ...staticData, ...appliedParams }, // Mescla dados estáticos com parâmetros aplicados
+      tradeAgreements
+    );
+    
+    // 6. Adicionar informações de dívida
+    updatedCountryState.economy.debtContracts = debtContracts;
+    updatedCountryState.economy.numberOfDebtContracts = debtContracts.length;
+    
+    // 7. Atualizar o estado
+    this.setCountryState(roomName, countryName, updatedCountryState);
+    
+    return updatedCountryState;
+  }
+
+  /**
+   * NOVO: Atualiza parâmetros econômicos (juros, impostos, investimento)
+   */
+  updateEconomicParameter(roomName, countryName, parameter, value) {
+    const countryKey = `${countryName}:${roomName}`;
+    
+    // Atualizar parâmetros aplicados
+    const currentParams = this.appliedParameters.get(countryKey) || this.getDefaultParameters();
+    currentParams[parameter] = value;
+    this.appliedParameters.set(countryKey, currentParams);
+    
+    console.log(`[ECONOMY] ${countryName}: ${parameter} alterado para ${value}`);
+    
+    // Recalcular economia com novos parâmetros
+    return this.performCompleteEconomicCalculation(roomName, countryName);
+  }
+
+  /**
+   * NOVO: Emite títulos de dívida pública
+   */
+  issueDebtBonds(roomName, countryName, bondAmount) {
+    const countryState = this.getCountryState(roomName, countryName);
+    if (!countryState) {
+      return { success: false, message: 'País não encontrado' };
+    }
+
+    const currentGdp = this.getNumericValue(countryState.economy.gdp);
+    const currentDebt = this.getNumericValue(countryState.economy.publicDebt) || 0;
+    const debtToGdpRatio = currentDebt / currentGdp;
+    
+    // Validações
+    if (bondAmount <= 0 || bondAmount > 1000) {
+      return { success: false, message: 'Valor deve estar entre 0 e 1000 bilhões' };
+    }
+    
+    const newDebtToGdp = (currentDebt + bondAmount) / currentGdp;
+    if (newDebtToGdp > 1.2) {
+      return { success: false, message: 'Emissão faria a dívida ultrapassar 120% do PIB' };
+    }
+
+    // Calcular taxa de juros baseada no rating e situação
+    const countryKey = `${countryName}:${roomName}`;
+    const appliedParams = this.appliedParameters.get(countryKey) || this.getDefaultParameters();
+    const baseRate = appliedParams.interestRate || 8.0;
+    
+    // Premium de risco baseado na dívida atual
+    let riskPremium = 0;
+    if (debtToGdpRatio > 0.6) {
+      riskPremium = (debtToGdpRatio - 0.6) * 20;
+    }
+    
+    const effectiveRate = baseRate + riskPremium + (Math.random() * 2); // Variação aleatória
+    
+    // Criar contrato de dívida
+    const newContract = {
+      id: this.nextDebtId++,
+      originalValue: bondAmount,
+      remainingValue: bondAmount,
+      interestRate: effectiveRate,
+      monthlyPayment: this.calculateMonthlyPayment(bondAmount, effectiveRate, 120), // 10 anos
+      remainingInstallments: 120,
+      issueDate: new Date(),
+      roomName,
+      countryName
+    };
+    
+    // Armazenar contrato
+    const existingContracts = this.debtContracts.get(countryKey) || [];
+    existingContracts.push(newContract);
+    this.debtContracts.set(countryKey, existingContracts);
+    
+    // Atualizar tesouro e dívida pública no estado
+    const currentTreasury = this.getNumericValue(countryState.economy.treasury);
+    const newTreasury = currentTreasury + bondAmount;
+    const newPublicDebt = currentDebt + bondAmount;
+    
+    // Atualizar estado da economia
+    this.updateCountryState(roomName, countryName, 'economy', {
+      treasury: { value: newTreasury, unit: 'bi USD' },
+      publicDebt: { value: newPublicDebt, unit: 'bi USD' }
+    });
+    
+    console.log(`[ECONOMY] ${countryName}: Emitiu ${bondAmount} bi em títulos (taxa: ${effectiveRate.toFixed(2)}%)`);
+    
+    return {
+      success: true,
+      message: `Títulos emitidos com sucesso. Taxa efetiva: ${effectiveRate.toFixed(2)}%`,
+      bondAmount,
+      newTreasury,
+      newPublicDebt,
+      newContract,
+      effectiveRate
+    };
+  }
+
+  /**
+   * NOVO: Obtém resumo completo de dívidas de um país
+   */
+  getDebtSummary(roomName, countryName) {
+    const countryKey = `${countryName}:${roomName}`;
+    const contracts = this.debtContracts.get(countryKey) || [];
+    
+    if (contracts.length === 0) {
+      return {
+        totalMonthlyPayment: 0,
+        principalRemaining: 0,
+        totalFuturePayments: 0,
+        numberOfContracts: 0,
+        contracts: []
+      };
+    }
+    
+    const totalMonthlyPayment = contracts.reduce((sum, contract) => sum + contract.monthlyPayment, 0);
+    const principalRemaining = contracts.reduce((sum, contract) => sum + contract.remainingValue, 0);
+    const totalFuturePayments = contracts.reduce((sum, contract) => 
+      sum + (contract.monthlyPayment * contract.remainingInstallments), 0
+    );
+    
+    return {
+      totalMonthlyPayment,
+      principalRemaining,
+      totalFuturePayments,
+      numberOfContracts: contracts.length,
+      contracts
+    };
+  }
+
   initializeRoom(roomName, countries) {
     this.core.initializeRoom(roomName, countries);
   }
 
-  /**
-   * Remove a room and all its country states
-   * @param {string} roomName - Name of the room to remove
-   * @returns {boolean} - True if removed, false if not found
-   */
   removeRoom(roomName) {
+    // Limpar dados de parâmetros e dívidas da sala
+    for (const [key] of this.appliedParameters.entries()) {
+      if (key.includes(`:${roomName}`)) {
+        this.appliedParameters.delete(key);
+      }
+    }
+    
+    for (const [key] of this.debtContracts.entries()) {
+      if (key.includes(`:${roomName}`)) {
+        this.debtContracts.delete(key);
+      }
+    }
+    
     return this.core.removeRoom(roomName);
   }
 
   // ======================================================================
-  // ECONOMIC CALCULATIONS (delegated to CountryEconomyCalculator)
+  // TRADE AGREEMENTS (simplificado)
   // ======================================================================
 
-  /**
-   * Update country economy for trade agreements
-   * @param {string} roomName - Name of the room
-   * @param {string} countryName - Name of the country
-   * @param {Array} tradeAgreements - List of trade agreements
-   * @returns {Object|null} - Updated country state or null if error
-   */
   updateCountryStateForTrade(roomName, countryName, tradeAgreements) {
-    return this.updater.updateCountryEconomyForTrade(roomName, countryName, tradeAgreements);
+    // Apenas recalcula a economia considerando os acordos
+    return this.performCompleteEconomicCalculation(roomName, countryName);
   }
 
-  /**
-   * Update economies of countries involved in a trade agreement
-   * @param {string} roomName - Name of the room
-   * @param {Object} agreement - Trade agreement data
-   */
   updateCountriesForTradeAgreement(roomName, agreement) {
-    this.updater.updateCountriesForTradeAgreement(roomName, agreement);
+    const { originCountry, country: targetCountry } = agreement;
+    
+    // Atualizar ambos os países
+    this.performCompleteEconomicCalculation(roomName, originCountry);
+    this.performCompleteEconomicCalculation(roomName, targetCountry);
   }
 
-  /**
-   * Perform immediate economic update for a country
-   * @param {string} roomName - Name of the room
-   * @param {string} countryName - Name of the country
-   * @param {Array} tradeAgreements - Trade agreements (optional)
-   * @returns {Object|null} - Updated country state or null if error
-   */
   updateCountryEconomy(roomName, countryName, tradeAgreements = []) {
-    return this.updater.updateCountryEconomy(roomName, countryName, tradeAgreements);
+    return this.performCompleteEconomicCalculation(roomName, countryName);
   }
 
   // ======================================================================
-  // PERIODIC UPDATES (delegated to CountryStateUpdater)
+  // PERIODIC UPDATES (delegated)
   // ======================================================================
 
-  /**
-   * Start periodic updates with custom intervals
-   * @param {number} updateIntervalMs - Update interval in milliseconds
-   * @param {number} saveIntervalMs - Save interval in milliseconds
-   */
   startPeriodicUpdates(updateIntervalMs, saveIntervalMs) {
     this.updater.startPeriodicUpdates(updateIntervalMs, saveIntervalMs);
   }
 
-  /**
-   * Stop periodic updates
-   */
   stopPeriodicUpdates() {
     this.updater.stopPeriodicUpdates();
   }
 
-  /**
-   * Perform manual update cycle
-   */
   performManualUpdate() {
     this.updater.performManualUpdate();
   }
 
-  /**
-   * Get update statistics
-   * @returns {Object} - Update statistics
-   */
   getUpdateStats() {
     return this.updater.getUpdateStats();
   }
 
   // ======================================================================
-  // PERSISTENCE (delegated to CountryStateCore)
+  // PERSISTENCE (delegated)
   // ======================================================================
 
-  /**
-   * Save states to Redis
-   */
   async saveStatesToRedis() {
     return this.core.saveStatesToRedis();
   }
 
-  /**
-   * Load states from Redis
-   */
   async loadStatesFromRedis() {
     return this.core.loadStatesFromRedis();
   }
@@ -247,53 +321,29 @@ class CountryStateManager {
   // UTILITY METHODS
   // ======================================================================
 
-  /**
-   * Get last updated timestamp for a room
-   * @param {string} roomName - Name of the room
-   * @returns {number} - Timestamp
-   */
   getLastUpdated(roomName) {
     return this.core.getLastUpdated(roomName);
   }
 
-  /**
-   * Get all room names
-   * @returns {Array<string>} - Array of room names
-   */
   getAllRooms() {
     return this.core.getAllRooms();
   }
 
-  /**
-   * Get all country names in a room
-   * @param {string} roomName - Name of the room
-   * @returns {Array<string>} - Array of country names
-   */
   getAllCountriesInRoom(roomName) {
     return this.core.getAllCountriesInRoom(roomName);
   }
 
-  /**
-   * Get numeric value from property (utility method)
-   * @param {any} property - Property that can be number or object with value
-   * @returns {number} - Numeric value
-   */
   getNumericValue(property) {
-    return this.core.getNumericValue(property);
+    if (property === undefined || property === null) return 0;
+    if (typeof property === 'number') return property;
+    if (typeof property === 'object' && property.value !== undefined) return property.value;
+    return 0;
   }
 
-  /**
-   * Check if manager is initialized
-   * @returns {boolean} - True if initialized
-   */
   isInitialized() {
     return this.initialized;
   }
 
-  /**
-   * Get module instances (for advanced usage)
-   * @returns {Object} - Object with module instances
-   */
   getModules() {
     return {
       core: this.core,
@@ -303,19 +353,50 @@ class CountryStateManager {
   }
 
   // ======================================================================
-  // BACKWARD COMPATIBILITY
+  // HELPER METHODS
   // ======================================================================
 
   /**
-   * Backward compatibility: Property access for lastUpdated
+   * Obtém parâmetros econômicos padrão de um país
    */
+  getDefaultParameters(staticData = {}) {
+    return {
+      interestRate: this.getNumericValue(staticData.interestRate) || 8.0,
+      taxBurden: this.getNumericValue(staticData.taxBurden) || 40.0,
+      publicServices: this.getNumericValue(staticData.publicServices) || 30.0
+    };
+  }
+
+  /**
+   * Verifica se um update contém parâmetros econômicos
+   */
+  isEconomicParameter(updates) {
+    return updates && (
+      updates.interestRate !== undefined ||
+      updates.taxBurden !== undefined ||
+      updates.publicServices !== undefined
+    );
+  }
+
+  /**
+   * Calcula pagamento mensal de um empréstimo
+   */
+  calculateMonthlyPayment(principal, annualRate, months) {
+    const monthlyRate = annualRate / 100 / 12;
+    if (monthlyRate === 0) return principal / months;
+    
+    return principal * monthlyRate * Math.pow(1 + monthlyRate, months) / 
+           (Math.pow(1 + monthlyRate, months) - 1);
+  }
+
+  // ======================================================================
+  // BACKWARD COMPATIBILITY
+  // ======================================================================
+
   get lastUpdated() {
     return this.core.lastUpdated;
   }
 
-  /**
-   * Backward compatibility: Property access for roomStates
-   */
   get roomStates() {
     return this.core.roomStates;
   }
@@ -324,17 +405,15 @@ class CountryStateManager {
   // CLEANUP
   // ======================================================================
 
-  /**
-   * Clean up resources when shutting down
-   */
   cleanup() {
     console.log('CountryStateManager cleanup starting...');
     
-    // Stop periodic updates
     this.updater.cleanup();
-    
-    // Save final state
     this.core.cleanup();
+    
+    // Limpar caches locais
+    this.appliedParameters.clear();
+    this.debtContracts.clear();
     
     console.log('CountryStateManager cleanup completed');
   }

@@ -5,8 +5,8 @@ import { addMessage, setChatHistory } from '../modules/chat/chatState';
 
 import {
   initializeCountryStates,
+  updateSingleCountryState,
   updateCountryStates,
-  updateCountryState,
   resetState as resetCountryState
 } from '../modules/country/countryStateSlice';
 import {
@@ -328,7 +328,7 @@ export const setupSocketEvents = (socket, socketApi) => {
 
   socket.on('countryStateUpdated', (data) => {
     console.log('Estado de país atualizado:', data);
-    store.dispatch(updateCountryState({
+    store.dispatch(updateSingleCountryState({
       roomName: data.roomName,
       countryName: data.countryName,
       category: data.category,
