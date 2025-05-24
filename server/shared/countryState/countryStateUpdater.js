@@ -77,21 +77,21 @@ class CountryStateUpdater {
       const countryData = gameState.countriesData[countryName];
       if (countryData && countryData.economy) {
         countriesWithEconomy++;
-        console.log(`[ECONOMY] ${countryName} economy data:`, {
-          gdp: countryData.economy.gdp,
-          unemployment: countryData.economy.unemployment,
-          taxBurden: countryData.economy.taxBurden,
-          publicServices: countryData.economy.publicServices,
-          hasServices: !!countryData.economy.services,
-          hasCommodities: !!countryData.economy.commodities,
-          hasManufactures: !!(countryData.economy.manufactures || countryData.economy.manufacturing)
-        });
+        // console.log(`[ECONOMY] ${countryName} economy data:`, {
+        //   gdp: countryData.economy.gdp,
+        //   unemployment: countryData.economy.unemployment,
+        //   taxBurden: countryData.economy.taxBurden,
+        //   publicServices: countryData.economy.publicServices,
+        //   hasServices: !!countryData.economy.services,
+        //   hasCommodities: !!countryData.economy.commodities,
+        //   hasManufactures: !!(countryData.economy.manufactures || countryData.economy.manufacturing)
+        // });
       } else {
-        console.warn(`[ECONOMY] ${countryName} has no economy data in JSON`);
+        // console.warn(`[ECONOMY] ${countryName} has no economy data in JSON`);
       }
     });
     
-    console.log(`[ECONOMY] ${countriesWithEconomy} out of ${sampleCountries.length} sample countries have economy data`);
+    // console.log(`[ECONOMY] ${countriesWithEconomy} out of ${sampleCountries.length} sample countries have economy data`);
   }
 
   /**
@@ -101,13 +101,13 @@ class CountryStateUpdater {
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
       this.updateInterval = null;
-      console.log('[ECONOMY] Update interval stopped');
+      // console.log('[ECONOMY] Update interval stopped');
     }
     
     if (this.saveInterval) {
       clearInterval(this.saveInterval);
       this.saveInterval = null;
-      console.log('[ECONOMY] Save interval stopped');
+      // console.log('[ECONOMY] Save interval stopped');
     }
   }
 
@@ -380,7 +380,7 @@ class CountryStateUpdater {
    */
   cleanup() {
     this.stopPeriodicUpdates();
-    console.log('[ECONOMY] CountryStateUpdater cleanup completed');
+    // console.log('[ECONOMY] CountryStateUpdater cleanup completed');
   }
 }
 

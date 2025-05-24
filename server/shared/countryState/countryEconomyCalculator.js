@@ -95,7 +95,7 @@ class CountryEconomyCalculator {
         value: this.getNumericValue(jsonEconomy.gdp), 
         unit: 'bi USD' 
       };
-      console.log(`[ECONOMY] ${countryName} GDP from JSON: ${economy.gdp.value}`);
+      // console.log(`[ECONOMY] ${countryName} GDP from JSON: ${economy.gdp.value}`);
     } else {
       economy.gdp = { value: 100, unit: 'bi USD' };
     }
@@ -142,7 +142,7 @@ class CountryEconomyCalculator {
     // Ensure sectoral distribution adds up to 100%
     const total = economy.services.value + economy.commodities.value + economy.manufactures.value;
     if (Math.abs(total - 100) > 1) {
-      console.log(`[ECONOMY] ${countryName} sectoral total was ${total}%, adjusting to 100%`);
+      // console.log(`[ECONOMY] ${countryName} sectoral total was ${total}%, adjusting to 100%`);
       const adjustment = (100 - total) / 3;
       economy.services.value += adjustment;
       economy.commodities.value += adjustment;
@@ -202,7 +202,7 @@ class CountryEconomyCalculator {
         percentValue: Math.round((domesticConsumption / gdp) * 100),
         unit: 'bi USD'
       };
-      console.log(`[ECONOMY] ${countryName} commodities needs from JSON: ${domesticConsumption} (${economy.commoditiesNeeds.percentValue}% of GDP)`);
+      // console.log(`[ECONOMY] ${countryName} commodities needs from JSON: ${domesticConsumption} (${economy.commoditiesNeeds.percentValue}% of GDP)`);
     } else {
       economy.commoditiesNeeds = { value: gdp * 0.3, percentValue: 30, unit: 'bi USD' };
     }
@@ -215,7 +215,7 @@ class CountryEconomyCalculator {
         percentValue: Math.round((domesticConsumption / gdp) * 100),
         unit: 'bi USD'
       };
-      console.log(`[ECONOMY] ${countryName} manufactures needs from JSON: ${domesticConsumption} (${economy.manufacturesNeeds.percentValue}% of GDP)`);
+      // console.log(`[ECONOMY] ${countryName} manufactures needs from JSON: ${domesticConsumption} (${economy.manufacturesNeeds.percentValue}% of GDP)`);
     } else if (jsonEconomy.manufacturing && jsonEconomy.manufacturing.domesticConsumption !== undefined) {
       const domesticConsumption = jsonEconomy.manufacturing.domesticConsumption;
       economy.manufacturesNeeds = {
@@ -223,7 +223,7 @@ class CountryEconomyCalculator {
         percentValue: Math.round((domesticConsumption / gdp) * 100),
         unit: 'bi USD'
       };
-      console.log(`[ECONOMY] ${countryName} manufacturing needs from JSON: ${domesticConsumption} (${economy.manufacturesNeeds.percentValue}% of GDP)`);
+      // console.log(`[ECONOMY] ${countryName} manufacturing needs from JSON: ${domesticConsumption} (${economy.manufacturesNeeds.percentValue}% of GDP)`);
     } else {
       economy.manufacturesNeeds = { value: gdp * 0.45, percentValue: 45, unit: 'bi USD' };
     }
@@ -775,7 +775,7 @@ class CountryEconomyCalculator {
     }
 
     // CORRIGIDO: Log sempre que calcular para debug
-    console.log(`[ECONOMY ADVANCED] ${countryName}: Inflation ${(economy.inflation * 100).toFixed(1)}%, Unemployment ${economy.unemployment.toFixed(1)}%, Popularity ${economy.popularity.toFixed(1)}%, Rating ${economy.creditRating}`);
+    // console.log(`[ECONOMY ADVANCED] ${countryName}: Inflation ${(economy.inflation * 100).toFixed(1)}%, Unemployment ${economy.unemployment.toFixed(1)}%, Popularity ${economy.popularity.toFixed(1)}%, Rating ${economy.creditRating}`);
   }
 
   /**
@@ -1093,9 +1093,9 @@ class CountryEconomyCalculator {
       // Show if we're using JSON data
       const gameState = global.gameState;
       if (gameState && gameState.countriesData && gameState.countriesData[countryName]) {
-        console.log(`[ECONOMY] ${countryName} has JSON data available with enhanced calculations`);
+        // console.log(`[ECONOMY] ${countryName} has JSON data available with enhanced calculations`);
       } else {
-        console.log(`[ECONOMY] ${countryName} using default values with enhanced calculations`);
+        // console.log(`[ECONOMY] ${countryName} using default values with enhanced calculations`);
       }
       
       this.lastLogTime = now;
