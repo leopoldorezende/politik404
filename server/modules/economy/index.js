@@ -1,5 +1,5 @@
 /**
- * index.js (Simplificado)
+ * index.js (Corrigido)
  * Entry point for the economy module - DELEGADO para countryStateManager
  */
 
@@ -9,9 +9,9 @@ import {
   createTradeAgreement, 
   cancelTradeAgreement
 } from './tradeAgreementService.js';
-import {
-  calculateTradeAgreementsImpact
-} from './economyUpdateService.js';
+
+// REMOVIDO: calculateTradeAgreementsImpact - agora está integrado no countryEconomyCalculator
+// Evita duplicação e centraliza lógica no countryStateManager
 
 // Export apenas funcionalidades que não estão duplicadas no countryStateManager
 export {
@@ -21,8 +21,5 @@ export {
   // Trade agreement services (mantidos pois gerenciam agreements, não economia)
   setupPeriodicTradeUpdates,
   createTradeAgreement,
-  cancelTradeAgreement,
-  
-  // Trade impact calculation (usado pelo countryStateManager)
-  calculateTradeAgreementsImpact
+  cancelTradeAgreement
 };

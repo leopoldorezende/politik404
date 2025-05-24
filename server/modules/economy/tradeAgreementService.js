@@ -1,10 +1,11 @@
 /**
- * tradeAgreementService.js (Atualizado)
+ * tradeAgreementService.js (Corrigido)
  * Service for managing trade agreements between countries
  * ECONOMIA DELEGADA para countryStateManager
  */
 
-// REMOVIDO: import { updateCountryEconomiesWithTradeAgreement } from './economyUpdateService.js';
+// REMOVIDO: import desnecessário para economyUpdateService
+// Toda economia é gerenciada pelo countryStateManager
 
 /**
  * Setup periodic updates for trade-related economic calculations
@@ -190,11 +191,6 @@ function cancelTradeAgreement(io, gameState, roomName, agreementId, userCountry,
   
   return true;
 }
-
-/**
- * REMOVIDO: updateCountryEconomyForTrade - agora delegado para countryStateManager
- * REMOVIDO: updateCountryEconomiesAfterAgreementCancellation - agora delegado para countryStateManager
- */
 
 export { 
   setupPeriodicTradeUpdates, 
