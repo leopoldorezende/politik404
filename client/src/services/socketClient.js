@@ -34,7 +34,6 @@ export const COUNTRY_STATE_EVENTS = {
 };
 
 export const TRADE_EVENTS = {
-  CREATE_AGREEMENT: 'socket/createTradeAgreement',
   CANCEL_AGREEMENT: 'socket/cancelTradeAgreement',
   GET_AGREEMENTS: 'socket/getTradeAgreements',
   SEND_PROPOSAL: 'socket/sendTradeProposal',
@@ -69,7 +68,6 @@ export const socketApi = {
     }
     
     const socket = socketApi.connect();
-    
     sessionStorage.setItem('username', username);
     store.dispatch(login(username));
     
@@ -213,12 +211,22 @@ export const socketApi = {
   // ======================================================================
   // MÉTODOS DE ECONOMIA
   // ======================================================================
-
+  
+  updateEconomicParameter: (parameter, value) => {
+    const socket = getSocketInstance() || socketApi.connect();
+    socket.emit('updateEconomicParameter', { parameter, value });
+  },
+  
   issueDebtBonds: (bondAmount) => {
     const socket = getSocketInstance() || socketApi.connect();
     socket.emit('issueDebtBonds', { bondAmount });
   },
   
+  getDebtSummary: () => {
+    const socket = getSocketInstance() || socketApi.connect();
+    socket.emit('getDebtSummary');
+  },
+
   // ======================================================================
   // MÉTODOS DE COMÉRCIO
   // ======================================================================

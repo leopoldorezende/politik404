@@ -347,35 +347,35 @@ export const selectCountryEconomicIndicators = (state, roomName, countryName) =>
     gdpGrowth = economy.quarterlyGrowth * 100; // Converter para porcentagem
   }
   
-  return {
-    // Indicadores básicos (usando função de normalização)
-    gdp: normalizeEconomicValue(economy.gdp),
-    treasury: normalizeEconomicValue(economy.treasury),
+return {
+    // Indicadores básicos com fallbacks
+    gdp: normalizeEconomicValue(economy.gdp) || 100,
+    treasury: normalizeEconomicValue(economy.treasury) || 10,
     publicDebt: normalizeEconomicValue(economy.publicDebt) || 0,
     
-    // Indicadores avançados calculados pelo servidor
-    inflation: (normalizeEconomicValue(economy.inflation) || 0) * 100, // Converter para porcentagem
-    unemployment: normalizeEconomicValue(economy.unemployment) || 0,
-    popularity: normalizeEconomicValue(economy.popularity) || 50,
+    // Indicadores avançados com verificação de existência
+    inflation: economy.inflation !== undefined ? (economy.inflation * 100) : 2.8,
+    unemployment: economy.unemployment || 12.5,
+    popularity: economy.popularity || 50,
     creditRating: economy.creditRating || 'A',
     
-    // Parâmetros econômicos
-    interestRate: normalizeEconomicValue(economy.interestRate) || 8.0,
-    taxBurden: normalizeEconomicValue(economy.taxBurden) || 40.0,
-    publicServices: normalizeEconomicValue(economy.publicServices) || 30.0,
+    // Parâmetros econômicos com fallbacks
+    interestRate: economy.interestRate || 8.0,
+    taxBurden: economy.taxBurden || 40.0,
+    publicServices: economy.publicServices || 30.0,
     
-    // Crescimento calculado
-    gdpGrowth: gdpGrowth,
+    // Crescimento com verificação
+    gdpGrowth: economy.gdpGrowth || economy.quarterlyGrowth || 0,
     
-    // Indicadores adicionais se disponíveis
-    previousQuarterGDP: normalizeEconomicValue(economy.previousQuarterGDP),
-    quarterlyGrowth: normalizeEconomicValue(economy.quarterlyGrowth),
+    // Dados opcionais
+    previousQuarterGDP: economy.previousQuarterGDP,
+    quarterlyGrowth: economy.quarterlyGrowth,
     
-    // Histórico se disponível (para gráficos futuros)
-    gdpHistory: economy.gdpHistory || [],
-    inflationHistory: economy.inflationHistory || [],
-    popularityHistory: economy.popularityHistory || [],
-    unemploymentHistory: economy.unemploymentHistory || []
+    // Históricos com arrays vazios como fallback
+    gdpHistory: Array.isArray(economy.gdpHistory) ? economy.gdpHistory : [],
+    inflationHistory: Array.isArray(economy.inflationHistory) ? economy.inflationHistory : [],
+    popularityHistory: Array.isArray(economy.popularityHistory) ? economy.popularityHistory : [],
+    unemploymentHistory: Array.isArray(economy.unemploymentHistory) ? economy.unemploymentHistory : []
   };
 };
 

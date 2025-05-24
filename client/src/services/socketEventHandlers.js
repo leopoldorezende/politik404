@@ -50,7 +50,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     'tradeProposalReceived', 'tradeProposalResponse', 'tradeProposalProcessed',
     'tradeAgreementCancelled', 'tradeAgreementsList', 'tradeAgreementUpdated',
     // CORRIGIDO: Remover eventos econômicos que não existem no servidor
-    'debtSummaryResponse', 'economicParameterUpdated',
+    'debtBondsIssued', 'economicParameterUpdated',
     'error', 'pong'
   ];
   
@@ -427,21 +427,22 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
   
   // Handler para resumo de dívidas
-  socket.on('debtSummaryResponse', (data) => {
-    console.log('Resumo de dívidas recebido:', data);
+  socket.on('debtBondsIssued', (data) => {
+    console.log('Títulos de dívida emitidos:', data);
     
     const currentRoom = store.getState().rooms.currentRoom;
     const myCountry = store.getState().game.myCountry;
     
-    if (currentRoom?.name && myCountry) {
+    if (currentRoom?.name && myCountry && data.debtContract) {
+      // Atualizar dados de dívida no Redux
       store.dispatch(updateCountryDebt({
         roomName: currentRoom.name,
         countryName: myCountry,
         debtData: {
-          debtRecords: data.debtRecords,
-          numberOfDebtContracts: data.numberOfContracts,
-          totalMonthlyPayment: data.totalMonthlyPayment,
-          principalRemaining: data.principalRemaining
+          debtRecords: [data.debtContract],
+          numberOfDebtContracts: 1,
+          totalMonthlyPayment: data.debtContract.monthlyPayment,
+          principalRemaining: data.debtContract.remainingValue
         },
         timestamp: Date.now()
       }));

@@ -147,29 +147,25 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       }
     }
 
-    // Marcar todos como pendentes
     setPendingUpdates(new Set(['interestRate', 'taxBurden', 'publicServices']));
     
     try {
       const socket = socketApi.getSocketInstance();
       if (socket) {
-        // Enviar todos os parâmetros em sequência
+        // ✅ USAR ESTRUTURA CORRETA que o servidor espera
         for (const param of parameters) {
           socket.emit('updateEconomicParameter', {
-            roomName: currentRoom.name,
-            countryName: myCountry,
             parameter: param.name,
             value: param.value
+            // ❌ NÃO enviar roomName e countryName - servidor obtém automaticamente
           });
           
-          console.log(`[ECONOMY] Enviando atualização: ${param.name} = ${param.value}% para ${myCountry}`);
+          console.log(`[ECONOMY] Enviando: ${param.name} = ${param.value}%`);
         }
       }
     } catch (error) {
       console.error('Erro ao atualizar parâmetros:', error);
       MessageService.showError(`Erro ao atualizar parâmetros: ${error.message}`);
-      
-      // Limpar pending em caso de erro
       setPendingUpdates(new Set());
     }
   }, [currentRoom?.name, myCountry, localParameters]);
@@ -198,23 +194,18 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       return;
     }
     
-    if (!currentRoom?.name || !myCountry) {
-      MessageService.showError('Erro: dados da sala ou país não encontrados');
-      return;
-    }
-    
     setIsIssuingBonds(true);
     
     try {
       const socket = socketApi.getSocketInstance();
       if (socket) {
-        // CORRIGIDO: Usar evento correto que existe no servidor
+        // ✅ USAR ESTRUTURA CORRETA que o servidor espera
         socket.emit('issueDebtBonds', { 
-          bondAmount: amount,
-          isEmergency: false
+          bondAmount: amount
+          // ❌ NÃO enviar isEmergency se não for usado pelo servidor
         });
         
-        console.log(`[ECONOMY] Emitindo ${amount} bi USD em títulos para ${myCountry}`);
+        console.log(`[ECONOMY] Emitindo ${amount} bi USD em títulos`);
         setBondAmount('');
       }
     } catch (error) {
@@ -222,7 +213,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       MessageService.showError('Erro ao emitir títulos: ' + error.message);
       setIsIssuingBonds(false);
     }
-  }, [bondAmount, currentRoom?.name, myCountry]);
+  }, [bondAmount]);
   
   /**
    * CORRIGIDO: Abre popup de dívidas com dados corretos

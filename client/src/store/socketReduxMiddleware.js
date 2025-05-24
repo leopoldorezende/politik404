@@ -7,7 +7,7 @@ const socketMiddleware = store => next => action => {
   
   // Depois, verifique se é uma ação relacionada ao socket e a encaminhe para o socketApi
   switch (action.type) {
-    // Eventos principais
+    // Eventos principais (✅ CORRETOS)
     case SOCKET_EVENTS.CONNECT:
       socketApi.connect();
       break;
@@ -37,19 +37,11 @@ const socketMiddleware = store => next => action => {
       socketApi.sendMessage(content, isPrivate, recipient);
       break;
       
-    case SOCKET_EVENTS.REQUEST_CHAT_HISTORY:
-      socketApi.requestPrivateHistory(action.payload);
-      break;
-      
     case SOCKET_EVENTS.REQUEST_COUNTRY:
       socketApi.requestCountry(action.payload);
       break;
-      
-    case SOCKET_EVENTS.SEND_TRADE_PROPOSAL:
-      socketApi.sendTradeProposal(action.payload);
-      break;
-      
-    // Eventos de estado de país
+    
+    // Eventos de estado de país (✅ CORRETOS)
     case COUNTRY_STATE_EVENTS.SUBSCRIBE:
       socketApi.subscribeToCountryStates(action.payload);
       break;
@@ -71,19 +63,7 @@ const socketMiddleware = store => next => action => {
       );
       break;
     
-    // Eventos de comércio
-    case TRADE_EVENTS.CREATE_AGREEMENT:
-      socketApi.createTradeAgreement(action.payload);
-      break;
-    
-    case TRADE_EVENTS.CANCEL_AGREEMENT:
-      socketApi.cancelTradeAgreement(action.payload);
-      break;
-    
-    case TRADE_EVENTS.GET_AGREEMENTS:
-      socketApi.getTradeAgreements();
-      break;
-    
+    // Eventos de comércio (✅ CORRIGIR)
     case TRADE_EVENTS.SEND_PROPOSAL:
       socketApi.sendTradeProposal(action.payload);
       break;
@@ -91,14 +71,19 @@ const socketMiddleware = store => next => action => {
     case TRADE_EVENTS.RESPOND_PROPOSAL:
       socketApi.respondToTradeProposal(action.payload.proposalId, action.payload.accepted);
       break;
+      
+    case TRADE_EVENTS.CANCEL_AGREEMENT:
+      socketApi.cancelTradeAgreement(action.payload);
+      break;
+      
+    case TRADE_EVENTS.GET_AGREEMENTS:
+      socketApi.getTradeAgreements();
+      break;
 
     default:
-      // Não faz nada para outras ações
       break;
   }
-  
-  return result;
-};
+}
 
 export { COUNTRY_STATE_EVENTS, TRADE_EVENTS };
 
