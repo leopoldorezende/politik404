@@ -111,6 +111,18 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     }
   }, [currentRoom?.name, dispatch]);
   
+   // Solicitar dados de dívida quando o componente montar
+  useEffect(() => {
+    if (currentRoom?.name && myCountry) {
+      const socket = socketApi.getSocketInstance();
+      if (socket) {
+        // Solicitar resumo de dívidas
+        socket.emit('getDebtSummary');
+        console.log(`[ECONOMY] Solicitando resumo de dívidas para ${myCountry}`);
+      }
+    }
+  }, [currentRoom?.name, myCountry]);
+
   // ======================================================================
   // HANDLERS DE COMANDOS (CORRIGIDOS - enviam eventos corretos)
   // ======================================================================
@@ -247,6 +259,15 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       
       if (success) {
         MessageService.showSuccess(`Títulos emitidos: ${issuedAmount} bi USD`, 4000);
+        
+        // ADICIONAR: Solicitar resumo atualizado de dívidas
+        setTimeout(() => {
+          const socket = socketApi.getSocketInstance();
+          if (socket) {
+            socket.emit('getDebtSummary');
+            console.log('[ECONOMY] Solicitando resumo atualizado após emissão');
+          }
+        }, 500);
       } else {
         MessageService.showError(message || 'Falha na emissão de títulos');
       }
