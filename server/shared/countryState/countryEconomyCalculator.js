@@ -1114,13 +1114,18 @@ class CountryEconomyCalculator {
   logUpdate(countryName, economy) {
     const now = Date.now();
     
-    // Log every 5 cycles for first country alphabetically with enhanced info
-    if (this.updateCounter % 5 === 0 && countryName.charAt(0) <= 'B' && now - this.lastLogTime > this.logInterval) {
-      const gdpValue = economy.gdp.value.toFixed(1);
-      const treasuryValue = economy.treasury.value.toFixed(1);
-      const commoditiesBalance = economy.commoditiesBalance.value.toFixed(1);
-      const inflation = economy.inflation ? (economy.inflation * 100).toFixed(1) + '%' : 'N/A';
-      const unemployment = economy.unemployment ? economy.unemployment.toFixed(1) + '%' : 'N/A';
+    // Log every 10 cycles for first country alphabetically with enhanced info
+    // Só faz log se os cálculos avançados já foram executados
+    if (this.updateCounter % 10 === 0 && countryName.charAt(0) <= 'B' && now - this.lastLogTime > this.logInterval) {
+      const gdpValue = getNumericValue(economy.gdp).toFixed(1);
+      const treasuryValue = getNumericValue(economy.treasury).toFixed(1);
+      const commoditiesBalance = getNumericValue(economy.commoditiesBalance).toFixed(1);
+      
+      // CORRIGIDO: Verificar se as propriedades existem antes de usar
+      const inflation = (economy.inflation !== undefined && economy.inflation !== null) ? 
+        (economy.inflation * 100).toFixed(1) + '%' : 'N/A';
+      const unemployment = (economy.unemployment !== undefined && economy.unemployment !== null) ? 
+        economy.unemployment.toFixed(1) + '%' : 'N/A';
       const creditRating = economy.creditRating || 'N/A';
       
       console.log(`[ECONOMY ENHANCED] ${countryName} UPDATE #${this.updateCounter} - GDP: ${gdpValue}, Treasury: ${treasuryValue}, Commodities: ${commoditiesBalance}, Inflation: ${inflation}, Unemployment: ${unemployment}, Rating: ${creditRating}`);
