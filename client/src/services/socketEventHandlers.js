@@ -451,19 +451,6 @@ export const setupSocketEvents = (socket, socketApi) => {
         parameters: { [parameter]: value },
         timestamp: Date.now()
       }));
-      
-      // Mostrar confirmação se for para o país do usuário atual
-      const myCountry = store.getState().game.myCountry;
-      if (countryName === myCountry) {
-        const parameterNames = {
-          interestRate: 'Taxa de Juros',
-          taxBurden: 'Carga Tributária', 
-          publicServices: 'Investimento Público'
-        };
-        
-        const parameterName = parameterNames[parameter] || parameter;
-        MessageService.showSuccess(`${parameterName} alterada para ${value}%`);
-      }
     }
   });
   
