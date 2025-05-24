@@ -5,10 +5,10 @@
  * CORRIGIDO: Garantir que parâmetros econômicos afetem todos os indicadores
  */
 
-import CountryStateCore from './countryState/countryStateCore.js';
-import CountryEconomyCalculator from './countryState/countryEconomyCalculator.js';
-import CountryStateUpdater from './countryState/countryStateUpdater.js';
-import { getNumericValue } from './utils/economicUtils.js';
+import CountryStateCore from './countryStateCore.js';
+import CountryEconomyCalculator from './countryEconomyCalculator.js';
+import CountryStateUpdater from './countryStateUpdater.js';
+import { getNumericValue } from '../utils/economicUtils.js';
 
 /**
  * Manager Centralizado - Única Fonte de Verdade para Economia

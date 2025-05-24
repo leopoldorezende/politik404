@@ -2,7 +2,7 @@
  * Handlers relacionados ao chat
  */
 
-import { getCurrentRoom } from '../../shared/gameStateUtils.js';
+import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
 
 /**
  * Configura os handlers relacionados ao chat

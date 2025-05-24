@@ -6,7 +6,7 @@ import {
   sendUpdatedPlayersList, 
   sendUpdatedRoomsList 
 } from '../room/roomNotifications.js';
-import { getCurrentRoom } from '../../shared/gameStateUtils.js';
+import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
 
 /**
  * Configura os handlers relacionados a entrada e saída de jogadores das salas

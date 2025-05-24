@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
-import countryStateManager from './shared/countryStateManager.js';
+import countryStateManager from './shared/countryState/countryStateManager.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { initializeSocketHandlers } from './modules/index.js';
@@ -15,7 +15,7 @@ import {
   createDefaultGameState,
   cleanupInactiveUsers, 
   registerSocketUserMapping 
-} from './shared/gameStateUtils.js';
+} from './shared/utils/gameStateUtils.js';
 import { 
   initializeExistingRoomsExpiration,
   cleanup as cleanupExpirationTimers

@@ -3,7 +3,7 @@
  */
 
 import redis from '../../shared/redisClient.js';
-import countryStateManager from '../../shared/countryStateManager.js';
+import countryStateManager from '../../shared/countryState/countryStateManager.js';
 import { 
   sendUpdatedRoomsList, 
   sendUpdatedPlayersList 

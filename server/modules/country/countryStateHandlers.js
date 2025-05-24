@@ -3,7 +3,7 @@
  * Socket.io handlers for country state management
  */
 
-import countryStateManager from '../../shared/countryStateManager.js';
+import countryStateManager from '../../shared/countryState/countryStateManager.js';
 
 // Maps for tracking client subscriptions and broadcasting intervals
 const roomSubscriptions = new Map(); // roomName -> Set of socket IDs

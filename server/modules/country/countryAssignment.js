@@ -8,7 +8,7 @@ import {
 import { 
   getCurrentRoom, 
   getUsernameFromSocketId 
-} from '../../shared/gameStateUtils.js';
+} from '../../shared/utils/gameStateUtils.js';
 import {
   isValidCountry,
   getBorderingCountries,

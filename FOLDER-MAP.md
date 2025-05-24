@@ -141,12 +141,12 @@
   │       │   ├── countryEconomyCalculator.js
   │       │   ├── countryStateConfig.js
   │       │   ├── countryStateCore.js
+  │       │   ├── countryStateManager.js
   │       │   ├── countryStateUpdater.js
   │       │   └── index.js
-  │       ├── countryStateManager.js
   │       ├── firebaseAdmin.js
-  │       ├── gameStateUtils.js  # Utilitários de estado para o jogo
   │       ├── redisClient.js  # Infraestrutura do Redis
   │       └── utils
-  │           └── economicUtils.js
+  │           ├── economicUtils.js
+  │           └── gameStateUtils.js  # Utilitários de estado para o jogo
   └── v13.md

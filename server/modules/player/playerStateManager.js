@@ -3,7 +3,7 @@
  * SIMPLIFICADO - Sistema básico para estados essenciais
  */
 
-import { getCurrentRoom } from '../../shared/gameStateUtils.js';
+import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
 
 /**
  * Configura os handlers relacionados ao gerenciamento de estado dos jogadores

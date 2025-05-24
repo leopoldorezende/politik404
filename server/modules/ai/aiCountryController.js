@@ -4,7 +4,7 @@
  * CORRIGIDO: Usa countryStateManager ao invés de economyCalculations removido
  */
 
-import countryStateManager from '../../shared/countryStateManager.js';
+import countryStateManager from '../../shared/countryState/countryStateManager.js';
 
 /**
  * Avalia uma proposta de comércio do ponto de vista da IA

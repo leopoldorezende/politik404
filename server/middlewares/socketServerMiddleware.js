@@ -5,7 +5,7 @@
 import { 
   initializeGameState, 
   cleanupInactiveUsers
-} from '../shared/gameStateUtils.js';
+} from '../shared/utils/gameStateUtils.js';
 import { simulateAICountryActions } from '../modules/ai/aiCountryController.js';
 
 /**

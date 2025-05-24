@@ -2,7 +2,7 @@
  * Handlers relacionados à autenticação de usuários
  */
 
-import { getUsernameFromSocketId } from '../../shared/gameStateUtils.js';
+import { getUsernameFromSocketId } from '../../shared/utils/gameStateUtils.js';
 
 /**
  * Configura os eventos relacionados à autenticação

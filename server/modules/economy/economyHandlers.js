@@ -4,8 +4,8 @@
  * DELEGADO COMPLETAMENTE para countryStateManager
  */
 
-import countryStateManager from '../../shared/countryStateManager.js';
-import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/gameStateUtils.js';
+import countryStateManager from '../../shared/countryState/countryStateManager.js';
+import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/utils/gameStateUtils.js';
 import { 
   setupPeriodicTradeUpdates,
   createTradeAgreement,

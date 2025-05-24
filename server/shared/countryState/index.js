@@ -10,7 +10,7 @@ import CountryEconomyCalculator from './countryEconomyCalculator.js';
 import CountryStateUpdater from './countryStateUpdater.js';
 
 // Main manager (singleton)
-import countryStateManager from '../countryStateManager.js';
+import countryStateManager from './countryStateManager.js';
 
 // Configuration
 import CONFIG, {
