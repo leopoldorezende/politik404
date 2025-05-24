@@ -189,14 +189,14 @@ export const {
 } = countryStateSlice.actions;
 
 // ======================================================================
-// HELPER FUNCTION - Extrai valor numérico de propriedades
+// HELPER FUNCTION - CORRIGIDA: Função de normalização unificada
 // ======================================================================
 
 /**
  * Função auxiliar para extrair valores numéricos de propriedades que podem estar em diferentes formatos
  * Centraliza a lógica para evitar repetição nos seletores
  */
-const getNumericValue = (property) => {
+const normalizeEconomicValue = (property) => {
   if (property === undefined || property === null) return 0;
   if (typeof property === 'number') return property;
   if (typeof property === 'object' && property.value !== undefined) return property.value;
@@ -267,78 +267,39 @@ export const selectAvailableCountries = (state, roomName) => {
 
 /**
  * CORRIGIDO: Obtém resumo de dívidas de um país (baseado nos dados do servidor)
- * FIX: Garantir que numberOfContracts seja sempre um número válido
  */
 export const selectCountryDebtSummary = (state, roomName, countryName) => {
   const economy = selectCountryEconomy(state, roomName, countryName);
   if (!economy) return null;
   
-  // CORRIGIDO: Verificar múltiplas fontes de dados de contratos de dívida
+  // Usar dados vindos diretamente do countryStateManager
   const contracts = economy.debtContracts || economy.debtRecords || [];
+  const numberOfContracts = economy.numberOfDebtContracts || economy.numberOfContracts || contracts.length;
   
-  // CORRIGIDO: Garantir que contracts seja sempre um array
-  const contractsArray = Array.isArray(contracts) ? contracts : [];
-  
-  // CORRIGIDO: Obter numberOfContracts de múltiplas fontes possíveis
-  let numberOfContracts = contractsArray.length;
-  
-  // Verificar se há um valor explícito vindo do servidor
-  if (economy.numberOfDebtContracts !== undefined) {
-    numberOfContracts = Math.max(numberOfContracts, economy.numberOfDebtContracts);
-  }
-  if (economy.numberOfContracts !== undefined) {
-    numberOfContracts = Math.max(numberOfContracts, economy.numberOfContracts);
-  }
-  
-  // CORRIGIDO: Se não há contratos, mas há dívida pública, considerar que pode haver contratos antigos
-  const publicDebtValue = getNumericValue(economy.publicDebt);
-  if (numberOfContracts === 0 && publicDebtValue > 0) {
-    // Pode haver dívida sem contratos detalhados (de inicialização ou períodos anteriores)
+  // Se não há contratos, retorna resumo vazio
+  if (contracts.length === 0) {
     return {
       totalMonthlyPayment: 0,
-      principalRemaining: publicDebtValue,
+      principalRemaining: normalizeEconomicValue(economy.publicDebt) || 0,
       totalFuturePayments: 0,
       numberOfContracts: 0,
-      contracts: [],
-      hasDebt: true // NOVO: indicar que há dívida mesmo sem contratos detalhados
+      contracts: []
     };
   }
   
-  // Se não há contratos nem dívida, retorna resumo vazio
-  if (numberOfContracts === 0) {
-    return {
-      totalMonthlyPayment: 0,
-      principalRemaining: 0,
-      totalFuturePayments: 0,
-      numberOfContracts: 0,
-      contracts: [],
-      hasDebt: false
-    };
-  }
-  
-  // CORRIGIDO: Calcular resumo baseado nos contratos com valores seguros
-  const totalMonthlyPayment = contractsArray.reduce((sum, debt) => {
-    return sum + (typeof debt.monthlyPayment === 'number' ? debt.monthlyPayment : 0);
-  }, 0);
-  
-  const principalRemaining = contractsArray.reduce((sum, debt) => {
-    const remaining = debt.remainingValue || debt.originalValue || 0;
-    return sum + (typeof remaining === 'number' ? remaining : 0);
-  }, 0);
-  
-  const totalFuturePayments = contractsArray.reduce((sum, debt) => {
-    const monthly = typeof debt.monthlyPayment === 'number' ? debt.monthlyPayment : 0;
-    const installments = typeof debt.remainingInstallments === 'number' ? debt.remainingInstallments : 0;
-    return sum + (monthly * installments);
-  }, 0);
+  // Calcular resumo baseado nos contratos
+  const totalMonthlyPayment = contracts.reduce((sum, debt) => sum + (debt.monthlyPayment || 0), 0);
+  const principalRemaining = contracts.reduce((sum, debt) => sum + (debt.remainingValue || debt.originalValue || 0), 0);
+  const totalFuturePayments = contracts.reduce((sum, debt) => 
+    sum + ((debt.monthlyPayment || 0) * (debt.remainingInstallments || 0)), 0
+  );
   
   return {
     totalMonthlyPayment,
     principalRemaining,
     totalFuturePayments,
     numberOfContracts,
-    contracts: contractsArray,
-    hasDebt: numberOfContracts > 0 || publicDebtValue > 0
+    contracts
   };
 };
 
@@ -350,13 +311,13 @@ export const selectCountrySectoralBalance = (state, roomName, countryName) => {
   if (!economy) return null;
   
   return {
-    commoditiesBalance: getNumericValue(economy.commoditiesBalance),
-    manufacturesBalance: getNumericValue(economy.manufacturesBalance),
-    commoditiesOutput: getNumericValue(economy.commoditiesOutput),
-    manufacturesOutput: getNumericValue(economy.manufacturesOutput),
-    servicesOutput: getNumericValue(economy.servicesOutput),
-    commoditiesNeeds: getNumericValue(economy.commoditiesNeeds),
-    manufacturesNeeds: getNumericValue(economy.manufacturesNeeds),
+    commoditiesBalance: normalizeEconomicValue(economy.commoditiesBalance),
+    manufacturesBalance: normalizeEconomicValue(economy.manufacturesBalance),
+    commoditiesOutput: normalizeEconomicValue(economy.commoditiesOutput),
+    manufacturesOutput: normalizeEconomicValue(economy.manufacturesOutput),
+    servicesOutput: normalizeEconomicValue(economy.servicesOutput),
+    commoditiesNeeds: normalizeEconomicValue(economy.commoditiesNeeds),
+    manufacturesNeeds: normalizeEconomicValue(economy.manufacturesNeeds),
     // Estatísticas de comércio calculadas pelo servidor
     tradeStats: economy.tradeStats || {
       commodityImports: 0,
@@ -374,16 +335,6 @@ export const selectCountryEconomicIndicators = (state, roomName, countryName) =>
   const economy = selectCountryEconomy(state, roomName, countryName);
   if (!economy) return null;
   
-  // CORRIGIDO: Tratar inflação - se vier como decimal (0.018), converter para porcentagem (1.8)
-  const inflationValue = getNumericValue(economy.inflation) || 0;
-  const formattedInflation = inflationValue < 1 ? inflationValue * 100 : inflationValue;
-  
-  // CORRIGIDO: Tratar desemprego - garantir que está em formato correto
-  const unemploymentValue = getNumericValue(economy.unemployment) || 0;
-  
-  // CORRIGIDO: Tratar popularidade - garantir que está em formato correto
-  const popularityValue = getNumericValue(economy.popularity) || 50;
-  
   // Calcular crescimento do PIB se histórico estiver disponível
   let gdpGrowth = 0;
   if (economy.gdpHistory && economy.gdpHistory.length >= 2) {
@@ -397,28 +348,28 @@ export const selectCountryEconomicIndicators = (state, roomName, countryName) =>
   }
   
   return {
-    // Indicadores básicos
-    gdp: getNumericValue(economy.gdp),
-    treasury: getNumericValue(economy.treasury),
-    publicDebt: getNumericValue(economy.publicDebt) || 0,
+    // Indicadores básicos (usando função de normalização)
+    gdp: normalizeEconomicValue(economy.gdp),
+    treasury: normalizeEconomicValue(economy.treasury),
+    publicDebt: normalizeEconomicValue(economy.publicDebt) || 0,
     
-    // CORRIGIDO: Indicadores avançados calculados pelo servidor (formatação correta)
-    inflation: formattedInflation, // Garantir que está em porcentagem
-    unemployment: unemploymentValue, // Já deve estar em porcentagem
-    popularity: popularityValue, // Já deve estar em porcentagem
+    // Indicadores avançados calculados pelo servidor
+    inflation: (normalizeEconomicValue(economy.inflation) || 0) * 100, // Converter para porcentagem
+    unemployment: normalizeEconomicValue(economy.unemployment) || 0,
+    popularity: normalizeEconomicValue(economy.popularity) || 50,
     creditRating: economy.creditRating || 'A',
     
     // Parâmetros econômicos
-    interestRate: getNumericValue(economy.interestRate) || 8.0,
-    taxBurden: getNumericValue(economy.taxBurden) || 40.0,
-    publicServices: getNumericValue(economy.publicServices) || 30.0,
+    interestRate: normalizeEconomicValue(economy.interestRate) || 8.0,
+    taxBurden: normalizeEconomicValue(economy.taxBurden) || 40.0,
+    publicServices: normalizeEconomicValue(economy.publicServices) || 30.0,
     
     // Crescimento calculado
     gdpGrowth: gdpGrowth,
     
     // Indicadores adicionais se disponíveis
-    previousQuarterGDP: getNumericValue(economy.previousQuarterGDP),
-    quarterlyGrowth: getNumericValue(economy.quarterlyGrowth),
+    previousQuarterGDP: normalizeEconomicValue(economy.previousQuarterGDP),
+    quarterlyGrowth: normalizeEconomicValue(economy.quarterlyGrowth),
     
     // Histórico se disponível (para gráficos futuros)
     gdpHistory: economy.gdpHistory || [],
@@ -436,12 +387,12 @@ export const selectCountrySectoralDistribution = (state, roomName, countryName) 
   if (!economy) return null;
   
   return {
-    services: getNumericValue(economy.services),
-    commodities: getNumericValue(economy.commodities),
-    manufactures: getNumericValue(economy.manufactures),
-    servicesOutput: getNumericValue(economy.servicesOutput),
-    commoditiesOutput: getNumericValue(economy.commoditiesOutput),
-    manufacturesOutput: getNumericValue(economy.manufacturesOutput)
+    services: normalizeEconomicValue(economy.services),
+    commodities: normalizeEconomicValue(economy.commodities),
+    manufactures: normalizeEconomicValue(economy.manufactures),
+    servicesOutput: normalizeEconomicValue(economy.servicesOutput),
+    commoditiesOutput: normalizeEconomicValue(economy.commoditiesOutput),
+    manufacturesOutput: normalizeEconomicValue(economy.manufacturesOutput)
   };
 };
 
@@ -454,14 +405,14 @@ export const selectCountryInternalNeeds = (state, roomName, countryName) => {
   
   return {
     commoditiesNeeds: {
-      value: getNumericValue(economy.commoditiesNeeds),
-      percentValue: getNumericValue(economy.commoditiesNeeds?.percentValue) || 
+      value: normalizeEconomicValue(economy.commoditiesNeeds),
+      percentValue: normalizeEconomicValue(economy.commoditiesNeeds?.percentValue) || 
                    (economy.commoditiesNeeds?.value && economy.gdp?.value ? 
                     (economy.commoditiesNeeds.value / economy.gdp.value) * 100 : 30)
     },
     manufacturesNeeds: {
-      value: getNumericValue(economy.manufacturesNeeds),
-      percentValue: getNumericValue(economy.manufacturesNeeds?.percentValue) || 
+      value: normalizeEconomicValue(economy.manufacturesNeeds),
+      percentValue: normalizeEconomicValue(economy.manufacturesNeeds?.percentValue) || 
                    (economy.manufacturesNeeds?.value && economy.gdp?.value ? 
                     (economy.manufacturesNeeds.value / economy.gdp.value) * 100 : 45)
     }
