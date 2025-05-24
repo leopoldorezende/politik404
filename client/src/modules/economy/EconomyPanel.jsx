@@ -322,7 +322,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       const num = Number(value);
       return (num >= 0 ? '+' : '') + num.toFixed(2);  // ← ALTERADO PARA 2 CASAS DECIMAIS
     },
-    
+
     creditRatingColor: (rating) => {
       if (['AAA', 'AA', 'A'].includes(rating)) return '#28a745';
       if (rating === 'BBB') return '#ffc107';
@@ -546,15 +546,21 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           </div>
         )}
         
-        {/* Botão de resumo de dívidas */}
-        {debtSummary && debtSummary.numberOfContracts > 0 && (
-          <button 
-            className="debt-summary-btn"
-            onClick={handleOpenDebtPopup}
-          >
-            Ver Dívidas ({debtSummary.numberOfContracts} {debtSummary.numberOfContracts === 1 ? 'contrato' : 'contratos'})
-          </button>
-        )}
+      {/* Botão de resumo de dívidas (CORRIGIDO - Mais Simples) */}
+      {(() => {
+        const contractCount = debtSummary?.numberOfContracts || debtSummary?.contracts?.length || 0;
+        return contractCount > 0;
+      })() && (
+        <button 
+          className="debt-summary-btn"
+          onClick={handleOpenDebtPopup}
+        >
+          Ver Dívidas ({(() => {
+            const count = debtSummary?.numberOfContracts || debtSummary?.contracts?.length || 0;
+            return `${count} ${count === 1 ? 'contrato' : 'contratos'}`;
+          })()})
+        </button>
+      )}
       </div>
       
       {/* Debug info em desenvolvimento */}
