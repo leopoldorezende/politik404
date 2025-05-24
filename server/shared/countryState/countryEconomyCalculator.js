@@ -4,6 +4,8 @@
  * INTEGRADO COM calculateTradeAgreementsImpact - Sem imports externos
  */
 
+import { getNumericValue } from '../utils/economicUtils.js';
+
 // Constantes econômicas integradas
 const ECONOMIC_CONSTANTS = {
   HISTORY_SIZE: 20,
@@ -23,18 +25,6 @@ class CountryEconomyCalculator {
     this.updateCounter = 0;
     this.lastLogTime = 0;
     this.logInterval = 10000; // 10 seconds between logs for debugging
-  }
-
-  /**
-   * Get numeric value from property that can be in different formats
-   * @param {any} property - Property that can be number or object with value
-   * @returns {number} - Numeric value
-   */
-  getNumericValue(property) {
-    if (property === undefined || property === null) return 0;
-    if (typeof property === 'number') return property;
-    if (typeof property === 'object' && property.value !== undefined) return property.value;
-    return 0;
   }
 
   /**
@@ -173,7 +163,7 @@ class CountryEconomyCalculator {
     // GDP from JSON
     if (jsonEconomy.gdp) {
       economy.gdp = { 
-        value: this.getNumericValue(jsonEconomy.gdp), 
+        value: getNumericValue(jsonEconomy.gdp), 
         unit: 'bi USD' 
       };
       console.log(`[ECONOMY] ${countryName} GDP from JSON: ${economy.gdp.value}`);
@@ -184,7 +174,7 @@ class CountryEconomyCalculator {
     // Treasury from JSON
     if (jsonEconomy.treasury !== undefined) {
       economy.treasury = { 
-        value: this.getNumericValue(jsonEconomy.treasury), 
+        value: getNumericValue(jsonEconomy.treasury), 
         unit: 'bi USD' 
       };
     } else {
@@ -194,7 +184,7 @@ class CountryEconomyCalculator {
     // Sectoral distribution from JSON
     if (jsonEconomy.services) {
       economy.services = { 
-        value: this.getNumericValue(jsonEconomy.services), 
+        value: getNumericValue(jsonEconomy.services), 
         unit: '%' 
       };
     } else {
@@ -203,7 +193,7 @@ class CountryEconomyCalculator {
     
     if (jsonEconomy.commodities) {
       economy.commodities = { 
-        value: this.getNumericValue(jsonEconomy.commodities), 
+        value: getNumericValue(jsonEconomy.commodities), 
         unit: '%' 
       };
     } else {
@@ -213,7 +203,7 @@ class CountryEconomyCalculator {
     if (jsonEconomy.manufactures || jsonEconomy.manufacturing) {
       const manufacturesData = jsonEconomy.manufactures || jsonEconomy.manufacturing;
       economy.manufactures = { 
-        value: this.getNumericValue(manufacturesData), 
+        value: getNumericValue(manufacturesData), 
         unit: '%' 
       };
     } else {
@@ -231,13 +221,13 @@ class CountryEconomyCalculator {
     }
     
     // Initialize additional economic indicators with defaults or JSON data
-    economy.inflation = (this.getNumericValue(jsonEconomy.inflation) || 2.8) / 100; // Convert to decimal
-    economy.interestRate = this.getNumericValue(jsonEconomy.interestRate) || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE;
-    economy.taxBurden = this.getNumericValue(jsonEconomy.taxBurden) || ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE;
-    economy.publicServices = this.getNumericValue(jsonEconomy.publicServices) || 30.0;
-    economy.unemployment = this.getNumericValue(jsonEconomy.unemployment) || 12.5;
-    economy.popularity = this.getNumericValue(jsonEconomy.popularity) || 50;
-    economy.publicDebt = this.getNumericValue(jsonEconomy.publicDebt) || 0;
+    economy.inflation = (getNumericValue(jsonEconomy.inflation) || 2.8) / 100; // Convert to decimal
+    economy.interestRate = getNumericValue(jsonEconomy.interestRate) || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE;
+    economy.taxBurden = getNumericValue(jsonEconomy.taxBurden) || ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE;
+    economy.publicServices = getNumericValue(jsonEconomy.publicServices) || 30.0;
+    economy.unemployment = getNumericValue(jsonEconomy.unemployment) || 12.5;
+    economy.popularity = getNumericValue(jsonEconomy.popularity) || 50;
+    economy.publicDebt = getNumericValue(jsonEconomy.publicDebt) || 0;
     
     // Initialize histories for moving averages
     economy.gdpHistory = [economy.gdp.value];
@@ -783,7 +773,7 @@ class CountryEconomyCalculator {
   performAdvancedEconomicCalculations(economy, countryName) {
     // Prepare economy state for advanced calculations
     const economyState = {
-      gdp: this.getNumericValue(economy.gdp),
+      gdp: getNumericValue(economy.gdp),
       inflation: economy.inflation || ECONOMIC_CONSTANTS.EQUILIBRIUM_INFLATION,
       interestRate: economy.interestRate || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE,
       taxBurden: economy.taxBurden || ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE,
@@ -792,11 +782,11 @@ class CountryEconomyCalculator {
       unemployment: economy.unemployment || 12.5,
       popularity: economy.popularity || 50,
       quarterlyGrowth: economy.quarterlyGrowth || 0.005,
-      gdpHistory: economy.gdpHistory || [this.getNumericValue(economy.gdp)],
+      gdpHistory: economy.gdpHistory || [getNumericValue(economy.gdp)],
       inflationHistory: economy.inflationHistory || [economy.inflation || ECONOMIC_CONSTANTS.EQUILIBRIUM_INFLATION],
       popularityHistory: economy.popularityHistory || [economy.popularity || 50],
       unemploymentHistory: economy.unemploymentHistory || [economy.unemployment || 12.5],
-      previousQuarterGDP: economy.previousQuarterGDP || this.getNumericValue(economy.gdp)
+      previousQuarterGDP: economy.previousQuarterGDP || getNumericValue(economy.gdp)
     };
 
     // Calculate economic growth
@@ -804,7 +794,7 @@ class CountryEconomyCalculator {
     
     // Update quarterly growth every 30 cycles (representing quarterly updates)
     if (this.updateCounter % 30 === 0) {
-      const currentGdp = this.getNumericValue(economy.gdp);
+      const currentGdp = getNumericValue(economy.gdp);
       economy.quarterlyGrowth = (currentGdp - economyState.previousQuarterGDP) / economyState.previousQuarterGDP;
       economy.previousQuarterGDP = currentGdp;
       economyState.quarterlyGrowth = economy.quarterlyGrowth;
@@ -835,7 +825,7 @@ class CountryEconomyCalculator {
       inflation: economy.inflation,
       unemployment: economy.unemployment,
       quarterlyGrowth: economy.quarterlyGrowth,
-      gdp: this.getNumericValue(economy.gdp)
+      gdp: getNumericValue(economy.gdp)
     });
     economy.popularity = popularityResult.newPopularity;
     economy.popularityHistory = popularityResult.newPopularityHistory;
@@ -847,12 +837,12 @@ class CountryEconomyCalculator {
       quarterlyGrowth: economy.quarterlyGrowth,
       inflationHistory: economy.inflationHistory,
       publicDebt: economy.publicDebt || 0,
-      gdp: this.getNumericValue(economy.gdp)
+      gdp: getNumericValue(economy.gdp)
     });
 
     // Update GDP history
     if (!economy.gdpHistory) economy.gdpHistory = [];
-    economy.gdpHistory.push(this.getNumericValue(economy.gdp));
+    economy.gdpHistory.push(getNumericValue(economy.gdp));
     if (economy.gdpHistory.length > ECONOMIC_CONSTANTS.HISTORY_SIZE) {
       economy.gdpHistory.shift();
     }
@@ -869,7 +859,7 @@ class CountryEconomyCalculator {
    * @param {string} countryName - Country name
    */
   updateGDP(economy, countryName) {
-    const currentGdp = this.getNumericValue(economy.gdp);
+    const currentGdp = getNumericValue(economy.gdp);
     
     // Get unemployment data from the economy state or JSON
     let unemploymentRate = economy.unemployment || 12.5;
@@ -879,7 +869,7 @@ class CountryEconomyCalculator {
     if (!economy.unemployment && gameState && gameState.countriesData && gameState.countriesData[countryName]) {
       const countryData = gameState.countriesData[countryName];
       if (countryData.economy && countryData.economy.unemployment !== undefined) {
-        unemploymentRate = this.getNumericValue(countryData.economy.unemployment);
+        unemploymentRate = getNumericValue(countryData.economy.unemployment);
       }
     }
 
@@ -912,8 +902,8 @@ class CountryEconomyCalculator {
    * @param {string} countryName - Country name
    */
   updateTreasury(economy, staticData, countryName) {
-    const currentTreasury = this.getNumericValue(economy.treasury);
-    const gdp = this.getNumericValue(economy.gdp);
+    const currentTreasury = getNumericValue(economy.treasury);
+    const gdp = getNumericValue(economy.gdp);
     
     // Use economy state values if available, otherwise fallback to JSON or defaults
     let taxBurden = economy.taxBurden || 25;
@@ -925,11 +915,11 @@ class CountryEconomyCalculator {
       const countryData = gameState.countriesData[countryName];
       if (countryData.economy) {
         if (!economy.taxBurden && countryData.economy.taxBurden !== undefined) {
-          taxBurden = this.getNumericValue(countryData.economy.taxBurden);
+          taxBurden = getNumericValue(countryData.economy.taxBurden);
           economy.taxBurden = taxBurden; // Store for future use
         }
         if (!economy.publicServices && countryData.economy.publicServices !== undefined) {
-          publicServices = this.getNumericValue(countryData.economy.publicServices);
+          publicServices = getNumericValue(countryData.economy.publicServices);
           economy.publicServices = publicServices; // Store for future use
         }
       }
@@ -957,20 +947,20 @@ class CountryEconomyCalculator {
    * @param {Object} economy - Economy object
    */
   updateSectoralOutputs(economy) {
-    const gdpValue = this.getNumericValue(economy.gdp);
+    const gdpValue = getNumericValue(economy.gdp);
     
     economy.servicesOutput = { 
-      value: parseFloat((gdpValue * this.getNumericValue(economy.services) / 100).toFixed(2)), 
+      value: parseFloat((gdpValue * getNumericValue(economy.services) / 100).toFixed(2)), 
       unit: 'bi USD' 
     };
     
     economy.commoditiesOutput = { 
-      value: parseFloat((gdpValue * this.getNumericValue(economy.commodities) / 100).toFixed(2)), 
+      value: parseFloat((gdpValue * getNumericValue(economy.commodities) / 100).toFixed(2)), 
       unit: 'bi USD' 
     };
     
     economy.manufacturesOutput = { 
-      value: parseFloat((gdpValue * this.getNumericValue(economy.manufactures) / 100).toFixed(2)), 
+      value: parseFloat((gdpValue * getNumericValue(economy.manufactures) / 100).toFixed(2)), 
       unit: 'bi USD' 
     };
   }
@@ -980,7 +970,7 @@ class CountryEconomyCalculator {
    * @param {Object} economy - Economy object
    */
   updateInternalNeeds(economy) {
-    const gdp = this.getNumericValue(economy.gdp);
+    const gdp = getNumericValue(economy.gdp);
     
     // Small variations every few cycles
     if (this.updateCounter % 5 === 0) {
@@ -1006,7 +996,7 @@ class CountryEconomyCalculator {
    * @param {Object} economy - Economy object
    */
   updateDomesticNeedsWithVariation(economy) {
-    const gdp = this.getNumericValue(economy.gdp);
+    const gdp = getNumericValue(economy.gdp);
     
     // Enhanced needs variation based on economic conditions
     let commoditiesVariation = (Math.random() * 0.4) - 0.2;
@@ -1091,8 +1081,8 @@ class CountryEconomyCalculator {
       servicesVariation -= 1;
     }
     
-    let services = this.getNumericValue(economy.services) + servicesVariation;
-    let commodities = this.getNumericValue(economy.commodities) + commoditiesVariation;
+    let services = getNumericValue(economy.services) + servicesVariation;
+    let commodities = getNumericValue(economy.commodities) + commoditiesVariation;
     let manufactures = 100 - services - commodities;
     
     // Enforce enhanced limits with smooth transitions

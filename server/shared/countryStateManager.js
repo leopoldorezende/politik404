@@ -8,6 +8,7 @@
 import CountryStateCore from './countryState/countryStateCore.js';
 import CountryEconomyCalculator from './countryState/countryEconomyCalculator.js';
 import CountryStateUpdater from './countryState/countryStateUpdater.js';
+import { getNumericValue } from './utils/economicUtils.js';
 
 /**
  * Manager Centralizado - Única Fonte de Verdade para Economia
@@ -187,8 +188,8 @@ class CountryStateManager {
       return { success: false, message: 'País não encontrado' };
     }
 
-    const currentGdp = this.getNumericValue(countryState.economy.gdp);
-    const currentDebt = this.getNumericValue(countryState.economy.publicDebt) || 0;
+    const currentGdp = getNumericValue(countryState.economy.gdp);
+    const currentDebt = getNumericValue(countryState.economy.publicDebt) || 0;
     const debtToGdpRatio = currentDebt / currentGdp;
     
     // Validações
@@ -233,7 +234,7 @@ class CountryStateManager {
     this.debtContracts.set(countryKey, existingContracts);
     
     // Atualizar tesouro e dívida pública no estado
-    const currentTreasury = this.getNumericValue(countryState.economy.treasury);
+    const currentTreasury = getNumericValue(countryState.economy.treasury);
     const newTreasury = currentTreasury + bondAmount;
     const newPublicDebt = currentDebt + bondAmount;
     
@@ -378,13 +379,6 @@ class CountryStateManager {
     return this.core.getAllCountriesInRoom(roomName);
   }
 
-  getNumericValue(property) {
-    if (property === undefined || property === null) return 0;
-    if (typeof property === 'number') return property;
-    if (typeof property === 'object' && property.value !== undefined) return property.value;
-    return 0;
-  }
-
   isInitialized() {
     return this.initialized;
   }
@@ -406,9 +400,9 @@ class CountryStateManager {
    */
   getDefaultParameters(staticData = {}) {
     return {
-      interestRate: this.getNumericValue(staticData.interestRate) || 8.0,
-      taxBurden: this.getNumericValue(staticData.taxBurden) || 40.0,
-      publicServices: this.getNumericValue(staticData.publicServices) || 30.0
+      interestRate: getNumericValue(staticData.interestRate) || 8.0,
+      taxBurden: getNumericValue(staticData.taxBurden) || 40.0,
+      publicServices: getNumericValue(staticData.publicServices) || 30.0
     };
   }
 

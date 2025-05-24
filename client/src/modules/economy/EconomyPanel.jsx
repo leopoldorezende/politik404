@@ -12,6 +12,30 @@ import { socketApi } from '../../services/socketClient';
 import MessageService from '../../ui/toast/messageService';
 import './EconomyPanel.css';
 
+// Import centralized formatters
+const formatCurrency = (value, decimals = 1) => {
+  if (value === undefined || value === null || isNaN(value)) return '0.0';
+  return Number(value).toFixed(decimals);
+};
+
+const formatPercent = (value) => {
+  if (value === undefined || value === null || isNaN(value)) return '0.0%';
+  return Number(value).toFixed(1) + '%';
+};
+
+const formatValueWithSign = (value) => {
+  if (value === undefined || value === null || isNaN(value)) return '0.0';
+  const num = Number(value);
+  return (num >= 0 ? '+' : '') + num.toFixed(1);
+};
+
+const getCreditRatingColor = (rating) => {
+  if (['AAA', 'AA', 'A'].includes(rating)) return '#28a745';
+  if (rating === 'BBB') return '#ffc107';
+  if (['BB', 'B'].includes(rating)) return '#fd7e14';
+  return '#dc3545';
+};
+
 /**
  * EconomyPanel.jsx (Corrigido)
  * Interface principal para controle econômico
@@ -281,35 +305,6 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }, [myCountry, currentRoom?.name]);
   
   // ======================================================================
-  // UTILITÁRIOS DE FORMATAÇÃO (memoizados)
-  // ======================================================================
-  
-  const formatters = useMemo(() => ({
-    currency: (value) => {
-      if (value === undefined || value === null || isNaN(value)) return '0.0';
-      return Number(value).toFixed(1);
-    },
-    
-    percent: (value) => {
-      if (value === undefined || value === null || isNaN(value)) return '0.0%';
-      return Number(value).toFixed(1) + '%';
-    },
-    
-    valueWithSign: (value) => {
-      if (value === undefined || value === null || isNaN(value)) return '0.0';
-      const num = Number(value);
-      return (num >= 0 ? '+' : '') + num.toFixed(1);
-    },
-    
-    creditRatingColor: (rating) => {
-      if (['AAA', 'AA', 'A'].includes(rating)) return '#28a745';
-      if (rating === 'BBB') return '#ffc107';
-      if (['BB', 'B'].includes(rating)) return '#fd7e14';
-      return '#dc3545';
-    }
-  }), []);
-  
-  // ======================================================================
   // VALIDAÇÕES E CHECKS (CORRIGIDOS)
   // ======================================================================
   
@@ -367,9 +362,9 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         <div className="indicator">
           <label>PIB:</label>
           <div className="indicator-value">
-            <span className="value">{formatters.currency(safeIndicators.gdp)} bi</span>
+            <span className="value">{formatCurrency(safeIndicators.gdp)} bi</span>
             <span className={`growth ${safeIndicators.gdpGrowth >= 0 ? 'positive' : 'negative'}`}>
-              {formatters.valueWithSign(safeIndicators.gdpGrowth)}% anual
+              {formatValueWithSign(safeIndicators.gdpGrowth)}% anual
             </span>
           </div>
         </div>
@@ -377,16 +372,16 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         <div className="indicator">
           <label>Tesouro:</label>
           <span className={`value ${safeIndicators.treasury >= 0 ? '' : 'negative'}`}>
-            {formatters.currency(safeIndicators.treasury)} bi
+            {formatCurrency(safeIndicators.treasury)} bi
           </span>
         </div>
         
         <div className="indicator">
           <label>Dívida Pública:</label>
           <div className="indicator-value">
-            <span className="value">{formatters.currency(safeIndicators.publicDebt)} bi</span>
+            <span className="value">{formatCurrency(safeIndicators.publicDebt)} bi</span>
             <span className="debt-ratio">
-              {formatters.percent((safeIndicators.publicDebt / safeIndicators.gdp) * 100)} PIB
+              {formatPercent((safeIndicators.publicDebt / safeIndicators.gdp) * 100)} PIB
             </span>
           </div>
         </div>
@@ -394,21 +389,21 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         <div className="indicator">
           <label>Inflação:</label>
           <span className={`value ${safeIndicators.inflation > 5 ? 'negative' : 'positive'}`}>
-            {formatters.percent(safeIndicators.inflation)}
+            {formatPercent(safeIndicators.inflation)}
           </span>
         </div>
         
         <div className="indicator">
           <label>Desemprego:</label>
           <span className={`value ${safeIndicators.unemployment > 10 ? 'negative' : 'positive'}`}>
-            {formatters.percent(safeIndicators.unemployment)}
+            {formatPercent(safeIndicators.unemployment)}
           </span>
         </div>
         
         <div className="indicator">
           <label>Popularidade:</label>
           <span className={`value ${safeIndicators.popularity > 50 ? 'positive' : 'negative'}`}>
-            {formatters.percent(safeIndicators.popularity)}
+            {formatPercent(safeIndicators.popularity)}
           </span>
         </div>
         
@@ -416,7 +411,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           <label>Rating:</label>
           <span 
             className="credit-rating" 
-            style={{ color: formatters.creditRatingColor(safeIndicators.creditRating) }}
+            style={{ color: getCreditRatingColor(safeIndicators.creditRating) }}
           >
             {safeIndicators.creditRating}
           </span>
@@ -426,7 +421,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       {/* Controles Econômicos (CORRIGIDOS) */}
       <div className="economic-controls">
         <div className="control-group">
-          <label>Taxa de Juros: {formatters.percent(localParameters.interestRate)}</label>
+          <label>Taxa de Juros: {formatPercent(localParameters.interestRate)}</label>
           <div className="slider-container">
             <input
               type="range"
@@ -444,7 +439,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         </div>
         
         <div className="control-group">
-          <label>Carga Tributária: {formatters.percent(localParameters.taxBurden)}</label>
+          <label>Carga Tributária: {formatPercent(localParameters.taxBurden)}</label>
           <div className="slider-container">
             <input
               type="range"
@@ -462,7 +457,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         </div>
         
         <div className="control-group">
-          <label>Investimento Público: {formatters.percent(localParameters.publicServices)}</label>
+          <label>Investimento Público: {formatPercent(localParameters.publicServices)}</label>
           <div className="slider-container">
             <input
               type="range"
@@ -528,7 +523,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         {safeIndicators.publicDebt > 0 && (
           <div className="debt-info">
             <small>
-              Capacidade: {formatters.percent(Math.max(0, 120 - (safeIndicators.publicDebt / safeIndicators.gdp) * 100))} restante
+              Capacidade: {formatPercent(Math.max(0, 120 - (safeIndicators.publicDebt / safeIndicators.gdp) * 100))} restante
             </small>
           </div>
         )}
@@ -554,11 +549,11 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           borderRadius: '4px'
         }}>
           <div>✅ Dados sincronizados com countryStateManager</div>
-          <div>💰 PIB: {formatters.currency(safeIndicators.gdp)} | Tesouro: {formatters.currency(safeIndicators.treasury)}</div>
-          <div>📊 Inflação: {formatters.percent(safeIndicators.inflation)} | Desemprego: {formatters.percent(safeIndicators.unemployment)} | Rating: {safeIndicators.creditRating}</div>
-          <div>👥 Popularidade: {formatters.percent(safeIndicators.popularity)}</div>
+          <div>💰 PIB: {formatCurrency(safeIndicators.gdp)} | Tesouro: {formatCurrency(safeIndicators.treasury)}</div>
+          <div>📊 Inflação: {formatPercent(safeIndicators.inflation)} | Desemprego: {formatPercent(safeIndicators.unemployment)} | Rating: {safeIndicators.creditRating}</div>
+          <div>👥 Popularidade: {formatPercent(safeIndicators.popularity)}</div>
           <div>📄 Dívidas: {debtSummary?.numberOfContracts || 0} contratos</div>
-          <div>🔧 Parâmetros: Juros {formatters.percent(safeIndicators.interestRate)} | Impostos {formatters.percent(safeIndicators.taxBurden)} | Serviços {formatters.percent(safeIndicators.publicServices)}</div>
+          <div>🔧 Parâmetros: Juros {formatPercent(safeIndicators.interestRate)} | Impostos {formatPercent(safeIndicators.taxBurden)} | Serviços {formatPercent(safeIndicators.publicServices)}</div>
           <div>🕐 Última atualização: {new Date(lastUpdated).toLocaleTimeString()}</div>
           <div>🔄 Pending: {pendingUpdates.size > 0 ? Array.from(pendingUpdates).join(', ') : 'Nenhum'}</div>
         </div>

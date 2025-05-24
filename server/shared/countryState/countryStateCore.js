@@ -5,6 +5,7 @@
  */
 
 import redis from '../redisClient.js';
+import { getNumericValue } from '../utils/economicUtils.js';
 
 // Default values for new country indicators
 const DEFAULT_INDICATORS = {
@@ -76,18 +77,6 @@ class CountryStateCore {
     } catch (error) {
       console.error('[ECONOMY] Error initializing CountryStateCore:', error);
     }
-  }
-
-  /**
-   * Get numeric value from property that can be in different formats
-   * @param {any} property - Property that can be number or object with value
-   * @returns {number} - Numeric value
-   */
-  getNumericValue(property) {
-    if (property === undefined || property === null) return 0;
-    if (typeof property === 'number') return property;
-    if (typeof property === 'object' && property.value !== undefined) return property.value;
-    return 0;
   }
 
   /**
@@ -252,7 +241,7 @@ class CountryStateCore {
       // GDP from JSON
       if (jsonEconomy.gdp !== undefined) {
         state.economy.gdp = { 
-          value: this.getNumericValue(jsonEconomy.gdp), 
+          value: getNumericValue(jsonEconomy.gdp), 
           unit: 'bi USD' 
         };
         console.log(`[ECONOMY] ${countryName} GDP from JSON: ${state.economy.gdp.value}`);
@@ -264,7 +253,7 @@ class CountryStateCore {
       // Treasury from JSON
       if (jsonEconomy.treasury !== undefined) {
         state.economy.treasury = { 
-          value: this.getNumericValue(jsonEconomy.treasury), 
+          value: getNumericValue(jsonEconomy.treasury), 
           unit: 'bi USD' 
         };
       } else {
@@ -322,19 +311,19 @@ class CountryStateCore {
   setSectoralDistributionFromJSON(economy, jsonEconomy, countryName) {
     // Services
     if (jsonEconomy.services !== undefined) {
-      economy.services.value = this.getNumericValue(jsonEconomy.services);
+      economy.services.value = getNumericValue(jsonEconomy.services);
     }
     
     // Commodities
     if (jsonEconomy.commodities !== undefined) {
-      economy.commodities.value = this.getNumericValue(jsonEconomy.commodities);
+      economy.commodities.value = getNumericValue(jsonEconomy.commodities);
     }
     
     // Manufactures (could be 'manufactures' or 'manufacturing')
     if (jsonEconomy.manufactures !== undefined) {
-      economy.manufactures.value = this.getNumericValue(jsonEconomy.manufactures);
+      economy.manufactures.value = getNumericValue(jsonEconomy.manufactures);
     } else if (jsonEconomy.manufacturing !== undefined) {
-      economy.manufactures.value = this.getNumericValue(jsonEconomy.manufacturing);
+      economy.manufactures.value = getNumericValue(jsonEconomy.manufacturing);
     }
     
     // Ensure total is 100%
@@ -358,9 +347,9 @@ class CountryStateCore {
    */
   setDefenseFromJSON(state, countryData, countryName) {
     if (countryData && countryData.defense) {
-      state.defense.navy = this.getNumericValue(countryData.defense.navy) || 20;
-      state.defense.army = this.getNumericValue(countryData.defense.army) || 20;
-      state.defense.airforce = this.getNumericValue(countryData.defense.airforce) || 20;
+      state.defense.navy = getNumericValue(countryData.defense.navy) || 20;
+      state.defense.army = getNumericValue(countryData.defense.army) || 20;
+      state.defense.airforce = getNumericValue(countryData.defense.airforce) || 20;
       console.log(`[ECONOMY] ${countryName} defense from JSON: Navy ${state.defense.navy}, Army ${state.defense.army}, Air ${state.defense.airforce}`);
     } else {
       state.defense.navy = 20;
@@ -377,14 +366,14 @@ class CountryStateCore {
    */
   setPoliticsFromJSON(state, countryData, countryName) {
     if (countryData && countryData.politics) {
-      state.politics.parliament = this.getNumericValue(countryData.politics.parliamentSupport) || 50;
-      state.politics.media = this.getNumericValue(countryData.politics.mediaSupport) || 50;
+      state.politics.parliament = getNumericValue(countryData.politics.parliamentSupport) || 50;
+      state.politics.media = getNumericValue(countryData.politics.mediaSupport) || 50;
       
       if (countryData.politics.opposition !== undefined) {
         if (typeof countryData.politics.opposition === 'object' && countryData.politics.opposition.strength !== undefined) {
           state.politics.opposition = countryData.politics.opposition.strength;
         } else {
-          state.politics.opposition = this.getNumericValue(countryData.politics.opposition);
+          state.politics.opposition = getNumericValue(countryData.politics.opposition);
         }
       }
       
