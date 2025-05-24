@@ -117,7 +117,6 @@
   │   │   │   └── countryUtils.js  # Utilitários para países
   │   │   ├── economy
   │   │   │   ├── economyHandlers.js
-  │   │   │   ├── economyUpdateService.js
   │   │   │   ├── index.js
   │   │   │   └── tradeAgreementService.js
   │   │   ├── index.js
@@ -147,5 +146,8 @@
   │       ├── countryStateManager.js
   │       ├── firebaseAdmin.js
   │       ├── gameStateUtils.js  # Utilitários de estado para o jogo
-  │       └── redisClient.js  # Infraestrutura do Redis
-  └── v10.md
+  │       ├── redisClient.js  # Infraestrutura do Redis
+  │       └── utils
+  │           ├── economicUtils.js
+  │           └── formatUtils.js
+  └── v11.md
