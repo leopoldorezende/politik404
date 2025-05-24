@@ -13,9 +13,9 @@ import MessageService from '../../ui/toast/messageService';
 import './EconomyPanel.css';
 
 /**
- * EconomyPanel.jsx (Simplificado)
+ * EconomyPanel.jsx (Corrigido)
  * Interface principal para controle econômico
- * Sliders só aplicam mudanças via botão "Aplicar"
+ * Sincronizada com dados do countryStateManager do servidor
  */
 const EconomyPanel = ({ onOpenDebtPopup }) => {
   const dispatch = useDispatch();
@@ -38,18 +38,11 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   const lastUpdated = useSelector(state => selectLastUpdated(state, currentRoom?.name));
   
   // ======================================================================
-  // ESTADO LOCAL (SIMPLES - apenas valores dos sliders)
+  // ESTADO LOCAL (apenas para UI, não para dados)
   // ======================================================================
   
-  // Valores dos sliders (controlados apenas pelo usuário)
-  const [sliderValues, setSliderValues] = useState({
-    interestRate: 8.0,
-    taxBurden: 40.0,
-    publicServices: 30.0
-  });
-  
-  // Valores aplicados no servidor (última aplicação bem-sucedida)
-  const [appliedValues, setAppliedValues] = useState({
+  // Parâmetros locais (antes de aplicar) - CORRIGIDO: Inicializa com dados do servidor
+  const [localParameters, setLocalParameters] = useState({
     interestRate: 8.0,
     taxBurden: 40.0,
     publicServices: 30.0
@@ -60,29 +53,28 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   const [isIssuingBonds, setIsIssuingBonds] = useState(false);
   const [pendingUpdates, setPendingUpdates] = useState(new Set());
   
-  // Flag para inicialização (só inicializa os sliders uma vez)
-  const [initialized, setInitialized] = useState(false);
-  
   // ======================================================================
-  // INICIALIZAÇÃO DOS SLIDERS (APENAS UMA VEZ)
+  // SINCRONIZAÇÃO COM DADOS DO SERVIDOR (CORRIGIDA)
   // ======================================================================
   
-  // Inicializar sliders apenas uma vez com dados do servidor
+  // Sincronizar parâmetros locais com dados vindos do servidor
   useEffect(() => {
-    if (economicIndicators && !initialized) {
-      const serverValues = {
+    if (economicIndicators) {
+      const newParams = {
         interestRate: economicIndicators.interestRate || 8.0,
         taxBurden: economicIndicators.taxBurden || 40.0,
         publicServices: economicIndicators.publicServices || 30.0
       };
       
-      setSliderValues(serverValues);
-      setAppliedValues(serverValues);
-      setInitialized(true);
-      
-      console.log('[ECONOMY] Sliders inicializados com valores do servidor:', serverValues);
+      // Só atualiza se os valores realmente mudaram para evitar loops
+      if (JSON.stringify(newParams) !== JSON.stringify(localParameters)) {
+        setLocalParameters(newParams);
+        
+        // Limpar pending updates quando dados do servidor chegam
+        setPendingUpdates(new Set());
+      }
     }
-  }, [economicIndicators, initialized]);
+  }, [economicIndicators?.interestRate, economicIndicators?.taxBurden, economicIndicators?.publicServices]);
   
   // Assinar para atualizações quando o componente montar
   useEffect(() => {
@@ -96,78 +88,68 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }, [currentRoom?.name, dispatch]);
   
   // ======================================================================
-  // HANDLERS DOS SLIDERS (SIMPLES)
+  // HANDLERS DE COMANDOS (CORRIGIDOS - enviam eventos corretos)
   // ======================================================================
   
   /**
-   * Handler para mudança do slider (apenas atualiza valor local)
+   * CORRIGIDO: Aplica todas as mudanças de parâmetros econômicos de uma vez
    */
-  const handleSliderChange = useCallback((parameter, value) => {
-    setSliderValues(prev => ({
-      ...prev,
-      [parameter]: parseFloat(value)
-    }));
-  }, []);
-  
-  /**
-   * Handler para aplicar mudança (envia para servidor)
-   */
-  const handleApplyParameter = useCallback(async (parameter) => {
+  const applyAllParameters = useCallback(async () => {
     if (!currentRoom?.name || !myCountry) return;
     
-    const newValue = sliderValues[parameter];
+    const parameters = [
+      { name: 'interestRate', value: localParameters.interestRate, min: 0, max: 25 },
+      { name: 'taxBurden', value: localParameters.taxBurden, min: 0, max: 60 },
+      { name: 'publicServices', value: localParameters.publicServices, min: 0, max: 60 }
+    ];
     
-    // Validações
-    if (isNaN(newValue)) {
-      MessageService.showError('Valor inválido');
-      return;
+    // Validar todos os parâmetros
+    for (const param of parameters) {
+      if (isNaN(param.value) || param.value < param.min || param.value > param.max) {
+        MessageService.showError(`${param.name} deve estar entre ${param.min}% e ${param.max}%`);
+        return;
+      }
     }
-    
-    let min = 0, max = 100;
-    if (parameter === 'interestRate') {
-      max = 25;
-    } else if (parameter === 'taxBurden') {
-      max = 60;
-    } else if (parameter === 'publicServices') {
-      max = 60;
-    }
-    
-    if (newValue < min || newValue > max) {
-      MessageService.showError(`Valor deve estar entre ${min}% e ${max}%`);
-      return;
-    }
-    
-    // Verificar se há diferença para aplicar
-    if (Math.abs(newValue - appliedValues[parameter]) < 0.1) {
-      MessageService.showInfo('Valor não alterado');
-      return;
-    }
-    
-    // Marcar como pendente
-    setPendingUpdates(prev => new Set([...prev, parameter]));
+
+    // Marcar todos como pendentes
+    setPendingUpdates(new Set(['interestRate', 'taxBurden', 'publicServices']));
     
     try {
       const socket = socketApi.getSocketInstance();
       if (socket) {
-        socket.emit('updateEconomicParameter', {
-          parameter: parameter,
-          value: newValue
-        });
-        
-        console.log(`[ECONOMY] Aplicando: ${parameter} = ${newValue}% para ${myCountry}`);
+        // Enviar todos os parâmetros em sequência
+        for (const param of parameters) {
+          socket.emit('updateEconomicParameter', {
+            roomName: currentRoom.name,
+            countryName: myCountry,
+            parameter: param.name,
+            value: param.value
+          });
+          
+          console.log(`[ECONOMY] Enviando atualização: ${param.name} = ${param.value}% para ${myCountry}`);
+        }
       }
     } catch (error) {
-      console.error(`Erro ao aplicar ${parameter}:`, error);
-      MessageService.showError(`Erro ao aplicar ${parameter}: ${error.message}`);
+      console.error('Erro ao atualizar parâmetros:', error);
+      MessageService.showError(`Erro ao atualizar parâmetros: ${error.message}`);
       
-      // Remover dos pending em caso de erro
-      setPendingUpdates(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(parameter);
-        return newSet;
+      // Limpar pending em caso de erro
+      setPendingUpdates(new Set());
+    }
+  }, [currentRoom?.name, myCountry, localParameters]);
+
+  /**
+   * Cancela as alterações e restaura valores do servidor
+   */
+  const cancelChanges = useCallback(() => {
+    if (economicIndicators) {
+      setLocalParameters({
+        interestRate: economicIndicators.interestRate || 8.0,
+        taxBurden: economicIndicators.taxBurden || 40.0,
+        publicServices: economicIndicators.publicServices || 30.0
       });
     }
-  }, [sliderValues, appliedValues, currentRoom?.name, myCountry]);
+  }, [economicIndicators]);
   
   /**
    * CORRIGIDO: Emite títulos de dívida
@@ -190,6 +172,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     try {
       const socket = socketApi.getSocketInstance();
       if (socket) {
+        // CORRIGIDO: Usar evento correto que existe no servidor
         socket.emit('issueDebtBonds', { 
           bondAmount: amount,
           isEmergency: false
@@ -211,9 +194,15 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   const handleOpenDebtPopup = useCallback(() => {
     if (economicIndicators && debtSummary && onOpenDebtPopup) {
       console.log('[ECONOMY] Abrindo popup de dívidas:', { debtSummary, economicIndicators });
+      
+      // Usar dados vindos do servidor via Redux
       onOpenDebtPopup(debtSummary, debtSummary.contracts || [], economicIndicators);
     } else {
-      console.warn('[ECONOMY] Dados insuficientes para abrir popup de dívidas');
+      console.warn('[ECONOMY] Dados insuficientes para abrir popup de dívidas:', { 
+        hasEconomicIndicators: !!economicIndicators, 
+        hasDebtSummary: !!debtSummary,
+        hasCallback: !!onOpenDebtPopup 
+      });
       MessageService.showWarning('Aguardando dados de dívida...');
     }
   }, [economicIndicators, debtSummary, onOpenDebtPopup]);
@@ -226,11 +215,11 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
     
-    // Handler para confirmação de emissão de títulos
+    // CORRIGIDO: Handler para confirmação de emissão de títulos
     const handleDebtBondsIssued = (data) => {
       console.log('[ECONOMY] Títulos emitidos confirmados:', data);
       
-      const { success, bondAmount: issuedAmount, message } = data;
+      const { success, bondAmount: issuedAmount, newTreasury, newPublicDebt, message } = data;
       
       if (success) {
         MessageService.showSuccess(`Títulos emitidos: ${issuedAmount} bi USD`, 4000);
@@ -241,11 +230,11 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       setIsIssuingBonds(false);
     };
     
-    // Handler para confirmação de parâmetros aplicados
+    // CORRIGIDO: Handler para confirmação de parâmetros
     const handleParameterUpdated = (data) => {
-      console.log('[ECONOMY] Parâmetro confirmado pelo servidor:', data);
+      console.log('[ECONOMY] Parâmetro confirmado:', data);
       
-      const { countryName, roomName, parameter, value, success } = data;
+      const { countryName, roomName, parameter, value } = data;
       
       // Só processar se for para o país atual
       if (countryName === myCountry && roomName === currentRoom?.name) {
@@ -256,26 +245,15 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           return newSet;
         });
         
-        if (success !== false) {
-          // Atualizar valor aplicado (confirmação do servidor)
-          setAppliedValues(prev => ({
-            ...prev,
-            [parameter]: value
-          }));
-          
-          const parameterNames = {
-            interestRate: 'Taxa de Juros',
-            taxBurden: 'Carga Tributária', 
-            publicServices: 'Investimento Público'
-          };
-          
-          const parameterName = parameterNames[parameter] || parameter;
-          MessageService.showSuccess(`${parameterName} aplicada: ${value}%`);
-        }
+        // Atualizar parâmetro local se necessário
+        setLocalParameters(prev => ({
+          ...prev,
+          [parameter]: value
+        }));
       }
     };
     
-    // Handler para títulos de emergência
+    // CORRIGIDO: Handler para títulos de emergência
     const handleEmergencyBonds = (data) => {
       console.log('[ECONOMY] Títulos de emergência:', data);
       
@@ -308,21 +286,21 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   
   const formatters = useMemo(() => ({
     currency: (value) => {
-      if (value === undefined || value === null || isNaN(value)) return '0.00';
-      return Number(value).toFixed(2);  // ← ALTERADO PARA 2 CASAS DECIMAIS
+      if (value === undefined || value === null || isNaN(value)) return '0.0';
+      return Number(value).toFixed(1);
     },
     
     percent: (value) => {
-      if (value === undefined || value === null || isNaN(value)) return '0.00%';
-      return Number(value).toFixed(2) + '%';  // ← ALTERADO PARA 2 CASAS DECIMAIS
+      if (value === undefined || value === null || isNaN(value)) return '0.0%';
+      return Number(value).toFixed(1) + '%';
     },
     
     valueWithSign: (value) => {
-      if (value === undefined || value === null || isNaN(value)) return '0.00';
+      if (value === undefined || value === null || isNaN(value)) return '0.0';
       const num = Number(value);
-      return (num >= 0 ? '+' : '') + num.toFixed(2);  // ← ALTERADO PARA 2 CASAS DECIMAIS
+      return (num >= 0 ? '+' : '') + num.toFixed(1);
     },
-
+    
     creditRatingColor: (rating) => {
       if (['AAA', 'AA', 'A'].includes(rating)) return '#28a745';
       if (rating === 'BBB') return '#ffc107';
@@ -332,7 +310,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }), []);
   
   // ======================================================================
-  // VALIDAÇÕES E CHECKS
+  // VALIDAÇÕES E CHECKS (CORRIGIDOS)
   // ======================================================================
   
   if (!myCountry) {
@@ -353,6 +331,10 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     );
   }
   
+  // ======================================================================
+  // VALIDAÇÕES DE VALORES (ADICIONADAS)
+  // ======================================================================
+  
   // Verificar se há valores inválidos e mostrar fallbacks
   const safeIndicators = {
     gdp: economicIndicators.gdp || 100,
@@ -367,6 +349,11 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     publicServices: economicIndicators.publicServices || 30.0,
     gdpGrowth: economicIndicators.gdpGrowth || 0
   };
+  
+  // Verificar se algum parâmetro foi alterado
+  const hasChanges = Math.abs(localParameters.interestRate - (economicIndicators.interestRate || 8.0)) >= 0.1 ||
+                  Math.abs(localParameters.taxBurden - (economicIndicators.taxBurden || 40.0)) >= 0.1 ||
+                  Math.abs(localParameters.publicServices - (economicIndicators.publicServices || 30.0)) >= 0.1;
   
   // ======================================================================
   // RENDER
@@ -436,86 +423,86 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         </div>
       </div>
       
-      {/* Controles Econômicos (SIMPLIFICADOS) */}
+      {/* Controles Econômicos (CORRIGIDOS) */}
       <div className="economic-controls">
-        <h4>Parâmetros Econômicos</h4>
-        
         <div className="control-group">
-          <label>Taxa de Juros: {formatters.percent(sliderValues.interestRate)}</label>
+          <label>Taxa de Juros: {formatters.percent(localParameters.interestRate)}</label>
           <div className="slider-container">
             <input
               type="range"
               min="0"
               max="25"
               step="0.25"
-              value={sliderValues.interestRate}
-              onChange={(e) => handleSliderChange('interestRate', e.target.value)}
-              disabled={pendingUpdates.has('interestRate')}
+              value={localParameters.interestRate}
+              onChange={(e) => setLocalParameters(prev => ({
+                ...prev,
+                interestRate: parseFloat(e.target.value)
+              }))}
+              disabled={pendingUpdates.size > 0}
             />
-            <button 
-              onClick={() => handleApplyParameter('interestRate')}
-              disabled={
-                Math.abs(sliderValues.interestRate - appliedValues.interestRate) < 0.1 || 
-                pendingUpdates.has('interestRate')
-              }
-            >
-              {pendingUpdates.has('interestRate') ? 'Aplicando...' : 'Aplicar'}
-            </button>
           </div>
         </div>
         
         <div className="control-group">
-          <label>Carga Tributária: {formatters.percent(sliderValues.taxBurden)}</label>
+          <label>Carga Tributária: {formatters.percent(localParameters.taxBurden)}</label>
           <div className="slider-container">
             <input
               type="range"
               min="0"
               max="60"
               step="0.5"
-              value={sliderValues.taxBurden}
-              onChange={(e) => handleSliderChange('taxBurden', e.target.value)}
-              disabled={pendingUpdates.has('taxBurden')}
+              value={localParameters.taxBurden}
+              onChange={(e) => setLocalParameters(prev => ({
+                ...prev,
+                taxBurden: parseFloat(e.target.value)
+              }))}
+              disabled={pendingUpdates.size > 0}
             />
-            <button 
-              onClick={() => handleApplyParameter('taxBurden')}
-              disabled={
-                Math.abs(sliderValues.taxBurden - appliedValues.taxBurden) < 0.1 || 
-                pendingUpdates.has('taxBurden')
-              }
-            >
-              {pendingUpdates.has('taxBurden') ? 'Aplicando...' : 'Aplicar'}
-            </button>
           </div>
         </div>
         
         <div className="control-group">
-          <label>Investimento Público: {formatters.percent(sliderValues.publicServices)}</label>
+          <label>Investimento Público: {formatters.percent(localParameters.publicServices)}</label>
           <div className="slider-container">
             <input
               type="range"
               min="0"
               max="60"
               step="0.5"
-              value={sliderValues.publicServices}
-              onChange={(e) => handleSliderChange('publicServices', e.target.value)}
-              disabled={pendingUpdates.has('publicServices')}
+              value={localParameters.publicServices}
+              onChange={(e) => setLocalParameters(prev => ({
+                ...prev,
+                publicServices: parseFloat(e.target.value)
+              }))}
+              disabled={pendingUpdates.size > 0}
             />
-            <button 
-              onClick={() => handleApplyParameter('publicServices')}
-              disabled={
-                Math.abs(sliderValues.publicServices - appliedValues.publicServices) < 0.1 || 
-                pendingUpdates.has('publicServices')
-              }
-            >
-              {pendingUpdates.has('publicServices') ? 'Aplicando...' : 'Aplicar'}
-            </button>
           </div>
         </div>
+        
+        {/* Botões para aplicar e cancelar parâmetros */}
+        {hasChanges && (
+          <div className="apply-parameters">
+            <button 
+              onClick={cancelChanges}
+              disabled={pendingUpdates.size > 0}
+              className="btn-cancel-parameters"
+            >
+              Cancelar
+            </button>
+            <button 
+              onClick={applyAllParameters}
+              disabled={pendingUpdates.size > 0}
+              className="btn-apply-parameters"
+            >
+              {pendingUpdates.size > 0 ? 'Aplicando...' : 'Aplicar'}
+            </button>
+          </div>
+        )}
       </div>
       
-      {/* Emissão de Títulos */}
+      {/* Emissão de Títulos (CORRIGIDA) */}
       <div className="bonds-section">
-        <h4>Títulos da Dívida Pública</h4>
+        <h4>Emitir dívida pública</h4>
         
         <div className="bonds-controls">
           <input
@@ -546,25 +533,19 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           </div>
         )}
         
-      {/* Botão de resumo de dívidas (CORRIGIDO - Mais Simples) */}
-      {(() => {
-        const contractCount = debtSummary?.numberOfContracts || debtSummary?.contracts?.length || 0;
-        return contractCount > 0;
-      })() && (
-        <button 
-          className="debt-summary-btn"
-          onClick={handleOpenDebtPopup}
-        >
-          Ver Dívidas ({(() => {
-            const count = debtSummary?.numberOfContracts || debtSummary?.contracts?.length || 0;
-            return `${count} ${count === 1 ? 'contrato' : 'contratos'}`;
-          })()})
-        </button>
-      )}
+        {/* Botão de resumo de dívidas (CORRIGIDO) */}
+        {debtSummary && debtSummary.numberOfContracts > 0 && (
+          <button 
+            className="debt-summary-btn"
+            onClick={handleOpenDebtPopup}
+          >
+            Ver Dívidas ({debtSummary.numberOfContracts} {debtSummary.numberOfContracts === 1 ? 'contrato' : 'contratos'})
+          </button>
+        )}
       </div>
       
-      {/* Debug info em desenvolvimento */}
-      {process.env.NODE_ENV === 'development' && lastUpdated && (
+      {/* Debug info em desenvolvimento (CORRIGIDA) */}
+      {/* {process.env.NODE_ENV === 'development' && lastUpdated && (
         <div style={{ 
           fontSize: '10px', 
           color: '#666', 
@@ -577,12 +558,11 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           <div>💰 PIB: {formatters.currency(safeIndicators.gdp)} | Tesouro: {formatters.currency(safeIndicators.treasury)}</div>
           <div>📊 Inflação: {formatters.percent(safeIndicators.inflation)} | Desemprego: {formatters.percent(safeIndicators.unemployment)} | Rating: {safeIndicators.creditRating}</div>
           <div>📄 Dívidas: {debtSummary?.numberOfContracts || 0} contratos</div>
-          <div>🎛️ Sliders: Juros {formatters.percent(sliderValues.interestRate)} | Impostos {formatters.percent(sliderValues.taxBurden)} | Serviços {formatters.percent(sliderValues.publicServices)}</div>
-          <div>✅ Aplicados: Juros {formatters.percent(appliedValues.interestRate)} | Impostos {formatters.percent(appliedValues.taxBurden)} | Serviços {formatters.percent(appliedValues.publicServices)}</div>
+          <div>🔧 Parâmetros: Juros {formatters.percent(safeIndicators.interestRate)} | Impostos {formatters.percent(safeIndicators.taxBurden)} | Serviços {formatters.percent(safeIndicators.publicServices)}</div>
           <div>🕐 Última atualização: {new Date(lastUpdated).toLocaleTimeString()}</div>
           <div>🔄 Pending: {pendingUpdates.size > 0 ? Array.from(pendingUpdates).join(', ') : 'Nenhum'}</div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

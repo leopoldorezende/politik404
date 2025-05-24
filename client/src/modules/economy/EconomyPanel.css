@@ -100,7 +100,7 @@
 /* Controles Econômicos */
 .advanced-economy-panel .economic-controls {
   margin-bottom: 20px;
-  padding: 12px;
+  padding: 12px 12px 20px 12px;
   background: rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   border: 1px solid rgba(52, 73, 94, 0.2);
@@ -136,9 +136,13 @@
   gap: 6px;
 }
 
+.slider-container input {
+  padding: 0;
+}
+
 .advanced-economy-panel .slider-container input[type="range"] {
   width: 100%;
-  height: 4px;
+  height: 2px;
   background: rgba(52, 73, 94, 0.2);
   border-radius: 2px;
   outline: none;
@@ -160,7 +164,15 @@
   background: #2980b9;
 }
 
-.advanced-economy-panel .slider-container button {
+.advanced-economy-panel .apply-parameters {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+.advanced-economy-panel .apply-parameters button {
+  flex: 1;
+  margin-top: 8px;
   padding: 6px 12px;
   font-size: 11px;
   border-radius: 4px;
@@ -170,15 +182,14 @@
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 600;
-  align-self: flex-end;
 }
 
-.advanced-economy-panel .slider-container button:hover:not(:disabled) {
+.advanced-economy-panel .apply-parameters button:hover:not(:disabled) {
   background-color: #2980b9;
   border-color: #2980b9;
 }
 
-.advanced-economy-panel .slider-container button:disabled {
+.advanced-economy-panel .apply-parameters button:disabled {
   background-color: #bdc3c7;
   border-color: #bdc3c7;
   cursor: not-allowed;

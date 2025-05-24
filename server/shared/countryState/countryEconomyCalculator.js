@@ -944,12 +944,15 @@ class CountryEconomyCalculator {
       manufacturesVariation -= 0.05; // Luxury goods
     }
     
+    const currentCommoditiesPercent = economy.commoditiesNeeds?.percentValue || 30;
+    const currentManufacturesPercent = economy.manufacturesNeeds?.percentValue || 45;
+
     const newCommoditiesNeedPercent = Math.max(10, Math.min(50, 
-      economy.commoditiesNeeds.percentValue + commoditiesVariation
+      currentCommoditiesPercent + commoditiesVariation
     ));
-    
+
     const newManufacturesNeedPercent = Math.max(20, Math.min(70, 
-      economy.manufacturesNeeds.percentValue + manufacturesVariation
+      currentManufacturesPercent + manufacturesVariation
     ));
     
     economy.commoditiesNeeds.percentValue = newCommoditiesNeedPercent;
