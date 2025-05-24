@@ -148,6 +148,5 @@
   │       ├── gameStateUtils.js  # Utilitários de estado para o jogo
   │       ├── redisClient.js  # Infraestrutura do Redis
   │       └── utils
-  │           ├── economicUtils.js
-  │           └── formatUtils.js
-  └── v12.md
+  │           └── economicUtils.js
+  └── v13.md
