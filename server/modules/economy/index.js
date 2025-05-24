@@ -10,10 +10,7 @@ import {
   cancelTradeAgreement
 } from './tradeAgreementService.js';
 
-// REMOVIDO: calculateTradeAgreementsImpact - agora está integrado no countryEconomyCalculator
-// Evita duplicação e centraliza lógica no countryStateManager
-
-// Export apenas funcionalidades que não estão duplicadas no countryStateManager
+// Export funcionalidades centralizadas
 export {
   // Main socket handler setup
   setupEconomyHandlers,
