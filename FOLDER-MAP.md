@@ -116,7 +116,6 @@
   │   │   │   ├── countryStateHandlers.js
   │   │   │   └── countryUtils.js  # Utilitários para países
   │   │   ├── economy
-  │   │   │   ├── economyCalculations.js
   │   │   │   ├── economyHandlers.js
   │   │   │   ├── economyUpdateService.js
   │   │   │   ├── index.js
@@ -139,7 +138,6 @@
   │   │       └── countriesData.json
   │   ├── server.js  # Entry point do servidor
   │   └── shared
-  │       ├── advancedDebtManagement.js
   │       ├── countryState
   │       │   ├── countryEconomyCalculator.js
   │       │   ├── countryStateConfig.js

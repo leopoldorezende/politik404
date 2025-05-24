@@ -1,25 +1,15 @@
 /**
- * economyHandlers.js
+ * economyHandlers.js (Atualizado - Sem Duplicações)
  * Socket.io handlers for economic operations
- * CORRIGIDO: Integração completa com countryStateManager centralizado
+ * DELEGADO COMPLETAMENTE para countryStateManager
  */
 
-import { 
-  performEconomicCalculations,
-  issueDebtBonds,
-  issueEmergencyBonds,
-  processMonthlyDebtPayments,
-  updateTotalPublicDebt,
-  canIssueMoreDebt,
-  ECONOMIC_CONSTANTS
-} from './economyCalculations.js';
 import countryStateManager from '../../shared/countryStateManager.js';
 import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/gameStateUtils.js';
 import { 
   setupPeriodicTradeUpdates,
   createTradeAgreement,
-  cancelTradeAgreement,
-  updateCountryEconomyForTrade
+  cancelTradeAgreement
 } from './tradeAgreementService.js';
 import { evaluateTradeProposal } from '../ai/aiCountryController.js';
 
@@ -33,7 +23,7 @@ let periodicUpdatesInitialized = false;
  * @param {Object} gameState - Global game state
  */
 function setupEconomyHandlers(io, socket, gameState) {
-  console.log('Economy handlers initialized with countryStateManager integration');
+  console.log('Economy handlers initialized - DELEGADO para countryStateManager');
   
   // Set up periodic economic updates only once
   if (!periodicUpdatesInitialized) {
@@ -43,7 +33,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   }
 
   // ======================================================================
-  // NOVO: Handler para atualização de parâmetros econômicos
+  // PARÂMETROS ECONÔMICOS - DELEGADO para countryStateManager
   // ======================================================================
   
   socket.on('updateEconomicParameter', (data) => {
@@ -99,7 +89,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     }
     
     try {
-      // CORRIGIDO: Usar o countryStateManager centralizado
+      // DELEGADO: Usar o countryStateManager centralizado
       const updatedState = countryStateManager.updateEconomicParameter(
         roomName, 
         userCountry, 
@@ -110,7 +100,6 @@ function setupEconomyHandlers(io, socket, gameState) {
       if (updatedState) {
         console.log(`[ECONOMY] ${username} updated ${parameter} to ${value}% for ${userCountry}`);
         
-        // NOVO: Emitir confirmação para o cliente
         socket.emit('economicParameterUpdated', {
           roomName,
           countryName: userCountry,
@@ -120,7 +109,6 @@ function setupEconomyHandlers(io, socket, gameState) {
           message: `${parameter} updated to ${value}%`
         });
         
-        // NOVO: Notificar outros jogadores na sala sobre mudanças econômicas significativas
         if (parameter === 'interestRate') {
           socket.to(roomName).emit('economicNews', {
             type: 'interestRate',
@@ -141,7 +129,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // CORRIGIDO: Handler para emissão de títulos usando countryStateManager
+  // EMISSÃO DE TÍTULOS - DELEGADO para countryStateManager
   // ======================================================================
   
   socket.on('issueDebtBonds', (data) => {
@@ -182,7 +170,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     }
     
     try {
-      // CORRIGIDO: Usar o countryStateManager centralizado
+      // DELEGADO: Usar o countryStateManager centralizado
       const bondResult = countryStateManager.issueDebtBonds(
         roomName,
         userCountry,
@@ -192,7 +180,6 @@ function setupEconomyHandlers(io, socket, gameState) {
       if (bondResult.success) {
         console.log(`[ECONOMY] ${username} issued ${bondAmount} billion in debt bonds for ${userCountry}`);
         
-        // CORRIGIDO: Enviar resposta detalhada
         socket.emit('debtBondsIssued', {
           success: true,
           bondAmount,
@@ -203,7 +190,6 @@ function setupEconomyHandlers(io, socket, gameState) {
           debtContract: bondResult.newContract
         });
         
-        // NOVO: Notificar outros jogadores sobre emissão significativa
         if (bondAmount >= 50) {
           socket.to(roomName).emit('economicNews', {
             type: 'debtIssuance',
@@ -225,7 +211,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // CORRIGIDO: Handler para obter resumo de dívidas usando countryStateManager
+  // RESUMO DE DÍVIDAS - DELEGADO para countryStateManager
   // ======================================================================
   
   socket.on('getDebtSummary', () => {
@@ -253,7 +239,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     }
     
     try {
-      // CORRIGIDO: Usar o countryStateManager centralizado
+      // DELEGADO: Usar o countryStateManager centralizado
       const debtSummary = countryStateManager.getDebtSummary(roomName, userCountry);
       
       // Obter dados econômicos atuais
@@ -263,7 +249,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       const gdp = economy.gdp?.value || 100;
       const currentPublicDebt = economy.publicDebt || 0;
       
-      // CORRIGIDO: Calcular médias ponderadas corretas
+      // Calcular médias ponderadas corretas
       let averageInterestRate = 0;
       if (debtSummary.contracts.length > 0) {
         const totalInterest = debtSummary.contracts.reduce((sum, debt) => 
@@ -302,7 +288,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // MANTIDO: Handler para títulos de emergência
+  // TÍTULOS DE EMERGÊNCIA - DELEGADO para countryStateManager
   // ======================================================================
   
   socket.on('issueEmergencyBonds', (data) => {
@@ -336,7 +322,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     }
     
     try {
-      // Usar issueDebtBonds com flag de emergência
+      // DELEGADO: Usar countryStateManager com flag de emergência
       const bondResult = countryStateManager.issueDebtBonds(
         roomName,
         userCountry,
@@ -355,7 +341,6 @@ function setupEconomyHandlers(io, socket, gameState) {
           message: `Emergency bonds issued: ${bondResult.message}`
         });
         
-        // Notificar sala sobre emissão de emergência
         socket.to(roomName).emit('economicNews', {
           type: 'emergencyBonds',
           country: userCountry,
@@ -375,7 +360,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // HANDLER PARA PROCESSAMENTO DE PAGAMENTOS (SIMPLIFICADO)
+  // PAGAMENTOS AUTOMÁTICOS - INFORMATIVO APENAS
   // ======================================================================
   
   socket.on('processDebtPayments', () => {
@@ -387,7 +372,6 @@ function setupEconomyHandlers(io, socket, gameState) {
     }
     
     // Este processo é automático no countryStateManager
-    // Apenas retornar o status atual
     socket.emit('debtPaymentProcessed', {
       message: 'Debt payments are processed automatically by the economic system',
       automatic: true
@@ -395,7 +379,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // MANTIDOS: Handlers de comércio com melhorias
+  // COMÉRCIO - DELEGADO parcialmente para countryStateManager
   // ======================================================================
   
   // Handler para envio de propostas de comércio
@@ -514,7 +498,7 @@ function setupEconomyHandlers(io, socket, gameState) {
         if (aiDecision.accepted) {
           console.log(`[TRADE] AI-controlled ${targetCountry} accepted proposal from ${originCountry}: ${aiDecision.reason}`);
           
-          // Criar acordo comercial
+          // DELEGADO: Criar acordo comercial usando tradeAgreementService
           createTradeAgreement(io, gameState, roomName, {
             type,
             product,
@@ -583,7 +567,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     if (accepted) {
       console.log(`[TRADE] Proposal ${proposalId} accepted by ${username}`);
       
-      // Criar acordo comercial usando countryStateManager integrado
+      // DELEGADO: Criar acordo comercial usando tradeAgreementService
       createTradeAgreement(io, gameState, roomName, {
         type: proposal.type,
         product: proposal.product,
@@ -690,7 +674,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Criar o acordo comercial (isso atualizará automaticamente as economias via countryStateManager)
+    // DELEGADO: Criar o acordo comercial usando tradeAgreementService
     const agreement = createTradeAgreement(io, gameState, roomName, {
       type,
       product,
@@ -733,7 +717,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     const userRoomKey = `${username}:${roomName}`;
     const userCountry = gameState.userRoomCountries.get(userRoomKey);
     
-    // Cancelar o acordo comercial (isso atualizará automaticamente as economias)
+    // DELEGADO: Cancelar o acordo comercial usando tradeAgreementService
     const success = cancelTradeAgreement(io, gameState, roomName, agreementId, userCountry, socket);
     
     if (success) {

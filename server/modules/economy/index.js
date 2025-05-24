@@ -1,42 +1,28 @@
 /**
- * index.js
- * Entry point for the economy module - exports all related functionality
+ * index.js (Simplificado)
+ * Entry point for the economy module - DELEGADO para countryStateManager
  */
 
 import { setupEconomyHandlers } from './economyHandlers.js';
 import { 
   setupPeriodicTradeUpdates, 
   createTradeAgreement, 
-  cancelTradeAgreement, 
-  updateCountryEconomyForTrade 
+  cancelTradeAgreement
 } from './tradeAgreementService.js';
 import {
-  updateCountryEconomiesWithTradeAgreement,
   calculateTradeAgreementsImpact
 } from './economyUpdateService.js';
-import {
-  calculateGdpGrowth,
-  issueDebtBonds,
-  performEconomicCalculations
-} from './economyCalculations.js';
 
-// Export all functionality for easy access from other modules
+// Export apenas funcionalidades que não estão duplicadas no countryStateManager
 export {
   // Main socket handler setup
   setupEconomyHandlers,
   
-  // Trade agreement services
+  // Trade agreement services (mantidos pois gerenciam agreements, não economia)
   setupPeriodicTradeUpdates,
   createTradeAgreement,
   cancelTradeAgreement,
-  updateCountryEconomyForTrade,
   
-  // Economy update services
-  updateCountryEconomiesWithTradeAgreement,
-  calculateTradeAgreementsImpact,
-  
-  // Economic calculations
-  calculateGdpGrowth,
-  issueDebtBonds,
-  performEconomicCalculations
+  // Trade impact calculation (usado pelo countryStateManager)
+  calculateTradeAgreementsImpact
 };

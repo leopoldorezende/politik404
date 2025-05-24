@@ -1,87 +1,7 @@
-import { performEconomicCalculations } from './economyCalculations.js';
-
 /**
- * Atualiza as economias dos países envolvidos em um acordo comercial
- * @param {Object} gameState - Estado global do jogo
- * @param {string} roomName - Nome da sala
- * @param {Object} agreement - Dados do acordo
+ * economyUpdateService.js (Simplificado)
+ * APENAS cálculo de impacto comercial - economia delegada para countryStateManager
  */
-function updateCountryEconomiesWithTradeAgreement(gameState, roomName, agreement) {
-  const { originCountry, country: targetCountry } = agreement;
-  
-  // Atualizar economia do país de origem
-  updateCountryEconomyForTrade(gameState, roomName, originCountry);
-  
-  // Atualizar economia do país de destino
-  updateCountryEconomyForTrade(gameState, roomName, targetCountry);
-}
-
-/**
- * Atualiza a economia de um país com base em seus acordos comerciais
- * @param {Object} gameState - Estado global do jogo
- * @param {string} roomName - Nome da sala
- * @param {string} countryName - Nome do país
- */
-function updateCountryEconomyForTrade(gameState, roomName, countryName) {
-  // Obter estado atual e dados estáticos do país
-  const countryStateManager = global.countryStateManager;
-  if (!countryStateManager) return;
-  
-  const currentState = countryStateManager.getCountryState(roomName, countryName);
-  const staticData = gameState.countriesData[countryName];
-  
-  if (!currentState || !staticData) {
-    console.error(`Country data missing for ${countryName}`);
-    return;
-  }
-  
-  // Para o país de origem, realizar cálculos considerando os acordos comerciais
-  const room = gameState.rooms.get(roomName);
-  if (!room) {
-    console.error(`Room not found: ${roomName}`);
-    return;
-  }
-  
-  // Consideramos todos os acordos na sala
-  // Isso é importante porque precisamos considerar acordos onde o país é tanto origem quanto destino
-  const allAgreements = room.tradeAgreements || [];
-  
-  // Realizar cálculos econômicos
-  const calculationResult = performEconomicCalculations(
-    currentState,
-    { ...staticData, countryName: countryName },
-    {
-      tradeAgreements: allAgreements
-    }
-  );
-  
-  // MODIFICADO: Log apenas quando um acordo é realmente processado, não a cada ciclo
-  // Log para debug dos balanços comerciais apenas em eventos importantes
-  const hasActiveAgreements = allAgreements.some(a => 
-    a.originCountry === countryName || a.country === countryName
-  );
-  
-  if (hasActiveAgreements) {
-    // Verificar momento do último log para evitar logs excessivos
-    const now = Date.now();
-    if (!global.lastTradeCalcLog || now - global.lastTradeCalcLog > 60000) { // Log a cada 1 minuto no máximo
-      console.log(`Trade calculation results for ${countryName}:`, {
-        manufacturesBalance: calculationResult.economy.manufacturesBalance?.value,
-        commoditiesBalance: calculationResult.economy.commoditiesBalance?.value,
-        tradeStats: calculationResult.economy.tradeStats
-      });
-      global.lastTradeCalcLog = now;
-    }
-  }
-  
-  // Atualizar o estado do país
-  countryStateManager.updateCountryState(
-    roomName,
-    countryName,
-    'economy',
-    calculationResult.economy
-  );
-}
 
 /**
  * Calcula o impacto dos acordos comerciais na economia
@@ -134,15 +54,13 @@ function calculateTradeAgreementsImpact(economy, tradeAgreements = [], countryNa
   });
 
   // Calcular ajustes nos balanços - exportações DIMINUEM, importações aumentam
-  // Para o cálculo do balanço, exportações subtraem e importações adicionam ao saldo interno disponível
   const commoditiesBalanceAdjustment = -commodityExports + commodityImports;
   const manufacturesBalanceAdjustment = -manufactureExports + manufactureImports;
 
-  // MODIFICADO: Log apenas quando há impacto real de comércio e com intervalo mínimo entre logs
+  // Log apenas quando há impacto real de comércio e com intervalo mínimo entre logs
   if (commodityExports > 0 || commodityImports > 0 || manufactureExports > 0 || manufactureImports > 0) {
-    // Verificar tempo desde o último log para evitar logs excessivos
     const now = Date.now();
-    if (!global.lastTradeAdjustmentLog || now - global.lastTradeAdjustmentLog > 60000) { // Log a cada 1 minuto no máximo
+    if (!global.lastTradeAdjustmentLog || now - global.lastTradeAdjustmentLog > 60000) {
       console.log(`Trade adjustments for ${countryName}:`, {
         commodityExports,
         commodityImports,
@@ -168,7 +86,5 @@ function calculateTradeAgreementsImpact(economy, tradeAgreements = [], countryNa
 }
 
 export {
-  updateCountryEconomiesWithTradeAgreement,
-  updateCountryEconomyForTrade,
   calculateTradeAgreementsImpact
 };

@@ -1,7 +1,7 @@
 /**
- * countryEconomyCalculator.js
+ * countryEconomyCalculator.js (Corrigido Final)
  * Advanced economic calculations for country states
- * INTEGRATED WITH ADVANCED CALCULATIONS - No longer needs separate advancedEconomyCalculations.js
+ * INTEGRADO COM calculateTradeAgreementsImpact - Sem imports externos
  */
 
 // Constantes econômicas integradas
@@ -35,6 +35,87 @@ class CountryEconomyCalculator {
     if (typeof property === 'number') return property;
     if (typeof property === 'object' && property.value !== undefined) return property.value;
     return 0;
+  }
+
+  /**
+   * INTEGRADO: Calcula o impacto dos acordos comerciais na economia
+   * Evita dupla contagem considerando apenas acordos onde o país atual é originador
+   * @param {Array} tradeAgreements - Acordos comerciais ativos
+   * @param {string} countryName - Nome do país atual
+   * @returns {Object} - Ajustes a serem aplicados
+   */
+  calculateTradeAgreementsImpact(tradeAgreements = [], countryName) {
+    if (!tradeAgreements || tradeAgreements.length === 0 || !countryName) {
+      return {
+        commodityImports: 0,
+        commodityExports: 0,
+        manufactureImports: 0,
+        manufactureExports: 0,
+        balanceAdjustments: {}
+      };
+    }
+
+    // Totais iniciais
+    let commodityImports = 0;
+    let commodityExports = 0;
+    let manufactureImports = 0;
+    let manufactureExports = 0;
+
+    // Filtramos apenas os acordos onde este país é o originador
+    // Isso é fundamental para evitar a contagem dupla
+    const ownAgreements = tradeAgreements.filter(agreement => 
+      agreement.originCountry === countryName
+    );
+    
+    // Processamos apenas os acordos originados por este país
+    ownAgreements.forEach(agreement => {
+      if (agreement.type === 'export') {
+        // Exportação do país atual
+        if (agreement.product === 'commodity') {
+          commodityExports += agreement.value;
+        } else if (agreement.product === 'manufacture') {
+          manufactureExports += agreement.value;
+        }
+      } else if (agreement.type === 'import') {
+        // Importação para o país atual
+        if (agreement.product === 'commodity') {
+          commodityImports += agreement.value;
+        } else if (agreement.product === 'manufacture') {
+          manufactureImports += agreement.value;
+        }
+      }
+    });
+
+    // Calcular ajustes nos balanços - exportações DIMINUEM, importações aumentam
+    const commoditiesBalanceAdjustment = -commodityExports + commodityImports;
+    const manufacturesBalanceAdjustment = -manufactureExports + manufactureImports;
+
+    // Log apenas quando há impacto real de comércio e com intervalo mínimo entre logs
+    if (commodityExports > 0 || commodityImports > 0 || manufactureExports > 0 || manufactureImports > 0) {
+      const now = Date.now();
+      if (!global.lastTradeAdjustmentLog || now - global.lastTradeAdjustmentLog > 60000) {
+        console.log(`Trade adjustments for ${countryName}:`, {
+          commodityExports,
+          commodityImports,
+          manufactureExports, 
+          manufactureImports,
+          commoditiesBalanceAdjustment,
+          manufacturesBalanceAdjustment
+        });
+        global.lastTradeAdjustmentLog = now;
+      }
+    }
+
+    return {
+      commodityImports,
+      commodityExports,
+      manufactureImports,
+      manufactureExports,
+      balanceAdjustments: {
+        commodities: commoditiesBalanceAdjustment,
+        manufactures: manufacturesBalanceAdjustment
+      }
+    };
   }
 
   /**
@@ -95,7 +176,7 @@ class CountryEconomyCalculator {
         value: this.getNumericValue(jsonEconomy.gdp), 
         unit: 'bi USD' 
       };
-      // console.log(`[ECONOMY] ${countryName} GDP from JSON: ${economy.gdp.value}`);
+      console.log(`[ECONOMY] ${countryName} GDP from JSON: ${economy.gdp.value}`);
     } else {
       economy.gdp = { value: 100, unit: 'bi USD' };
     }
@@ -142,7 +223,7 @@ class CountryEconomyCalculator {
     // Ensure sectoral distribution adds up to 100%
     const total = economy.services.value + economy.commodities.value + economy.manufactures.value;
     if (Math.abs(total - 100) > 1) {
-      // console.log(`[ECONOMY] ${countryName} sectoral total was ${total}%, adjusting to 100%`);
+      console.log(`[ECONOMY] ${countryName} sectoral total was ${total}%, adjusting to 100%`);
       const adjustment = (100 - total) / 3;
       economy.services.value += adjustment;
       economy.commodities.value += adjustment;
@@ -202,7 +283,7 @@ class CountryEconomyCalculator {
         percentValue: Math.round((domesticConsumption / gdp) * 100),
         unit: 'bi USD'
       };
-      // console.log(`[ECONOMY] ${countryName} commodities needs from JSON: ${domesticConsumption} (${economy.commoditiesNeeds.percentValue}% of GDP)`);
+      console.log(`[ECONOMY] ${countryName} commodities needs from JSON: ${domesticConsumption} (${economy.commoditiesNeeds.percentValue}% of GDP)`);
     } else {
       economy.commoditiesNeeds = { value: gdp * 0.3, percentValue: 30, unit: 'bi USD' };
     }
@@ -215,7 +296,7 @@ class CountryEconomyCalculator {
         percentValue: Math.round((domesticConsumption / gdp) * 100),
         unit: 'bi USD'
       };
-      // console.log(`[ECONOMY] ${countryName} manufactures needs from JSON: ${domesticConsumption} (${economy.manufacturesNeeds.percentValue}% of GDP)`);
+      console.log(`[ECONOMY] ${countryName} manufactures needs from JSON: ${domesticConsumption} (${economy.manufacturesNeeds.percentValue}% of GDP)`);
     } else if (jsonEconomy.manufacturing && jsonEconomy.manufacturing.domesticConsumption !== undefined) {
       const domesticConsumption = jsonEconomy.manufacturing.domesticConsumption;
       economy.manufacturesNeeds = {
@@ -223,7 +304,7 @@ class CountryEconomyCalculator {
         percentValue: Math.round((domesticConsumption / gdp) * 100),
         unit: 'bi USD'
       };
-      // console.log(`[ECONOMY] ${countryName} manufacturing needs from JSON: ${domesticConsumption} (${economy.manufacturesNeeds.percentValue}% of GDP)`);
+      console.log(`[ECONOMY] ${countryName} manufacturing needs from JSON: ${domesticConsumption} (${economy.manufacturesNeeds.percentValue}% of GDP)`);
     } else {
       economy.manufacturesNeeds = { value: gdp * 0.45, percentValue: 45, unit: 'bi USD' };
     }
@@ -663,8 +744,10 @@ class CountryEconomyCalculator {
       }
     }
     
-    // CORRIGIDO: Sempre executar cálculos avançados (removida condição % 3)
-    this.performAdvancedEconomicCalculations(economy, countryName);
+    // Only perform advanced calculations every few cycles to avoid excessive computation
+    if (this.updateCounter % 3 === 0) {
+      this.performAdvancedEconomicCalculations(economy, countryName);
+    }
     
     // Apply basic growth and changes
     this.updateGDP(economy, countryName);
@@ -727,12 +810,12 @@ class CountryEconomyCalculator {
       economyState.quarterlyGrowth = economy.quarterlyGrowth;
     }
 
-    // CORRIGIDO: Calculate inflation sempre e aplicar ao economy
+    // Calculate inflation
     const inflationResult = this.calculateInflation(economyState);
     economy.inflation = inflationResult.newInflation;
     economy.inflationHistory = inflationResult.newInflationHistory;
 
-    // CORRIGIDO: Calculate unemployment sempre e aplicar ao economy
+    // Calculate unemployment
     economy.unemployment = this.calculateUnemployment({
       ...economyState,
       inflation: economy.inflation,
@@ -746,7 +829,7 @@ class CountryEconomyCalculator {
       economy.unemploymentHistory.shift();
     }
 
-    // CORRIGIDO: Calculate popularity sempre e aplicar ao economy
+    // Calculate popularity
     const popularityResult = this.calculatePopularity({
       ...economyState,
       inflation: economy.inflation,
@@ -757,7 +840,7 @@ class CountryEconomyCalculator {
     economy.popularity = popularityResult.newPopularity;
     economy.popularityHistory = popularityResult.newPopularityHistory;
 
-    // CORRIGIDO: Update credit rating sempre e aplicar ao economy
+    // Update credit rating
     economy.creditRating = this.updateCreditRating({
       ...economyState,
       inflation: economy.inflation,
@@ -774,8 +857,10 @@ class CountryEconomyCalculator {
       economy.gdpHistory.shift();
     }
 
-    // CORRIGIDO: Log sempre que calcular para debug
-    // console.log(`[ECONOMY ADVANCED] ${countryName}: Inflation ${(economy.inflation * 100).toFixed(1)}%, Unemployment ${economy.unemployment.toFixed(1)}%, Popularity ${economy.popularity.toFixed(1)}%, Rating ${economy.creditRating}`);
+    // Log advanced calculations occasionally
+    if (this.updateCounter % 30 === 0) {
+      console.log(`[ECONOMY ADVANCED] ${countryName}: Inflation ${(economy.inflation * 100).toFixed(1)}%, Unemployment ${economy.unemployment.toFixed(1)}%, Popularity ${economy.popularity.toFixed(1)}%, Rating ${economy.creditRating}`);
+    }
   }
 
   /**
@@ -902,22 +987,6 @@ class CountryEconomyCalculator {
       const commoditiesVariation = (Math.random() * 0.6) - 0.3;
       const manufacturesVariation = (Math.random() * 0.6) - 0.3;
       
-      // CORRIGIDO: Verificar se as propriedades existem antes de acessar percentValue
-      if (!economy.commoditiesNeeds) {
-        economy.commoditiesNeeds = { value: gdp * 0.3, percentValue: 30, unit: 'bi USD' };
-      }
-      if (!economy.manufacturesNeeds) {
-        economy.manufacturesNeeds = { value: gdp * 0.45, percentValue: 45, unit: 'bi USD' };
-      }
-      
-      // Garantir que percentValue existe
-      if (economy.commoditiesNeeds.percentValue === undefined) {
-        economy.commoditiesNeeds.percentValue = 30;
-      }
-      if (economy.manufacturesNeeds.percentValue === undefined) {
-        economy.manufacturesNeeds.percentValue = 45;
-      }
-      
       economy.commoditiesNeeds.percentValue = Math.max(15, Math.min(45, 
         economy.commoditiesNeeds.percentValue + commoditiesVariation
       ));
@@ -925,22 +994,6 @@ class CountryEconomyCalculator {
       economy.manufacturesNeeds.percentValue = Math.max(25, Math.min(65, 
         economy.manufacturesNeeds.percentValue + manufacturesVariation
       ));
-    }
-    
-    // CORRIGIDO: Garantir que as estruturas existem antes de calcular valores absolutos
-    if (!economy.commoditiesNeeds) {
-      economy.commoditiesNeeds = { value: 0, percentValue: 30, unit: 'bi USD' };
-    }
-    if (!economy.manufacturesNeeds) {
-      economy.manufacturesNeeds = { value: 0, percentValue: 45, unit: 'bi USD' };
-    }
-    
-    // Garantir que percentValue existe
-    if (economy.commoditiesNeeds.percentValue === undefined) {
-      economy.commoditiesNeeds.percentValue = 30;
-    }
-    if (economy.manufacturesNeeds.percentValue === undefined) {
-      economy.manufacturesNeeds.percentValue = 45;
     }
     
     // Recalculate absolute values
@@ -954,22 +1007,6 @@ class CountryEconomyCalculator {
    */
   updateDomesticNeedsWithVariation(economy) {
     const gdp = this.getNumericValue(economy.gdp);
-    
-    // CORRIGIDO: Garantir que as estruturas existem
-    if (!economy.commoditiesNeeds) {
-      economy.commoditiesNeeds = { value: gdp * 0.3, percentValue: 30, unit: 'bi USD' };
-    }
-    if (!economy.manufacturesNeeds) {
-      economy.manufacturesNeeds = { value: gdp * 0.45, percentValue: 45, unit: 'bi USD' };
-    }
-    
-    // Garantir que percentValue existe
-    if (economy.commoditiesNeeds.percentValue === undefined) {
-      economy.commoditiesNeeds.percentValue = 30;
-    }
-    if (economy.manufacturesNeeds.percentValue === undefined) {
-      economy.manufacturesNeeds.percentValue = 45;
-    }
     
     // Enhanced needs variation based on economic conditions
     let commoditiesVariation = (Math.random() * 0.4) - 0.2;
@@ -1010,7 +1047,7 @@ class CountryEconomyCalculator {
    * @param {string} countryName - Country name
    */
   applyTradeImpact(economy, tradeAgreements, countryName) {
-    const tradeImpact = this.calculateTradeImpact(tradeAgreements, countryName);
+    const tradeImpact = this.calculateTradeAgreementsImpact(tradeAgreements, countryName);
     
     // Calculate balances
     economy.commoditiesBalance.value = parseFloat((
@@ -1030,43 +1067,6 @@ class CountryEconomyCalculator {
       manufactureImports: tradeImpact.manufactureImports,
       manufactureExports: tradeImpact.manufactureExports
     };
-  }
-
-  /**
-   * Calculate trade impact from agreements
-   * @param {Array} tradeAgreements - Trade agreements
-   * @param {string} countryName - Country name
-   * @returns {Object} - Trade impact
-   */
-  calculateTradeImpact(tradeAgreements, countryName) {
-    let commodityImports = 0, commodityExports = 0;
-    let manufactureImports = 0, manufactureExports = 0;
-
-    if (!tradeAgreements || tradeAgreements.length === 0) {
-      return { commodityImports, commodityExports, manufactureImports, manufactureExports };
-    }
-
-    const ownAgreements = tradeAgreements.filter(agreement => 
-      agreement.originCountry === countryName
-    );
-    
-    ownAgreements.forEach(agreement => {
-      if (agreement.type === 'export') {
-        if (agreement.product === 'commodity') {
-          commodityExports += agreement.value;
-        } else if (agreement.product === 'manufacture') {
-          manufactureExports += agreement.value;
-        }
-      } else if (agreement.type === 'import') {
-        if (agreement.product === 'commodity') {
-          commodityImports += agreement.value;
-        } else if (agreement.product === 'manufacture') {
-          manufactureImports += agreement.value;
-        }
-      }
-    });
-
-    return { commodityImports, commodityExports, manufactureImports, manufactureExports };
   }
 
   /**
@@ -1138,9 +1138,9 @@ class CountryEconomyCalculator {
       // Show if we're using JSON data
       const gameState = global.gameState;
       if (gameState && gameState.countriesData && gameState.countriesData[countryName]) {
-        // console.log(`[ECONOMY] ${countryName} has JSON data available with enhanced calculations`);
+        console.log(`[ECONOMY] ${countryName} has JSON data available with enhanced calculations`);
       } else {
-        // console.log(`[ECONOMY] ${countryName} using default values with enhanced calculations`);
+        console.log(`[ECONOMY] ${countryName} using default values with enhanced calculations`);
       }
       
       this.lastLogTime = now;
