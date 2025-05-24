@@ -187,37 +187,63 @@ export function setupCountryStateHandlers(io, socket, gameState) {
  * @param {Object} io - Socket.io server instance
  * @param {string} roomName - Name of the room
  */
-function startBroadcastingUpdates(io, roomName) {
-  // Check if already broadcasting
-  if (roomIntervals.has(roomName)) return;
-  
-  console.log(`Starting country state broadcasts for room ${roomName}`);
-  
-  let broadcastCounter = 0;
-  
-  // Create an interval to broadcast updates
-  const intervalId = setInterval(() => {
-    // Get the current states
-    const states = countryStateManager.getRoomCountryStates(roomName);
-    const timestamp = countryStateManager.lastUpdated.get(roomName) || Date.now();
+  function startBroadcastingUpdates(io, roomName) {
+    // Check if already broadcasting
+    if (roomIntervals.has(roomName)) return;
     
-    // Broadcast to all subscribers
-    io.to(`countryStates:${roomName}`).emit('countryStatesUpdated', {
-      roomName,
-      states,
-      timestamp
-    });
+    console.log(`Starting country state broadcasts for room ${roomName}`);
     
-    // ✅ Log menos frequente
-    broadcastCounter++;
-    if (broadcastCounter % 30 === 0) { // A cada 60 segundos (30 broadcasts)
-      console.log(`[BROADCAST] Room ${roomName}: 30 updates sent to clients`);
-    }
-  }, 2000); // Manter 2 segundos
-  
-  // Store the interval ID
-  roomIntervals.set(roomName, intervalId);
-}
+    let broadcastCounter = 0;
+    
+    // Create an interval to broadcast updates
+    const intervalId = setInterval(() => {
+      // CORRIGIDO: Usar countryStateManager para obter estados atualizados
+      const states = countryStateManager.getRoomCountryStates(roomName);
+      const timestamp = countryStateManager.getLastUpdated(roomName) || Date.now();
+      
+      // CORRIGIDO: Verificar se há dados válidos antes de enviar
+      if (states && Object.keys(states).length > 0) {
+        // CORRIGIDO: Processar cada país para garantir formatação correta dos indicadores
+        const processedStates = {};
+        
+        Object.keys(states).forEach(countryName => {
+          const countryData = states[countryName];
+          
+          if (countryData.economy) {
+            processedStates[countryName] = {
+              ...countryData,
+              economy: {
+                ...countryData.economy,
+                // CORRIGIDO: Garantir que indicadores estejam em formato correto
+                inflation: countryData.economy.inflation || 0,
+                unemployment: countryData.economy.unemployment || 0,
+                popularity: countryData.economy.popularity || 50,
+                creditRating: countryData.economy.creditRating || 'A'
+              }
+            };
+          } else {
+            processedStates[countryName] = countryData;
+          }
+        });
+        
+        // Broadcast to all subscribers
+        io.to(`countryStates:${roomName}`).emit('countryStatesUpdated', {
+          roomName,
+          states: processedStates,
+          timestamp
+        });
+      }
+      
+      // ✅ Log menos frequente
+      broadcastCounter++;
+      if (broadcastCounter % 30 === 0) { // A cada 60 segundos (30 broadcasts)
+        console.log(`[BROADCAST] Room ${roomName}: 30 updates sent to clients`);
+      }
+    }, DEFAULT_BROADCAST_INTERVAL); // Manter 2 segundos
+    
+    // Store the interval ID
+    roomIntervals.set(roomName, intervalId);
+  }
 
 /**
  * Stop broadcasting country state updates for a room

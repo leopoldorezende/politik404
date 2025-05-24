@@ -663,10 +663,8 @@ class CountryEconomyCalculator {
       }
     }
     
-    // Only perform advanced calculations every few cycles to avoid excessive computation
-    if (this.updateCounter % 3 === 0) {
-      this.performAdvancedEconomicCalculations(economy, countryName);
-    }
+    // CORRIGIDO: Sempre executar cálculos avançados (removida condição % 3)
+    this.performAdvancedEconomicCalculations(economy, countryName);
     
     // Apply basic growth and changes
     this.updateGDP(economy, countryName);
@@ -729,12 +727,12 @@ class CountryEconomyCalculator {
       economyState.quarterlyGrowth = economy.quarterlyGrowth;
     }
 
-    // Calculate inflation
+    // CORRIGIDO: Calculate inflation sempre e aplicar ao economy
     const inflationResult = this.calculateInflation(economyState);
     economy.inflation = inflationResult.newInflation;
     economy.inflationHistory = inflationResult.newInflationHistory;
 
-    // Calculate unemployment
+    // CORRIGIDO: Calculate unemployment sempre e aplicar ao economy
     economy.unemployment = this.calculateUnemployment({
       ...economyState,
       inflation: economy.inflation,
@@ -748,7 +746,7 @@ class CountryEconomyCalculator {
       economy.unemploymentHistory.shift();
     }
 
-    // Calculate popularity
+    // CORRIGIDO: Calculate popularity sempre e aplicar ao economy
     const popularityResult = this.calculatePopularity({
       ...economyState,
       inflation: economy.inflation,
@@ -759,7 +757,7 @@ class CountryEconomyCalculator {
     economy.popularity = popularityResult.newPopularity;
     economy.popularityHistory = popularityResult.newPopularityHistory;
 
-    // Update credit rating
+    // CORRIGIDO: Update credit rating sempre e aplicar ao economy
     economy.creditRating = this.updateCreditRating({
       ...economyState,
       inflation: economy.inflation,
@@ -776,10 +774,8 @@ class CountryEconomyCalculator {
       economy.gdpHistory.shift();
     }
 
-    // Log advanced calculations occasionally
-    if (this.updateCounter % 30 === 0) {
-      console.log(`[ECONOMY ADVANCED] ${countryName}: Inflation ${(economy.inflation * 100).toFixed(1)}%, Unemployment ${economy.unemployment.toFixed(1)}%, Popularity ${economy.popularity.toFixed(1)}%, Rating ${economy.creditRating}`);
-    }
+    // CORRIGIDO: Log sempre que calcular para debug
+    console.log(`[ECONOMY ADVANCED] ${countryName}: Inflation ${(economy.inflation * 100).toFixed(1)}%, Unemployment ${economy.unemployment.toFixed(1)}%, Popularity ${economy.popularity.toFixed(1)}%, Rating ${economy.creditRating}`);
   }
 
   /**

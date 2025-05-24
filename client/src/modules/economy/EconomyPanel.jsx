@@ -340,8 +340,8 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     gdp: economicIndicators.gdp || 100,
     treasury: economicIndicators.treasury || 10,
     publicDebt: economicIndicators.publicDebt || 0,
-    inflation: economicIndicators.inflation || 0,
-    unemployment: economicIndicators.unemployment || 0,
+    inflation: economicIndicators.inflation || 0, 
+    unemployment: economicIndicators.unemployment || 0, 
     popularity: economicIndicators.popularity || 50,
     creditRating: economicIndicators.creditRating || 'A',
     interestRate: economicIndicators.interestRate || 8.0,
@@ -544,8 +544,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
         )}
       </div>
       
-      {/* Debug info em desenvolvimento (CORRIGIDA) */}
-      {/* {process.env.NODE_ENV === 'development' && lastUpdated && (
+      {process.env.NODE_ENV === 'development' && lastUpdated && (
         <div style={{ 
           fontSize: '10px', 
           color: '#666', 
@@ -557,12 +556,13 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
           <div>✅ Dados sincronizados com countryStateManager</div>
           <div>💰 PIB: {formatters.currency(safeIndicators.gdp)} | Tesouro: {formatters.currency(safeIndicators.treasury)}</div>
           <div>📊 Inflação: {formatters.percent(safeIndicators.inflation)} | Desemprego: {formatters.percent(safeIndicators.unemployment)} | Rating: {safeIndicators.creditRating}</div>
+          <div>👥 Popularidade: {formatters.percent(safeIndicators.popularity)}</div>
           <div>📄 Dívidas: {debtSummary?.numberOfContracts || 0} contratos</div>
           <div>🔧 Parâmetros: Juros {formatters.percent(safeIndicators.interestRate)} | Impostos {formatters.percent(safeIndicators.taxBurden)} | Serviços {formatters.percent(safeIndicators.publicServices)}</div>
           <div>🕐 Última atualização: {new Date(lastUpdated).toLocaleTimeString()}</div>
           <div>🔄 Pending: {pendingUpdates.size > 0 ? Array.from(pendingUpdates).join(', ') : 'Nenhum'}</div>
         </div>
-      )} */}
+      )}
     </div>
   );
 };

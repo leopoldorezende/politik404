@@ -374,6 +374,16 @@ export const selectCountryEconomicIndicators = (state, roomName, countryName) =>
   const economy = selectCountryEconomy(state, roomName, countryName);
   if (!economy) return null;
   
+  // CORRIGIDO: Tratar inflação - se vier como decimal (0.018), converter para porcentagem (1.8)
+  const inflationValue = getNumericValue(economy.inflation) || 0;
+  const formattedInflation = inflationValue < 1 ? inflationValue * 100 : inflationValue;
+  
+  // CORRIGIDO: Tratar desemprego - garantir que está em formato correto
+  const unemploymentValue = getNumericValue(economy.unemployment) || 0;
+  
+  // CORRIGIDO: Tratar popularidade - garantir que está em formato correto
+  const popularityValue = getNumericValue(economy.popularity) || 50;
+  
   // Calcular crescimento do PIB se histórico estiver disponível
   let gdpGrowth = 0;
   if (economy.gdpHistory && economy.gdpHistory.length >= 2) {
@@ -392,10 +402,10 @@ export const selectCountryEconomicIndicators = (state, roomName, countryName) =>
     treasury: getNumericValue(economy.treasury),
     publicDebt: getNumericValue(economy.publicDebt) || 0,
     
-    // Indicadores avançados calculados pelo servidor
-    inflation: (getNumericValue(economy.inflation) || 0) * 100, // Converter para porcentagem
-    unemployment: getNumericValue(economy.unemployment) || 0,
-    popularity: getNumericValue(economy.popularity) || 50,
+    // CORRIGIDO: Indicadores avançados calculados pelo servidor (formatação correta)
+    inflation: formattedInflation, // Garantir que está em porcentagem
+    unemployment: unemploymentValue, // Já deve estar em porcentagem
+    popularity: popularityValue, // Já deve estar em porcentagem
     creditRating: economy.creditRating || 'A',
     
     // Parâmetros econômicos

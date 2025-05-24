@@ -337,11 +337,42 @@ export const setupSocketEvents = (socket, socketApi) => {
     const { roomName, states, timestamp } = data;
     
     if (roomName && states) {
+      // CORRIGIDO: Processar cada país para garantir formatação correta dos indicadores
+      const processedStates = {};
+      
+      Object.keys(states).forEach(countryName => {
+        const countryData = states[countryName];
+        
+        if (countryData.economy) {
+          processedStates[countryName] = {
+            ...countryData,
+            economy: {
+              ...countryData.economy,
+              // CORRIGIDO: Converter inflação de decimal para porcentagem se necessário
+              inflation: typeof countryData.economy.inflation === 'number' && countryData.economy.inflation < 1 
+                ? countryData.economy.inflation * 100 
+                : countryData.economy.inflation || 0,
+              // CORRIGIDO: Garantir que todos os indicadores estejam presentes
+              unemployment: countryData.economy.unemployment || 0,
+              popularity: countryData.economy.popularity || 50,
+              creditRating: countryData.economy.creditRating || 'A'
+            }
+          };
+        } else {
+          processedStates[countryName] = countryData;
+        }
+      });
+      
       store.dispatch(updateCountryStates({
         roomName,
-        states,
+        states: processedStates,
         timestamp: timestamp || Date.now()
       }));
+      
+      // Log apenas ocasionalmente para evitar spam
+      if (Date.now() % 10000 < 2000) { // A cada ~10 segundos
+        console.log(`[ECONOMY] Estados atualizados para sala ${roomName}: ${Object.keys(processedStates).length} países`);
+      }
     }
   });
 
