@@ -902,6 +902,22 @@ class CountryEconomyCalculator {
       const commoditiesVariation = (Math.random() * 0.6) - 0.3;
       const manufacturesVariation = (Math.random() * 0.6) - 0.3;
       
+      // CORRIGIDO: Verificar se as propriedades existem antes de acessar percentValue
+      if (!economy.commoditiesNeeds) {
+        economy.commoditiesNeeds = { value: gdp * 0.3, percentValue: 30, unit: 'bi USD' };
+      }
+      if (!economy.manufacturesNeeds) {
+        economy.manufacturesNeeds = { value: gdp * 0.45, percentValue: 45, unit: 'bi USD' };
+      }
+      
+      // Garantir que percentValue existe
+      if (economy.commoditiesNeeds.percentValue === undefined) {
+        economy.commoditiesNeeds.percentValue = 30;
+      }
+      if (economy.manufacturesNeeds.percentValue === undefined) {
+        economy.manufacturesNeeds.percentValue = 45;
+      }
+      
       economy.commoditiesNeeds.percentValue = Math.max(15, Math.min(45, 
         economy.commoditiesNeeds.percentValue + commoditiesVariation
       ));
@@ -909,6 +925,22 @@ class CountryEconomyCalculator {
       economy.manufacturesNeeds.percentValue = Math.max(25, Math.min(65, 
         economy.manufacturesNeeds.percentValue + manufacturesVariation
       ));
+    }
+    
+    // CORRIGIDO: Garantir que as estruturas existem antes de calcular valores absolutos
+    if (!economy.commoditiesNeeds) {
+      economy.commoditiesNeeds = { value: 0, percentValue: 30, unit: 'bi USD' };
+    }
+    if (!economy.manufacturesNeeds) {
+      economy.manufacturesNeeds = { value: 0, percentValue: 45, unit: 'bi USD' };
+    }
+    
+    // Garantir que percentValue existe
+    if (economy.commoditiesNeeds.percentValue === undefined) {
+      economy.commoditiesNeeds.percentValue = 30;
+    }
+    if (economy.manufacturesNeeds.percentValue === undefined) {
+      economy.manufacturesNeeds.percentValue = 45;
     }
     
     // Recalculate absolute values
@@ -922,6 +954,22 @@ class CountryEconomyCalculator {
    */
   updateDomesticNeedsWithVariation(economy) {
     const gdp = this.getNumericValue(economy.gdp);
+    
+    // CORRIGIDO: Garantir que as estruturas existem
+    if (!economy.commoditiesNeeds) {
+      economy.commoditiesNeeds = { value: gdp * 0.3, percentValue: 30, unit: 'bi USD' };
+    }
+    if (!economy.manufacturesNeeds) {
+      economy.manufacturesNeeds = { value: gdp * 0.45, percentValue: 45, unit: 'bi USD' };
+    }
+    
+    // Garantir que percentValue existe
+    if (economy.commoditiesNeeds.percentValue === undefined) {
+      economy.commoditiesNeeds.percentValue = 30;
+    }
+    if (economy.manufacturesNeeds.percentValue === undefined) {
+      economy.manufacturesNeeds.percentValue = 45;
+    }
     
     // Enhanced needs variation based on economic conditions
     let commoditiesVariation = (Math.random() * 0.4) - 0.2;
@@ -940,15 +988,12 @@ class CountryEconomyCalculator {
       manufacturesVariation -= 0.05; // Luxury goods
     }
     
-    const currentCommoditiesPercent = economy.commoditiesNeeds?.percentValue || 30;
-    const currentManufacturesPercent = economy.manufacturesNeeds?.percentValue || 45;
-
     const newCommoditiesNeedPercent = Math.max(10, Math.min(50, 
-      currentCommoditiesPercent + commoditiesVariation
+      economy.commoditiesNeeds.percentValue + commoditiesVariation
     ));
-
+    
     const newManufacturesNeedPercent = Math.max(20, Math.min(70, 
-      currentManufacturesPercent + manufacturesVariation
+      economy.manufacturesNeeds.percentValue + manufacturesVariation
     ));
     
     economy.commoditiesNeeds.percentValue = newCommoditiesNeedPercent;
