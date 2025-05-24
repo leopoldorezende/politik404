@@ -148,4 +148,4 @@
   │       ├── firebaseAdmin.js
   │       ├── gameStateUtils.js  # Utilitários de estado para o jogo
   │       └── redisClient.js  # Infraestrutura do Redis
-  └── v8.md
+  └── v9.md
