@@ -786,7 +786,11 @@ class CountryEconomyCalculator {
     
     // Log updates for debugging
     this.logUpdate(countryName, economy);
-    
+
+    // Log dados econômicos básicos em tempo real (mesmo sem cálculos avançados)
+    if (this.updateCounter % 10 === 0) {
+      this.logRealTimeEconomicData(countryName, economy);
+    }
     return countryState;
   }
 
@@ -872,10 +876,51 @@ class CountryEconomyCalculator {
       economy.gdpHistory.shift();
     }
 
-    // Log advanced calculations occasionally
-    if (this.updateCounter % 30 === 0) {
-      console.log(`[ECONOMY ADVANCED] ${countryName}: Inflation ${(economy.inflation * 100).toFixed(1)}%, Unemployment ${economy.unemployment.toFixed(1)}%, Popularity ${economy.popularity.toFixed(1)}%, Rating ${economy.creditRating}`);
+   // Log dados econômicos em tempo real
+    this.logRealTimeEconomicData(countryName, economy);
+  }
+
+  /**
+   * Log consolidado dos dados econômicos em tempo real
+   * @param {string} countryName - Nome do país
+   * @param {Object} economy - Dados econômicos
+   */
+  logRealTimeEconomicData(countryName, economy) {
+    // Só fazer log para países com jogadores ativos (evitar spam)
+    const gameState = global.gameState;
+    if (!gameState || !gameState.rooms) return;
+    
+    // Verificar se o país tem jogadores online
+    let hasOnlinePlayer = false;
+    for (const [roomName, room] of gameState.rooms.entries()) {
+      if (room && room.players) {
+        const playerInCountry = room.players.find(p => 
+          typeof p === 'object' && p.country === countryName && p.isOnline
+        );
+        if (playerInCountry) {
+          hasOnlinePlayer = true;
+          break;
+        }
+      }
     }
+    
+    // Só fazer log se houver jogador online no país
+    if (!hasOnlinePlayer) return;
+    
+    // Log apenas a cada 6 ciclos para evitar spam (a cada ~12 segundos)
+    if (this.updateCounter % 6 !== 0) return;
+    
+    // Formatar dados econômicos
+    const gdp = getNumericValue(economy.gdp) || 0;
+    const treasury = getNumericValue(economy.treasury) || 0;
+    const publicDebt = economy.publicDebt || 0;
+    const inflation = economy.inflation ? (economy.inflation * 100).toFixed(1) + '%' : 'N/A';
+    const unemployment = economy.unemployment ? economy.unemployment.toFixed(1) + '%' : 'N/A';
+    const popularity = economy.popularity ? economy.popularity.toFixed(1) + '%' : 'N/A';
+    const creditRating = economy.creditRating || 'N/A';
+    
+    // Log consolidado em uma linha
+    console.log(`[ECONOMIA REAL-TIME] ${countryName}: PIB=${gdp.toFixed(1)}bi | Tesouro=${treasury.toFixed(1)}bi | Dívida=${publicDebt.toFixed(1)}bi | Inflação=${inflation} | Desemprego=${unemployment} | Popularidade=${popularity} | Rating=${creditRating}`);
   }
 
   /**

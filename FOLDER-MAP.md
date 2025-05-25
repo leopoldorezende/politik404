@@ -155,4 +155,4 @@
   │           ├── economicUtils.js
   │           ├── gameStateUtils.js  # Utilitários de estado para o jogo
   │           └── intervalManager.js
-  └── v18.md
+  └── v19.md

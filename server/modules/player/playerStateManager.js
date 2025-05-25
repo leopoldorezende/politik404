@@ -1,12 +1,11 @@
 /**
- * Gerenciamento do estado dos jogadores
- * SIMPLIFICADO - Sistema básico para estados essenciais
+ * Gerenciamento básico do estado dos jogadores
  */
 
 import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
 
 /**
- * Configura os handlers relacionados ao gerenciamento de estado dos jogadores
+ * Configura handlers básicos de estado dos jogadores
  * @param {Object} io - Instância do Socket.io
  * @param {Object} socket - Socket do cliente
  * @param {Object} gameState - Estado global do jogo
@@ -22,24 +21,43 @@ function setupPlayerStateManager(io, socket, gameState) {
       return;
     }
     
-    // Encontra a sala atual
     const roomName = getCurrentRoom(socket, gameState);
     if (!roomName) {
       socket.emit('error', 'Não está em uma sala');
       return;
     }
     
-    // Chave para acessar o estado do jogador
     const stateKey = `${username}:${roomName}`;
-    
-    // Obtém o estado atual
     const playerState = gameState.playerStates.get(stateKey);
     
     if (playerState) {
-      // Envia o estado para o cliente
       socket.emit('stateRestored', playerState);
     } else {
       socket.emit('error', 'Estado não encontrado');
+    }
+  });
+
+  // Evento de desconexão
+  socket.on('disconnect', () => {
+    const username = socket.username;
+    if (username) {
+      gameState.onlinePlayers.delete(username);
+      io.emit('playerOnlineStatus', { username, isOnline: false });
+      
+      // Atualizar status nas salas
+      for (const [roomName, room] of gameState.rooms.entries()) {
+        if (room.players) {
+          const playerIndex = room.players.findIndex(player => {
+            return typeof player === 'object' && player.username === username;
+          });
+          
+          if (playerIndex !== -1 && typeof room.players[playerIndex] === 'object') {
+            room.players[playerIndex].isOnline = false;
+            io.to(roomName).emit('playerOnlineStatus', { username, isOnline: false });
+            io.to(roomName).emit('playersList', room.players);
+          }
+        }
+      }
     }
   });
 }

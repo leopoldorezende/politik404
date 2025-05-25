@@ -1,8 +1,6 @@
 /**
- * countryStateManager.js (Corrigido)
- * Centralizador único de todos os cálculos econômicos
- * Fonte única de verdade para estados de países
- * CORRIGIDO: Garantir que parâmetros econômicos afetem todos os indicadores
+ * countryStateManager.js (Simplificado)
+ * Manager centralizado para todos os cálculos econômicos
  */
 
 import CountryStateCore from './countryStateCore.js';
@@ -10,9 +8,6 @@ import CountryEconomyCalculator from './countryEconomyCalculator.js';
 import CountryStateUpdater from './countryStateUpdater.js';
 import { getNumericValue } from '../utils/economicUtils.js';
 
-/**
- * Manager Centralizado - Única Fonte de Verdade para Economia
- */
 class CountryStateManager {
   constructor() {
     this.core = new CountryStateCore();
@@ -21,16 +16,13 @@ class CountryStateManager {
     this.initialized = false;
     
     // Cache para parâmetros econômicos aplicados
-    this.appliedParameters = new Map(); // countryKey -> {interestRate, taxBurden, publicServices}
+    this.appliedParameters = new Map();
     
     // Contratos de dívida por país
-    this.debtContracts = new Map(); // countryKey -> [contracts]
+    this.debtContracts = new Map();
     this.nextDebtId = 1;
   }
 
-  /**
-   * Initialize the manager and all its modules
-   */
   async initialize() {
     if (this.initialized) return;
     
@@ -38,7 +30,7 @@ class CountryStateManager {
       await this.core.initialize();
       this.updater.startPeriodicUpdates();
       this.initialized = true;
-      console.log('CountryStateManager (corrigido) initialized successfully');
+      console.log('CountryStateManager initialized');
     } catch (error) {
       console.error('Error initializing CountryStateManager:', error);
       throw error;
@@ -46,7 +38,7 @@ class CountryStateManager {
   }
 
   // ======================================================================
-  // CORE STATE MANAGEMENT (delegated to CountryStateCore)
+  // CORE STATE MANAGEMENT
   // ======================================================================
 
   getRoomCountryStates(roomName) {
@@ -61,16 +53,11 @@ class CountryStateManager {
     this.core.setCountryState(roomName, countryName, state);
   }
 
-  /**
-   * CENTRALIZADO: Atualiza estado do país E recalcula economia
-   * Esta é a função principal que centraliza todos os cálculos
-   */
   updateCountryState(roomName, countryName, category, updates) {
     const updatedState = this.core.updateCountryState(roomName, countryName, category, updates);
     
     if (!updatedState) return null;
     
-    // Se atualizou economia OU parâmetros, recalcula tudo
     if (category === 'economy' || this.isEconomicParameter(updates)) {
       this.performCompleteEconomicCalculation(roomName, countryName);
     }
@@ -78,112 +65,82 @@ class CountryStateManager {
     return updatedState;
   }
 
-  /**
-   * CORRIGIDO: Centraliza TODOS os cálculos econômicos em um só lugar
-   * Esta função substitui a lógica espalhada e GARANTE que parâmetros afetem indicadores
-   */
+  // ======================================================================
+  // CÁLCULOS ECONÔMICOS CENTRALIZADOS
+  // ======================================================================
+
   performCompleteEconomicCalculation(roomName, countryName) {
     const countryState = this.getCountryState(roomName, countryName);
     if (!countryState) return null;
 
-    // 1. Obter dados estáticos do JSON
     const gameState = global.gameState;
     const staticData = gameState?.countriesData?.[countryName] || { name: countryName };
     
-    // 2. Obter acordos comerciais
     const room = gameState?.rooms?.get(roomName);
     const tradeAgreements = room?.tradeAgreements || [];
     
-    // 3. CORRIGIDO: Obter parâmetros aplicados e garantir que sejam usados
+    // Obter parâmetros aplicados
     const countryKey = `${countryName}:${roomName}`;
     const appliedParams = this.appliedParameters.get(countryKey) || this.getDefaultParameters(staticData);
     
-    // 4. IMPORTANTE: Garantir que o estado tenha os parâmetros aplicados
+    // Garantir que o estado tenha os parâmetros aplicados
     if (!countryState.economy) {
       countryState.economy = {};
     }
     
-    // CORRIGIDO: Forçar atualização dos parâmetros no estado antes dos cálculos
     countryState.economy.interestRate = appliedParams.interestRate;
     countryState.economy.taxBurden = appliedParams.taxBurden;
     countryState.economy.publicServices = appliedParams.publicServices;
     
-    console.log(`[ECONOMY] Aplicando parâmetros para ${countryName}:`, {
-      interestRate: appliedParams.interestRate,
-      taxBurden: appliedParams.taxBurden,
-      publicServices: appliedParams.publicServices
-    });
-    
-    // 5. Obter contratos de dívida
+    // Obter contratos de dívida
     const debtContracts = this.debtContracts.get(countryKey) || [];
     
-    // 6. CÁLCULO COMPLETO usando o calculador COM parâmetros aplicados
+    // Cálculo completo
     const updatedCountryState = this.economyCalculator.performEconomicUpdate(
       countryState,
-      { ...staticData, ...appliedParams }, // Mescla dados estáticos com parâmetros aplicados
+      { ...staticData, ...appliedParams },
       tradeAgreements
     );
     
-    // 7. CORRIGIDO: Garantir que os parâmetros permaneçam no estado após cálculos
+    // Garantir que os parâmetros permaneçam após cálculos
     updatedCountryState.economy.interestRate = appliedParams.interestRate;
     updatedCountryState.economy.taxBurden = appliedParams.taxBurden;
     updatedCountryState.economy.publicServices = appliedParams.publicServices;
     
-    // 8. Adicionar informações de dívida
+    // Adicionar informações de dívida
     updatedCountryState.economy.debtContracts = debtContracts;
     updatedCountryState.economy.numberOfDebtContracts = debtContracts.length;
     
-    // 9. Atualizar o estado
     this.setCountryState(roomName, countryName, updatedCountryState);
-    
-    console.log(`[ECONOMY] Cálculo completo para ${countryName} - Parâmetros aplicados:`, {
-      interestRate: updatedCountryState.economy.interestRate,
-      taxBurden: updatedCountryState.economy.taxBurden,
-      publicServices: updatedCountryState.economy.publicServices,
-      inflation: updatedCountryState.economy.inflation ? (updatedCountryState.economy.inflation * 100).toFixed(1) + '%' : 'N/A',
-      unemployment: updatedCountryState.economy.unemployment ? updatedCountryState.economy.unemployment.toFixed(1) + '%' : 'N/A',
-      popularity: updatedCountryState.economy.popularity ? updatedCountryState.economy.popularity.toFixed(1) + '%' : 'N/A'
-    });
     
     return updatedCountryState;
   }
 
-  /**
-   * CORRIGIDO: Atualiza parâmetros econômicos (juros, impostos, investimento)
-   * GARANTE que os novos parâmetros sejam usados nos cálculos
-   */
   updateEconomicParameter(roomName, countryName, parameter, value) {
     const countryKey = `${countryName}:${roomName}`;
     
-    // ✅ CORREÇÃO: Salvar EXATAMENTE o valor enviado pelo cliente
     const currentParams = this.appliedParameters.get(countryKey) || this.getDefaultParameters();
-    currentParams[parameter] = value; // Usar valor EXATO do cliente
+    currentParams[parameter] = value;
     this.appliedParameters.set(countryKey, currentParams);
     
-    console.log(`[ECONOMY] ${countryName}: ${parameter} definido para ${value} (valor EXATO do cliente)`);
-    
-    // ✅ CORREÇÃO: Garantir que o estado tenha os valores corretos ANTES dos cálculos
     const countryState = this.getCountryState(roomName, countryName);
     if (countryState && countryState.economy) {
-      countryState.economy[parameter] = value; // Forçar valor exato
+      countryState.economy[parameter] = value;
     }
     
-    // DEPOIS recalcular economia com os novos parâmetros
     const result = this.performCompleteEconomicCalculation(roomName, countryName);
     
-    // ✅ CORREÇÃO: Garantir que o parâmetro permaneça com valor original após cálculos
     if (result && result.economy) {
-      result.economy[parameter] = value; // Re-forçar valor original
+      result.economy[parameter] = value;
     }
-    
-    console.log(`[ECONOMY] CONFIRMAÇÃO ${countryName} - ${parameter} mantido em ${value}`);
     
     return result;
   }
 
-  /**
-   * NOVO: Emite títulos de dívida pública
-   */
+  // ======================================================================
+  // GESTÃO DE DÍVIDA
+  // ======================================================================
+
   issueDebtBonds(roomName, countryName, bondAmount) {
     const countryState = this.getCountryState(roomName, countryName);
     if (!countryState) {
@@ -194,7 +151,6 @@ class CountryStateManager {
     const currentDebt = getNumericValue(countryState.economy.publicDebt) || 0;
     const debtToGdpRatio = currentDebt / currentGdp;
     
-    // Validações
     if (bondAmount <= 0 || bondAmount > 1000) {
       return { success: false, message: 'Valor deve estar entre 0 e 1000 bilhões' };
     }
@@ -204,18 +160,17 @@ class CountryStateManager {
       return { success: false, message: 'Emissão faria a dívida ultrapassar 120% do PIB' };
     }
 
-    // Calcular taxa de juros baseada no rating e situação
+    // Calcular taxa de juros
     const countryKey = `${countryName}:${roomName}`;
     const appliedParams = this.appliedParameters.get(countryKey) || this.getDefaultParameters();
     const baseRate = appliedParams.interestRate || 8.0;
     
-    // Premium de risco baseado na dívida atual
     let riskPremium = 0;
     if (debtToGdpRatio > 0.6) {
       riskPremium = (debtToGdpRatio - 0.6) * 20;
     }
     
-    const effectiveRate = baseRate + riskPremium + (Math.random() * 2); // Variação aleatória
+    const effectiveRate = baseRate + riskPremium + (Math.random() * 2);
     
     // Criar contrato de dívida
     const newContract = {
@@ -223,7 +178,7 @@ class CountryStateManager {
       originalValue: bondAmount,
       remainingValue: bondAmount,
       interestRate: effectiveRate,
-      monthlyPayment: this.calculateMonthlyPayment(bondAmount, effectiveRate, 120), // 10 anos
+      monthlyPayment: this.calculateMonthlyPayment(bondAmount, effectiveRate, 120),
       remainingInstallments: 120,
       issueDate: new Date(),
       roomName,
@@ -235,22 +190,19 @@ class CountryStateManager {
     existingContracts.push(newContract);
     this.debtContracts.set(countryKey, existingContracts);
     
-    // Atualizar tesouro e dívida pública no estado
+    // Atualizar tesouro e dívida pública
     const currentTreasury = getNumericValue(countryState.economy.treasury);
     const newTreasury = currentTreasury + bondAmount;
     const newPublicDebt = currentDebt + bondAmount;
     
-    // Atualizar estado da economia
     this.updateCountryState(roomName, countryName, 'economy', {
       treasury: { value: newTreasury, unit: 'bi USD' },
       publicDebt: { value: newPublicDebt, unit: 'bi USD' }
     });
     
-    console.log(`[ECONOMY] ${countryName}: Emitiu ${bondAmount} bi em títulos (taxa: ${effectiveRate.toFixed(2)}%)`);
-    
     return {
       success: true,
-      message: `Títulos emitidos com sucesso. Taxa efetiva: ${effectiveRate.toFixed(2)}%`,
+      message: `Títulos emitidos com taxa: ${effectiveRate.toFixed(2)}%`,
       bondAmount,
       newTreasury,
       newPublicDebt,
@@ -259,9 +211,6 @@ class CountryStateManager {
     };
   }
 
-  /**
-   * NOVO: Obtém resumo completo de dívidas de um país
-   */
   getDebtSummary(roomName, countryName) {
     const countryKey = `${countryName}:${roomName}`;
     const contracts = this.debtContracts.get(countryKey) || [];
@@ -291,6 +240,10 @@ class CountryStateManager {
     };
   }
 
+  // ======================================================================
+  // ROOM MANAGEMENT
+  // ======================================================================
+
   initializeRoom(roomName, countries) {
     this.core.initializeRoom(roomName, countries);
   }
@@ -313,18 +266,12 @@ class CountryStateManager {
   }
 
   // ======================================================================
-  // TRADE AGREEMENTS (simplificado)
+  // TRADE AGREEMENTS
   // ======================================================================
-
-  updateCountryStateForTrade(roomName, countryName, tradeAgreements) {
-    // Apenas recalcula a economia considerando os acordos
-    return this.performCompleteEconomicCalculation(roomName, countryName);
-  }
 
   updateCountriesForTradeAgreement(roomName, agreement) {
     const { originCountry, country: targetCountry } = agreement;
     
-    // Atualizar ambos os países
     this.performCompleteEconomicCalculation(roomName, originCountry);
     this.performCompleteEconomicCalculation(roomName, targetCountry);
   }
@@ -334,7 +281,7 @@ class CountryStateManager {
   }
 
   // ======================================================================
-  // PERIODIC UPDATES (delegated)
+  // PERIODIC UPDATES
   // ======================================================================
 
   startPeriodicUpdates(updateIntervalMs, saveIntervalMs) {
@@ -354,7 +301,7 @@ class CountryStateManager {
   }
 
   // ======================================================================
-  // PERSISTENCE (delegated)
+  // PERSISTENCE
   // ======================================================================
 
   async saveStatesToRedis() {
@@ -393,13 +340,6 @@ class CountryStateManager {
     };
   }
 
-  // ======================================================================
-  // HELPER METHODS
-  // ======================================================================
-
-  /**
-   * Obtém parâmetros econômicos padrão de um país
-   */
   getDefaultParameters(staticData = {}) {
     return {
       interestRate: getNumericValue(staticData.interestRate) || 8.0,
@@ -408,9 +348,6 @@ class CountryStateManager {
     };
   }
 
-  /**
-   * Verifica se um update contém parâmetros econômicos
-   */
   isEconomicParameter(updates) {
     return updates && (
       updates.interestRate !== undefined ||
@@ -419,9 +356,6 @@ class CountryStateManager {
     );
   }
 
-  /**
-   * Calcula pagamento mensal de um empréstimo
-   */
   calculateMonthlyPayment(principal, annualRate, months) {
     const monthlyRate = annualRate / 100 / 12;
     if (monthlyRate === 0) return principal / months;
@@ -452,7 +386,6 @@ class CountryStateManager {
     this.updater.cleanup();
     this.core.cleanup();
     
-    // Limpar caches locais
     this.appliedParameters.clear();
     this.debtContracts.clear();
     
