@@ -4,20 +4,22 @@
  * Centralizes all configurable parameters for easy maintenance
  */
 
+import { SYNC_CONFIG } from '../config/syncConfig.js';
+
 // ======================================================================
 // TIMING CONFIGURATIONS
 // ======================================================================
 
 export const TIMING_CONFIG = {
-  // Update intervals (in milliseconds)
-  ECONOMIC_UPDATE_INTERVAL: 2000,        // 2 seconds between economic updates
-  REDIS_SAVE_INTERVAL: 60000,           // 1 minute between Redis saves
+  // Update intervals 
+  ECONOMIC_UPDATE_INTERVAL: SYNC_CONFIG.MASTER_CYCLE,    // 2000ms
+  REDIS_SAVE_INTERVAL: SYNC_CONFIG.USER_CLEANUP_INTERVAL, // 60000ms (a cada 30 ciclos)
   
-  // Logging intervals
+  // Logging intervals 
   LOG_INTERVAL: 60000,                  // 1 minute between detailed logs
   TRADE_LOG_INTERVAL: 60000,            // 1 minute between trade logs
   
-  // Update cycle frequencies
+  // Update cycle frequencies 
   SECTORAL_UPDATE_FREQUENCY: 6,         // Every 6 cycles (12 seconds)
   NEEDS_UPDATE_FREQUENCY: 3,            // Every 3 cycles (6 seconds)
   STATISTICS_LOG_FREQUENCY: 60,         // Every 60 cycles (2 minutes)

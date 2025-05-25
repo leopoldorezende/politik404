@@ -12,7 +12,9 @@ import DebtSummaryPopup from '../economy/DebtSummaryPopup';
 import MessageService from '../../ui/toast/messageService';
 import './GamePage.css';
 
+
 const GamePage = () => {
+  const CLIENT_UPDATE_INTERVAL = 1000;
   const dispatch = useDispatch();
   const myCountry = useSelector(state => state.game.myCountry);
   const currentRoom = useSelector(state => state.rooms.currentRoom);
@@ -39,7 +41,7 @@ const GamePage = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
-    }, 1000);
+    }, CLIENT_UPDATE_INTERVAL);
     
     return () => clearInterval(timer);
   }, []);

@@ -10,3 +10,5 @@ server/node_modules/
 # Arquivos de ambiente
 .env
 .env.*
+.DS_Store
+deploy.sh

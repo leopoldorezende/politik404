@@ -5,6 +5,7 @@
  */
 
 import CountryEconomyCalculator from './countryEconomyCalculator.js';
+import { SYNC_CONFIG } from '../config/syncConfig.js';
 
 /**
  * Country State Updater
@@ -28,7 +29,7 @@ class CountryStateUpdater {
    * @param {number} updateIntervalMs - Update interval in milliseconds (default: 2000)
    * @param {number} saveIntervalMs - Save interval in milliseconds (default: 60000)
    */
-  startPeriodicUpdates(updateIntervalMs = 2000, saveIntervalMs = 60000) {
+  startPeriodicUpdates(updateIntervalMs = SYNC_CONFIG.MASTER_CYCLE, saveIntervalMs = SYNC_CONFIG.USER_CLEANUP_INTERVAL) {
     // Stop existing intervals
     this.stopPeriodicUpdates();
     

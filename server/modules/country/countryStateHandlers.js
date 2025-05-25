@@ -3,6 +3,7 @@
  * Socket.io handlers for country state management
  */
 
+import { SYNC_CONFIG } from '../../shared/config/syncConfig.js';
 import countryStateManager from '../../shared/countryState/countryStateManager.js';
 
 // Maps for tracking client subscriptions and broadcasting intervals
@@ -10,7 +11,7 @@ const roomSubscriptions = new Map(); // roomName -> Set of socket IDs
 const roomIntervals = new Map(); // roomName -> interval ID
 
 // Default broadcast interval in milliseconds
-const DEFAULT_BROADCAST_INTERVAL = 2000; // 1 second for testing
+const DEFAULT_BROADCAST_INTERVAL = SYNC_CONFIG.MASTER_CYCLE;
 
 /**
  * Setup country state handlers for a socket

@@ -4,8 +4,7 @@
  * ECONOMIA DELEGADA para countryStateManager
  */
 
-// REMOVIDO: import desnecessário para economyUpdateService
-// Toda economia é gerenciada pelo countryStateManager
+import { SYNC_CONFIG } from '../../shared/config/syncConfig.js';
 
 /**
  * Setup periodic updates for trade-related economic calculations
@@ -33,7 +32,7 @@ function setupPeriodicTradeUpdates(io, gameState) {
         timestamp: Date.now()
       });
     }
-  }, 5000); // Run every 5 seconds
+  }, SYNC_CONFIG.TRADE_PROCESSING_INTERVAL);
   
   console.log('Periodic trade updates scheduled (every 5 seconds)');
 }

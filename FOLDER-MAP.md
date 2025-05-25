@@ -138,6 +138,8 @@
   │   │       └── countriesData.json
   │   ├── server.js  # Entry point do servidor
   │   └── shared
+  │       ├── config
+  │       │   └── syncConfig.js
   │       ├── countryState
   │       │   ├── countryEconomyCalculator.js
   │       │   ├── countryStateConfig.js
@@ -150,4 +152,4 @@
   │       └── utils
   │           ├── economicUtils.js
   │           └── gameStateUtils.js  # Utilitários de estado para o jogo
-  └── v16.md
+  └── v17.md
