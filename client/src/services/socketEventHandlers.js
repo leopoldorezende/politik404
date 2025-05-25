@@ -4,6 +4,8 @@ import { store } from '../store';
 import { setRooms, setCurrentRoom, leaveRoom } from '../modules/room/roomState';
 import { setMyCountry, setPlayers, setPlayerOnlineStatus, setOnlinePlayers } from '../modules/game/gameState';
 import { addMessage, setChatHistory } from '../modules/chat/chatState';
+import authMutex from './authMutex.js';
+import StorageService from './storageService.js';
 
 import {
   initializeCountryStates,
@@ -30,11 +32,9 @@ import {
 // Import do serviço de mensagens para mostrar toasts
 import MessageService from '../ui/toast/messageService';
 
-// Variáveis para controlar autenticação e evitar spam
-let lastAuthTime = 0;
+// Controle de autenticação centralizado no authMutex
 let isAuthenticated = false;
 let authenticationInProgress = false;
-const AUTH_COOLDOWN = 2000; // 2 segundos entre autenticações
 
 // Configurar todos os eventos do socket
 export const setupSocketEvents = (socket, socketApi) => {
@@ -70,30 +70,30 @@ export const setupSocketEvents = (socket, socketApi) => {
     setReconnectAttempts(0);
     setIsJoiningRoom(false);
     
-    // Reautenticar automaticamente se houver um usuário guardado
-    const username = sessionStorage.getItem('username');
-    if (username && !isAuthenticated && !authenticationInProgress) {
+    // Reautenticar automaticamente usando mutex
+    const username = StorageService.get(StorageService.KEYS.USERNAME);
+
+    if (username && !isAuthenticated) {
       console.log('Reautenticando usuário após conexão:', username);
       
-      const now = Date.now();
-      
-      // Verificar cooldown de autenticação
-      if (now - lastAuthTime >= AUTH_COOLDOWN) {
-        lastAuthTime = now;
-        authenticationInProgress = true;
-        
-        setTimeout(() => {
-          if (!isAuthenticated && authenticationInProgress) {
-            console.log('Enviando autenticação para:', username);
-            socket.emit('authenticate', username, { 
-              clientSessionId: sessionStorage.getItem('clientSessionId'),
-              reconnect: true
-            });
-          }
-        }, 500); // Aguardar meio segundo para estabilizar
-      } else {
-        console.log('Autenticação em cooldown, aguardando...');
-      }
+      authMutex.executeAuth(async () => {
+        if (!isAuthenticated) {
+          console.log('Enviando autenticação para:', username);
+          
+          // Wait a bit for connection to stabilize
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          socket.emit('authenticate', username, { 
+            clientSessionId: StorageService.get(StorageService.KEYS.CLIENT_SESSION_ID),
+            reconnect: true
+          });
+          
+          return true;
+        }
+        return false;
+      }).catch(error => {
+        console.error('Authentication error:', error.message);
+      });
     }
   });
   
@@ -166,7 +166,6 @@ export const setupSocketEvents = (socket, socketApi) => {
     
     // Reset de autenticação ao desconectar
     isAuthenticated = false;
-    authenticationInProgress = false;
     
     if (reason === 'io server disconnect' || reason === 'transport close') {
       setTimeout(() => {
@@ -185,9 +184,8 @@ export const setupSocketEvents = (socket, socketApi) => {
     
     // Marcar como autenticado para evitar spam
     isAuthenticated = true;
-    authenticationInProgress = false;
     
-    const pendingRoom = sessionStorage.getItem('pendingRoom');
+    const pendingRoom = StorageService.get(StorageService.KEYS.PENDING_ROOM);
     if (pendingRoom && !getIsJoiningRoom()) {
       setTimeout(() => {
         console.log('Retomando entrada na sala após autenticação:', pendingRoom);
@@ -205,7 +203,6 @@ export const setupSocketEvents = (socket, socketApi) => {
   socket.on('authenticationIgnored', (data) => {
     console.log('Autenticação ignorada pelo servidor:', data);
     isAuthenticated = true;
-    authenticationInProgress = false;
     
     // Ainda assim, solicitar salas se necessário
     setTimeout(() => {
@@ -221,7 +218,7 @@ export const setupSocketEvents = (socket, socketApi) => {
   socket.on('roomJoined', (room) => {
     console.log('Entrou na sala:', room);
     setIsJoiningRoom(false);
-    sessionStorage.removeItem('pendingRoom');
+    StorageService.remove(StorageService.KEYS.PENDING_ROOM);
     store.dispatch(setCurrentRoom(room));
   });
   
@@ -309,7 +306,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     console.log('Estado restaurado:', state);
     if (state && state.country) {
       store.dispatch(setMyCountry(state.country));
-      sessionStorage.setItem('myCountry', state.country);
+      StorageService.set(StorageService.KEYS.MY_COUNTRY, state.country);
     }
   });
   

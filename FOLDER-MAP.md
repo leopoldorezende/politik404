@@ -75,9 +75,11 @@
   │   │   │       ├── TradeProposalPopup.jsx
   │   │   │       └── tradeState.js  # Estado do comércio
   │   │   ├── services
+  │   │   │   ├── authMutex.js
   │   │   │   ├── socketClient.js
   │   │   │   ├── socketConnection.js
-  │   │   │   └── socketEventHandlers.js
+  │   │   │   ├── socketEventHandlers.js
+  │   │   │   └── storageService.js
   │   │   ├── store
   │   │   │   ├── index.js
   │   │   │   └── socketReduxMiddleware.js
@@ -151,5 +153,6 @@
   │       ├── redisClient.js  # Infraestrutura do Redis
   │       └── utils
   │           ├── economicUtils.js
-  │           └── gameStateUtils.js  # Utilitários de estado para o jogo
+  │           ├── gameStateUtils.js  # Utilitários de estado para o jogo
+  │           └── intervalManager.js
   └── v17.md

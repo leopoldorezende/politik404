@@ -4,7 +4,7 @@
  */
 
 export const SYNC_CONFIG = {
-  MASTER_CYCLE: 2000,
+  MASTER_CYCLE: 600,
   
   // Offsets dentro do ciclo
   get TRADE_CALCULATION() { return this.MASTER_CYCLE / 10; },    // 200ms

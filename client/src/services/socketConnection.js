@@ -10,12 +10,15 @@ let isJoiningRoom = false;
 let isConnecting = false; // Flag para evitar múltiplas conexões simultâneas
 
 // ID de sessão único para este cliente
+import StorageService from './storageService.js';
+
+// ID de sessão único para este cliente
 const getSessionId = () => {
-  if (!localStorage.getItem('clientSessionId')) {
+  if (!StorageService.exists(StorageService.KEYS.CLIENT_SESSION_ID)) {
     const sessionId = Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('clientSessionId', sessionId);
+    StorageService.set(StorageService.KEYS.CLIENT_SESSION_ID, sessionId);
   }
-  return localStorage.getItem('clientSessionId');
+  return StorageService.get(StorageService.KEYS.CLIENT_SESSION_ID);
 };
 
 // Inicializa a conexão do socket

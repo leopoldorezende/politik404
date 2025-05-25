@@ -97,6 +97,30 @@ class CountryStateCore {
       } else {
         console.log('[ECONOMY] No country states found in Redis');
       }
+      
+      // NOVO: Carregar dados adicionais se existirem
+      const extendedData = await redis.get('country_states_extended');
+      if (extendedData && global.countryStateManager) {
+        try {
+          const parsed = JSON.parse(extendedData);
+          
+          if (parsed.appliedParameters) {
+            global.countryStateManager.appliedParameters = new Map(Object.entries(parsed.appliedParameters));
+            console.log(`[ECONOMY] Loaded ${Object.keys(parsed.appliedParameters).length} applied parameters from Redis`);
+          }
+          
+          if (parsed.debtContracts) {
+            global.countryStateManager.debtContracts = new Map(Object.entries(parsed.debtContracts));
+            console.log(`[ECONOMY] Loaded ${Object.keys(parsed.debtContracts).length} debt contracts from Redis`);
+          }
+          
+          if (parsed.version) {
+            console.log(`[ECONOMY] Extended data version: ${parsed.version}`);
+          }
+        } catch (parseError) {
+          console.error('[ECONOMY] Error parsing extended data from Redis:', parseError);
+        }
+      }
     } catch (error) {
       console.error('[ECONOMY] Error loading country states from Redis:', error);
     }
@@ -109,6 +133,19 @@ class CountryStateCore {
     try {
       const serialized = Object.fromEntries(this.roomStates);
       await redis.set('country_states', JSON.stringify(serialized));
+      
+      // NOVO: Salvar dados adicionais do manager se disponível
+      if (global.countryStateManager) {
+        const additionalData = {
+          appliedParameters: Object.fromEntries(global.countryStateManager.appliedParameters || new Map()),
+          debtContracts: Object.fromEntries(global.countryStateManager.debtContracts || new Map()),
+          timestamp: Date.now(),
+          version: '1.0'
+        };
+        await redis.set('country_states_extended', JSON.stringify(additionalData));
+        console.log(`[ECONOMY] Saved extended data: ${Object.keys(additionalData.appliedParameters).length} parameters, ${Object.keys(additionalData.debtContracts).length} debt contracts`);
+      }
+      
       console.log(`[ECONOMY] Saved ${this.roomStates.size} room states to Redis`);
     } catch (error) {
       console.error('[ECONOMY] Error saving country states to Redis:', error);

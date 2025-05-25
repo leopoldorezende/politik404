@@ -5,6 +5,7 @@
  */
 
 import { SYNC_CONFIG } from '../../shared/config/syncConfig.js';
+import intervalManager from '../../shared/utils/intervalManager.js';
 
 /**
  * Setup periodic updates for trade-related economic calculations
@@ -12,29 +13,35 @@ import { SYNC_CONFIG } from '../../shared/config/syncConfig.js';
  * @param {Object} gameState - Global game state
  */
 function setupPeriodicTradeUpdates(io, gameState) {
-  // Check if updates are already running
-  if (gameState.tradeUpdateInterval) {
-    clearInterval(gameState.tradeUpdateInterval);
-  }
+  // Clear any existing trade update intervals
+  intervalManager.clearByType('tradeUpdate');
   
-  // Setup interval for periodic updates (every 5 seconds)
-  gameState.tradeUpdateInterval = setInterval(() => {
-    // Process each room
-    for (const [roomName, room] of gameState.rooms.entries()) {
-      // Skip if no trade agreements
-      if (!room.tradeAgreements || room.tradeAgreements.length === 0) {
-        continue;
+  // Register new interval with proper management
+  const intervalId = intervalManager.register(
+    () => {
+      // Process each room
+      for (const [roomName, room] of gameState.rooms.entries()) {
+        // Skip if no trade agreements
+        if (!room.tradeAgreements || room.tradeAgreements.length === 0) {
+          continue;
+        }
+        
+        // Notify players in the room about updated trade agreements
+        io.to(roomName).emit('tradeAgreementUpdated', {
+          agreements: room.tradeAgreements,
+          timestamp: Date.now()
+        });
       }
-      
-      // Notify players in the room about updated trade agreements
-      io.to(roomName).emit('tradeAgreementUpdated', {
-        agreements: room.tradeAgreements,
-        timestamp: Date.now()
-      });
-    }
-  }, SYNC_CONFIG.TRADE_PROCESSING_INTERVAL);
+    },
+    SYNC_CONFIG.TRADE_PROCESSING_INTERVAL,
+    'tradeUpdate',
+    { scope: 'global', description: 'Trade agreements periodic broadcast' }
+  );
   
-  console.log('Periodic trade updates scheduled (every 5 seconds)');
+  // Store reference for cleanup (optional - intervalManager handles it)
+  gameState.tradeUpdateIntervalId = intervalId;
+  
+  console.log(`Periodic trade updates registered with ID: ${intervalId}`);
 }
 
 /**

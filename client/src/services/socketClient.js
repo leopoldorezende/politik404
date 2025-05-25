@@ -3,6 +3,7 @@ import { login } from '../modules/auth/authState';
 import { setMyCountry } from '../modules/game/gameState';
 import { resetState as resetCountryState } from '../modules/country/countryStateSlice';
 import { resetTradeState } from '../modules/trade/tradeState';
+import StorageService from './storageService.js';
 import { 
   initializeSocket, 
   getSocketInstance, 
@@ -68,11 +69,13 @@ export const socketApi = {
     }
     
     const socket = socketApi.connect();
-    sessionStorage.setItem('username', username);
+    StorageService.set(StorageService.KEYS.USERNAME, username);
     store.dispatch(login(username));
     
     setTimeout(() => {
-      socket.emit('authenticate', username, { clientSessionId: sessionStorage.getItem('clientSessionId') });
+      socket.emit('authenticate', username, { 
+        clientSessionId: StorageService.get(StorageService.KEYS.CLIENT_SESSION_ID) 
+      });
     }, 100);
   },
   
@@ -103,7 +106,7 @@ export const socketApi = {
     console.log('Tentando entrar na sala:', roomName);
     setIsJoiningRoom(true);
     
-    sessionStorage.setItem('pendingRoom', roomName);
+    StorageService.set(StorageService.KEYS.PENDING_ROOM, roomName);
     
     const socket = getSocketInstance() || socketApi.connect();
     
@@ -121,7 +124,7 @@ export const socketApi = {
       return;
     }
     
-    const username = sessionStorage.getItem('username');
+    const username = StorageService.get(StorageService.KEYS.USERNAME);
     if (!username) {
       console.error('Usuário não autenticado, não é possível entrar na sala');
       setIsJoiningRoom(false);
@@ -142,13 +145,13 @@ export const socketApi = {
   
   leaveRoom: (intentional = true) => {
     setIsJoiningRoom(false);
-    sessionStorage.removeItem('pendingRoom');
-    
+    StorageService.remove(StorageService.KEYS.PENDING_ROOM);
+
     const socket = getSocketInstance() || socketApi.connect();
     socket.emit('leaveRoom', { intentional });
-    
+
     store.dispatch(setMyCountry(null));
-    sessionStorage.removeItem('myCountry');
+    StorageService.remove(StorageService.KEYS.MY_COUNTRY);
     store.dispatch(resetCountryState());
     store.dispatch(resetTradeState());
   },
@@ -159,7 +162,7 @@ export const socketApi = {
   
   sendMessage: (content, isPrivate = false, recipient = null) => {
     const socket = getSocketInstance() || socketApi.connect();
-    const username = sessionStorage.getItem('username');
+    const username = StorageService.get(StorageService.KEYS.USERNAME);
     
     if (!username) {
       console.error('Não é possível enviar mensagem: Nome de usuário não encontrado');
