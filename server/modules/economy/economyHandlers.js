@@ -2,6 +2,7 @@
  * economyHandlers.js (Atualizado - Sem Duplicações)
  * Socket.io handlers for economic operations
  * DELEGADO COMPLETAMENTE para countryStateManager
+ * CORRIGIDO: Enviar valor exato do cliente de volta
  */
 
 import countryStateManager from '../../shared/countryState/countryStateManager.js';
@@ -89,22 +90,20 @@ function setupEconomyHandlers(io, socket, gameState) {
     }
     
     try {
-      // DELEGADO: Usar o countryStateManager centralizado
+      // ✅ CORREÇÃO: Usar valor EXATO do cliente
       const updatedState = countryStateManager.updateEconomicParameter(
-        roomName, 
-        userCountry, 
-        parameter, 
-        value
+        roomName, userCountry, parameter, value
       );
       
       if (updatedState) {
         console.log(`[ECONOMY] ${username} updated ${parameter} to ${value}% for ${userCountry}`);
         
+        // ✅ CORREÇÃO: Enviar de volta o valor EXATO que o cliente enviou
         socket.emit('economicParameterUpdated', {
           roomName,
           countryName: userCountry,
           parameter,
-          value,
+          value: value, // ← Valor ORIGINAL do cliente, não do estado calculado
           success: true,
           message: `${parameter} updated to ${value}%`
         });

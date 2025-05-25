@@ -2,6 +2,7 @@
  * countryEconomyCalculator.js (Corrigido Final)
  * Advanced economic calculations for country states
  * INTEGRADO COM calculateTradeAgreementsImpact - Sem imports externos
+ * CORRIGIDO: Preservar parâmetros aplicados durante cálculos
  */
 
 import { getNumericValue } from '../utils/economicUtils.js';
@@ -718,6 +719,13 @@ class CountryEconomyCalculator {
     
     const economy = countryState.economy;
     
+    // ✅ CORREÇÃO: Preservar parâmetros aplicados ANTES de qualquer cálculo
+    const preservedParameters = {
+      interestRate: economy.interestRate,
+      taxBurden: economy.taxBurden, 
+      publicServices: economy.publicServices
+    };
+    
     // Initialize economy from JSON data if this is the first time
     if (!economy.gdp || this.updateCounter === 0) {
       console.log(`[ECONOMY] First-time initialization for ${countryName}`);
@@ -755,6 +763,23 @@ class CountryEconomyCalculator {
     if (this.updateCounter % 10 === 0) {
       this.updateDomesticNeedsWithVariation(economy);
     }
+    
+    // ✅ CORREÇÃO: Restaurar parâmetros originais após todos os cálculos
+    if (preservedParameters.interestRate !== undefined) {
+      economy.interestRate = preservedParameters.interestRate;
+    }
+    if (preservedParameters.taxBurden !== undefined) {
+      economy.taxBurden = preservedParameters.taxBurden;
+    }  
+    if (preservedParameters.publicServices !== undefined) {
+      economy.publicServices = preservedParameters.publicServices;
+    }
+    
+    // console.log(`[ECONOMY] Parâmetros preservados após cálculos para ${countryName}:`, {
+    //   interestRate: economy.interestRate,
+    //   taxBurden: economy.taxBurden,
+    //   publicServices: economy.publicServices
+    // });
     
     // Increment update counter
     this.updateCounter++;

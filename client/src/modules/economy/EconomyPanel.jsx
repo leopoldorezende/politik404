@@ -91,11 +91,11 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       };
       
       // Só atualiza se os valores realmente mudaram para evitar loops
-      if (JSON.stringify(newParams) !== JSON.stringify(localParameters)) {
-        setLocalParameters(newParams);
-        
-        // Limpar pending updates quando dados do servidor chegam
-        setPendingUpdates(new Set());
+      if (pendingUpdates.size === 0) {
+        // Só atualiza se os valores realmente mudaram para evitar loops
+        if (JSON.stringify(newParams) !== JSON.stringify(localParameters)) {
+          setLocalParameters(newParams);
+        }
       }
     }
   }, [economicIndicators?.interestRate, economicIndicators?.taxBurden, economicIndicators?.publicServices]);
@@ -274,18 +274,16 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       
       // Só processar se for para o país atual
       if (countryName === myCountry && roomName === currentRoom?.name) {
-        // Remover dos pending updates
+        // ✅ CORREÇÃO: Remover dos pending updates
         setPendingUpdates(prev => {
           const newSet = new Set(prev);
           newSet.delete(parameter);
           return newSet;
         });
         
-        // Atualizar parâmetro local se necessário
-        setLocalParameters(prev => ({
-          ...prev,
-          [parameter]: value
-        }));
+        // ✅ CORREÇÃO: NÃO sobrescrever valor local com valor do servidor
+        // O servidor já confirmou que recebeu, manter valor local
+        console.log(`[ECONOMY] Parâmetro ${parameter} confirmado pelo servidor, mantendo valor local`);
       }
     };
     

@@ -155,26 +155,28 @@ class CountryStateManager {
   updateEconomicParameter(roomName, countryName, parameter, value) {
     const countryKey = `${countryName}:${roomName}`;
     
-    // Atualizar parâmetros aplicados
+    // ✅ CORREÇÃO: Salvar EXATAMENTE o valor enviado pelo cliente
     const currentParams = this.appliedParameters.get(countryKey) || this.getDefaultParameters();
-    currentParams[parameter] = value;
+    currentParams[parameter] = value; // Usar valor EXATO do cliente
     this.appliedParameters.set(countryKey, currentParams);
     
-    console.log(`[ECONOMY] ${countryName}: ${parameter} alterado para ${value} - Forçando recálculo completo`);
+    console.log(`[ECONOMY] ${countryName}: ${parameter} definido para ${value} (valor EXATO do cliente)`);
     
-    // CORRIGIDO: Recalcular economia IMEDIATAMENTE com novos parâmetros
+    // ✅ CORREÇÃO: Garantir que o estado tenha os valores corretos ANTES dos cálculos
+    const countryState = this.getCountryState(roomName, countryName);
+    if (countryState && countryState.economy) {
+      countryState.economy[parameter] = value; // Forçar valor exato
+    }
+    
+    // DEPOIS recalcular economia com os novos parâmetros
     const result = this.performCompleteEconomicCalculation(roomName, countryName);
     
-    // VERIFICAÇÃO: Log para confirmar que os cálculos avançados foram executados
+    // ✅ CORREÇÃO: Garantir que o parâmetro permaneça com valor original após cálculos
     if (result && result.economy) {
-      console.log(`[ECONOMY] VERIFICAÇÃO ${countryName} após alterar ${parameter}:`, {
-        parametroAlterado: `${parameter} = ${value}`,
-        inflacao: result.economy.inflation ? (result.economy.inflation * 100).toFixed(1) + '%' : 'N/A',
-        desemprego: result.economy.unemployment ? result.economy.unemployment.toFixed(1) + '%' : 'N/A',
-        popularidade: result.economy.popularity ? result.economy.popularity.toFixed(1) + '%' : 'N/A',
-        crescimento: result.economy.quarterlyGrowth ? (result.economy.quarterlyGrowth * 100).toFixed(2) + '%' : 'N/A'
-      });
+      result.economy[parameter] = value; // Re-forçar valor original
     }
+    
+    console.log(`[ECONOMY] CONFIRMAÇÃO ${countryName} - ${parameter} mantido em ${value}`);
     
     return result;
   }
