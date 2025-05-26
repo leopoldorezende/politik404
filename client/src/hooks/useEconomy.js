@@ -25,6 +25,8 @@ export const useEconomy = (roomName, countryName) => {
     socketRef.current = socket;
     setLoading(true);
 
+    console.log(`[HOOK] Subscribing to room ${roomName}`);
+
     // Subscrever a atualizações da sala
     socket.emit('subscribeToCountryStates', roomName);
 

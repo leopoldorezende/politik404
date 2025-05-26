@@ -54,7 +54,6 @@
   │   │   │   │   ├── GamePage.css
   │   │   │   │   ├── GamePage.jsx  # Tela principal do jogo
   │   │   │   │   └── gameState.js  # Estado do jogo
-  │   │   │   ├── index.js
   │   │   │   ├── map
   │   │   │   │   ├── Chokepoints.jsx
   │   │   │   │   ├── MapView.css
@@ -119,13 +118,12 @@
   │   │   │   ├── countryAssignment.js  # Atribuições de países
   │   │   │   └── countryUtils.js  # Utilitários para países
   │   │   ├── economy
-  │   │   │   └── economyHandlers.js
+  │   │   │   ├── economyHandlers.js
+  │   │   │   └── tradeAgreementService.js
   │   │   ├── index.js
   │   │   ├── player
-  │   │   │   ├── playerHandlers.js  # Handlers para jogadores
   │   │   │   ├── playerRoomHandlers.js  # Handlers para jogadores na sala
-  │   │   │   ├── playerStateManager.js  # Gerencia estado dos jogadores
-  │   │   │   └── playerUtils.js  # Funções utilitárias
+  │   │   │   └── playerStateManager.js  # Gerencia estado dos jogadores
   │   │   └── room
   │   │       ├── roomExpirationManager.js
   │   │       ├── roomManagement.js  # Gerenciamento de sala
@@ -140,12 +138,18 @@
   │   └── shared
   │       ├── config
   │       │   └── syncConfig.js
+  │       ├── countryState
+  │       │   ├── countryEconomyCalculator.js
+  │       │   ├── countryStateConfig.js
+  │       │   ├── countryStateCore.js
+  │       │   ├── countryStateManager.js
+  │       │   ├── countryStateUpdater.js
+  │       │   └── index.js
   │       ├── firebaseAdmin.js
   │       ├── redisClient.js  # Infraestrutura do Redis
   │       ├── services
   │       │   └── economyService.js
   │       └── utils
   │           ├── economicUtils.js
-  │           ├── gameStateUtils.js  # Utilitários de estado para o jogo
-  │           └── intervalManager.js
-  └── v19.md
+  │           └── gameStateUtils.js  # Utilitários de estado para o jogo
+  └── v20.md

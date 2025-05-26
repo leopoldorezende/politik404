@@ -1,9 +1,9 @@
 /**
  * economyHandlers.js - Handlers simplificados para economia
- * APENAS comunicação WebSocket - lógica delegada para economyService
+ * APENAS comunicação WebSocket - lógica delegada para EconomyService
  */
 
-import economyService from '../../shared/services/economyService.js';
+import economyService from '../../shared/services/EconomyService.js';
 import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/utils/gameStateUtils.js';
 import { evaluateTradeProposal } from '../ai/aiCountryController.js';
 
@@ -11,7 +11,7 @@ import { evaluateTradeProposal } from '../ai/aiCountryController.js';
  * Setup economy-related socket event handlers
  */
 function setupEconomyHandlers(io, socket, gameState) {
-  console.log('Economy handlers initialized - delegated to economyService');
+  console.log('Economy handlers initialized - delegated to EconomyService');
 
   // ======================================================================
   // PARÂMETROS ECONÔMICOS
@@ -40,7 +40,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Delegar para economyService
+    // Delegar para EconomyService
     const result = economyService.updateEconomicParameter(roomName, userCountry, parameter, value);
     
     if (result) {
@@ -76,7 +76,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     
     const { bondAmount } = data;
     
-    // Delegar para economyService
+    // Delegar para EconomyService
     const result = economyService.issueDebtBonds(roomName, userCountry, bondAmount);
     
     if (result.success) {
@@ -107,7 +107,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Delegar para economyService
+    // Delegar para EconomyService
     const debtSummary = economyService.getDebtSummary(roomName, userCountry);
     const countryState = economyService.getCountryState(roomName, userCountry);
     
@@ -322,7 +322,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // SUBSCRIÇÃO A ESTADOS DE PAÍS (simplificado)
+  // SUBSCRIÇÃO A ESTADOS DE PAÍS (ESSENCIAL - NÃO PODE SER REMOVIDO)
   // ======================================================================
   
   socket.on('subscribeToCountryStates', (roomName) => {
@@ -333,9 +333,11 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
+    console.log(`[ECONOMY] ${username} subscribed to country states for room ${roomName}`);
+    
     socket.join(`countryStates:${roomName}`);
     
-    // Enviar estados iniciais
+    // Enviar estados iniciais IMEDIATAMENTE
     const roomStates = economyService.getRoomStates(roomName);
     socket.emit('countryStatesInitialized', {
       roomName,
@@ -345,6 +347,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
   
   socket.on('unsubscribeFromCountryStates', (roomName) => {
+    console.log(`[ECONOMY] User unsubscribed from country states for room ${roomName}`);
     socket.leave(`countryStates:${roomName}`);
   });
 }

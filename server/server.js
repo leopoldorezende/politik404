@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
-import economyService from './shared/services/economyService.js'; // Novo serviço centralizado
+import economyService from './shared/services/EconomyService.js'; // Novo serviço centralizado
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { initializeSocketHandlers } from './modules/index.js';
@@ -195,19 +195,27 @@ process.on('SIGTERM', shutdownHandler);
 
 // Iniciar servidor só depois que Redis restaurar
 restoreRoomsFromRedis().then(() => {
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);
-    console.log(`EconomyService initialized: ${economyService.initialized ? 'Yes' : 'No'}`);
+  // CRÍTICO: Inicializar EconomyService
+  economyService.initialize().then(() => {
+    console.log('✅ EconomyService initialized successfully');
     
-    // Configurar limpeza periódica
-    setupPeriodicCleanup(io, gameState);
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);
+      console.log(`EconomyService initialized: ${economyService.initialized ? 'Yes' : 'No'}`);
+      
+      // Configurar limpeza periódica
+      setupPeriodicCleanup(io, gameState);
+    });
+  }).catch(error => {
+    console.error('❌ Failed to initialize EconomyService:', error);
+    process.exit(1);
   });
 });
 
 io.use(createSocketMiddleware(io));
 
-// Configurar broadcast de atualizações econômicas
+// Configurar broadcast de atualizações econômicas A CADA 2 SEGUNDOS (CRÍTICO)
 setInterval(() => {
   // Broadcast estados econômicos para todas as salas ativas
   for (const [roomName, room] of gameState.rooms.entries()) {
@@ -217,15 +225,21 @@ setInterval(() => {
     if (hasOnlinePlayers) {
       const roomStates = economyService.getRoomStates(roomName);
       if (roomStates && Object.keys(roomStates).length > 0) {
+        // FORÇAR broadcast para subscribers
         io.to(`countryStates:${roomName}`).emit('countryStatesUpdated', {
           roomName,
           states: roomStates,
           timestamp: Date.now()
         });
+        
+        // Log ocasional para debug
+        if (Date.now() % 10000 < 2000) {
+          console.log(`[BROADCAST] Sent updates to room ${roomName}: ${Object.keys(roomStates).length} countries`);
+        }
       }
     }
   }
-}, 2000); // A cada 2 segundos
+}, 2000); // EXATAMENTE 2 segundos
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
