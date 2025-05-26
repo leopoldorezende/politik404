@@ -26,6 +26,13 @@ const TradePanel = () => {
   // Estado local
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Atualizar acordos automaticamente quando economicIndicators mudam
+  React.useEffect(() => {
+    if (currentRoom?.name && economicIndicators) {
+      refreshAgreements();
+    }
+  }, [currentRoom?.name, economicIndicators?.tradeStats, refreshAgreements]);
+
   // Função para cancelar acordo comercial
   const handleCancelAgreement = (agreementId) => {
     if (window.confirm('Tem certeza que deseja cancelar este acordo comercial?')) {

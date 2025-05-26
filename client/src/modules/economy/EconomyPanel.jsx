@@ -126,12 +126,21 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }, [bondAmount]);
 
   const handleOpenDebtPopup = useCallback(() => {
-    if (economicIndicators && debtSummary && onOpenDebtPopup) {
-      onOpenDebtPopup(debtSummary, debtSummary.contracts || [], economicIndicators);
+    if (debtSummary && onOpenDebtPopup) {
+      // Usar dados do debtSummary que já contém economicData
+      const economicData = debtSummary.economicData || {
+        gdp: economicIndicators?.gdp || 0,
+        treasury: economicIndicators?.treasury || 0,
+        publicDebt: economicIndicators?.publicDebt || 0
+      };
+      
+      onOpenDebtPopup(debtSummary, debtSummary.debtRecords || [], economicData);
     } else {
       MessageService.showWarning('Aguardando dados de dívida...');
+      // Tentar buscar dados novamente
+      refreshDebt();
     }
-  }, [economicIndicators, debtSummary, onOpenDebtPopup]);
+  }, [debtSummary, onOpenDebtPopup, economicIndicators, refreshDebt]);
 
   // ======================================================================
   // HANDLERS DE EVENTOS DO SERVIDOR

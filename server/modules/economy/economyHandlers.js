@@ -115,15 +115,23 @@ function setupEconomyHandlers(io, socket, gameState) {
       const economy = countryState.economy;
       
       socket.emit('debtSummaryResponse', {
-        totalPublicDebt: economy.publicDebt,
+        totalPublicDebt: economy.publicDebt || 0,
         principalRemaining: debtSummary.principalRemaining,
         totalFuturePayments: debtSummary.totalFuturePayments,
         totalMonthlyPayment: debtSummary.totalMonthlyPayment,
         numberOfContracts: debtSummary.numberOfContracts,
-        debtToGdpRatio: (economy.publicDebt / economy.gdp) * 100,
-        canIssueMoreDebt: (economy.publicDebt / economy.gdp) <= 1.2,
-        debtRecords: debtSummary.contracts
+        debtToGdpRatio: ((economy.publicDebt || 0) / (economy.gdp || 100)) * 100,
+        canIssueMoreDebt: ((economy.publicDebt || 0) / (economy.gdp || 100)) <= 1.2,
+        debtRecords: debtSummary.contracts,
+        // Dados econômicos completos para o popup
+        economicData: {
+          gdp: economy.gdp || 0,
+          treasury: economy.treasury || 0,
+          publicDebt: economy.publicDebt || 0
+        }
       });
+    } else {
+      socket.emit('error', 'Country data not found');
     }
   });
 

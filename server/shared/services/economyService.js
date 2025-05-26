@@ -507,7 +507,7 @@ class EconomyService {
       };
       
       await redis.set('economy_service_data', JSON.stringify(data));
-      console.log('[ECONOMY] Data saved to Redis');
+      console.log(`[ECONOMY] Data saved to Redis - ${this.debtContracts.size} debt contracts saved`);
     } catch (error) {
       console.error('[ECONOMY] Error saving to Redis:', error);
     }
@@ -524,7 +524,7 @@ class EconomyService {
         this.debtContracts = new Map(Object.entries(parsed.debtContracts || {}));
         this.nextDebtId = parsed.nextDebtId || 1;
         
-        console.log(`[ECONOMY] Loaded data from Redis: ${this.countryStates.size} rooms`);
+        console.log(`[ECONOMY] Loaded data from Redis: ${this.countryStates.size} rooms, ${this.debtContracts.size} debt contracts`);
       }
     } catch (error) {
       console.error('[ECONOMY] Error loading from Redis:', error);

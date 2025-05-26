@@ -118,8 +118,7 @@
   │   │   │   ├── countryAssignment.js  # Atribuições de países
   │   │   │   └── countryUtils.js  # Utilitários para países
   │   │   ├── economy
-  │   │   │   ├── economyHandlers.js
-  │   │   │   └── tradeAgreementService.js
+  │   │   │   └── economyHandlers.js
   │   │   ├── index.js
   │   │   ├── player
   │   │   │   ├── playerRoomHandlers.js  # Handlers para jogadores na sala
