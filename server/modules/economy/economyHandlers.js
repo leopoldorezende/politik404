@@ -1,783 +1,362 @@
 /**
- * economyHandlers.js (Atualizado - Sem Duplicações)
- * Socket.io handlers for economic operations
- * DELEGADO COMPLETAMENTE para countryStateManager
- * CORRIGIDO: Enviar valor exato do cliente de volta
+ * economyHandlers.js - Handlers simplificados para economia
+ * APENAS comunicação WebSocket - lógica delegada para economyService
  */
 
-import countryStateManager from '../../shared/countryState/countryStateManager.js';
+import economyService from '../../shared/services/economyService.js';
 import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/utils/gameStateUtils.js';
-import { 
-  setupPeriodicTradeUpdates,
-  createTradeAgreement,
-  cancelTradeAgreement
-} from './tradeAgreementService.js';
 import { evaluateTradeProposal } from '../ai/aiCountryController.js';
-
-// Flag to track if the periodic updates have been initialized
-let periodicUpdatesInitialized = false;
 
 /**
  * Setup economy-related socket event handlers
- * @param {Object} io - Socket.io instance
- * @param {Object} socket - Client socket
- * @param {Object} gameState - Global game state
  */
 function setupEconomyHandlers(io, socket, gameState) {
-  console.log('Economy handlers initialized - DELEGADO para countryStateManager');
-  
-  // Set up periodic economic updates only once
-  if (!periodicUpdatesInitialized) {
-    setupPeriodicTradeUpdates(io, gameState);
-    periodicUpdatesInitialized = true;
-    console.log('Periodic trade updates initialized (first-time setup)');
-  }
+  console.log('Economy handlers initialized - delegated to economyService');
 
   // ======================================================================
-  // PARÂMETROS ECONÔMICOS - DELEGADO para countryStateManager
+  // PARÂMETROS ECONÔMICOS
   // ======================================================================
   
   socket.on('updateEconomicParameter', (data) => {
     const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'User not authenticated');
-      return;
-    }
-    
-    // Get current room
     const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Not in a room');
-      return;
-    }
+    const userCountry = getUserCountry(gameState, roomName, username);
     
-    // Get user's country
-    const userRoomKey = `${username}:${roomName}`;
-    const userCountry = gameState.userRoomCountries.get(userRoomKey);
-    
-    if (!userCountry) {
-      socket.emit('error', 'No country assigned');
+    if (!username || !roomName || !userCountry) {
+      socket.emit('error', 'Invalid request');
       return;
     }
     
     const { parameter, value } = data;
     
-    // Validar parâmetro
-    const validParameters = ['interestRate', 'taxBurden', 'publicServices'];
-    if (!validParameters.includes(parameter)) {
-      socket.emit('error', 'Invalid economic parameter');
+    // Validação básica
+    if (!['interestRate', 'taxBurden', 'publicServices'].includes(parameter)) {
+      socket.emit('error', 'Invalid parameter');
       return;
     }
     
-    // Validar valor
-    if (typeof value !== 'number' || isNaN(value)) {
-      socket.emit('error', 'Invalid parameter value');
+    if (typeof value !== 'number' || value < 0 || value > (parameter === 'interestRate' ? 25 : 60)) {
+      socket.emit('error', 'Invalid value');
       return;
     }
     
-    // Validar ranges
-    let min = 0, max = 100;
-    if (parameter === 'interestRate') {
-      max = 25;
-    } else if (parameter === 'taxBurden' || parameter === 'publicServices') {
-      max = 60;
-    }
+    // Delegar para economyService
+    const result = economyService.updateEconomicParameter(roomName, userCountry, parameter, value);
     
-    if (value < min || value > max) {
-      socket.emit('error', `${parameter} must be between ${min}% and ${max}%`);
-      return;
-    }
-    
-    try {
-      // ✅ CORREÇÃO: Usar valor EXATO do cliente
-      const updatedState = countryStateManager.updateEconomicParameter(
-        roomName, userCountry, parameter, value
-      );
+    if (result) {
+      socket.emit('economicParameterUpdated', {
+        roomName, countryName: userCountry, parameter, value, success: true
+      });
       
-      if (updatedState) {
-        console.log(`[ECONOMY] ${username} updated ${parameter} to ${value}% for ${userCountry}`);
-        
-        // ✅ CORREÇÃO: Enviar de volta o valor EXATO que o cliente enviou
-        socket.emit('economicParameterUpdated', {
-          roomName,
-          countryName: userCountry,
-          parameter,
-          value: value, // ← Valor ORIGINAL do cliente, não do estado calculado
-          success: true,
-          message: `${parameter} updated to ${value}%`
+      // Broadcast para sala se mudança significativa
+      if (parameter === 'interestRate') {
+        socket.to(roomName).emit('economicNews', {
+          type: 'interestRate', country: userCountry, value,
+          message: `${userCountry} changed interest rate to ${value}%`
         });
-        
-        if (parameter === 'interestRate') {
-          socket.to(roomName).emit('economicNews', {
-            type: 'interestRate',
-            country: userCountry,
-            value,
-            message: `${userCountry} changed interest rate to ${value}%`
-          });
-        }
-        
-      } else {
-        socket.emit('error', 'Failed to update economic parameter');
       }
-      
-    } catch (error) {
-      console.error(`Error updating economic parameter for ${userCountry}:`, error);
-      socket.emit('error', 'Internal error updating economic parameter');
+    } else {
+      socket.emit('error', 'Failed to update parameter');
     }
   });
 
   // ======================================================================
-  // EMISSÃO DE TÍTULOS - DELEGADO para countryStateManager
+  // EMISSÃO DE TÍTULOS
   // ======================================================================
   
   socket.on('issueDebtBonds', (data) => {
     const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'User not authenticated');
-      return;
-    }
-    
-    // Get current room
     const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Not in a room');
+    const userCountry = getUserCountry(gameState, roomName, username);
+    
+    if (!username || !roomName || !userCountry) {
+      socket.emit('error', 'Invalid request');
       return;
     }
     
-    const room = gameState.rooms.get(roomName);
-    if (!room) {
-      socket.emit('error', 'Room not found');
-      return;
-    }
+    const { bondAmount } = data;
     
-    // Get user's country
-    const userRoomKey = `${username}:${roomName}`;
-    const userCountry = gameState.userRoomCountries.get(userRoomKey);
+    // Delegar para economyService
+    const result = economyService.issueDebtBonds(roomName, userCountry, bondAmount);
     
-    if (!userCountry) {
-      socket.emit('error', 'No country assigned');
-      return;
-    }
-    
-    // Validate bond amount
-    const { bondAmount, isEmergency = false } = data;
-    if (!bondAmount || bondAmount <= 0 || bondAmount > 1000) {
-      socket.emit('error', 'Invalid bond amount. Must be between 0 and 1000 billions');
-      return;
-    }
-    
-    try {
-      // DELEGADO: Usar o countryStateManager centralizado
-      const bondResult = countryStateManager.issueDebtBonds(
-        roomName,
-        userCountry,
-        bondAmount
-      );
+    if (result.success) {
+      socket.emit('debtBondsIssued', result);
       
-      if (bondResult.success) {
-        console.log(`[ECONOMY] ${username} issued ${bondAmount} billion in debt bonds for ${userCountry}`);
-        
-        socket.emit('debtBondsIssued', {
-          success: true,
-          bondAmount,
-          newTreasury: bondResult.newTreasury,
-          newPublicDebt: bondResult.newPublicDebt,
-          effectiveInterestRate: bondResult.effectiveRate,
-          message: bondResult.message,
-          debtContract: bondResult.newContract
+      if (bondAmount >= 50) {
+        socket.to(roomName).emit('economicNews', {
+          type: 'debtIssuance', country: userCountry, amount: bondAmount,
+          message: `${userCountry} issued ${bondAmount} billion in government bonds`
         });
-        
-        if (bondAmount >= 50) {
-          socket.to(roomName).emit('economicNews', {
-            type: 'debtIssuance',
-            country: userCountry,
-            amount: bondAmount,
-            message: `${userCountry} issued ${bondAmount} billion in government bonds`
-          });
-        }
-        
-      } else {
-        console.log(`[ECONOMY] ${username} failed to issue debt bonds for ${userCountry}: ${bondResult.message}`);
-        socket.emit('error', bondResult.message);
       }
-      
-    } catch (error) {
-      console.error(`Error issuing debt bonds for ${userCountry}:`, error);
-      socket.emit('error', 'Internal error processing bond issuance');
+    } else {
+      socket.emit('error', result.message);
     }
   });
 
   // ======================================================================
-  // RESUMO DE DÍVIDAS - DELEGADO para countryStateManager
+  // RESUMO DE DÍVIDAS
   // ======================================================================
   
   socket.on('getDebtSummary', () => {
     const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'User not authenticated');
-      return;
-    }
-    
-    // Get current room
     const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Not in a room');
+    const userCountry = getUserCountry(gameState, roomName, username);
+    
+    if (!username || !roomName || !userCountry) {
+      socket.emit('error', 'Invalid request');
       return;
     }
     
-    // Get user's country
-    const userRoomKey = `${username}:${roomName}`;
-    const userCountry = gameState.userRoomCountries.get(userRoomKey);
+    // Delegar para economyService
+    const debtSummary = economyService.getDebtSummary(roomName, userCountry);
+    const countryState = economyService.getCountryState(roomName, userCountry);
     
-    if (!userCountry) {
-      socket.emit('error', 'No country assigned');
-      return;
-    }
-    
-    try {
-      // DELEGADO: Usar o countryStateManager centralizado
-      const debtSummary = countryStateManager.getDebtSummary(roomName, userCountry);
-      
-      // Obter dados econômicos atuais
-      const currentState = countryStateManager.getCountryState(roomName, userCountry);
-      const economy = currentState?.economy || {};
-      
-      const gdp = economy.gdp?.value || 100;
-      const currentPublicDebt = economy.publicDebt || 0;
-      
-      // Calcular médias ponderadas corretas
-      let averageInterestRate = 0;
-      if (debtSummary.contracts.length > 0) {
-        const totalInterest = debtSummary.contracts.reduce((sum, debt) => 
-          sum + (debt.interestRate * debt.remainingValue), 0
-        );
-        const totalBalance = debtSummary.contracts.reduce((sum, debt) => 
-          sum + debt.remainingValue, 0
-        );
-        averageInterestRate = totalBalance > 0 ? totalInterest / totalBalance : 0;
-      }
+    if (countryState) {
+      const economy = countryState.economy;
       
       socket.emit('debtSummaryResponse', {
-        totalPublicDebt: currentPublicDebt,
+        totalPublicDebt: economy.publicDebt,
         principalRemaining: debtSummary.principalRemaining,
         totalFuturePayments: debtSummary.totalFuturePayments,
         totalMonthlyPayment: debtSummary.totalMonthlyPayment,
-        averageInterestRate,
         numberOfContracts: debtSummary.numberOfContracts,
-        debtToGdpRatio: (currentPublicDebt / gdp) * 100,
-        canIssueMoreDebt: (currentPublicDebt / gdp) <= 1.2,
-        debtRecords: debtSummary.contracts.map(debt => ({
-          id: debt.id,
-          originalValue: debt.originalValue,
-          remainingValue: debt.remainingValue,
-          interestRate: debt.interestRate,
-          monthlyPayment: debt.monthlyPayment,
-          remainingInstallments: debt.remainingInstallments,
-          issueDate: debt.issueDate
-        }))
+        debtToGdpRatio: (economy.publicDebt / economy.gdp) * 100,
+        canIssueMoreDebt: (economy.publicDebt / economy.gdp) <= 1.2,
+        debtRecords: debtSummary.contracts
       });
-      
-    } catch (error) {
-      console.error(`Error getting debt summary for ${userCountry}:`, error);
-      socket.emit('error', 'Internal error getting debt summary');
     }
   });
 
   // ======================================================================
-  // TÍTULOS DE EMERGÊNCIA - DELEGADO para countryStateManager
+  // PROPOSTAS COMERCIAIS
   // ======================================================================
   
-  socket.on('issueEmergencyBonds', (data) => {
-    const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'User not authenticated');
-      return;
-    }
-    
-    // Get current room
-    const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Not in a room');
-      return;
-    }
-    
-    // Get user's country
-    const userRoomKey = `${username}:${roomName}`;
-    const userCountry = gameState.userRoomCountries.get(userRoomKey);
-    
-    if (!userCountry) {
-      socket.emit('error', 'No country assigned');
-      return;
-    }
-    
-    const { requiredAmount } = data;
-    if (!requiredAmount || requiredAmount <= 0) {
-      socket.emit('error', 'Invalid required amount for emergency bonds');
-      return;
-    }
-    
-    try {
-      // DELEGADO: Usar countryStateManager com flag de emergência
-      const bondResult = countryStateManager.issueDebtBonds(
-        roomName,
-        userCountry,
-        requiredAmount
-      );
-      
-      if (bondResult.success) {
-        console.log(`[ECONOMY] ${username} issued emergency bonds for ${userCountry}: ${bondResult.message}`);
-        
-        socket.emit('emergencyBondsIssued', {
-          success: true,
-          requiredAmount,
-          actualAmount: bondResult.bondAmount,
-          newTreasury: bondResult.newTreasury,
-          newPublicDebt: bondResult.newPublicDebt,
-          message: `Emergency bonds issued: ${bondResult.message}`
-        });
-        
-        socket.to(roomName).emit('economicNews', {
-          type: 'emergencyBonds',
-          country: userCountry,
-          amount: bondResult.bondAmount,
-          message: `${userCountry} issued emergency bonds due to financial crisis`
-        });
-        
-      } else {
-        console.log(`[ECONOMY] ${username} failed to issue emergency bonds for ${userCountry}: ${bondResult.message}`);
-        socket.emit('error', bondResult.message);
-      }
-      
-    } catch (error) {
-      console.error(`Error issuing emergency bonds for ${userCountry}:`, error);
-      socket.emit('error', 'Internal error processing emergency bond issuance');
-    }
-  });
-
-  // ======================================================================
-  // PAGAMENTOS AUTOMÁTICOS - INFORMATIVO APENAS
-  // ======================================================================
-  
-  socket.on('processDebtPayments', () => {
-    const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'User not authenticated');
-      return;
-    }
-    
-    // Este processo é automático no countryStateManager
-    socket.emit('debtPaymentProcessed', {
-      message: 'Debt payments are processed automatically by the economic system',
-      automatic: true
-    });
-  });
-
-  // ======================================================================
-  // COMÉRCIO - DELEGADO parcialmente para countryStateManager
-  // ======================================================================
-  
-  // Handler para envio de propostas de comércio
   socket.on('sendTradeProposal', (proposal) => {
     const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'User not authenticated');
-      return;
-    }
-    
-    // Get current room
     const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Not in a room');
+    const userCountry = getUserCountry(gameState, roomName, username);
+    
+    if (!username || !roomName || !userCountry) {
+      socket.emit('error', 'Invalid request');
       return;
     }
     
-    const room = gameState.rooms.get(roomName);
-    if (!room) {
-      socket.emit('error', 'Room not found');
+    const { type, product, targetCountry, value } = proposal;
+    
+    // Validação básica
+    if (!type || !product || !targetCountry || !value || value <= 0 || value > 1000) {
+      socket.emit('error', 'Invalid proposal data');
       return;
     }
     
-    // Validar dados da proposta
-    const { type, product, targetCountry, value, originCountry } = proposal;
-    
-    if (!type || !product || !targetCountry || !value || !originCountry) {
-      socket.emit('error', 'Missing required proposal details');
+    if (!['import', 'export'].includes(type) || !['commodity', 'manufacture'].includes(product)) {
+      socket.emit('error', 'Invalid trade type or product');
       return;
     }
     
-    if (type !== 'import' && type !== 'export') {
-      socket.emit('error', 'Invalid trade type. Must be "import" or "export"');
-      return;
-    }
-    
-    if (product !== 'commodity' && product !== 'manufacture') {
-      socket.emit('error', 'Invalid product type. Must be "commodity" or "manufacture"');
-      return;
-    }
-    
-    if (value <= 0 || value > 1000) {
-      socket.emit('error', 'Invalid trade value. Must be between 0 and 1000 billions');
-      return;
-    }
-    
-    // Verificar se o país de origem é controlado pelo jogador que enviou a proposta
-    const userRoomKey = `${username}:${roomName}`;
-    const userCountry = gameState.userRoomCountries.get(userRoomKey);
-    
-    if (userCountry !== originCountry) {
+    if (userCountry !== proposal.originCountry) {
       socket.emit('error', 'You can only create proposals for your own country');
       return;
     }
     
-    // Gerar ID único para a proposta
+    const room = gameState.rooms.get(roomName);
     const proposalId = `trade-proposal-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
-    // Criar objeto da proposta
     const tradeProposal = {
       id: proposalId,
-      type,
-      product,
-      targetCountry,
-      value,
-      originCountry,
+      type, product, targetCountry, value,
+      originCountry: userCountry,
       originPlayer: username,
       timestamp: Date.now()
     };
     
-    // Verificar se o país alvo é controlado por um jogador
-    let targetPlayer = null;
-    let isPlayerControlled = false;
+    // Verificar se país alvo é controlado por jogador
+    const targetPlayer = room.players.find(player => 
+      typeof player === 'object' && player.country === targetCountry
+    );
     
-    // Procurar o jogador que controla o país alvo
-    for (const player of room.players) {
-      if (typeof player === 'object' && player.country === targetCountry) {
-        targetPlayer = player.username;
-        isPlayerControlled = true;
-        break;
-      }
-    }
-    
-    console.log(`[TRADE] Proposal from ${originCountry} to ${targetCountry}. Target is ${isPlayerControlled ? 'player-controlled' : 'AI-controlled'}`);
-    
-    if (isPlayerControlled) {
-      // País alvo é controlado por um jogador
-      // Verificar se o jogador está online
-      const targetSocketId = gameState.usernameToSocketId?.get(targetPlayer);
+    if (targetPlayer && targetPlayer.isOnline) {
+      // Enviar para jogador humano
+      const targetSocketId = gameState.usernameToSocketId?.get(targetPlayer.username);
       const targetSocket = targetSocketId ? io.sockets.sockets.get(targetSocketId) : null;
       
       if (targetSocket && targetSocket.connected) {
-        // Armazenar a proposta no socket do jogador alvo para uso posterior
         targetSocket.tradeProposal = tradeProposal;
-        
-        // Enviar proposta para o jogador alvo
         targetSocket.emit('tradeProposalReceived', tradeProposal);
-        console.log(`[TRADE] Proposal sent to player ${targetPlayer}`);
-        
       } else {
-        // Jogador alvo não está online
         socket.emit('error', 'Target player is not online');
       }
     } else {
-      // País alvo é controlado pelo sistema - usar lógica de IA
-      const aiDecision = evaluateTradeProposal(gameState, roomName, {
-        type,
-        product,
-        targetCountry,
-        value,
-        originCountry
-      });
+      // IA decision
+      const aiDecision = evaluateTradeProposal(gameState, roomName, tradeProposal);
       
       setTimeout(() => {
         if (aiDecision.accepted) {
-          console.log(`[TRADE] AI-controlled ${targetCountry} accepted proposal from ${originCountry}: ${aiDecision.reason}`);
-          
-          // DELEGADO: Criar acordo comercial usando tradeAgreementService
-          createTradeAgreement(io, gameState, roomName, {
-            type,
-            product,
-            country: targetCountry,
-            value,
-            originCountry,
-            originPlayer: username
+          // Criar acordo comercial
+          economyService.createTradeAgreement(roomName, {
+            type, product, country: targetCountry, value,
+            originCountry: userCountry, originPlayer: username
           });
           
-          // Notificar jogador que enviou que a proposta foi aceita
           socket.emit('tradeProposalResponse', {
-            proposalId,
-            accepted: true,
-            targetCountry,
+            proposalId, accepted: true, targetCountry,
             message: `${targetCountry} accepted your trade proposal`
           });
         } else {
-          console.log(`[TRADE] AI-controlled ${targetCountry} rejected proposal from ${originCountry}: ${aiDecision.reason}`);
-          
-          // Notificar jogador que enviou que a proposta foi rejeitada
           socket.emit('tradeProposalResponse', {
-            proposalId,
-            accepted: false,
-            targetCountry,
+            proposalId, accepted: false, targetCountry,
             message: `${targetCountry} rejected your trade proposal`
           });
         }
-      }, 1500); // Pequeno delay para simular "pensamento" do AI
+      }, 1500);
     }
   });
   
-  // Handler para respostas às propostas comerciais
+  // ======================================================================
+  // RESPOSTA A PROPOSTAS
+  // ======================================================================
+  
   socket.on('respondToTradeProposal', (response) => {
     const username = socket.username;
+    const roomName = getCurrentRoom(socket, gameState);
     
-    if (!username) {
-      socket.emit('error', 'User not authenticated');
+    if (!username || !roomName) {
+      socket.emit('error', 'Invalid request');
       return;
     }
     
     const { proposalId, accepted } = response;
-    
-    if (!proposalId) {
-      socket.emit('error', 'Proposal ID is required');
-      return;
-    }
-    
-    // Get current room
-    const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Not in a room');
-      return;
-    }
-    
-    // Recuperar detalhes da proposta do socket (armazenados quando recebeu a proposta)
     const proposal = socket.tradeProposal;
     
     if (!proposal) {
-      socket.emit('error', 'Trade proposal details not found');
+      socket.emit('error', 'Trade proposal not found');
       return;
     }
     
-    // Verificar se o país de origem é controlado por um jogador humano ou pela IA
-    const isAIControlledProposal = !isCountryControlledByHuman(gameState, roomName, proposal.originCountry);
-    
     if (accepted) {
-      console.log(`[TRADE] Proposal ${proposalId} accepted by ${username}`);
-      
-      // DELEGADO: Criar acordo comercial usando tradeAgreementService
-      createTradeAgreement(io, gameState, roomName, {
+      // Criar acordo comercial
+      economyService.createTradeAgreement(roomName, {
         type: proposal.type,
         product: proposal.product,
         country: proposal.targetCountry,
         value: proposal.value,
         originCountry: proposal.originCountry,
-        originPlayer: proposal.originPlayer || null
+        originPlayer: proposal.originPlayer
       });
       
-      // Se não for uma proposta de IA, notificar o jogador humano que enviou a proposta
-      if (!isAIControlledProposal) {
-        const originSocketId = gameState.usernameToSocketId?.get(proposal.originPlayer);
-        const originSocket = originSocketId ? io.sockets.sockets.get(originSocketId) : null;
-        
-        if (originSocket && originSocket.connected) {
-          originSocket.emit('tradeProposalResponse', {
-            proposalId,
-            accepted: true,
-            targetCountry: proposal.targetCountry,
-            message: `${proposal.targetCountry} accepted your trade proposal`
-          });
-        }
+      // Notificar jogador que enviou proposta
+      const originSocketId = gameState.usernameToSocketId?.get(proposal.originPlayer);
+      const originSocket = originSocketId ? io.sockets.sockets.get(originSocketId) : null;
+      
+      if (originSocket && originSocket.connected) {
+        originSocket.emit('tradeProposalResponse', {
+          proposalId, accepted: true, targetCountry: proposal.targetCountry,
+          message: `${proposal.targetCountry} accepted your trade proposal`
+        });
       }
     } else {
-      console.log(`[TRADE] Proposal ${proposalId} rejected by ${username}`);
+      // Notificar rejeição
+      const originSocketId = gameState.usernameToSocketId?.get(proposal.originPlayer);
+      const originSocket = originSocketId ? io.sockets.sockets.get(originSocketId) : null;
       
-      // Se não for uma proposta de IA, notificar o jogador humano que enviou a proposta
-      if (!isAIControlledProposal) {
-        const originSocketId = gameState.usernameToSocketId?.get(proposal.originPlayer);
-        const originSocket = originSocketId ? io.sockets.sockets.get(originSocketId) : null;
-        
-        if (originSocket && originSocket.connected) {
-          originSocket.emit('tradeProposalResponse', {
-            proposalId,
-            accepted: false,
-            targetCountry: proposal.targetCountry,
-            message: `${proposal.targetCountry} rejected your trade proposal`
-          });
-        }
+      if (originSocket && originSocket.connected) {
+        originSocket.emit('tradeProposalResponse', {
+          proposalId, accepted: false, targetCountry: proposal.targetCountry,
+          message: `${proposal.targetCountry} rejected your trade proposal`
+        });
       }
     }
     
-    // Limpar a proposta armazenada
     delete socket.tradeProposal;
   });
 
-  // Handler para criação de acordos comerciais (compatibilidade)
-  socket.on('createTradeAgreement', (data) => {
-    const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'User not authenticated');
-      return;
-    }
-    
-    // Get current room
-    const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Not in a room');
-      return;
-    }
-    
-    const room = gameState.rooms.get(roomName);
-    if (!room) {
-      socket.emit('error', 'Room not found');
-      return;
-    }
-    
-    // Validar dados do acordo
-    const { type, product, country, value } = data;
-    
-    if (!type || !product || !country || !value) {
-      socket.emit('error', 'Missing required agreement details');
-      return;
-    }
-
-    if (type !== 'import' && type !== 'export') {
-      socket.emit('error', 'Invalid trade type. Must be "import" or "export"');
-      return;
-    }
-
-    if (product !== 'commodity' && product !== 'manufacture') {
-      socket.emit('error', 'Invalid product type. Must be "commodity" or "manufacture"');
-      return;
-    }
-
-    if (value <= 0 || value > 1000) {
-      socket.emit('error', 'Invalid trade value. Must be between 0 and 1000 billions');
-      return;
-    }
-    
-    // Get user's country
-    const userRoomKey = `${username}:${roomName}`;
-    const userCountry = gameState.userRoomCountries.get(userRoomKey);
-    
-    if (!userCountry) {
-      socket.emit('error', 'No country assigned');
-      return;
-    }
-    
-    // Verificar se o país de destino é válido
-    if (!gameState.countriesData[country]) {
-      socket.emit('error', 'Invalid target country');
-      return;
-    }
-    
-    // DELEGADO: Criar o acordo comercial usando tradeAgreementService
-    const agreement = createTradeAgreement(io, gameState, roomName, {
-      type,
-      product,
-      country,
-      value, 
-      originCountry: userCountry,
-      originPlayer: username
-    });
-    
-    if (agreement) {
-      console.log(`[TRADE] ${username} created agreement: ${type} ${product} with ${country}`);
-    } else {
-      socket.emit('error', 'Failed to create trade agreement');
-    }
-  });
+  // ======================================================================
+  // CANCELAMENTO DE ACORDOS
+  // ======================================================================
   
-  // Handler para cancelamento de acordos comerciais
   socket.on('cancelTradeAgreement', (agreementId) => {
     const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'User not authenticated');
-      return;
-    }
-    
-    // Get current room
     const roomName = getCurrentRoom(socket, gameState);
-    if (!roomName) {
-      socket.emit('error', 'Not in a room');
+    const userCountry = getUserCountry(gameState, roomName, username);
+    
+    if (!username || !roomName || !userCountry) {
+      socket.emit('error', 'Invalid request');
       return;
     }
     
-    const room = gameState.rooms.get(roomName);
-    if (!room || !room.tradeAgreements) {
-      socket.emit('error', 'No trade agreements found');
-      return;
-    }
-    
-    // Get user's country
-    const userRoomKey = `${username}:${roomName}`;
-    const userCountry = gameState.userRoomCountries.get(userRoomKey);
-    
-    // DELEGADO: Cancelar o acordo comercial usando tradeAgreementService
-    const success = cancelTradeAgreement(io, gameState, roomName, agreementId, userCountry, socket);
+    const success = economyService.cancelTradeAgreement(roomName, agreementId);
     
     if (success) {
-      console.log(`[TRADE] ${username} cancelled trade agreement ${agreementId}`);
+      socket.emit('tradeAgreementCancelled', agreementId);
+      
+      // Broadcast acordos atualizados
+      const room = gameState.rooms.get(roomName);
+      io.to(roomName).emit('tradeAgreementUpdated', {
+        agreements: room.tradeAgreements || [],
+        timestamp: Date.now()
+      });
+    } else {
+      socket.emit('error', 'Failed to cancel trade agreement');
     }
   });
   
-  // Handler para obter acordos comerciais ativos
+  // ======================================================================
+  // OBTER ACORDOS
+  // ======================================================================
+  
   socket.on('getTradeAgreements', () => {
-    const username = socket.username;
-    
-    if (!username) {
-      socket.emit('error', 'User not authenticated');
-      return;
-    }
-    
-    // Get current room
     const roomName = getCurrentRoom(socket, gameState);
+    
     if (!roomName) {
       socket.emit('error', 'Not in a room');
       return;
     }
     
     const room = gameState.rooms.get(roomName);
-    if (!room) {
-      socket.emit('error', 'Room not found');
-      return;
-    }
+    const agreements = room?.tradeAgreements || [];
     
-    // Get all trade agreements for the room
-    const agreements = room.tradeAgreements || [];
-    
-    // Send agreements to client
     socket.emit('tradeAgreementsList', {
       agreements,
       timestamp: Date.now()
     });
   });
+
+  // ======================================================================
+  // SUBSCRIÇÃO A ESTADOS DE PAÍS (simplificado)
+  // ======================================================================
+  
+  socket.on('subscribeToCountryStates', (roomName) => {
+    const username = socket.username;
+    
+    if (!username || !gameState.rooms.get(roomName)) {
+      socket.emit('error', 'Invalid subscription request');
+      return;
+    }
+    
+    socket.join(`countryStates:${roomName}`);
+    
+    // Enviar estados iniciais
+    const roomStates = economyService.getRoomStates(roomName);
+    socket.emit('countryStatesInitialized', {
+      roomName,
+      states: roomStates,
+      timestamp: Date.now()
+    });
+  });
+  
+  socket.on('unsubscribeFromCountryStates', (roomName) => {
+    socket.leave(`countryStates:${roomName}`);
+  });
 }
 
 /**
- * Função auxiliar para verificar se um país é controlado por um jogador humano
- * @param {Object} gameState - Estado global do jogo
- * @param {string} roomName - Nome da sala
- * @param {string} countryName - Nome do país
- * @returns {boolean} - Verdadeiro se controlado por humano
+ * Função auxiliar para obter país do usuário
  */
-function isCountryControlledByHuman(gameState, roomName, countryName) {
-  const room = gameState.rooms.get(roomName);
-  if (!room || !room.players) return false;
+function getUserCountry(gameState, roomName, username) {
+  if (!roomName || !username) return null;
   
-  return room.players.some(player => {
-    if (typeof player === 'object') {
-      return player.country === countryName;
-    }
-    if (typeof player === 'string') {
-      const match = player.match(/\((.*)\)/);
-      return match && match[1] === countryName;
-    }
-    return false;
-  });
+  const userRoomKey = `${username}:${roomName}`;
+  return gameState.userRoomCountries.get(userRoomKey) || null;
 }
 
 export { setupEconomyHandlers };

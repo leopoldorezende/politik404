@@ -1,225 +1,142 @@
 /**
- * Room management functionality
+ * Gerenciamento de salas - ATUALIZADO para usar EconomyService
  */
 
-import redis from '../../shared/redisClient.js';
-import countryStateManager from '../../shared/countryState/countryStateManager.js';
 import { 
-  sendUpdatedRoomsList, 
-  sendUpdatedPlayersList 
+  sendUpdatedRoomsList 
 } from './roomNotifications.js';
-import { 
-  scheduleRoomExpiration, 
-  cancelRoomExpiration 
-} from './roomExpirationManager.js';
+import { setupRoomExpiration } from './roomExpirationManager.js';
 
 /**
- * Configures event handlers related to room management
- * @param {Object} io - Socket.io instance
- * @param {Object} socket - Client socket
- * @param {Object} gameState - Global game state
+ * Configura os handlers relacionados ao gerenciamento de salas
+ * @param {Object} io - Instância do Socket.io
+ * @param {Object} socket - Socket do cliente
+ * @param {Object} gameState - Estado global do jogo
  */
 function setupRoomManagement(io, socket, gameState) {
-  console.log('Room management initialized');
+  console.log('Room management handlers inicializados');
   
-  // Centralized function to verify user authentication
-  const verifyAuth = () => {
+  // Criar uma nova sala
+  socket.on('createRoom', (data) => {
     const username = socket.username;
     if (!username) {
-      socket.emit('error', 'User not authenticated');
-      return null;
+      socket.emit('error', 'Usuário não autenticado');
+      return;
     }
-    return username;
-  };
+    
+    let roomName, duration;
+    
+    // Suporte para formato antigo (string) e novo (objeto)
+    if (typeof data === 'string') {
+      roomName = data;
+      duration = 30 * 60000; // 30 minutos padrão
+    } else if (typeof data === 'object') {
+      roomName = data.name;
+      duration = data.duration || 30 * 60000;
+    } else {
+      socket.emit('error', 'Dados da sala inválidos');
+      return;
+    }
+    
+    if (!roomName || roomName.trim() === '') {
+      socket.emit('error', 'Nome da sala não pode estar vazio');
+      return;
+    }
+    
+    // Verificar se a sala já existe
+    if (gameState.rooms.has(roomName)) {
+      socket.emit('error', 'Uma sala com este nome já existe');
+      return;
+    }
+    
+    // Criar a nova sala
+    const room = gameState.createRoom(roomName, username);
+    room.duration = duration;
+    room.expiresAt = Date.now() + duration;
+    
+    gameState.rooms.set(roomName, room);
+    
+    // ===== NOVA INTEGRAÇÃO COM ECONOMYSERVICE =====
+    // Inicializar economia da sala
+    const economyService = global.economyService;
+    if (economyService && gameState.countriesData) {
+      economyService.initializeRoom(roomName, gameState.countriesData);
+      console.log(`[ECONOMY] Sala ${roomName} inicializada no EconomyService`);
+    }
+    // ===== FIM DA NOVA INTEGRAÇÃO =====
+    
+    console.log(`Sala criada: ${roomName} por ${username} (${duration / 60000} min)`);
+    
+    // Configurar expiração da sala
+    setupRoomExpiration(io, gameState, roomName, duration);
+    
+    // Enviar confirmação
+    socket.emit('roomCreated', { 
+      success: true, 
+      message: `Sala '${roomName}' criada com sucesso`,
+      roomName,
+      duration
+    });
+    
+    // Atualizar lista de salas para todos
+    sendUpdatedRoomsList(io, gameState);
+  });
   
-  // Centralized function to verify room existence
-  const verifyRoom = (roomName) => {
-    if (!roomName) {
-      socket.emit('error', 'Invalid room name');
-      return null;
+  // Obter lista de salas
+  socket.on('getRooms', () => {
+    const roomsList = Array.from(gameState.rooms.entries()).map(([name, room]) => ({
+      name,
+      owner: room.owner,
+      playerCount: room.players ? room.players.length : 0,
+      createdAt: room.createdAt,
+      duration: room.duration || 30 * 60000,
+      expiresAt: room.expiresAt || (Date.now() + 30 * 60000)
+    }));
+    
+    socket.emit('roomsList', roomsList);
+  });
+  
+  // Deletar uma sala (apenas o dono pode)
+  socket.on('deleteRoom', (roomName) => {
+    const username = socket.username;
+    if (!username) {
+      socket.emit('error', 'Usuário não autenticado');
+      return;
     }
     
     const room = gameState.rooms.get(roomName);
     if (!room) {
-      socket.emit('error', 'Room does not exist');
-      return null;
+      socket.emit('error', 'Sala não encontrada');
+      return;
     }
-    
-    return room;
-  };
-  
-  // Centralized function to verify room ownership
-  const verifyRoomOwnership = (roomName) => {
-    const username = verifyAuth();
-    if (!username) return null;
-    
-    const room = verifyRoom(roomName);
-    if (!room) return null;
     
     if (room.owner !== username) {
-      socket.emit('error', 'Only the room owner can perform this action');
-      return null;
-    }
-    
-    return { username, room };
-  };
-  
-  // Function to save rooms state to Redis
-  const saveRoomsToRedis = async () => {
-    try {
-      await redis.set('rooms', JSON.stringify(Object.fromEntries(gameState.rooms)));
-    } catch (error) {
-      console.error('Error saving rooms to Redis:', error);
-    }
-  };
-
-  // Get room list
-  socket.on('getRooms', () => {
-    sendUpdatedRoomsList(io, gameState);
-  });
-  
-  // Create room
-  socket.on('createRoom', (roomData) => {
-    // Mantém compatibilidade - se receber string, converte para objeto
-    if (typeof roomData === 'string') {
-      roomData = { name: roomData, duration: 30 * 60000 }; // 30 minutos padrão em milissegundos
-    }
-    
-    const { name: roomName, duration = 30 * 60000 } = roomData;
-    
-    console.log(`Request to create room: ${roomName} with duration: ${duration/1000} seconds`);
-    const username = verifyAuth();
-    if (!username) return;
-    
-    if (!roomName || typeof roomName !== 'string' || roomName.trim() === '') {
-      socket.emit('error', 'Invalid room name');
+      socket.emit('error', 'Apenas o dono da sala pode deletá-la');
       return;
     }
     
-    if (gameState.rooms.has(roomName)) {
-      socket.emit('error', 'Room with this name already exists');
-      return;
-    }
-    
-    // Validar duração (entre 1 minuto e 2 horas)
-    if (duration < 60000 || duration > 120 * 60000) {
-      socket.emit('error', 'Room duration must be between 1 minute and 2 hours');
-      return;
-    }
-    
-    // Create room with standardized structure using helper function
-    const newRoom = gameState.createRoom(roomName, username);
-    
-    // Adicionar informações de tempo
-    newRoom.duration = duration;
-    newRoom.createdTimestamp = Date.now();
-    newRoom.expiresAt = Date.now() + duration;
-    
-    // Store room in the map
-    gameState.rooms.set(roomName, newRoom);
-    console.log(`Room "${roomName}" created by ${username}`);
-    
-    // Inicializar estados dos países para esta sala
-    countryStateManager.initializeRoom(roomName, gameState.countriesData);
-    console.log(`Initialized country states for room ${roomName}`);
-    
-    // Agendar expiração da sala
-    scheduleRoomExpiration(io, gameState, roomName, newRoom.expiresAt);
-    
-    // Save to Redis
-    saveRoomsToRedis();
-
-    // Notify client that created the room
-    socket.emit('roomCreated', { name: roomName, success: true });
-    
-    // Update room list for all connected clients
-    sendUpdatedRoomsList(io, gameState);
-  });
-  
-  // Delete room (owner only)
-  socket.on('deleteRoom', (roomName) => {
-    const result = verifyRoomOwnership(roomName);
-    if (!result) return;
-    
-    const { username, room } = result;
-    
-    // Cancela o timer de expiração se existir
-    cancelRoomExpiration(roomName);
-    
-    // Notify all players in the room
-    io.to(roomName).emit('roomDeleted', { 
-      name: roomName, 
-      message: 'This room has been removed by the owner',
-      reason: 'manual_deletion'
+    // Notificar todos os jogadores na sala
+    io.to(roomName).emit('roomDeleted', {
+      message: `A sala '${roomName}' foi deletada pelo criador.`
     });
     
-    // Remove all players from the room
-    const socketsInRoom = io.sockets.adapter.rooms.get(roomName);
-    if (socketsInRoom) {
-      for (const socketId of socketsInRoom) {
-        const clientSocket = io.sockets.sockets.get(socketId);
-        if (clientSocket) {
-          clientSocket.leave(roomName);
-          // Remove user-room association
-          const clientUsername = clientSocket.username;
-          if (clientUsername) {
-            gameState.userToRoom.delete(clientUsername);
-          }
-        }
-      }
+    // ===== NOVA INTEGRAÇÃO COM ECONOMYSERVICE =====
+    // Limpar dados econômicos da sala
+    const economyService = global.economyService;
+    if (economyService) {
+      economyService.removeRoom(roomName);
+      console.log(`[ECONOMY] Dados da sala ${roomName} removidos do EconomyService`);
     }
+    // ===== FIM DA NOVA INTEGRAÇÃO =====
     
-    // Clean up room-related data
-    cleanupRoomData(gameState, roomName);
+    // Remover a sala
+    gameState.rooms.delete(roomName);
     
-    console.log(`Room "${roomName}" deleted by ${username}`);
+    console.log(`Sala deletada: ${roomName} por ${username}`);
     
-    // Save to Redis
-    saveRoomsToRedis();
-
-    // Update room list for everyone
+    // Atualizar lista de salas
     sendUpdatedRoomsList(io, gameState);
   });
 }
 
-/**
- * Cleans up data related to a room
- * @param {Object} gameState - Global game state
- * @param {string} roomName - Name of the room to clean up
- */
-function cleanupRoomData(gameState, roomName) {
-  // Remove the room
-  gameState.rooms.delete(roomName);
-  
-  // Remove country states for this room
-  if (countryStateManager) {
-    countryStateManager.removeRoom(roomName);
-    console.log(`Removed country states for room ${roomName}`);
-  }
-  
-  // Clean up user associations for this room
-  for (const [key, value] of gameState.userRoomCountries.entries()) {
-    if (key.includes(`:${roomName}`)) {
-      gameState.userRoomCountries.delete(key);
-    }
-  }
-  
-  // Clean up player states for this room
-  for (const [key, value] of gameState.playerStates.entries()) {
-    if (key.includes(`:${roomName}`)) {
-      gameState.playerStates.delete(key);
-    }
-  }
-  
-  // Clean up ships in this room (if any)
-  for (const [shipId, ship] of gameState.ships.entries()) {
-    if (ship.roomName === roomName) {
-      gameState.ships.delete(shipId);
-    }
-  }
-}
-
-export { 
-  setupRoomManagement,
-  cleanupRoomData
-};
+export { setupRoomManagement };

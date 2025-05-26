@@ -1,53 +1,25 @@
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { COUNTRY_STATE_EVENTS } from '../../store/socketReduxMiddleware';
-import { 
-  selectCountryState, 
-  selectCountryStateLoading,
-  selectLastUpdated
-} from './countryStateSlice';
+/**
+ * CountryState.jsx - Simplificado usando hook direto
+ */
+
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { useEconomy } from '../../hooks/useEconomy';
 import './CountryState.css';
 
-/**
- * Componente para exibir os estados de um país
- */
 const CountryState = ({ roomName, countryName }) => {
-  const dispatch = useDispatch();
-  
-  // Seletores para obter dados de vários reducers
+  // Estados básicos do Redux
   const myCountry = useSelector(state => state.game.myCountry);
-  const countriesData = useSelector(state => state.game.countriesData);
   const currentRoom = useSelector(state => state.rooms.currentRoom);
   
-  // Se roomName e countryName não forem fornecidos, usar valores padrão
-  const room = roomName || (currentRoom?.name || null);
-  const country = countryName || myCountry || null;
+  // Usar valores fornecidos ou padrão
+  const room = roomName || currentRoom?.name;
+  const country = countryName || myCountry;
   
-  // Obter o estado do país (se disponível)
-  const countryState = useSelector(state => selectCountryState(state, room, country));
+  // Hook direto para dados (substitui toda complexidade do Redux)
+  const { countryData, lastUpdated, loading } = useEconomy(room, country);
   
-  // Obter o timestamp da última atualização
-  const lastUpdated = useSelector(state => selectLastUpdated(state, room));
-  
-  // Dados estáticos do país
-  const staticCountryData = countriesData && country ? countriesData[country] : null;
-  
-  // Loading state
-  const loading = useSelector(selectCountryStateLoading);
-  
-  // Assinar para atualizações quando o componente montar
-  useEffect(() => {
-    if (room) {
-      dispatch({ type: COUNTRY_STATE_EVENTS.SUBSCRIBE, payload: room });
-      
-      // Cancelar assinatura ao desmontar
-      return () => {
-        dispatch({ type: COUNTRY_STATE_EVENTS.UNSUBSCRIBE, payload: room });
-      };
-    }
-  }, [room, dispatch]);
-  
-  // Função para obter valor numérico de propriedade que pode estar em diferentes formatos
+  // Função para obter valor numérico
   const getNumericValue = (property) => {
     if (property === undefined || property === null) return 0;
     if (typeof property === 'number') return property;
@@ -55,7 +27,12 @@ const CountryState = ({ roomName, countryName }) => {
     return 0;
   };
   
-  // Se não houver sala ou país selecionado, mostrar mensagem
+  // Formatar valor com sinal
+  const formatValueWithSign = (value) => {
+    if (value === undefined || value === null) return '0';
+    return (value >= 0 ? '+' : '') + value.toFixed(2) + ' bi';
+  };
+  
   if (!room || !country) {
     return (
       <div className="country-state-display no-data">
@@ -64,8 +41,7 @@ const CountryState = ({ roomName, countryName }) => {
     );
   }
   
-  // Se ainda estiver carregando, mostrar loader
-  if (loading && !countryState) {
+  if (loading || !countryData) {
     return (
       <div className="country-state-display loading">
         <p>Carregando indicadores...</p>
@@ -73,20 +49,10 @@ const CountryState = ({ roomName, countryName }) => {
     );
   }
   
-  // Se não houver dados disponíveis, mostrar mensagem
-  if (!countryState) {
-    return (
-      <div className="country-state-display no-data">
-        <p>Não há dados disponíveis para este país.</p>
-      </div>
-    );
-  }
-  
-  // Formatar valor com sinal
-  const formatValueWithSign = (value) => {
-    if (value === undefined || value === null) return '0';
-    return (value >= 0 ? '+' : '') + value.toFixed(2) + ' bi';
-  };
+  const economy = countryData.economy || {};
+  const defense = countryData.defense || {};
+  const commerce = countryData.commerce || {};
+  const politics = countryData.politics || {};
   
   return (
     <div className="country-state-display">
@@ -100,31 +66,31 @@ const CountryState = ({ roomName, countryName }) => {
         <div className="indicator">
           <span className="indicator-label">PIB:</span>
           <span className="indicator-value">
-            {getNumericValue(countryState.economy.gdp)} {typeof countryState.economy.gdp === 'object' ? countryState.economy.gdp.unit : 'bi USD'}
+            {getNumericValue(economy.gdp)} bi USD
           </span>
         </div>
         <div className="indicator">
           <span className="indicator-label">Tesouro:</span>
           <span className="indicator-value">
-            {getNumericValue(countryState.economy.treasury)} {typeof countryState.economy.treasury === 'object' ? countryState.economy.treasury.unit : 'bi USD'}
+            {getNumericValue(economy.treasury)} bi USD
           </span>
         </div>
         
-        {/* Novos indicadores econômicos derivados */}
-        {countryState.economy.commoditiesBalance && (
+        {/* Indicadores de balanço comercial */}
+        {economy.commoditiesBalance !== undefined && (
           <div className="indicator">
             <span className="indicator-label">Saldo de Commodities:</span>
-            <span className={`indicator-value ${getNumericValue(countryState.economy.commoditiesBalance) >= 0 ? 'positive' : 'negative'}`}>
-              {formatValueWithSign(getNumericValue(countryState.economy.commoditiesBalance))}
+            <span className={`indicator-value ${getNumericValue(economy.commoditiesBalance) >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(getNumericValue(economy.commoditiesBalance))}
             </span>
           </div>
         )}
         
-        {countryState.economy.manufacturesBalance && (
+        {economy.manufacturesBalance !== undefined && (
           <div className="indicator">
             <span className="indicator-label">Saldo de Manufaturas:</span>
-            <span className={`indicator-value ${getNumericValue(countryState.economy.manufacturesBalance) >= 0 ? 'positive' : 'negative'}`}>
-              {formatValueWithSign(getNumericValue(countryState.economy.manufacturesBalance))}
+            <span className={`indicator-value ${getNumericValue(economy.manufacturesBalance) >= 0 ? 'positive' : 'negative'}`}>
+              {formatValueWithSign(getNumericValue(economy.manufacturesBalance))}
             </span>
           </div>
         )}
@@ -138,30 +104,30 @@ const CountryState = ({ roomName, countryName }) => {
           <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: `${countryState.defense.navy}%` }}
+              style={{ width: `${defense.navy || 20}%` }}
             ></div>
           </div>
-          <span className="indicator-value">{countryState.defense.navy}%</span>
+          <span className="indicator-value">{defense.navy || 20}%</span>
         </div>
         <div className="indicator">
           <span className="indicator-label">Exército:</span>
           <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: `${countryState.defense.army}%` }}
+              style={{ width: `${defense.army || 20}%` }}
             ></div>
           </div>
-          <span className="indicator-value">{countryState.defense.army}%</span>
+          <span className="indicator-value">{defense.army || 20}%</span>
         </div>
         <div className="indicator">
           <span className="indicator-label">Aeronáutica:</span>
           <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: `${countryState.defense.airforce}%` }}
+              style={{ width: `${defense.airforce || 20}%` }}
             ></div>
           </div>
-          <span className="indicator-value">{countryState.defense.airforce}%</span>
+          <span className="indicator-value">{defense.airforce || 20}%</span>
         </div>
       </div>
       
@@ -173,20 +139,20 @@ const CountryState = ({ roomName, countryName }) => {
           <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: `${countryState.commerce.exports}%` }}
+              style={{ width: `${commerce.exports || 15}%` }}
             ></div>
           </div>
-          <span className="indicator-value">{countryState.commerce.exports}%</span>
+          <span className="indicator-value">{commerce.exports || 15}%</span>
         </div>
         <div className="indicator">
           <span className="indicator-label">Importação:</span>
           <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: `${countryState.commerce.imports}%` }}
+              style={{ width: `${commerce.imports || 15}%` }}
             ></div>
           </div>
-          <span className="indicator-value">{countryState.commerce.imports}%</span>
+          <span className="indicator-value">{commerce.imports || 15}%</span>
         </div>
       </div>
       
@@ -198,30 +164,30 @@ const CountryState = ({ roomName, countryName }) => {
           <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: `${countryState.politics.parliament}%` }}
+              style={{ width: `${politics.parliament || 50}%` }}
             ></div>
           </div>
-          <span className="indicator-value">{countryState.politics.parliament}%</span>
+          <span className="indicator-value">{politics.parliament || 50}%</span>
         </div>
         <div className="indicator">
           <span className="indicator-label">Imprensa:</span>
           <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: `${countryState.politics.media}%` }}
+              style={{ width: `${politics.media || 50}%` }}
             ></div>
           </div>
-          <span className="indicator-value">{countryState.politics.media}%</span>
+          <span className="indicator-value">{politics.media || 50}%</span>
         </div>
         <div className="indicator">
           <span className="indicator-label">Oposição:</span>
           <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: `${countryState.politics.opposition}%` }}
+              style={{ width: `${politics.opposition || 25}%` }}
             ></div>
           </div>
-          <span className="indicator-value">{countryState.politics.opposition}%</span>
+          <span className="indicator-value">{politics.opposition || 25}%</span>
         </div>
       </div>
     </div>

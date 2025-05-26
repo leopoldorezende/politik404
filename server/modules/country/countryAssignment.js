@@ -39,6 +39,12 @@ function setupCountryAssignment(io, socket, gameState) {
       return;
     }
   
+    // Inicializar economia da sala se necessário
+    const economyService = global.economyService;
+    if (economyService && gameState.countriesData) {
+      economyService.initializeRoom(roomName, gameState.countriesData);
+    }
+    
     // Adiciona o jogador à sala
     socket.join(roomName);
     

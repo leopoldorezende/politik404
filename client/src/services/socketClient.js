@@ -1,7 +1,7 @@
 import { store } from '../store';
 import { login } from '../modules/auth/authState';
 import { setMyCountry } from '../modules/game/gameState';
-import { resetState as resetCountryState } from '../modules/country/countryStateSlice';
+// ❌ REMOVIDO: import { resetState as resetCountryState } from '../modules/country/countryStateSlice';
 import { resetTradeState } from '../modules/trade/tradeState';
 import StorageService from './storageService.js';
 import { 
@@ -27,12 +27,7 @@ export const SOCKET_EVENTS = {
   SEND_TRADE_PROPOSAL: 'socket/sendTradeProposal',
 };
 
-export const COUNTRY_STATE_EVENTS = {
-  SUBSCRIBE: 'socket/subscribeToCountryStates',
-  UNSUBSCRIBE: 'socket/unsubscribeFromCountryStates',
-  GET_STATE: 'socket/getCountryState',
-  UPDATE_STATE: 'socket/updateCountryState',
-};
+// ❌ REMOVIDO: export const COUNTRY_STATE_EVENTS (não mais usado)
 
 export const TRADE_EVENTS = {
   CANCEL_AGREEMENT: 'socket/cancelTradeAgreement',
@@ -152,7 +147,7 @@ export const socketApi = {
 
     store.dispatch(setMyCountry(null));
     StorageService.remove(StorageService.KEYS.MY_COUNTRY);
-    store.dispatch(resetCountryState());
+    // ❌ REMOVIDO: store.dispatch(resetCountryState());
     store.dispatch(resetTradeState());
   },
   
@@ -188,31 +183,7 @@ export const socketApi = {
   },
   
   // ======================================================================
-  // MÉTODOS DE ESTADO DE PAÍS
-  // ======================================================================
-
-  subscribeToCountryStates: (roomName) => {
-    const socket = getSocketInstance() || socketApi.connect();
-    socket.emit('subscribeToCountryStates', roomName);
-  },
-
-  unsubscribeFromCountryStates: (roomName) => {
-    const socket = getSocketInstance() || socketApi.connect();
-    socket.emit('unsubscribeFromCountryStates', roomName);
-  },
-
-  getCountryState: (roomName, countryName) => {
-    const socket = getSocketInstance() || socketApi.connect();
-    socket.emit('getCountryState', { roomName, countryName });
-  },
-
-  updateCountryState: (roomName, countryName, category, updates) => {
-    const socket = getSocketInstance() || socketApi.connect();
-    socket.emit('updateCountryState', { roomName, countryName, category, updates });
-  },
-
-  // ======================================================================
-  // MÉTODOS DE ECONOMIA
+  // MÉTODOS DE ECONOMIA (SIMPLIFICADOS)
   // ======================================================================
   
   updateEconomicParameter: (parameter, value) => {

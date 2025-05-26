@@ -6,11 +6,11 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
-import countryStateManager from './shared/countryState/countryStateManager.js';
+import economyService from './shared/services/economyService.js'; // Novo serviço centralizado
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { initializeSocketHandlers } from './modules/index.js';
-import { createSocketMiddleware } from './middlewares/socketServerMiddleware.js';
+import { createSocketMiddleware, setupPeriodicCleanup } from './middlewares/socketServerMiddleware.js';
 import { 
   createDefaultGameState,
   cleanupInactiveUsers, 
@@ -97,8 +97,8 @@ const io = new Server(server, {
   },
   transports: ['polling', 'websocket'],
   allowUpgrades: true,
-  pingTimeout: 60000, // Aumentar timeout
-  pingInterval: 25000, // Aumentar intervalo
+  pingTimeout: 60000,
+  pingInterval: 25000,
   maxHttpBufferSize: 1e8,
   connectTimeout: 45000,
   upgradeTimeout: 30000
@@ -142,8 +142,8 @@ gameState.countriesData = countriesData;
 // Disponibilizamos o gameState globalmente para acesso em outros módulos
 global.gameState = gameState;
 
-// Disponibiliza o countryStateManager globalmente para acesso em outros módulos
-global.countryStateManager = countryStateManager;
+// Disponibiliza o economyService globalmente (substitui countryStateManager)
+global.economyService = economyService;
 
 async function restoreRoomsFromRedis() {
   try {
@@ -152,6 +152,11 @@ async function restoreRoomsFromRedis() {
       const parsed = JSON.parse(stored);
       for (const [name, room] of Object.entries(parsed)) {
         gameState.rooms.set(name, room);
+        
+        // Inicializar economia para salas restauradas
+        if (Object.keys(countriesData).length > 0) {
+          economyService.initializeRoom(name, countriesData);
+        }
       }
       console.log(`[REDIS] Salas restauradas: ${gameState.rooms.size}`);
       
@@ -173,9 +178,9 @@ app.get('/check-connection', (req, res) => {
 const shutdownHandler = () => {
   console.log('Servidor está sendo encerrado. Limpando recursos...');
   
-  // Limpar o countryStateManager
-  if (global.countryStateManager) {
-    global.countryStateManager.cleanup();
+  // Limpar o economyService
+  if (global.economyService) {
+    global.economyService.cleanup();
   }
   
   // Limpar os timers de expiração
@@ -193,10 +198,34 @@ restoreRoomsFromRedis().then(() => {
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);
+    console.log(`EconomyService initialized: ${economyService.initialized ? 'Yes' : 'No'}`);
+    
+    // Configurar limpeza periódica
+    setupPeriodicCleanup(io, gameState);
   });
 });
 
 io.use(createSocketMiddleware(io));
+
+// Configurar broadcast de atualizações econômicas
+setInterval(() => {
+  // Broadcast estados econômicos para todas as salas ativas
+  for (const [roomName, room] of gameState.rooms.entries()) {
+    const hasOnlinePlayers = room.players && 
+      room.players.some(p => typeof p === 'object' && p.isOnline);
+    
+    if (hasOnlinePlayers) {
+      const roomStates = economyService.getRoomStates(roomName);
+      if (roomStates && Object.keys(roomStates).length > 0) {
+        io.to(`countryStates:${roomName}`).emit('countryStatesUpdated', {
+          roomName,
+          states: roomStates,
+          timestamp: Date.now()
+        });
+      }
+    }
+  }
+}, 2000); // A cada 2 segundos
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
@@ -245,6 +274,10 @@ io.on('connection', (socket) => {
           io.to(roomName).emit('playersList', room.players);
           if (room.players.length === 0) {
             gameState.rooms.delete(roomName);
+            
+            // Limpar dados econômicos da sala
+            economyService.removeRoom(roomName);
+            
             const roomsList = Array.from(gameState.rooms.entries()).map(([name, rm]) => ({
               name,
               owner: rm.owner,

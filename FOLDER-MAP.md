@@ -12,6 +12,8 @@
   │   ├── src
   │   │   ├── App.css
   │   │   ├── App.jsx  # Componente raiz
+  │   │   ├── hooks
+  │   │   │   └── useEconomy.js
   │   │   ├── main.jsx  # Entry point (Vite)
   │   │   ├── modules
   │   │   │   ├── actions
@@ -38,8 +40,7 @@
   │   │   │   │   ├── CountryDetails.jsx  # Componente de detalhes
   │   │   │   │   ├── CountryState.css
   │   │   │   │   ├── CountryState.jsx
-  │   │   │   │   ├── countryService.js  # Identificação dos países
-  │   │   │   │   └── countryStateSlice.js
+  │   │   │   │   └── countryService.js  # Identificação dos países
   │   │   │   ├── defense
   │   │   │   │   ├── DefensePanel.jsx  # Componente Painel Militar
   │   │   │   │   ├── defensePanel.css
@@ -53,6 +54,7 @@
   │   │   │   │   ├── GamePage.css
   │   │   │   │   ├── GamePage.jsx  # Tela principal do jogo
   │   │   │   │   └── gameState.js  # Estado do jogo
+  │   │   │   ├── index.js
   │   │   │   ├── map
   │   │   │   │   ├── Chokepoints.jsx
   │   │   │   │   ├── MapView.css
@@ -81,8 +83,7 @@
   │   │   │   ├── socketEventHandlers.js
   │   │   │   └── storageService.js
   │   │   ├── store
-  │   │   │   ├── index.js
-  │   │   │   └── socketReduxMiddleware.js
+  │   │   │   └── index.js
   │   │   └── ui
   │   │       ├── popup
   │   │       │   ├── Popup.css
@@ -116,12 +117,9 @@
   │   │   │   └── chatHandlers.js  # Handlers do chat
   │   │   ├── country
   │   │   │   ├── countryAssignment.js  # Atribuições de países
-  │   │   │   ├── countryStateHandlers.js
   │   │   │   └── countryUtils.js  # Utilitários para países
   │   │   ├── economy
-  │   │   │   ├── economyHandlers.js
-  │   │   │   ├── index.js
-  │   │   │   └── tradeAgreementService.js
+  │   │   │   └── economyHandlers.js
   │   │   ├── index.js
   │   │   ├── player
   │   │   │   ├── playerHandlers.js  # Handlers para jogadores
@@ -142,15 +140,10 @@
   │   └── shared
   │       ├── config
   │       │   └── syncConfig.js
-  │       ├── countryState
-  │       │   ├── countryEconomyCalculator.js
-  │       │   ├── countryStateConfig.js
-  │       │   ├── countryStateCore.js
-  │       │   ├── countryStateManager.js
-  │       │   ├── countryStateUpdater.js
-  │       │   └── index.js
   │       ├── firebaseAdmin.js
   │       ├── redisClient.js  # Infraestrutura do Redis
+  │       ├── services
+  │       │   └── economyService.js
   │       └── utils
   │           ├── economicUtils.js
   │           ├── gameStateUtils.js  # Utilitários de estado para o jogo

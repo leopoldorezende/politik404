@@ -1,223 +1,245 @@
 /**
- * aiCountryController.js (Corrigido)
- * IA para países não controlados por jogadores
- * CORRIGIDO: Usa countryStateManager ao invés de economyCalculations removido
+ * AI Country Controller - ATUALIZADO para usar EconomyService
+ * Controla decisões de IA para países não controlados por jogadores
  */
-
-import countryStateManager from '../../shared/countryState/countryStateManager.js';
 
 /**
  * Avalia uma proposta de comércio do ponto de vista da IA
  * @param {Object} gameState - Estado global do jogo
  * @param {string} roomName - Nome da sala
- * @param {Object} proposal - Proposta comercial
+ * @param {Object} proposal - Proposta de comércio
  * @returns {Object} - { accepted: boolean, reason: string }
  */
 function evaluateTradeProposal(gameState, roomName, proposal) {
   const { type, product, targetCountry, value, originCountry } = proposal;
   
-  try {
-    // Obter estado econômico do país alvo usando countryStateManager
-    const targetCountryState = countryStateManager.getCountryState(roomName, targetCountry);
-    
-    if (!targetCountryState || !targetCountryState.economy) {
-      return {
-        accepted: false,
-        reason: 'No economic data available for evaluation'
-      };
-    }
-    
-    const economy = targetCountryState.economy;
-    
-    // Obter valores numéricos de forma segura
-    const getNumericValue = (property) => {
-      if (property === undefined || property === null) return 0;
-      if (typeof property === 'number') return property;
-      if (typeof property === 'object' && property.value !== undefined) return property.value;
-      return 0;
-    };
-    
-    const commoditiesBalance = getNumericValue(economy.commoditiesBalance);
-    const manufacturesBalance = getNumericValue(economy.manufacturesBalance);
-    const gdp = getNumericValue(economy.gdp);
-    
-    // Lógica de decisão da IA baseada no balanço econômico
-    if (type === 'import') {
-      // Originador quer importar DO país alvo (país alvo exporta)
-      if (product === 'commodity') {
-        // Se o país alvo tem excedente de commodities, aceita exportar
-        if (commoditiesBalance > gdp * 0.05) { // 5% do PIB de excedente
-          return {
-            accepted: true,
-            reason: `${targetCountry} has commodity surplus and accepts export to ${originCountry}`
-          };
-        } else {
-          return {
-            accepted: false,
-            reason: `${targetCountry} has insufficient commodity surplus for export`
-          };
-        }
-      } else if (product === 'manufacture') {
-        // Se o país alvo tem excedente de manufaturas, aceita exportar
-        if (manufacturesBalance > gdp * 0.05) { // 5% do PIB de excedente
-          return {
-            accepted: true,
-            reason: `${targetCountry} has manufacturing surplus and accepts export to ${originCountry}`
-          };
-        } else {
-          return {
-            accepted: false,
-            reason: `${targetCountry} has insufficient manufacturing surplus for export`
-          };
-        }
-      }
-    } else if (type === 'export') {
-      // Originador quer exportar PARA o país alvo (país alvo importa)
-      if (product === 'commodity') {
-        // Se o país alvo tem déficit de commodities, aceita importar
-        if (commoditiesBalance < -gdp * 0.02) { // 2% do PIB de déficit
-          return {
-            accepted: true,
-            reason: `${targetCountry} has commodity deficit and accepts import from ${originCountry}`
-          };
-        } else {
-          return {
-            accepted: false,
-            reason: `${targetCountry} has no significant commodity deficit`
-          };
-        }
-      } else if (product === 'manufacture') {
-        // Se o país alvo tem déficit de manufaturas, aceita importar
-        if (manufacturesBalance < -gdp * 0.02) { // 2% do PIB de déficit
-          return {
-            accepted: true,
-            reason: `${targetCountry} has manufacturing deficit and accepts import from ${originCountry}`
-          };
-        } else {
-          return {
-            accepted: false,
-            reason: `${targetCountry} has no significant manufacturing deficit`
-          };
-        }
-      }
-    }
-    
-    // Fallback: decisão aleatória com tendência a rejeitar
-    const randomFactor = Math.random();
-    if (randomFactor > 0.7) { // 30% de chance de aceitar
-      return {
-        accepted: true,
-        reason: `${targetCountry} accepts proposal based on diplomatic considerations`
-      };
-    } else {
-      return {
-        accepted: false,
-        reason: `${targetCountry} rejects proposal due to current economic priorities`
-      };
-    }
-    
-  } catch (error) {
-    console.error(`Error evaluating trade proposal for ${targetCountry}:`, error);
-    
-    // Em caso de erro, rejeitar a proposta
-    return {
-      accepted: false,
-      reason: 'Internal error during proposal evaluation'
+  // ===== NOVA INTEGRAÇÃO COM ECONOMYSERVICE =====
+  // Obter dados econômicos do país alvo usando EconomyService
+  const economyService = global.economyService;
+  let targetCountryData = null;
+  
+  if (economyService) {
+    targetCountryData = economyService.getCountryState(roomName, targetCountry);
+  }
+  
+  // Se não conseguir dados do EconomyService, usar dados estáticos como fallback
+  if (!targetCountryData && gameState.countriesData) {
+    targetCountryData = { 
+      economy: gameState.countriesData[targetCountry]?.economy || {} 
     };
   }
+  // ===== FIM DA NOVA INTEGRAÇÃO =====
+  
+  // Fatores de decisão da IA
+  let acceptanceScore = 50; // Base: 50% de chance
+  
+  // Fator 1: Valor da proposta (propostas maiores são mais atrativas)
+  if (value >= 50) {
+    acceptanceScore += 20; // Proposta grande
+  } else if (value >= 20) {
+    acceptanceScore += 10; // Proposta média
+  } else if (value < 10) {
+    acceptanceScore -= 15; // Proposta muito pequena
+  }
+  
+  // Fator 2: Necessidades econômicas do país
+  if (targetCountryData?.economy) {
+    const economy = targetCountryData.economy;
+    
+    // Se for importação (país IA recebe produtos)
+    if (type === 'import') {
+      // IA prefere receber produtos que precisa
+      if (product === 'commodity' && economy.commoditiesBalance < 0) {
+        acceptanceScore += 25; // Precisa de commodities
+      }
+      if (product === 'manufacture' && economy.manufacturesBalance < 0) {
+        acceptanceScore += 25; // Precisa de manufaturas
+      }
+    }
+    
+    // Se for exportação (país IA envia produtos)
+    if (type === 'export') {
+      // IA prefere exportar produtos que tem excesso
+      if (product === 'commodity' && economy.commoditiesBalance > 10) {
+        acceptanceScore += 20; // Tem excesso de commodities
+      }
+      if (product === 'manufacture' && economy.manufacturesBalance > 10) {
+        acceptanceScore += 20; // Tem excesso de manufaturas
+      }
+      
+      // IA reluta em exportar se tem déficit
+      if (product === 'commodity' && economy.commoditiesBalance < -5) {
+        acceptanceScore -= 30; // Déficit de commodities
+      }
+      if (product === 'manufacture' && economy.manufacturesBalance < -5) {
+        acceptanceScore -= 30; // Déficit de manufaturas
+      }
+    }
+    
+    // Fator 3: Situação econômica geral
+    const gdp = economy.gdp || 100;
+    const treasury = economy.treasury || 10;
+    
+    // País com baixo tesouro é mais receptivo a comércio lucrativo
+    if (treasury < gdp * 0.05) { // Tesouro menor que 5% do PIB
+      acceptanceScore += 15;
+    }
+    
+    // País com muito tesouro é mais seletivo
+    if (treasury > gdp * 0.15) { // Tesouro maior que 15% do PIB
+      acceptanceScore -= 10;
+    }
+  }
+  
+  // Fator 4: Relacionamento baseado em acordos existentes
+  const room = gameState.rooms.get(roomName);
+  if (room && room.tradeAgreements) {
+    const existingAgreements = room.tradeAgreements.filter(agreement => 
+      (agreement.originCountry === targetCountry && agreement.country === originCountry) ||
+      (agreement.originCountry === originCountry && agreement.country === targetCountry)
+    );
+    
+    // Países com acordos existentes são mais propensos a novos acordos
+    if (existingAgreements.length > 0) {
+      acceptanceScore += 15;
+    }
+  }
+  
+  // Fator 5: Variação aleatória (simula "humor" da IA)
+  const randomFactor = (Math.random() - 0.5) * 30; // -15 a +15
+  acceptanceScore += randomFactor;
+  
+  // Limitar entre 0 e 100
+  acceptanceScore = Math.max(0, Math.min(100, acceptanceScore));
+  
+  // Decisão final
+  const accepted = acceptanceScore > 60; // Limiar de 60% para aceitar
+  
+  // Gerar razão da decisão
+  let reason = '';
+  if (accepted) {
+    if (acceptanceScore > 80) {
+      reason = `${targetCountry} achou a proposta muito vantajosa`;
+    } else {
+      reason = `${targetCountry} considera a proposta interessante`;
+    }
+  } else {
+    if (acceptanceScore < 30) {
+      reason = `${targetCountry} considera a proposta muito desfavorável`;
+    } else {
+      reason = `${targetCountry} não vê vantagem suficiente na proposta`;
+    }
+  }
+  
+  console.log(`[AI] ${targetCountry} avaliou proposta de ${originCountry}: ${accepted ? 'ACEITA' : 'REJEITADA'} (score: ${acceptanceScore.toFixed(1)})`);
+  
+  return { accepted, reason };
 }
 
 /**
- * Simula ações econômicas para países controlados pela IA
+ * Gera propostas de comércio automáticas da IA (futuro)
  * @param {Object} gameState - Estado global do jogo
  * @param {string} roomName - Nome da sala
- * @param {string} countryName - Nome do país
+ * @param {string} aiCountry - País controlado pela IA
+ * @returns {Object|null} - Proposta gerada ou null
  */
-function simulateAICountryActions(gameState, roomName, countryName) {
-  try {
-    // Obter estado do país usando countryStateManager
-    const countryState = countryStateManager.getCountryState(roomName, countryName);
-    
-    if (!countryState || !countryState.economy) {
-      console.warn(`[AI] No economic data for ${countryName}, skipping AI actions`);
-      return;
-    }
-    
-    const economy = countryState.economy;
-    
-    // Obter valores numéricos de forma segura
-    const getNumericValue = (property) => {
-      if (property === undefined || property === null) return 0;
-      if (typeof property === 'number') return property;
-      if (typeof property === 'object' && property.value !== undefined) return property.value;
-      return 0;
-    };
-    
-    const treasury = getNumericValue(economy.treasury);
-    const gdp = getNumericValue(economy.gdp);
-    const publicDebt = getNumericValue(economy.publicDebt) || 0;
-    
-    // Lógica da IA para emissão de títulos
-    if (treasury < gdp * 0.05) { // Tesouro abaixo de 5% do PIB
-      const debtToGdpRatio = publicDebt / gdp;
-      
-      // Só emite títulos se a dívida estiver abaixo de 80% do PIB
-      if (debtToGdpRatio < 0.8) {
-        const bondAmount = Math.min(gdp * 0.1, 50); // 10% do PIB ou 50 bi, o que for menor
-        
-        try {
-          const result = countryStateManager.issueDebtBonds(roomName, countryName, bondAmount);
-          
-          if (result.success) {
-            console.log(`[AI] ${countryName} issued ${bondAmount} billion in bonds (AI decision)`);
-          } else {
-            console.log(`[AI] ${countryName} failed to issue bonds: ${result.message}`);
-          }
-        } catch (error) {
-          console.error(`[AI] Error issuing bonds for ${countryName}:`, error);
-        }
-      } else {
-        console.log(`[AI] ${countryName} has high debt ratio (${(debtToGdpRatio * 100).toFixed(1)}%), avoiding new debt`);
-      }
-    }
-    
-    // Lógica da IA para ajuste de parâmetros econômicos (ocasional)
-    if (Math.random() < 0.1) { // 10% de chance a cada ciclo
-      // Ajustar taxa de juros baseado na inflação
-      const inflation = (getNumericValue(economy.inflation) || 0) * 100;
-      let targetInterestRate = 8.0; // Taxa padrão
-      
-      if (inflation > 6) {
-        targetInterestRate = Math.min(15, 8 + (inflation - 6) * 0.5); // Aumentar juros para combater inflação
-      } else if (inflation < 2) {
-        targetInterestRate = Math.max(2, 8 - (2 - inflation) * 0.5); // Reduzir juros para estimular economia
-      }
-      
-      const currentInterestRate = getNumericValue(economy.interestRate) || 8.0;
-      
-      // Só ajusta se a diferença for significativa
-      if (Math.abs(targetInterestRate - currentInterestRate) > 0.5) {
-        try {
-          countryStateManager.updateEconomicParameter(
-            roomName,
-            countryName,
-            'interestRate',
-            targetInterestRate
-          );
-          
-          console.log(`[AI] ${countryName} adjusted interest rate to ${targetInterestRate.toFixed(1)}% (inflation: ${inflation.toFixed(1)}%)`);
-        } catch (error) {
-          console.error(`[AI] Error updating interest rate for ${countryName}:`, error);
-        }
-      }
-    }
-    
-  } catch (error) {
-    console.error(`[AI] Error simulating actions for ${countryName}:`, error);
+function generateAITradeProposal(gameState, roomName, aiCountry) {
+  // ===== NOVA INTEGRAÇÃO COM ECONOMYSERVICE =====
+  const economyService = global.economyService;
+  
+  if (!economyService) {
+    return null; // Sem EconomyService, não pode gerar propostas
   }
+  
+  const countryData = economyService.getCountryState(roomName, aiCountry);
+  if (!countryData?.economy) {
+    return null; // Sem dados econômicos
+  }
+  
+  const economy = countryData.economy;
+  
+  // Lógica simples: se tem déficit grande, tenta importar
+  // se tem excesso grande, tenta exportar
+  
+  let proposalType = null;
+  let proposalProduct = null;
+  let proposalValue = 0;
+  
+  // Verificar déficits
+  if (economy.commoditiesBalance < -20) {
+    proposalType = 'import';
+    proposalProduct = 'commodity';
+    proposalValue = Math.min(50, Math.abs(economy.commoditiesBalance));
+  } else if (economy.manufacturesBalance < -20) {
+    proposalType = 'import';
+    proposalProduct = 'manufacture';
+    proposalValue = Math.min(50, Math.abs(economy.manufacturesBalance));
+  }
+  
+  // Verificar excedentes
+  if (!proposalType && economy.commoditiesBalance > 30) {
+    proposalType = 'export';
+    proposalProduct = 'commodity';
+    proposalValue = Math.min(50, economy.commoditiesBalance * 0.5);
+  } else if (!proposalType && economy.manufacturesBalance > 30) {
+    proposalType = 'export';
+    proposalProduct = 'manufacture';
+    proposalValue = Math.min(50, economy.manufacturesBalance * 0.5);
+  }
+  
+  if (!proposalType) {
+    return null; // Não há necessidade de comércio
+  }
+  
+  // Encontrar um país alvo (jogador humano preferencialmente)
+  const room = gameState.rooms.get(roomName);
+  if (!room || !room.players) {
+    return null;
+  }
+  
+  const humanPlayers = room.players.filter(player => 
+    typeof player === 'object' && 
+    player.isOnline && 
+    player.country !== aiCountry
+  );
+  
+  if (humanPlayers.length === 0) {
+    return null; // Sem jogadores humanos online
+  }
+  
+  const targetPlayer = humanPlayers[Math.floor(Math.random() * humanPlayers.length)];
+  
+  return {
+    type: proposalType,
+    product: proposalProduct,
+    targetCountry: targetPlayer.country,
+    value: Math.round(proposalValue),
+    originCountry: aiCountry,
+    originPlayer: null, // IA
+    timestamp: Date.now()
+  };
+  // ===== FIM DA NOVA INTEGRAÇÃO =====
 }
 
-export {
+/**
+ * Simula ações de países controlados por IA (função principal para middleware)
+ * @param {Object} io - Instância do Socket.io
+ * @param {Object} gameState - Estado global do jogo
+ */
+function simulateAICountryActions(io, gameState) {
+  // Por enquanto, esta função está desabilitada para simplificar
+  // A IA só age quando recebe propostas de comércio
+  
+  // Futuro: Aqui poderia haver lógica para IA proativa
+  // - Gerar propostas comerciais automaticamente
+  // - Ajustar parâmetros econômicos
+  // - Responder a eventos globais
+  
+  console.log('[AI] AI simulation called but currently disabled for simplicity');
+}
+
+export { 
   evaluateTradeProposal,
+  generateAITradeProposal,
   simulateAICountryActions
 };
