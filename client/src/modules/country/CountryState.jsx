@@ -27,12 +27,12 @@ const CountryState = ({ roomName, countryName }) => {
     return 0;
   };
   
-  // Formatar valor com sinal
+ // Formatar valor com sinal (2 casas decimais)
   const formatValueWithSign = (value) => {
-    if (value === undefined || value === null) return '0';
+    if (value === undefined || value === null) return '0.00';
     return (value >= 0 ? '+' : '') + value.toFixed(2) + ' bi';
   };
-  
+
   if (!room || !country) {
     return (
       <div className="country-state-display no-data">
@@ -66,13 +66,13 @@ const CountryState = ({ roomName, countryName }) => {
         <div className="indicator">
           <span className="indicator-label">PIB:</span>
           <span className="indicator-value">
-            {getNumericValue(economy.gdp)} bi USD
+            {getNumericValue(economy.gdp).toFixed(2)} bi
           </span>
         </div>
         <div className="indicator">
           <span className="indicator-label">Tesouro:</span>
           <span className="indicator-value">
-            {getNumericValue(economy.treasury)} bi USD
+            {getNumericValue(economy.treasury).toFixed(2)} bi
           </span>
         </div>
         

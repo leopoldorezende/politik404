@@ -6,6 +6,7 @@
 
 import redis from '../redisClient.js';
 import { getNumericValue } from '../utils/economicUtils.js';
+import { SYNC_CONFIG } from '../config/syncConfig.js';
 
 // Constantes econômicas consolidadas
 const ECONOMIC_CONSTANTS = {
@@ -13,8 +14,9 @@ const ECONOMIC_CONSTANTS = {
   EQUILIBRIUM_TAX_RATE: 40.0,
   EQUILIBRIUM_INFLATION: 0.04,
   MAX_DEBT_TO_GDP_RATIO: 1.2,
-  UPDATE_INTERVAL: 2000, // 2 segundos
-  SAVE_INTERVAL: 60000 // 1 minuto
+
+  UPDATE_INTERVAL: SYNC_CONFIG.ECONOMY_UPDATE_INTERVAL,
+  SAVE_INTERVAL: SYNC_CONFIG.ECONOMY_SAVE_INTERVAL,
 };
 
 class EconomyService {
@@ -495,10 +497,6 @@ class EconomyService {
           timestamp: Date.now()
         });
       }
-    }
-    
-    if (updatedCountries > 0) {
-      console.log(`[ECONOMY] Updated ${updatedCountries} countries`);
     }
   }
 

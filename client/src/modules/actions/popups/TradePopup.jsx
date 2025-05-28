@@ -116,15 +116,12 @@ const TradePopup = ({
     
     return (
       <div className="cooldown-message">
-        <p>
-          Você precisa aguardar antes de enviar uma nova proposta de {actionType}.
-        </p>
         <div className="cooldown-timer">
           <span className="material-icons">timer</span>
           <span className="countdown">{remaining} segundos</span>
         </div>
         <p>
-          Por favor, aguarde o fim deste período de espera para enviar uma nova proposta comercial.
+          Você precisa aguardar antes de enviar uma nova proposta de {actionType}.
         </p>
       </div>
     );

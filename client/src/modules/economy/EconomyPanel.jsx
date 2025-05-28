@@ -16,10 +16,16 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   const currentRoom = useSelector(state => state.rooms?.currentRoom);
   
   // Hook direto para dados econômicos (substitui Redux)
-  const { economicIndicators, loading, formatCurrency, formatPercent } = useEconomy(
+  const { economicIndicators, loading, formatPercent } = useEconomy(
     currentRoom?.name, 
     myCountry
   );
+  
+  // Formatação específica para valores em bilhões com 2 casas decimais
+  const formatCurrency = (value) => {
+    if (value === undefined || value === null || isNaN(value)) return '0.00';
+    return Number(value).toFixed(2);
+  };
   
   // Hook para dívida pública
   const { debtSummary, refresh: refreshDebt } = usePublicDebt(

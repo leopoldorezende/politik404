@@ -14,10 +14,16 @@ const TradePanel = () => {
   const currentRoom = useSelector(state => state.rooms.currentRoom);
   
   // Hooks diretos para dados
-  const { economicIndicators, formatCurrency, formatPercent } = useEconomy(
+  const { economicIndicators, formatPercent } = useEconomy(
     currentRoom?.name, 
     myCountry
   );
+  
+  // Formatação específica para valores em bilhões com 2 casas decimais
+  const formatCurrency = (value) => {
+    if (value === undefined || value === null || isNaN(value)) return '0.00';
+    return Number(value).toFixed(2);
+  };
   
   const { agreements, refresh: refreshAgreements } = useTradeAgreements(
     currentRoom?.name
@@ -50,11 +56,11 @@ const TradePanel = () => {
     }
   };
 
-  // Formatar valor com sinal
+  // Formatar valor com sinal (2 casas decimais)
   const formatValueWithSign = (value) => {
-    if (value === undefined || value === null) return '0';
+    if (value === undefined || value === null) return '0.00';
     const num = Number(value);
-    return (num >= 0 ? '+' : '') + num.toFixed(1) + ' bi';
+    return (num >= 0 ? '+' : '') + num.toFixed(2) + ' bi';
   };
 
   if (!myCountry) {
@@ -103,7 +109,7 @@ const TradePanel = () => {
               <div className="balance-row">
                 <span className="balance-label">Importações:</span>
                 <div className="balance-values-container">
-                  <span className="balance-number positive">+{formatCurrency(economicIndicators.tradeStats.commodityImports)} bi</span>
+                  <span className={`balance-number ${economicIndicators.commoditiesBalance < 0 ? 'positive' : 'negative'}`}>+{formatCurrency(economicIndicators.tradeStats.commodityImports)} bi</span>
                 </div>
               </div>
             )}
@@ -113,7 +119,7 @@ const TradePanel = () => {
               <div className="balance-row">
                 <span className="balance-label">Exportações:</span>
                 <div className="balance-values-container">
-                  <span className="balance-number negative">-{formatCurrency(economicIndicators.tradeStats.commodityExports)} bi</span>
+                  <span className={`balance-number ${economicIndicators.commoditiesBalance > 0 ? 'positive' : 'negative'}`}>-{formatCurrency(economicIndicators.tradeStats.commodityExports)} bi</span>
                 </div>
               </div>
             )}
@@ -150,7 +156,7 @@ const TradePanel = () => {
               <div className="balance-row">
                 <span className="balance-label">Importações:</span>
                 <div className="balance-values-container">
-                  <span className="balance-number positive">+{formatCurrency(economicIndicators.tradeStats.manufactureImports)} bi</span>
+                  <span className={`balance-number ${economicIndicators.manufacturesBalance < 0 ? 'positive' : 'negative'}`}>+{formatCurrency(economicIndicators.tradeStats.manufactureImports)} bi</span>
                 </div>
               </div>
             )}
@@ -160,7 +166,7 @@ const TradePanel = () => {
               <div className="balance-row">
                 <span className="balance-label">Exportações:</span>
                 <div className="balance-values-container">
-                  <span className="balance-number negative">-{formatCurrency(economicIndicators.tradeStats.manufactureExports)} bi</span>
+                  <span className={`balance-number ${economicIndicators.manufacturesBalance > 0 ? 'positive' : 'negative'}`}>-{formatCurrency(economicIndicators.tradeStats.manufactureExports)} bi</span>
                 </div>
               </div>
             )}

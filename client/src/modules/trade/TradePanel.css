@@ -135,14 +135,6 @@
   font-weight: bold;
 }
 
-.balance-value.positive {
-  color: #0f7a3c;
-}
-
-.balance-value.negative {
-  color: #a82112;
-}
-
 .balance-details {
   padding: 8px 12px;
 }
@@ -160,14 +152,6 @@
 .balance-number {
   font-weight: bold;
   margin-right: 5px;
-}
-
-.balance-number.positive {
-  color: #0f7a3c;
-}
-
-.balance-number.negative {
-  color: #a82112;
 }
 
 .balance-percent {
@@ -423,6 +407,14 @@
   color: #a82112;
 }
 
+.balance-number.positive {
+  color: #0f7a3c;
+}
+
+.balance-number.negative {
+  color: #a82112;
+}
+
 .balance-details {
   padding: 6px 8px;
 }
@@ -451,14 +443,6 @@
   font-weight: bold;
   margin-right: 5px;
   font-size: 13px;
-}
-
-.balance-number.negative {
-  color: #0f7a3c;
-}
-
-.balance-number.positive {
-  color: #a82112;
 }
 
 .balance-percent {
