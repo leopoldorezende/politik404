@@ -3,6 +3,7 @@
   /Politik404
   ├── FOLDER-MAP.md
   ├── README.md  # Documentação do front-end
+  ├── __
   ├── client
   │   ├── index.html  # HTML principal
   │   ├── package.json  # Dependências e scripts principais (monorepo)

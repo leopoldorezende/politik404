@@ -486,6 +486,15 @@ class EconomyService {
         this.performEconomicCalculations(roomName, countryName);
         updatedCountries++;
       }
+      
+      // ADICIONAR ESTA PARTE - Broadcast após cálculos
+      if (Object.keys(roomStates).length > 0 && global.io) {
+        global.io.to(`countryStates:${roomName}`).emit('countryStatesUpdated', {
+          roomName,
+          states: roomStates,
+          timestamp: Date.now()
+        });
+      }
     }
     
     if (updatedCountries > 0) {

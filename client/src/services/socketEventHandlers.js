@@ -414,27 +414,4 @@ export const setupSocketEvents = (socket, socketApi) => {
       });
     }
   });
-  
-  // ======================================================================
-  // PING/PONG PARA MANTER CONEXÃO ATIVA
-  // ======================================================================
-  
-  const pingInterval = setInterval(() => {
-    if (socket.connected && isAuthenticated) {
-      socket.emit('ping', Date.now());
-    }
-  }, 30000);
-  
-  socket.on('disconnect', () => {
-    if (pingInterval) {
-      clearInterval(pingInterval);
-    }
-  });
-  
-  socket.on('pong', (timestamp) => {
-    const latency = Date.now() - timestamp;
-    if (latency > 1000) {
-      console.log(`Socket latency: ${latency}ms`);
-    }
-  });
 };

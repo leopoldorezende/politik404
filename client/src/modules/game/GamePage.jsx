@@ -14,7 +14,7 @@ import './GamePage.css';
 
 
 const GamePage = () => {
-  const CLIENT_UPDATE_INTERVAL = 1000;
+  const CLIENT_UPDATE_INTERVAL = 500;
   const dispatch = useDispatch();
   const myCountry = useSelector(state => state.game.myCountry);
   const currentRoom = useSelector(state => state.rooms.currentRoom);

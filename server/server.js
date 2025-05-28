@@ -104,6 +104,8 @@ const io = new Server(server, {
   upgradeTimeout: 30000
 });
 
+global.io = io;
+
 // Rota para obter o token Mapbox
 app.get('/api/mapbox', (req, res) => {
   const authHeader = req.headers.authorization;
@@ -214,32 +216,6 @@ restoreRoomsFromRedis().then(() => {
 });
 
 io.use(createSocketMiddleware(io));
-
-// Configurar broadcast de atualizações econômicas A CADA 2 SEGUNDOS (CRÍTICO)
-setInterval(() => {
-  // Broadcast estados econômicos para todas as salas ativas
-  for (const [roomName, room] of gameState.rooms.entries()) {
-    const hasOnlinePlayers = room.players && 
-      room.players.some(p => typeof p === 'object' && p.isOnline);
-    
-    if (hasOnlinePlayers) {
-      const roomStates = economyService.getRoomStates(roomName);
-      if (roomStates && Object.keys(roomStates).length > 0) {
-        // FORÇAR broadcast para subscribers
-        io.to(`countryStates:${roomName}`).emit('countryStatesUpdated', {
-          roomName,
-          states: roomStates,
-          timestamp: Date.now()
-        });
-        
-        // Log ocasional para debug
-        if (Date.now() % 10000 < 2000) {
-          console.log(`[BROADCAST] Sent updates to room ${roomName}: ${Object.keys(roomStates).length} countries`);
-        }
-      }
-    }
-  }
-}, 2000); // EXATAMENTE 2 segundos
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
