@@ -152,4 +152,4 @@
   │       └── utils
   │           ├── economicUtils.js
   │           └── gameStateUtils.js  # Utilitários de estado para o jogo
-  └── v20.md
+  └── v21.md
