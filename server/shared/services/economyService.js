@@ -68,114 +68,124 @@ class EconomyService {
   // ========================================================================
 
   initializeRoom(roomName, countriesData) {
-    if (this.countryStates.has(roomName)) {
-      console.log(`[ECONOMY] Room ${roomName} already initialized`);
-      return;
+    // Garantir que a estrutura da sala existe
+    if (!this.countryStates.has(roomName)) {
+      this.countryStates.set(roomName, {});
+      console.log(`[ECONOMY] Room ${roomName} structure created`);
     }
-
-    const roomStates = {};
     
+    const roomStates = this.countryStates.get(roomName);
+    let countriesInitialized = 0;
+    
+    // Inicializar apenas países que ainda não existem
     for (const [countryName, countryData] of Object.entries(countriesData)) {
-      roomStates[countryName] = this.createCountryState(countryName, countryData);
+      if (!roomStates[countryName]) {
+        roomStates[countryName] = this.createCountryState(countryName, countryData);
+        countriesInitialized++;
+      }
     }
     
-    this.countryStates.set(roomName, roomStates);
-    console.log(`[ECONOMY] Room ${roomName} initialized with ${Object.keys(roomStates).length} countries`);
+    if (countriesInitialized > 0) {
+      console.log(`[ECONOMY] Room ${roomName}: initialized ${countriesInitialized} new countries`);
+    } else {
+      console.log(`[ECONOMY] Room ${roomName}: all countries already initialized`);
+    }
   }
 
-createCountryState(countryName, countryData) {
-  const economy = countryData?.economy || {};
-  
-  // USAR percentuais EXATOS do JSON (sem random)
-  let services = getNumericValue(economy.services) || 35;
-  let commodities = getNumericValue(economy.commodities) || 35;
-  let manufactures = getNumericValue(economy.manufactures) || 30;
-  
-  // GARANTIR que os setores somem exatamente 100% (normalizar se necessário)
-  const totalSectors = services + commodities + manufactures;
-  if (Math.abs(totalSectors - 100) > 0.01) {
-    console.log(`[ECONOMY] ${countryName} sectoral total was ${totalSectors}%, normalizing to 100%`);
-    // Normalizar proporcionalmente
-    services = (services / totalSectors) * 100;
-    commodities = (commodities / totalSectors) * 100;
-    manufactures = (manufactures / totalSectors) * 100;
-  }
-  
-  // Calcular necessidades base SEM random - baseado apenas na estrutura produtiva
-  const commoditiesNeedsPercent = 25 + (commodities * 0.1); // Base 25% + influência da produção
-  const manufacturesNeedsPercent = 35 + (manufactures * 0.1); // Base 35% + influência da produção
-  
-  // Garantir limites razoáveis
-  const finalCommoditiesNeeds = Math.max(15, Math.min(45, commoditiesNeedsPercent));
-  const finalManufacturesNeeds = Math.max(25, Math.min(55, manufacturesNeedsPercent));
-  
-  console.log(`[ECONOMY] ${countryName} exact sectors from JSON - Services: ${services.toFixed(1)}%, Commodities: ${commodities.toFixed(1)}%, Manufactures: ${manufactures.toFixed(1)}% (Total: ${(services + commodities + manufactures).toFixed(1)}%)`);
-  console.log(`[ECONOMY] ${countryName} calculated needs - Commodities: ${finalCommoditiesNeeds.toFixed(1)}%, Manufactures: ${finalManufacturesNeeds.toFixed(1)}%`);
-  
-  return {
-    economy: {
-      // Valores básicos
-      gdp: getNumericValue(economy.gdp) || 100,
-      treasury: getNumericValue(economy.treasury) || 10,
-      publicDebt: getNumericValue(economy.publicDebt) || 0,
-      
-      // Distribuição setorial EXATA do JSON
-      services: Math.round(services * 100) / 100, // 2 casas decimais
-      commodities: Math.round(commodities * 100) / 100,
-      manufactures: Math.round(manufactures * 100) / 100,
-      
-      // Outputs calculados dinamicamente (valores absolutos baseados no PIB)
-      servicesOutput: 0,
-      commoditiesOutput: 0,
-      manufacturesOutput: 0,
-      
-      // Necessidades (apenas commodities e manufactures)
-      commoditiesNeeds: 0,
-      manufacturesNeeds: 0,
-      
-      // Balanços
-      commoditiesBalance: 0,
-      manufacturesBalance: 0,
-      
-      // Guardar percentuais base para cálculos futuros (SEM random)
-      _commoditiesNeedsBasePercent: finalCommoditiesNeeds,
-      _manufacturesNeedsBasePercent: finalManufacturesNeeds,
-      
-      // Indicadores avançados
-      inflation: (getNumericValue(economy.inflation) || 2.8) / 100,
-      unemployment: getNumericValue(economy.unemployment) || 12.5,
-      popularity: getNumericValue(economy.popularity) || 50,
-      creditRating: 'A',
-      
-      // Parâmetros de política econômica
-      interestRate: getNumericValue(economy.interestRate) || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE,
-      taxBurden: getNumericValue(economy.taxBurden) || ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE,
-      publicServices: getNumericValue(economy.publicServices) || 30.0,
-      
-      // Estatísticas de comércio
-      tradeStats: {
-        commodityImports: 0,
-        commodityExports: 0,
-        manufactureImports: 0,
-        manufactureExports: 0
-      }
-    },
-    defense: {
-      navy: getNumericValue(countryData?.defense?.navy) || 20,
-      army: getNumericValue(countryData?.defense?.army) || 20,
-      airforce: getNumericValue(countryData?.defense?.airforce) || 20
-    },
-    commerce: {
-      exports: 15,
-      imports: 15
-    },
-    politics: {
-      parliament: getNumericValue(countryData?.politics?.parliamentSupport) || 50,
-      media: getNumericValue(countryData?.politics?.mediaSupport) || 50,
-      opposition: getNumericValue(countryData?.politics?.opposition?.strength || countryData?.politics?.opposition) || 25
+  createCountryState(countryName, countryData) {
+    const economy = countryData?.economy || {};
+    
+    // USAR percentuais EXATOS do JSON (sem random)
+    let services = getNumericValue(economy.services) || 35;
+    let commodities = getNumericValue(economy.commodities) || 35;
+    let manufactures = getNumericValue(economy.manufactures) || 30;
+    
+    // GARANTIR que os setores somem exatamente 100% (normalizar se necessário)
+    const totalSectors = services + commodities + manufactures;
+    if (Math.abs(totalSectors - 100) > 0.01) {
+      console.log(`[ECONOMY] ${countryName} sectoral total was ${totalSectors}%, normalizing to 100%`);
+      // Normalizar proporcionalmente
+      services = (services / totalSectors) * 100;
+      commodities = (commodities / totalSectors) * 100;
+      manufactures = (manufactures / totalSectors) * 100;
     }
-  };
-}
+    
+    // Calcular necessidades base SEM random - baseado apenas na estrutura produtiva
+    const commoditiesNeedsPercent = 25 + (commodities * 0.1); // Base 25% + influência da produção
+    const manufacturesNeedsPercent = 35 + (manufactures * 0.1); // Base 35% + influência da produção
+    
+    // Garantir limites razoáveis
+    const finalCommoditiesNeeds = Math.max(15, Math.min(45, commoditiesNeedsPercent));
+    const finalManufacturesNeeds = Math.max(25, Math.min(55, manufacturesNeedsPercent));
+    
+    // console.log(`[ECONOMY] ${countryName} exact sectors from JSON - Services: ${services.toFixed(1)}%, Commodities: ${commodities.toFixed(1)}%, Manufactures: ${manufactures.toFixed(1)}% (Total: ${(services + commodities + manufactures).toFixed(1)}%)`);
+    // console.log(`[ECONOMY] ${countryName} calculated needs - Commodities: ${finalCommoditiesNeeds.toFixed(1)}%, Manufactures: ${finalManufacturesNeeds.toFixed(1)}%`);
+    
+    return {
+      economy: {
+        // Valores básicos
+        gdp: getNumericValue(economy.gdp) || 100,
+        treasury: getNumericValue(economy.treasury) || 10,
+        publicDebt: getNumericValue(economy.publicDebt) || 0,
+        
+        // Distribuição setorial EXATA do JSON
+        services: Math.round(services * 100) / 100, // 2 casas decimais
+        commodities: Math.round(commodities * 100) / 100,
+        manufactures: Math.round(manufactures * 100) / 100,
+        
+        // Outputs calculados dinamicamente (valores absolutos baseados no PIB)
+        servicesOutput: 0,
+        commoditiesOutput: 0,
+        manufacturesOutput: 0,
+        
+        // Necessidades (apenas commodities e manufactures)
+        commoditiesNeeds: 0,
+        manufacturesNeeds: 0,
+        
+        // Balanços
+        commoditiesBalance: 0,
+        manufacturesBalance: 0,
+        
+        // Guardar percentuais base para cálculos futuros (SEM random)
+        _commoditiesNeedsBasePercent: finalCommoditiesNeeds,
+        _manufacturesNeedsBasePercent: finalManufacturesNeeds,
+        
+        // Indicadores avançados
+        inflation: (getNumericValue(economy.inflation) || 2.8) / 100,
+        unemployment: getNumericValue(economy.unemployment) || 12.5,
+        popularity: getNumericValue(economy.popularity) || 50,
+        creditRating: 'A',
+        
+        // Parâmetros de política econômica
+        interestRate: getNumericValue(economy.interestRate) || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE,
+        taxBurden: getNumericValue(economy.taxBurden) || ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE,
+        publicServices: getNumericValue(economy.publicServices) || 30.0,
+        
+        // Estatísticas de comércio
+        tradeStats: {
+          commodityImports: 0,
+          commodityExports: 0,
+          manufactureImports: 0,
+          manufactureExports: 0
+        }
+      },
+      defense: {
+        navy: getNumericValue(countryData?.defense?.navy) || 20,
+        army: getNumericValue(countryData?.defense?.army) || 20,
+        airforce: getNumericValue(countryData?.defense?.airforce) || 20
+      },
+      commerce: {
+        exports: 15,
+        imports: 15
+      },
+      politics: {
+        parliament: getNumericValue(countryData?.politics?.parliamentSupport) || 50,
+        media: getNumericValue(countryData?.politics?.mediaSupport) || 50,
+        opposition: getNumericValue(countryData?.politics?.opposition?.strength || countryData?.politics?.opposition) || 25
+      }
+    };
+  }
+
   // ========================================================================
   // ATUALIZAÇÃO DE PARÂMETROS ECONÔMICOS
   // ========================================================================
@@ -465,6 +475,7 @@ debugCountryState(roomName, countryName) {
 
   issueDebtBonds(roomName, countryName, bondAmount) {
     const countryState = this.getCountryState(roomName, countryName);
+
     if (!countryState) {
       return { success: false, message: 'País não encontrado' };
     }

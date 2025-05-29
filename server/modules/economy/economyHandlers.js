@@ -3,7 +3,6 @@
  * APENAS comunicação WebSocket - lógica delegada para EconomyService
  */
 
-import economyService from '../../shared/services/economyService.js';
 import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/utils/gameStateUtils.js';
 import { evaluateTradeProposal } from '../ai/aiCountryController.js';
 
@@ -48,15 +47,14 @@ function setupEconomyHandlers(io, socket, gameState) {
     }
     
     // VERIFICAR se economyService existe
-    const economyService = global.economyService;
-    if (!economyService) {
+    if (!global.economyService) {
       console.error('[ECONOMY] EconomyService not available');
       socket.emit('error', 'Economy service not available');
       return;
     }
     
     // VERIFICAR se economyService está inicializado
-    if (!economyService.initialized) {
+    if (!global.economyService.initialized) {
       console.error('[ECONOMY] EconomyService not initialized');
       socket.emit('error', 'Economy service not initialized');
       return;
@@ -64,7 +62,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     
     // Tentar atualizar o parâmetro
     try {
-      const result = economyService.updateEconomicParameter(roomName, userCountry, parameter, value);
+      const result = global.economyService.updateEconomicParameter(roomName, userCountry, parameter, value);
       
       if (result) {
         console.log(`[ECONOMY] Parameter updated successfully: ${parameter} = ${value} for ${userCountry}`);
@@ -87,7 +85,7 @@ function setupEconomyHandlers(io, socket, gameState) {
           });
         }
       } else {
-        console.error(`[ECONOMY] Failed to update parameter - economyService returned null/false`);
+        console.error(`[ECONOMY] Failed to update parameter - global.economyService returned null/false`);
         socket.emit('error', 'Failed to update parameter - service error');
       }
     } catch (error) {
@@ -104,7 +102,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     const username = socket.username;
     const roomName = getCurrentRoom(socket, gameState);
     const userCountry = getUserCountry(gameState, roomName, username);
-    
+
     if (!username || !roomName || !userCountry) {
       socket.emit('error', 'Invalid request');
       return;
@@ -113,7 +111,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     const { bondAmount } = data;
     
     // Delegar para EconomyService
-    const result = economyService.issueDebtBonds(roomName, userCountry, bondAmount);
+    const result = global.economyService.issueDebtBonds(roomName, userCountry, bondAmount);
     
     if (result.success) {
       socket.emit('debtBondsIssued', result);
@@ -144,23 +142,22 @@ function setupEconomyHandlers(io, socket, gameState) {
     }
     
     // VERIFICAÇÃO ADICIONAL: Garantir que o país existe no EconomyService
-    const economyService = global.economyService;
-    if (!economyService) {
+    if (!global.economyService) {
       socket.emit('error', 'Economy service not available');
       return;
     }
     
-    const countryState = economyService.getCountryState(roomName, userCountry);
+    const countryState = global.economyService.getCountryState(roomName, userCountry);
     if (!countryState) {
       console.error(`[ECONOMY] Country state not found for ${userCountry} in room ${roomName}`);
       
       // Tentar inicializar o país se a sala existe mas o país não
       if (gameState.countriesData && gameState.countriesData[userCountry]) {
         console.log(`[ECONOMY] Attempting to initialize missing country: ${userCountry}`);
-        economyService.initializeRoom(roomName, { [userCountry]: gameState.countriesData[userCountry] });
+        global.economyService.initializeRoom(roomName, { [userCountry]: gameState.countriesData[userCountry] });
         
         // Tentar novamente após inicialização
-        const retryCountryState = economyService.getCountryState(roomName, userCountry);
+        const retryCountryState = global.economyService.getCountryState(roomName, userCountry);
         if (!retryCountryState) {
           socket.emit('error', 'Failed to initialize country data');
           return;
@@ -172,8 +169,8 @@ function setupEconomyHandlers(io, socket, gameState) {
     }
     
     // Prosseguir com a lógica normal
-    const debtSummary = economyService.getDebtSummary(roomName, userCountry);
-    const finalCountryState = economyService.getCountryState(roomName, userCountry);
+    const debtSummary = global.economyService.getDebtSummary(roomName, userCountry);
+    const finalCountryState = global.economyService.getCountryState(roomName, userCountry);
     
     if (finalCountryState) {
       const economy = finalCountryState.economy;
@@ -265,7 +262,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       setTimeout(() => {
         if (aiDecision.accepted) {
           // Criar acordo comercial
-          economyService.createTradeAgreement(roomName, {
+          global.economyService.createTradeAgreement(roomName, {
             type, product, country: targetCountry, value,
             originCountry: userCountry, originPlayer: username
           });
@@ -307,7 +304,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     
     if (accepted) {
       // Criar acordo comercial
-      economyService.createTradeAgreement(roomName, {
+      global.economyService.createTradeAgreement(roomName, {
         type: proposal.type,
         product: proposal.product,
         country: proposal.targetCountry,
@@ -356,7 +353,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    const success = economyService.cancelTradeAgreement(roomName, agreementId);
+    const success = global.economyService.cancelTradeAgreement(roomName, agreementId);
     
     if (success) {
       socket.emit('tradeAgreementCancelled', agreementId);
@@ -410,7 +407,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     socket.join(`countryStates:${roomName}`);
     
     // Enviar estados iniciais IMEDIATAMENTE
-    const roomStates = economyService.getRoomStates(roomName);
+    const roomStates = global.economyService.getRoomStates(roomName);
     socket.emit('countryStatesInitialized', {
       roomName,
       states: roomStates,
@@ -430,12 +427,21 @@ function setupEconomyHandlers(io, socket, gameState) {
 function getUserCountry(gameState, roomName, username) {
   if (!roomName || !username) return null;
   
-  const userRoomKey = `${username}:${roomName}`;
-  const country = gameState.userRoomCountries?.get(userRoomKey);
+  // Usar a mesma fonte que countryAssignment.js usa
+  const room = gameState.rooms.get(roomName);
+  if (!room || !room.players) return null;
   
+  const player = room.players.find(p => {
+    if (typeof p === 'object') {
+      return p.username === username;
+    }
+    return false;
+  });
+  
+  const country = player?.country || null;
   console.log(`[ECONOMY] Getting user country: ${username} in ${roomName} = ${country}`);
   
-  return country || null;
+  return country;
 }
 
 export { setupEconomyHandlers };
