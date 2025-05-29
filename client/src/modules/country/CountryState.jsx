@@ -94,6 +94,16 @@ const CountryState = ({ roomName, countryName }) => {
             </span>
           </div>
         )}
+{/* 
+        {economy.servicesOutput !== undefined && (
+          <div className="indicator">
+            <span className="indicator-label">Produção de Serviços:</span>
+            <span className="indicator-value desativate">
+              {getNumericValue(economy.servicesOutput).toFixed(2)} bi
+            </span>
+          </div>
+        )}
+         */}
       </div>
       
       {/* Seção de Defesa */}

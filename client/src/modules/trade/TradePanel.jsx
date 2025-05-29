@@ -89,6 +89,7 @@ const TradePanel = () => {
     <div className="trade-panel">
       
       <div className="trade-balance-section">
+
         <div className="balance-item">
           <div className="balance-header">
             <span className="balance-title">Commodities</span>
@@ -101,6 +102,9 @@ const TradePanel = () => {
               <span className="balance-label">Produção:</span>
               <div className="balance-values-container">
                 <span className="balance-number">{formatCurrency(economicIndicators.commoditiesOutput)} bi</span>
+                <span className="balance-percent">
+                  ({Math.round((economicIndicators.commoditiesOutput / economicIndicators.gdp) * 100)}% PIB)
+                </span>
               </div>
             </div>
             
@@ -148,6 +152,9 @@ const TradePanel = () => {
               <span className="balance-label">Produção:</span>
               <div className="balance-values-container">
                 <span className="balance-number">{formatCurrency(economicIndicators.manufacturesOutput)} bi</span>
+                <span className="balance-percent">
+                  ({Math.round((economicIndicators.manufacturesOutput / economicIndicators.gdp) * 100)}% PIB)
+                </span>
               </div>
             </div>
             
@@ -177,6 +184,26 @@ const TradePanel = () => {
                 <span className="balance-number">{formatCurrency(economicIndicators.manufacturesNeeds)} bi</span>
                 <span className="balance-percent">
                   ({Math.round((economicIndicators.manufacturesNeeds / economicIndicators.gdp) * 100)}% PIB)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="balance-item">
+          <div className="balance-header">
+            <span className="balance-title">Serviços</span>
+            <div className="balance-value">
+              &nbsp;
+            </div>
+          </div>
+          <div className="balance-details">
+            <div className="balance-row">
+              <span className="balance-label">Produção:</span>
+              <div className="balance-values-container">
+                <span className="balance-number">{formatCurrency(economicIndicators.servicesOutput)} bi</span>
+                <span className="balance-percent">
+                  ({Math.round((economicIndicators.servicesOutput / economicIndicators.gdp) * 100)}% PIB)
                 </span>
               </div>
             </div>

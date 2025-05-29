@@ -355,7 +355,7 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
   
   socket.on('tradeAgreementsList', (data) => {
-    console.log('Lista de acordos comerciais recebida:', data);
+    //console.log('Lista de acordos comerciais recebida:', data);
     
     store.dispatch(resetTradeState());
     
@@ -369,7 +369,7 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
   
   socket.on('tradeAgreementUpdated', (data) => {
-    console.log('Atualização de acordos comerciais recebida:', data);
+    // console.log('Atualização de acordos comerciais recebida:', data);
     
     store.dispatch(resetTradeState());
     

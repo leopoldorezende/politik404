@@ -29,9 +29,9 @@
       "interestRate": 5.25,
       "taxBurden": 28,
       "publicServices": 36,
-      "commodities": 40,
-      "manufactures": 40, 
-      "services": 20
+      "commodities": 30,
+      "manufactures": 30, 
+      "services": 40
     }
   },
   "United Kingdom": {
@@ -54,12 +54,8 @@
     },
     "politics": {
       "parliamentSupport": 50,
-      "mediaSupport": 47,
-      "protests": 2.5,
-      "opposition": {
-        "strength": 32,
-        "foreignConnections": ["European Union", "Russia", "China"]
-      }
+      "mediaSupport": 50,
+      "businessSupport": 50
     },
     "economy": {
       "gdp": 1000, 
@@ -71,9 +67,9 @@
       "interestRate": 5.25,
       "taxBurden": 28,
       "publicServices": 36,
-      "commodities": 40,
-      "manufactures": 40, 
-      "services": 20
+      "commodities": 15,
+      "manufactures": 60, 
+      "services": 25
     }
   },
   "Indonesia": {
@@ -89,13 +85,9 @@
       "nuclearCapability": false
     },
     "politics": {
-      "parliamentSupport": 68,
-      "mediaSupport": 52,
-      "protests": 2.2,
-      "opposition": {
-        "strength": 20,
-        "foreignConnections": ["China"]
-      }
+      "parliamentSupport": 50,
+      "mediaSupport": 50,
+      "businessSupport": 50
     },
     "economy": {
       "gdp": 1000, 
@@ -107,9 +99,9 @@
       "interestRate": 5.25,
       "taxBurden": 28,
       "publicServices": 36,
-      "commodities": 40,
-      "manufactures": 40, 
-      "services": 20
+      "commodities": 50,
+      "manufactures": 10, 
+      "services": 40
     }
   },
   "India": {
@@ -131,13 +123,9 @@
       "nuclearCapability": true
     },
     "politics": {
-      "parliamentSupport": 70,
-      "mediaSupport": 55,
-      "protests": 2.8,
-      "opposition": {
-        "strength": 35,
-        "foreignConnections": ["Russia", "Iran"]
-      }
+      "parliamentSupport": 50,
+      "mediaSupport": 50,
+      "businessSupport": 50
     },
     "economy": {
       "gdp": 1000, 
@@ -149,9 +137,9 @@
       "interestRate": 5.25,
       "taxBurden": 28,
       "publicServices": 36,
-      "commodities": 40,
-      "manufactures": 40, 
-      "services": 20
+      "commodities": 45,
+      "manufactures": 29, 
+      "services": 26
     }
   },
   "China": {
@@ -171,13 +159,9 @@
       "nuclearCapability": true
     },
     "politics": {
-      "parliamentSupport": 90,
-      "mediaSupport": 80,
-      "protests": 0.5,
-      "opposition": {
-        "strength": 10,
-        "foreignConnections": ["Russia", "Iran"]
-      }
+      "parliamentSupport": 50,
+      "mediaSupport": 50,
+      "businessSupport": 50
     },
     "economy": {
       "gdp": 1000, 
@@ -189,9 +173,9 @@
       "interestRate": 5.25,
       "taxBurden": 28,
       "publicServices": 36,
-      "commodities": 40,
-      "manufactures": 40, 
-      "services": 20
+      "commodities": 14,
+      "manufactures": 50, 
+      "services": 36
     }
   },
   "Russia": {
@@ -211,13 +195,9 @@
       "nuclearCapability": true
     },
     "politics": {
-      "parliamentSupport": 75,
-      "mediaSupport": 65,
-      "protests": 1.0,
-      "opposition": {
-        "strength": 20,
-        "foreignConnections": ["Iran", "China"]
-      }
+      "parliamentSupport": 50,
+      "mediaSupport": 50,
+      "businessSupport": 50
     },
     "economy": {
       "gdp": 1000, 
@@ -229,9 +209,9 @@
       "interestRate": 5.25,
       "taxBurden": 28,
       "publicServices": 36,
-      "commodities": 40,
+      "commodities": 50,
       "manufactures": 40, 
-      "services": 20
+      "services": 10
     }
   },
   "Brazil": {
@@ -247,13 +227,9 @@
       "nuclearCapability": false
     },
     "politics": {
-      "parliamentSupport": 58,
+      "parliamentSupport": 50,
       "mediaSupport": 50,
-      "protests": 2.4,
-      "opposition": {
-        "strength": 33,
-        "foreignConnections": ["Russia", "China"]
-      }
+      "businessSupport": 50
     },
     "economy": {
       "gdp": 1000, 
@@ -265,9 +241,9 @@
       "interestRate": 5.25,
       "taxBurden": 28,
       "publicServices": 36,
-      "commodities": 40,
+      "commodities": 45,
       "manufactures": 40, 
-      "services": 20
+      "services": 15
     }
   },
   "Iran": {
@@ -283,13 +259,9 @@
       "nuclearCapability": false
     },
     "politics": {
-      "parliamentSupport": 70,
-      "mediaSupport": 40,
-      "protests": 3.0,
-      "opposition": {
-        "strength": 45,
-        "foreignConnections": ["Russia", "China"]
-      }
+      "parliamentSupport": 50,
+      "mediaSupport": 50,
+      "businessSupport": 50
     },
     "economy": {
       "gdp": 1000, 
@@ -301,9 +273,9 @@
       "interestRate": 5.25,
       "taxBurden": 28,
       "publicServices": 36,
-      "commodities": 40,
-      "manufactures": 40, 
-      "services": 20
+      "commodities": 45,
+      "manufactures": 30, 
+      "services": 25
     }
   },
   "Saudi Arabia": {
@@ -319,13 +291,9 @@
       "nuclearCapability": false
     },
     "politics": {
-      "parliamentSupport": 80,
-      "mediaSupport": 55,
-      "protests": 1.2,
-      "opposition": {
-        "strength": 30,
-        "foreignConnections": ["Iran"]
-      }
+      "parliamentSupport": 50,
+      "mediaSupport": 50,
+      "businessSupport": 50
     },
     "economy": {
       "gdp": 1000, 
@@ -338,8 +306,8 @@
       "taxBurden": 28,
       "publicServices": 36,
       "commodities": 40,
-      "manufactures": 40, 
-      "services": 20
+      "manufactures": 48, 
+      "services": 12
     }
   },
   "Germany": {
@@ -361,10 +329,9 @@
       "nuclearCapability": false
     },
     "politics": {
-      "parliamentSupport": 60,
-      "mediaSupport": 62,
-      "protests": 1.8,
-      "opposition": { "strength": 30, "foreignConnections": ["France", "United States"] }
+      "parliamentSupport": 50,
+      "mediaSupport": 50,
+      "businessSupport": 50
     },
     "economy": {
       "gdp": 1000, 
@@ -376,9 +343,9 @@
       "interestRate": 5.25,
       "taxBurden": 28,
       "publicServices": 36,
-      "commodities": 40,
+      "commodities": 25,
       "manufactures": 40, 
-      "services": 20
+      "services": 35
     }
   },
   "Algeria": {
@@ -398,10 +365,9 @@
       "nuclearCapability": false
     },
     "politics": {
-      "parliamentSupport": 70,
-      "mediaSupport": 40,
-      "protests": 2.9,
-      "opposition": { "strength": 38, "foreignConnections": ["Russia"] }
+      "parliamentSupport": 50,
+      "mediaSupport": 50,
+      "businessSupport": 50
     },
     "economy": {
       "gdp": 1000, 
@@ -414,8 +380,8 @@
       "taxBurden": 28,
       "publicServices": 36,
       "commodities": 40,
-      "manufactures": 40, 
-      "services": 20
+      "manufactures": 30, 
+      "services": 30
     }
   },
   "South Africa": {
@@ -438,10 +404,9 @@
       "nuclearCapability": false
     },
     "politics": {
-      "parliamentSupport": 65,
-      "mediaSupport": 48,
-      "protests": 3.1,
-      "opposition": { "strength": 42, "foreignConnections": ["China", "Russia"] }
+      "parliamentSupport": 50,
+      "mediaSupport": 50,
+      "businessSupport": 50
     },
     "economy": {
       "gdp": 1000, 
@@ -454,8 +419,8 @@
       "taxBurden": 28,
       "publicServices": 36,
       "commodities": 40,
-      "manufactures": 40, 
-      "services": 20
+      "manufactures": 45, 
+      "services": 15
     }
   }
 }

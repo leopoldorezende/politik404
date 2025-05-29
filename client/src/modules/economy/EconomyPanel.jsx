@@ -62,41 +62,74 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   // HANDLERS SIMPLIFICADOS
   // ======================================================================
 
-  const applyAllParameters = useCallback(async () => {
-    if (!currentRoom?.name || !myCountry) return;
-    
-    const parameters = [
-      { name: 'interestRate', value: localParameters.interestRate, min: 0, max: 25 },
-      { name: 'taxBurden', value: localParameters.taxBurden, min: 0, max: 60 },
-      { name: 'publicServices', value: localParameters.publicServices, min: 0, max: 60 }
-    ];
-    
-    // Validação
-    for (const param of parameters) {
-      if (isNaN(param.value) || param.value < param.min || param.value > param.max) {
-        MessageService.showError(`${param.name} deve estar entre ${param.min}% e ${param.max}%`);
-        return;
-      }
+const applyAllParameters = useCallback(async () => {
+  if (!currentRoom?.name || !myCountry) {
+    console.error('[ECONOMY] Missing room or country:', { room: currentRoom?.name, country: myCountry });
+    MessageService.showError('Dados da sala ou país não encontrados');
+    return;
+  }
+  
+  const parameters = [
+    { name: 'interestRate', value: localParameters.interestRate, min: 0, max: 25 },
+    { name: 'taxBurden', value: localParameters.taxBurden, min: 0, max: 60 },
+    { name: 'publicServices', value: localParameters.publicServices, min: 0, max: 60 }
+  ];
+  
+  console.log('[ECONOMY] Applying parameters:', parameters);
+  console.log('[ECONOMY] Room:', currentRoom.name, 'Country:', myCountry);
+  
+  // Validação
+  for (const param of parameters) {
+    if (isNaN(param.value) || param.value < param.min || param.value > param.max) {
+      console.error('[ECONOMY] Invalid parameter:', param);
+      MessageService.showError(`${param.name} deve estar entre ${param.min}% e ${param.max}%`);
+      return;
     }
+  }
 
-    setPendingUpdates(new Set(['interestRate', 'taxBurden', 'publicServices']));
-    
-    try {
-      const socket = socketApi.getSocketInstance();
-      if (socket) {
-        for (const param of parameters) {
-          socket.emit('updateEconomicParameter', {
-            parameter: param.name,
-            value: param.value
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar parâmetros:', error);
-      MessageService.showError(`Erro ao atualizar parâmetros: ${error.message}`);
-      setPendingUpdates(new Set());
+  setPendingUpdates(new Set(['interestRate', 'taxBurden', 'publicServices']));
+  
+  try {
+    const socket = socketApi.getSocketInstance();
+    if (!socket) {
+      throw new Error('Socket não disponível');
     }
-  }, [currentRoom?.name, myCountry, localParameters]);
+    
+    if (!socket.connected) {
+      throw new Error('Socket não conectado');
+    }
+    
+    console.log('[ECONOMY] Socket status:', { 
+      connected: socket.connected, 
+      id: socket.id 
+    });
+    
+    for (const param of parameters) {
+      console.log('[ECONOMY] Sending parameter update:', param);
+      socket.emit('updateEconomicParameter', {
+        parameter: param.name,
+        value: param.value
+      });
+    }
+    
+    // Timeout para resetar pending se não receber resposta
+    setTimeout(() => {
+      setPendingUpdates(prev => {
+        if (prev.size > 0) {
+          console.warn('[ECONOMY] Timeout waiting for parameter updates');
+          MessageService.showWarning('Tempo limite para atualização. Tente novamente.');
+          return new Set();
+        }
+        return prev;
+      });
+    }, 10000); // 10 segundos
+    
+  } catch (error) {
+    console.error('[ECONOMY] Error in applyAllParameters:', error);
+    MessageService.showError(`Erro ao atualizar parâmetros: ${error.message}`);
+    setPendingUpdates(new Set());
+  }
+}, [currentRoom?.name, myCountry, localParameters]);
 
   const cancelChanges = useCallback(() => {
     if (economicIndicators) {
@@ -157,27 +190,36 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     if (!socket) return;
 
     const handleParameterUpdated = (data) => {
-      const { countryName, parameter } = data;
+      console.log('[ECONOMY] Parameter updated response:', data);
+      
+      const { countryName, parameter, success } = data;
       
       if (countryName === myCountry) {
         setPendingUpdates(prev => {
           const newSet = new Set(prev);
           newSet.delete(parameter);
+          console.log('[ECONOMY] Removed from pending:', parameter, 'Remaining:', Array.from(newSet));
           return newSet;
         });
         
-        const parameterNames = {
-          interestRate: 'Taxa de Juros',
-          taxBurden: 'Carga Tributária', 
-          publicServices: 'Investimento Público'
-        };
-        
-        const parameterName = parameterNames[parameter] || parameter;
-        MessageService.showSuccess(`${parameterName} alterada para ${data.value}%`);
+        if (success) {
+          const parameterNames = {
+            interestRate: 'Taxa de Juros',
+            taxBurden: 'Carga Tributária', 
+            publicServices: 'Investimento Público'
+          };
+          
+          const parameterName = parameterNames[parameter] || parameter;
+          MessageService.showSuccess(`${parameterName} alterada para ${data.value}%`);
+        } else {
+          MessageService.showError(`Falha ao atualizar ${parameter}`);
+        }
       }
     };
 
     const handleDebtBondsIssued = (data) => {
+      console.log('[ECONOMY] Debt bonds issued response:', data);
+      
       const { success, bondAmount: issuedAmount, message } = data;
       
       if (success) {
@@ -237,6 +279,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     return (num >= 0 ? '+' : '') + num.toFixed(1);
   };
 
+  
   // ======================================================================
   // RENDER
   // ======================================================================

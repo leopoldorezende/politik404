@@ -22,41 +22,77 @@ function setupEconomyHandlers(io, socket, gameState) {
     const roomName = getCurrentRoom(socket, gameState);
     const userCountry = getUserCountry(gameState, roomName, username);
     
+    console.log(`[ECONOMY] Parameter update request - User: ${username}, Room: ${roomName}, Country: ${userCountry}`);
+    
     if (!username || !roomName || !userCountry) {
-      socket.emit('error', 'Invalid request');
+      console.error(`[ECONOMY] Invalid request - missing data: username=${username}, roomName=${roomName}, userCountry=${userCountry}`);
+      socket.emit('error', 'Invalid request - missing authentication or room data');
       return;
     }
     
     const { parameter, value } = data;
     
+    console.log(`[ECONOMY] Updating parameter: ${parameter} = ${value} for ${userCountry} in ${roomName}`);
+    
     // Validação básica
     if (!['interestRate', 'taxBurden', 'publicServices'].includes(parameter)) {
+      console.error(`[ECONOMY] Invalid parameter: ${parameter}`);
       socket.emit('error', 'Invalid parameter');
       return;
     }
     
     if (typeof value !== 'number' || value < 0 || value > (parameter === 'interestRate' ? 25 : 60)) {
+      console.error(`[ECONOMY] Invalid value: ${value} for parameter ${parameter}`);
       socket.emit('error', 'Invalid value');
       return;
     }
     
-    // Delegar para EconomyService
-    const result = economyService.updateEconomicParameter(roomName, userCountry, parameter, value);
+    // VERIFICAR se economyService existe
+    const economyService = global.economyService;
+    if (!economyService) {
+      console.error('[ECONOMY] EconomyService not available');
+      socket.emit('error', 'Economy service not available');
+      return;
+    }
     
-    if (result) {
-      socket.emit('economicParameterUpdated', {
-        roomName, countryName: userCountry, parameter, value, success: true
-      });
+    // VERIFICAR se economyService está inicializado
+    if (!economyService.initialized) {
+      console.error('[ECONOMY] EconomyService not initialized');
+      socket.emit('error', 'Economy service not initialized');
+      return;
+    }
+    
+    // Tentar atualizar o parâmetro
+    try {
+      const result = economyService.updateEconomicParameter(roomName, userCountry, parameter, value);
       
-      // Broadcast para sala se mudança significativa
-      if (parameter === 'interestRate') {
-        socket.to(roomName).emit('economicNews', {
-          type: 'interestRate', country: userCountry, value,
-          message: `${userCountry} changed interest rate to ${value}%`
+      if (result) {
+        console.log(`[ECONOMY] Parameter updated successfully: ${parameter} = ${value} for ${userCountry}`);
+        
+        socket.emit('economicParameterUpdated', {
+          roomName, 
+          countryName: userCountry, 
+          parameter, 
+          value, 
+          success: true
         });
+        
+        // Broadcast para sala se mudança significativa
+        if (parameter === 'interestRate') {
+          socket.to(roomName).emit('economicNews', {
+            type: 'interestRate', 
+            country: userCountry, 
+            value,
+            message: `${userCountry} changed interest rate to ${value}%`
+          });
+        }
+      } else {
+        console.error(`[ECONOMY] Failed to update parameter - economyService returned null/false`);
+        socket.emit('error', 'Failed to update parameter - service error');
       }
-    } else {
-      socket.emit('error', 'Failed to update parameter');
+    } catch (error) {
+      console.error(`[ECONOMY] Error updating parameter:`, error);
+      socket.emit('error', 'Failed to update parameter - internal error');
     }
   });
 
@@ -361,13 +397,17 @@ function setupEconomyHandlers(io, socket, gameState) {
 }
 
 /**
- * Função auxiliar para obter país do usuário
+ * Função auxiliar
  */
 function getUserCountry(gameState, roomName, username) {
   if (!roomName || !username) return null;
   
   const userRoomKey = `${username}:${roomName}`;
-  return gameState.userRoomCountries.get(userRoomKey) || null;
+  const country = gameState.userRoomCountries?.get(userRoomKey);
+  
+  console.log(`[ECONOMY] Getting user country: ${username} in ${roomName} = ${country}`);
+  
+  return country || null;
 }
 
 export { setupEconomyHandlers };

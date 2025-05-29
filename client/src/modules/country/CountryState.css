@@ -97,3 +97,50 @@
     margin: 0 5px;
   }
 }
+/* Estilo para indicador de porcentagem */
+.indicator-percent {
+  font-size: 0.85em;
+  color: #888;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+/* Estilo específico para produção de serviços */
+.indicator-value.positive {
+  color: #28a745;
+}
+
+/* Melhorar layout dos indicadores com múltiplas informações */
+.indicator {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.indicator-label {
+  min-width: 140px;
+  font-weight: 500;
+}
+
+.indicator-value {
+  font-weight: bold;
+  margin-right: 4px;
+}
+
+/* Responsive para telas menores */
+@media (max-width: 768px) {
+  .indicator {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .indicator-label {
+    min-width: auto;
+    margin-bottom: 2px;
+  }
+  
+  .indicator-percent {
+    margin-left: 0;
+  }
+}
