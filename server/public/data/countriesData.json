@@ -273,9 +273,9 @@
       "interestRate": 5.25,
       "taxBurden": 28,
       "publicServices": 36,
-      "commodities": 45,
+      "commodities": 25,
       "manufactures": 30, 
-      "services": 25
+      "services": 45
     }
   },
   "Saudi Arabia": {
@@ -305,9 +305,9 @@
       "interestRate": 5.25,
       "taxBurden": 28,
       "publicServices": 36,
-      "commodities": 40,
+      "commodities": 12,
       "manufactures": 48, 
-      "services": 12
+      "services": 40
     }
   },
   "Germany": {

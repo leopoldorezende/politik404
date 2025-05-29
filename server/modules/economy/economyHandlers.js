@@ -132,7 +132,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   // ======================================================================
   // RESUMO DE DÍVIDAS
   // ======================================================================
-  
+    
   socket.on('getDebtSummary', () => {
     const username = socket.username;
     const roomName = getCurrentRoom(socket, gameState);
@@ -143,12 +143,40 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Delegar para EconomyService
-    const debtSummary = economyService.getDebtSummary(roomName, userCountry);
-    const countryState = economyService.getCountryState(roomName, userCountry);
+    // VERIFICAÇÃO ADICIONAL: Garantir que o país existe no EconomyService
+    const economyService = global.economyService;
+    if (!economyService) {
+      socket.emit('error', 'Economy service not available');
+      return;
+    }
     
-    if (countryState) {
-      const economy = countryState.economy;
+    const countryState = economyService.getCountryState(roomName, userCountry);
+    if (!countryState) {
+      console.error(`[ECONOMY] Country state not found for ${userCountry} in room ${roomName}`);
+      
+      // Tentar inicializar o país se a sala existe mas o país não
+      if (gameState.countriesData && gameState.countriesData[userCountry]) {
+        console.log(`[ECONOMY] Attempting to initialize missing country: ${userCountry}`);
+        economyService.initializeRoom(roomName, { [userCountry]: gameState.countriesData[userCountry] });
+        
+        // Tentar novamente após inicialização
+        const retryCountryState = economyService.getCountryState(roomName, userCountry);
+        if (!retryCountryState) {
+          socket.emit('error', 'Failed to initialize country data');
+          return;
+        }
+      } else {
+        socket.emit('error', 'Country data not found');
+        return;
+      }
+    }
+    
+    // Prosseguir com a lógica normal
+    const debtSummary = economyService.getDebtSummary(roomName, userCountry);
+    const finalCountryState = economyService.getCountryState(roomName, userCountry);
+    
+    if (finalCountryState) {
+      const economy = finalCountryState.economy;
       
       socket.emit('debtSummaryResponse', {
         totalPublicDebt: economy.publicDebt || 0,
@@ -167,7 +195,7 @@ function setupEconomyHandlers(io, socket, gameState) {
         }
       });
     } else {
-      socket.emit('error', 'Country data not found');
+      socket.emit('error', 'Failed to retrieve country data after initialization');
     }
   });
 
