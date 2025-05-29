@@ -15,45 +15,23 @@
       "nuclearCapability": true
     },
     "politics": {
-      "parliamentSupport": 53,
-      "mediaSupport": 49,
-      "protests": 4.5,
-      "opposition": { "strength": 25, "foreignConnections": ["Russia", "China", "Iran"] }
+      "parliamentSupport": 50,
+      "mediaSupport": 50,
+      "businessSupport": 50
     },
     "economy": {
-      "popularity": 57, 
-      "unemployment": 3.8, 
-      "interestRate": 5.25, 
-      "taxBurden": 28, 
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
       "publicServices": 36,
-      "treasury": 2700, 
-      "gdp": 26950, 
-      "gdpGrowth": 2.1, 
-      "publicDebt": 34500, 
-      "publicDebtToGdp": 128.0, 
-      "inflation": 2.8,
-      "creditRating": "AA", 
-      "previousQuarterGDP": 26950, 
-      "quarterlyGrowth": 0.005,
-      "gdpHistory": [26950], 
-      "inflationHistory": [0.028], 
-      "popularityHistory": [57], 
-      "unemploymentHistory": [3.8], 
-      "debtRecords": [],
-      "commodities": { 
-        "value": 5390, 
-        "gdpShare": 20, 
-        "domesticConsumption": 4311
-      },
-      "manufactures": { 
-        "value": 4042, 
-        "gdpShare": 15, 
-        "domesticConsumption": 3234
-      },
-      "services": { 
-        "value": 17518, 
-        "gdpShare": 65 
-      }
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   },
   "United Kingdom": {
@@ -84,39 +62,18 @@
       }
     },
     "economy": {
-      "popularity": 45,
-      "unemployment": 4.0,
-      "interestRate": 4.75,
-      "taxBurden": 34,
-      "publicServices": 37,
-      "treasury": 480,
-      "gdp": 3450,
-      "gdpGrowth": 1.2,
-      "publicDebt": 3105,
-      "publicDebtToGdp": 90.0,
-      "inflation": 2.5,
-      "creditRating": "AA",
-      "previousQuarterGDP": 3450,
-      "quarterlyGrowth": 0.012,
-      "gdpHistory": [3450],
-      "inflationHistory": [0.025],
-      "popularityHistory": [45],
-      "unemploymentHistory": [4.0],
-      "debtRecords": [],
-      "commodities": {
-        "value": 345,
-        "gdpShare": 10,
-        "domesticConsumption": 276
-      },
-      "manufactures": {
-        "value": 655,
-        "gdpShare": 19,
-        "domesticConsumption": 517
-      },
-      "services": {
-        "value": 2450,
-        "gdpShare": 71
-      }
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
+      "publicServices": 36,
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   },
   "Indonesia": {
@@ -141,39 +98,18 @@
       }
     },
     "economy": {
-      "popularity": 55,
-      "unemployment": 5.3,
-      "interestRate": 6.0,
-      "taxBurden": 13,
-      "publicServices": 22,
-      "treasury": 90,
-      "gdp": 1300,
-      "gdpGrowth": 5.1,
-      "publicDebt": 460,
-      "publicDebtToGdp": 35.4,
-      "inflation": 3.6,
-      "creditRating": "AA",
-      "previousQuarterGDP": 1300,
-      "quarterlyGrowth": 0.051,
-      "gdpHistory": [1300],
-      "inflationHistory": [0.036],
-      "popularityHistory": [55],
-      "unemploymentHistory": [5.3],
-      "debtRecords": [],
-      "commodities": {
-        "value": 455,
-        "gdpShare": 35,
-        "domesticConsumption": 290
-      },
-      "manufactures": {
-        "value": 325,
-        "gdpShare": 25,
-        "domesticConsumption": 245
-      },
-      "services": {
-        "value": 520,
-        "gdpShare": 40
-      }
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
+      "publicServices": 36,
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   },
   "India": {
@@ -204,39 +140,18 @@
       }
     },
     "economy": {
-      "popularity": 60,
-      "unemployment": 7.4,
-      "interestRate": 6.5,
-      "taxBurden": 17,
-      "publicServices": 28,
-      "treasury": 250,
-      "gdp": 3500,
-      "gdpGrowth": 6.1,
-      "publicDebt": 1100,
-      "publicDebtToGdp": 31.4,
-      "inflation": 5.1,
-      "creditRating": "AA",
-      "previousQuarterGDP": 3500,
-      "quarterlyGrowth": 0.061,
-      "gdpHistory": [3500],
-      "inflationHistory": [0.051],
-      "popularityHistory": [60],
-      "unemploymentHistory": [7.4],
-      "debtRecords": [],
-      "commodities": {
-        "value": 875,
-        "gdpShare": 25,
-        "domesticConsumption": 700
-      },
-      "manufactures": {
-        "value": 1050,
-        "gdpShare": 30,
-        "domesticConsumption": 840
-      },
-      "services": {
-        "value": 1575,
-        "gdpShare": 45
-      }
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
+      "publicServices": 36,
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   },
   "China": {
@@ -265,39 +180,18 @@
       }
     },
     "economy": {
-      "popularity": 65,
-      "unemployment": 4.5,
-      "interestRate": 3.65,
-      "taxBurden": 25,
-      "publicServices": 30,
-      "treasury": 4000,
-      "gdp": 17500,
-      "gdpGrowth": 5.0,
-      "publicDebt": 8800,
-      "publicDebtToGdp": 50.3,
-      "inflation": 1.9,
-      "creditRating": "AA",
-      "previousQuarterGDP": 17500,
-      "quarterlyGrowth": 0.05,
-      "gdpHistory": [17500],
-      "inflationHistory": [0.019],
-      "popularityHistory": [65],
-      "unemploymentHistory": [4.5],
-      "debtRecords": [],
-      "commodities": {
-        "value": 3500,
-        "gdpShare": 20,
-        "domesticConsumption": 2800
-      },
-      "manufactures": {
-        "value": 8750,
-        "gdpShare": 50,
-        "domesticConsumption": 7000
-      },
-      "services": {
-        "value": 5250,
-        "gdpShare": 30
-      }
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
+      "publicServices": 36,
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   },
   "Russia": {
@@ -326,39 +220,18 @@
       }
     },
     "economy": {
-      "popularity": 55,
-      "unemployment": 4.0,
-      "interestRate": 16.0,
-      "taxBurden": 13,
-      "publicServices": 25,
-      "treasury": 600,
-      "gdp": 2200,
-      "gdpGrowth": 2.5,
-      "publicDebt": 400,
-      "publicDebtToGdp": 18.2,
-      "inflation": 7.8,
-      "creditRating": "AA",
-      "previousQuarterGDP": 2200,
-      "quarterlyGrowth": 0.025,
-      "gdpHistory": [2200],
-      "inflationHistory": [0.078],
-      "popularityHistory": [55],
-      "unemploymentHistory": [4.0],
-      "debtRecords": [],
-      "commodities": {
-        "value": 1100,
-        "gdpShare": 50,
-        "domesticConsumption": 800
-      },
-      "manufactures": {
-        "value": 660,
-        "gdpShare": 30,
-        "domesticConsumption": 500
-      },
-      "services": {
-        "value": 440,
-        "gdpShare": 20
-      }
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
+      "publicServices": 36,
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   },
   "Brazil": {
@@ -383,39 +256,18 @@
       }
     },
     "economy": {
-      "popularity": 50,
-      "unemployment": 7.8,
-      "interestRate": 10.5,
-      "taxBurden": 33,
-      "publicServices": 32,
-      "treasury": 150,
-      "gdp": 2200,
-      "gdpGrowth": 2.2,
-      "publicDebt": 1600,
-      "publicDebtToGdp": 72.7,
-      "inflation": 4.1,
-      "creditRating": "AA",
-      "previousQuarterGDP": 2200,
-      "quarterlyGrowth": 0.022,
-      "gdpHistory": [2200],
-      "inflationHistory": [0.041],
-      "popularityHistory": [50],
-      "unemploymentHistory": [7.8],
-      "debtRecords": [],
-      "commodities": {
-        "value": 990,
-        "gdpShare": 45,
-        "domesticConsumption": 650
-      },
-      "manufactures": {
-        "value": 770,
-        "gdpShare": 35,
-        "domesticConsumption": 600
-      },
-      "services": {
-        "value": 440,
-        "gdpShare": 20
-      }
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
+      "publicServices": 36,
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   },
   "Iran": {
@@ -440,39 +292,18 @@
       }
     },
     "economy": {
-      "popularity": 42,
-      "unemployment": 10.5,
-      "interestRate": 18.0,
-      "taxBurden": 10,
-      "publicServices": 18,
-      "treasury": 60,
-      "gdp": 450,
-      "gdpGrowth": 1.4,
-      "publicDebt": 210,
-      "publicDebtToGdp": 46.6,
-      "inflation": 35.0,
-      "creditRating": "AA",
-      "previousQuarterGDP": 450,
-      "quarterlyGrowth": 0.014,
-      "gdpHistory": [450],
-      "inflationHistory": [0.35],
-      "popularityHistory": [42],
-      "unemploymentHistory": [10.5],
-      "debtRecords": [],
-      "commodities": {
-        "value": 248,
-        "gdpShare": 55,
-        "domesticConsumption": 150
-      },
-      "manufactures": {
-        "value": 135,
-        "gdpShare": 30,
-        "domesticConsumption": 100
-      },
-      "services": {
-        "value": 67,
-        "gdpShare": 15
-      }
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
+      "publicServices": 36,
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   },
   "Saudi Arabia": {
@@ -497,39 +328,18 @@
       }
     },
     "economy": {
-      "popularity": 60,
-      "unemployment": 6.2,
-      "interestRate": 5.75,
-      "taxBurden": 5,
-      "publicServices": 20,
-      "treasury": 200,
-      "gdp": 1100,
-      "gdpGrowth": 2.9,
-      "publicDebt": 270,
-      "publicDebtToGdp": 24.5,
-      "inflation": 2.1,
-      "creditRating": "AA",
-      "previousQuarterGDP": 1100,
-      "quarterlyGrowth": 0.029,
-      "gdpHistory": [1100],
-      "inflationHistory": [0.021],
-      "popularityHistory": [60],
-      "unemploymentHistory": [6.2],
-      "debtRecords": [],
-      "commodities": {
-        "value": 605,
-        "gdpShare": 55,
-        "domesticConsumption": 450
-      },
-      "manufactures": {
-        "value": 275,
-        "gdpShare": 25,
-        "domesticConsumption": 220
-      },
-      "services": {
-        "value": 220,
-        "gdpShare": 20
-      }
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
+      "publicServices": 36,
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   },
   "Germany": {
@@ -557,39 +367,18 @@
       "opposition": { "strength": 30, "foreignConnections": ["France", "United States"] }
     },
     "economy": {
-      "popularity": 58, 
-      "unemployment": 3.1, 
-      "interestRate": 4.5, 
-      "taxBurden": 38, 
-      "publicServices": 44,
-      "treasury": 650, 
-      "gdp": 4200, 
-      "gdpGrowth": 1.1, 
-      "publicDebt": 2800, 
-      "publicDebtToGdp": 66.7, 
-      "inflation": 2.8,
-      "creditRating": "AA", 
-      "previousQuarterGDP": 4200, 
-      "quarterlyGrowth": 0.011,
-      "gdpHistory": [4200], 
-      "inflationHistory": [0.028], 
-      "popularityHistory": [58], 
-      "unemploymentHistory": [3.1], 
-      "debtRecords": [],
-      "commodities": { 
-        "value": 420, 
-        "gdpShare": 10, 
-        "domesticConsumption": 315
-      },
-      "manufactures": { 
-        "value": 2100, 
-        "gdpShare": 50, 
-        "domesticConsumption": 1500
-      },
-      "services": { 
-        "value": 1680, 
-        "gdpShare": 40 
-      }
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
+      "publicServices": 36,
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   },
   "Algeria": {
@@ -615,39 +404,18 @@
       "opposition": { "strength": 38, "foreignConnections": ["Russia"] }
     },
     "economy": {
-      "popularity": 46, 
-      "unemployment": 11.5, 
-      "interestRate": 9.0, 
-      "taxBurden": 14, 
-      "publicServices": 20,
-      "treasury": 40, 
-      "gdp": 195, 
-      "gdpGrowth": 2.8, 
-      "publicDebt": 70, 
-      "publicDebtToGdp": 35.9, 
-      "inflation": 8.5,
-      "creditRating": "AA", 
-      "previousQuarterGDP": 195, 
-      "quarterlyGrowth": 0.028,
-      "gdpHistory": [195], 
-      "inflationHistory": [0.085], 
-      "popularityHistory": [46], 
-      "unemploymentHistory": [11.5], 
-      "debtRecords": [],
-      "commodities": { 
-        "value": 107, 
-        "gdpShare": 55, 
-        "domesticConsumption": 75
-      },
-      "manufactures": { 
-        "value": 49, 
-        "gdpShare": 25, 
-        "domesticConsumption": 35
-      },
-      "services": { 
-        "value": 39, 
-        "gdpShare": 20 
-      }
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
+      "publicServices": 36,
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   },
   "South Africa": {
@@ -676,39 +444,18 @@
       "opposition": { "strength": 42, "foreignConnections": ["China", "Russia"] }
     },
     "economy": {
-      "popularity": 49, 
-      "unemployment": 32.1, 
-      "interestRate": 8.25, 
-      "taxBurden": 27, 
-      "publicServices": 30,
-      "treasury": 70, 
-      "gdp": 399, 
-      "gdpGrowth": 0.8, 
-      "publicDebt": 230, 
-      "publicDebtToGdp": 57.6, 
-      "inflation": 6.0,
-      "creditRating": "BB", 
-      "previousQuarterGDP": 396, 
-      "quarterlyGrowth": 0.002,
-      "gdpHistory": [399], 
-      "inflationHistory": [0.06], 
-      "popularityHistory": [49], 
-      "unemploymentHistory": [32.1], 
-      "debtRecords": [],
-      "commodities": { 
-        "value": 180, 
-        "gdpShare": 45, 
-        "domesticConsumption": 130
-      },
-      "manufactures": { 
-        "value": 120, 
-        "gdpShare": 30, 
-        "domesticConsumption": 90
-      },
-      "services": { 
-        "value": 99.75, 
-        "gdpShare": 25 
-      }
+      "gdp": 1000, 
+      "treasury": 100,
+      "publicDebt": 50, 
+      "popularity": 50, 
+      "unemployment": 10, 
+      "inflation": 4,
+      "interestRate": 5.25,
+      "taxBurden": 28,
+      "publicServices": 36,
+      "commodities": 40,
+      "manufactures": 40, 
+      "services": 20
     }
   }
 }

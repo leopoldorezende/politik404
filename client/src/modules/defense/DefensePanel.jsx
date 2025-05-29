@@ -117,38 +117,6 @@ const DefensePanel = () => {
       </div>
 
 
-      <div className="investment-section">
-        
-        <div className="form-group">
-        <h4>Investimento Militar</h4>
-          <select 
-            value={investmentType} 
-            onChange={(e) => setInvestmentType(e.target.value)}
-          >
-            <option value="army">Exército</option>
-            <option value="navy">Marinha</option>
-            <option value="airforce">Aeronáutica</option>
-          </select>
-        </div>
-        
-        <div className="form-group">
-          <label>
-            Selecionar Investimento: <span>{investmentAmount}%</span>
-          </label>
-          <input 
-            type="range" 
-            min="5" 
-            max="50" 
-            step="1" 
-            value={investmentAmount} 
-            onChange={(e) => setInvestmentAmount(parseInt(e.target.value))}
-          />
-        </div>
-        
-        <button className="action-btn">
-          Investir
-        </button>
-      </div>
   
     </div>
   );

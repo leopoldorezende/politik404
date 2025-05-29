@@ -3,7 +3,7 @@
  * APENAS comunicação WebSocket - lógica delegada para EconomyService
  */
 
-import economyService from '../../shared/services/EconomyService.js';
+import economyService from '../../shared/services/economyService.js';
 import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/utils/gameStateUtils.js';
 import { evaluateTradeProposal } from '../ai/aiCountryController.js';
 

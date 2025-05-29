@@ -138,13 +138,6 @@
   │   └── shared
   │       ├── config
   │       │   └── syncConfig.js
-  │       ├── countryState
-  │       │   ├── countryEconomyCalculator.js
-  │       │   ├── countryStateConfig.js
-  │       │   ├── countryStateCore.js
-  │       │   ├── countryStateManager.js
-  │       │   ├── countryStateUpdater.js
-  │       │   └── index.js
   │       ├── firebaseAdmin.js
   │       ├── redisClient.js  # Infraestrutura do Redis
   │       ├── services

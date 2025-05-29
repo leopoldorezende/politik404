@@ -93,27 +93,27 @@ class EconomyService {
         treasury: getNumericValue(economy.treasury) || 10,
         publicDebt: getNumericValue(economy.publicDebt) || 0,
         
-        // Distribuição setorial
+        // Distribuição setorial - agora números simples no JSON
         services: getNumericValue(economy.services) || 35,
         commodities: getNumericValue(economy.commodities) || 35,
         manufactures: getNumericValue(economy.manufactures) || 30,
         
-        // Outputs calculados
+        // Outputs calculados dinamicamente
         servicesOutput: 0,
         commoditiesOutput: 0,
         manufacturesOutput: 0,
         
-        // Necessidades internas
+        // Necessidades internas - calculadas dinamicamente
         commoditiesNeeds: 0,
         manufacturesNeeds: 0,
         commoditiesBalance: 0,
         manufacturesBalance: 0,
         
         // Indicadores avançados
-        inflation: getNumericValue(economy.inflation) || 2.8,
+        inflation: (getNumericValue(economy.inflation) || 2.8) / 100, // Converter para decimal
         unemployment: getNumericValue(economy.unemployment) || 12.5,
         popularity: getNumericValue(economy.popularity) || 50,
-        creditRating: economy.creditRating || 'A',
+        creditRating: 'A', // Será calculado dinamicamente
         
         // Parâmetros de política econômica
         interestRate: getNumericValue(economy.interestRate) || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE,
@@ -176,6 +176,57 @@ class EconomyService {
   }
 
   // ========================================================================
+  // Método para calcular rating de crédito dinamicamente
+  // ========================================================================
+
+  calculateCreditRating(economy) {
+    const debtToGdpRatio = economy.publicDebt / economy.gdp;
+    const inflationPercent = economy.inflation * 100;
+    
+    // Determinação da nota base com base na inflação
+    let baseRating;
+    if (inflationPercent <= 2) {
+      baseRating = "AAA";
+    } else if (inflationPercent <= 3) {
+      baseRating = "AA";
+    } else if (inflationPercent <= 4) {
+      baseRating = "A";
+    } else if (inflationPercent <= 5.5) {
+      baseRating = "BBB";
+    } else if (inflationPercent <= 7) {
+      baseRating = "BB";
+    } else if (inflationPercent <= 9) {
+      baseRating = "B";
+    } else if (inflationPercent <= 12) {
+      baseRating = "CCC";
+    } else if (inflationPercent <= 15) {
+      baseRating = "CC";
+    } else {
+      baseRating = "C";
+    }
+    
+    // Ajuste pela dívida
+    const levels = ["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "CC", "C", "D"];
+    let ratingIndex = levels.indexOf(baseRating);
+    
+    // Impacto da dívida na classificação
+    if (debtToGdpRatio > 0.3 && debtToGdpRatio <= 0.6) {
+      ratingIndex += 1;
+    } else if (debtToGdpRatio > 0.6 && debtToGdpRatio <= 0.9) {
+      ratingIndex += 2;
+    } else if (debtToGdpRatio > 0.9 && debtToGdpRatio <= 1.2) {
+      ratingIndex += 3;
+    } else if (debtToGdpRatio > 1.2) {
+      ratingIndex += 4;
+    }
+    
+    // Garantir que o índice não ultrapasse o tamanho do array
+    ratingIndex = Math.min(ratingIndex, levels.length - 1);
+    
+    return levels[ratingIndex];
+  }
+
+  // ========================================================================
   // CÁLCULOS ECONÔMICOS SIMPLIFICADOS
   // ========================================================================
 
@@ -185,14 +236,21 @@ class EconomyService {
 
     const economy = countryState.economy;
     
-    // Calcular outputs setoriais
+    // Calcular outputs setoriais (mantém igual)
     economy.servicesOutput = (economy.gdp * economy.services / 100);
     economy.commoditiesOutput = (economy.gdp * economy.commodities / 100);
     economy.manufacturesOutput = (economy.gdp * economy.manufactures / 100);
     
-    // Calcular necessidades internas (30% e 45% do PIB)
-    economy.commoditiesNeeds = economy.gdp * 0.30;
-    economy.manufacturesNeeds = economy.gdp * 0.45;
+    // CALCULAR necessidades internas dinamicamente baseado na estrutura produtiva
+    // Commodities: base 25% + bônus pela produção do setor
+    const commoditiesProductionRatio = economy.commodities / 100;
+    const commoditiesNeedPercent = 0.25 + (commoditiesProductionRatio * 0.15); // 25% base + até 15% bônus
+    economy.commoditiesNeeds = economy.gdp * commoditiesNeedPercent;
+    
+    // Manufactures: base 35% + bônus pela produção do setor
+    const manufacturesProductionRatio = economy.manufactures / 100;
+    const manufacturesNeedPercent = 0.35 + (manufacturesProductionRatio * 0.20); // 35% base + até 20% bônus
+    economy.manufacturesNeeds = economy.gdp * manufacturesNeedPercent;
     
     // Aplicar impacto do comércio
     const gameState = global.gameState;
@@ -205,7 +263,7 @@ class EconomyService {
     economy.commoditiesBalance = economy.commoditiesOutput + tradeImpact.commodityImports 
                                 - tradeImpact.commodityExports - economy.commoditiesNeeds;
     economy.manufacturesBalance = economy.manufacturesOutput + tradeImpact.manufactureImports 
-                                 - tradeImpact.manufactureExports - economy.manufacturesNeeds;
+                                - tradeImpact.manufactureExports - economy.manufacturesNeeds;
     
     // Armazenar estatísticas de comércio
     economy.tradeStats = {
@@ -215,13 +273,16 @@ class EconomyService {
       manufactureExports: tradeImpact.manufactureExports
     };
     
-    // Atualizar tesouro baseado em impostos e gastos
+    // CALCULAR rating de crédito dinamicamente
+    economy.creditRating = this.calculateCreditRating(economy);
+    
+    // Atualizar tesouro baseado em impostos e gastos (mantém igual)
     const revenue = economy.gdp * (economy.taxBurden / 100) * 0.001;
     const expenses = economy.gdp * (economy.publicServices / 100) * 0.0008;
     const netChange = revenue - expenses;
     economy.treasury = Math.max(economy.treasury + netChange, -economy.gdp * 0.1);
     
-    // Crescimento econômico simples
+    // Crescimento econômico simples (mantém igual)
     const employmentRate = 100 - economy.unemployment;
     const baseGrowthRate = (employmentRate / 1000000) + (Math.random() * 0.0001 - 0.00005);
     economy.gdp = economy.gdp * (1 + baseGrowthRate);
