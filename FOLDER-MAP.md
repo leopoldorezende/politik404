@@ -143,6 +143,7 @@
   │       ├── services
   │       │   └── economyService.js
   │       └── utils
+  │           ├── economicCalculations.js
   │           ├── economicUtils.js
   │           └── gameStateUtils.js  # Utilitários de estado para o jogo
   └── v22.md
