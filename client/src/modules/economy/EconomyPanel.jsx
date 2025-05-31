@@ -319,7 +319,7 @@ const applyAllParameters = useCallback(async () => {
         <div className="indicator">
           <label>Inflação:</label>
           <span className={`value ${economicIndicators.inflation > 5 ? 'negative' : 'positive'}`}>
-            {formatPercent(economicIndicators.inflation)}
+            {formatPercent(economicIndicators.inflation * 100)} {/* CORREÇÃO: multiplicar por 100 */}
           </span>
         </div>
         

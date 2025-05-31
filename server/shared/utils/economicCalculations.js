@@ -1,7 +1,7 @@
 /**
  * economicCalculations.js - Módulo específico para cálculos econômicos dinâmicos
  * Localização: server/shared/utils/economicCalculations.js
- * Baseado nos arquivos de inspiração para resolver os problemas identificados
+ * VERSÃO CORRIGIDA - Indicadores mais realistas e responsivos
  */
 
 /**
@@ -23,113 +23,102 @@ const ECONOMIC_CONSTANTS = {
 
 /**
  * Calcula a inflação dinâmica baseada nas políticas econômicas
- * CORRIGE: Inflação travada em 0%
+ * CORRIGIDO: Inflação mais responsiva aos controles
  */
 export function calculateDynamicInflation(economy) {
-  let currentInflation = economy.inflation || 0.04; // Garantir valor inicial
+  let currentInflation = economy.inflation || 0.04;
   
   // Se inflação for 0, inicializar com valor base
   if (currentInflation === 0) {
     currentInflation = 0.04; // 4% inicial
   }
   
-  // Efeito da taxa de juros na inflação (inverso)
-  const interestDiff = economy.interestRate - ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE;
+  // Efeito da taxa de juros na inflação (CORRIGIDO)
   let inflationEffect = 0;
   
   if (economy.interestRate < ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE) {
     // Juros baixos aumentam inflação
-    const factor = 1 + ((ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE - economy.interestRate) * 0.05);
+    const factor = 1 + ((ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE - economy.interestRate) * 0.08);
     inflationEffect = currentInflation * factor - currentInflation;
   } else if (economy.interestRate > ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE) {
     // Juros altos reduzem inflação
     if (economy.interestRate <= 15) {
-      const factor = 1 - ((economy.interestRate - ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE) * 0.03);
-      inflationEffect = currentInflation * Math.max(0.3, factor) - currentInflation;
+      let factor = 1 - ((economy.interestRate - ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE) * 0.06);
+      factor = Math.max(0.3, factor); // ✅ CORRIGIDO
+      inflationEffect = currentInflation * factor - currentInflation;
     } else {
       // Juros muito altos reduzem drasticamente
-      const normalReduction = 1 - (7 * 0.03); // Até 15%
-      const excessReduction = Math.pow(1.1, economy.interestRate - 15) * 0.02;
+      const normalReduction = 1 - (7 * 0.06); // Até 15%
+      const excessReduction = Math.pow(1.2, economy.interestRate - 15) * 0.04;
       const factor = Math.max(0.1, normalReduction - excessReduction);
       inflationEffect = currentInflation * factor - currentInflation;
     }
   }
   
-  // Efeito da carga tributária
+  // Resto da função permanece igual...
   const taxDiff = economy.taxBurden - ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE;
   let taxEffect = 0;
   
   if (economy.taxBurden > ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE) {
-    // Impostos altos reduzem inflação (efeito deflacionário)
-    const factor = 1 - ((economy.taxBurden - ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE) * 0.002);
-    taxEffect = currentInflation * Math.max(0.9, factor) - currentInflation;
+    const factor = 1 - ((economy.taxBurden - ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE) * 0.005);
+    taxEffect = currentInflation * Math.max(0.8, factor) - currentInflation;
   } else {
-    // Impostos baixos aumentam inflação
-    const factor = 1 + ((ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE - economy.taxBurden) * 0.003);
+    const factor = 1 + ((ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE - economy.taxBurden) * 0.004);
     taxEffect = currentInflation * factor - currentInflation;
   }
   
-  // Efeito do crescimento econômico
   const gdpGrowth = economy.gdpGrowth || 0;
   let growthEffect = 0;
   
-  if (gdpGrowth > 2) { // Crescimento acima de 2%
+  if (gdpGrowth > 2) {
     const excess = (gdpGrowth - 2) / 100;
     const emphasis = 1 + (excess * 3);
-    growthEffect = excess * 0.02 * emphasis;
+    growthEffect = excess * 0.025 * emphasis;
   } else if (gdpGrowth > 0 && gdpGrowth <= 2) {
-    growthEffect = (gdpGrowth / 100) * 0.001;
+    growthEffect = (gdpGrowth / 100) * 0.002;
   } else if (gdpGrowth < 0) {
-    // Crescimento negativo reduz inflação
-    growthEffect = (gdpGrowth / 100) * 0.01;
+    growthEffect = (gdpGrowth / 100) * 0.012;
   }
   
-  // Efeito da dívida pública
   const debtToGDP = economy.publicDebt / economy.gdp;
   let debtEffect = 0;
   
   if (debtToGDP > 0.7) {
     const excessDebt = debtToGDP - 0.7;
-    debtEffect = excessDebt * 0.01; // Dívida alta aumenta inflação estrutural
+    debtEffect = excessDebt * 0.01;
   }
   
-  // Variação aleatória pequena para realismo
   const randomVariation = (Math.random() - 0.5) * 0.002;
   
   // Aplicar todos os efeitos
   let newInflation = currentInflation + inflationEffect + taxEffect + growthEffect + debtEffect + randomVariation;
   
-  // Inércia inflacionária (80% do valor anterior, 20% do novo)
-  newInflation = currentInflation * 0.8 + newInflation * 0.2;
+  // Inércia inflacionária
+  newInflation = currentInflation * 0.7 + newInflation * 0.3;
   
-  // Limites realistas (deflação até 25% de inflação)
-  newInflation = Math.max(-0.05, Math.min(0.25, newInflation));
+  // CORREÇÃO: Apenas limite mínimo para deflação, SEM limite máximo
+  newInflation = Math.max(-0.05, newInflation); // Remove Math.min - inflação pode crescer livremente
   
   return newInflation;
 }
 
 /**
  * Calcula o desemprego dinâmico
- * CORRIGE: Desemprego sempre caindo para 3%
+ * CORRIGIDO: Desemprego mais responsivo aos controles
  */
 export function calculateDynamicUnemployment(economy) {
   let currentUnemployment = economy.unemployment || 12.5;
-  
-  // Se desemprego estiver muito baixo, forçar realismo
-  if (currentUnemployment < 5) {
-    currentUnemployment = 8.0; // Resetar para valor mais realista
-  }
   
   // Efeito do crescimento econômico (Lei de Okun adaptada)
   const gdpGrowth = economy.gdpGrowth || 0;
   let growthEffect = 0;
   
   if (gdpGrowth > 0) {
-    // Crescimento reduz desemprego, mas não linearmente
-    growthEffect = -(gdpGrowth * 0.4); // Para cada 1% de crescimento, -0.4% desemprego
+    // Crescimento reduz desemprego
+    growthEffect = -(gdpGrowth * 0.8);
   } else if (gdpGrowth < 0) {
     // Recessão aumenta desemprego mais rapidamente
-    growthEffect = Math.abs(gdpGrowth) * 0.8;
+    growthEffect = Math.abs(gdpGrowth) * 1.2;
   }
   
   // Efeito da inflação (Curva de Phillips modificada)
@@ -138,47 +127,50 @@ export function calculateDynamicUnemployment(economy) {
   
   if (inflationPercent < 1) {
     // Deflação ou inflação muito baixa mantém desemprego alto
-    inflationEffect = (1 - inflationPercent) * 0.5;
+    inflationEffect = (1 - inflationPercent) * 0.6;
   } else if (inflationPercent > 10) {
     // Inflação muito alta também prejudica emprego (estagflação)
-    inflationEffect = (inflationPercent - 10) * 0.3;
+    inflationEffect = (inflationPercent - 10) * 0.4;
   } else if (inflationPercent >= 2 && inflationPercent <= 5) {
     // Faixa ideal de inflação pode reduzir desemprego levemente
-    inflationEffect = -((inflationPercent - 1) * 0.1);
+    inflationEffect = -((inflationPercent - 1) * 0.15);
   }
   
-  // Efeito do investimento público
+  // Efeito do investimento público (mais significativo)
   let investmentEffect = 0;
-  if (economy.publicServices > 30) {
-    // Investimento público acima de 30% reduz desemprego
-    investmentEffect = -((economy.publicServices - 30) * 0.15);
-  } else if (economy.publicServices < 20) {
+  if (economy.publicServices > 35) {
+    // Investimento público alto reduz desemprego
+    investmentEffect = -((economy.publicServices - 35) * 0.3);
+  } else if (economy.publicServices < 25) {
     // Investimento muito baixo aumenta desemprego
-    investmentEffect = (20 - economy.publicServices) * 0.1;
+    investmentEffect = (25 - economy.publicServices) * 0.25;
   }
   
   // Efeito da carga tributária
   let taxEffect = 0;
   if (economy.taxBurden > 50) {
     // Impostos muito altos podem desencorajar contratações
-    taxEffect = (economy.taxBurden - 50) * 0.08;
-  } else if (economy.taxBurden < 25) {
-    // Impostos muito baixos podem reduzir serviços públicos e aumentar desemprego
-    taxEffect = (25 - economy.taxBurden) * 0.05;
+    taxEffect = (economy.taxBurden - 50) * 0.12;
+  } else if (economy.taxBurden < 30) {
+    // Impostos muito baixos podem reduzir serviços públicos
+    taxEffect = (30 - economy.taxBurden) * 0.08;
   }
   
   // Efeito da taxa de juros
   let interestEffect = 0;
   if (economy.interestRate > 12) {
-    // Juros muito altos desencorajam investimento e aumentam desemprego
-    interestEffect = (economy.interestRate - 12) * 0.2;
+    // Juros muito altos desencorajam investimento
+    interestEffect = (economy.interestRate - 12) * 0.4;
+  } else if (economy.interestRate < 5) {
+    // Juros muito baixos estimulam investimento e emprego
+    interestEffect = -(5 - economy.interestRate) * 0.3;
   }
   
   // Aplicar todos os efeitos
   let newUnemployment = currentUnemployment + growthEffect + inflationEffect + investmentEffect + taxEffect + interestEffect;
   
-  // Inércia do desemprego (muda lentamente)
-  newUnemployment = currentUnemployment * 0.9 + newUnemployment * 0.1;
+  // Inércia do desemprego (muda mais rapidamente)
+  newUnemployment = currentUnemployment * 0.8 + newUnemployment * 0.2;
   
   // Limites realistas (3% a 35%)
   newUnemployment = Math.max(3, Math.min(35, newUnemployment));
@@ -188,54 +180,53 @@ export function calculateDynamicUnemployment(economy) {
 
 /**
  * Calcula a popularidade dinâmica baseada nos indicadores
- * CORRIGE: Popularidade travada em 95%
+ * CORRIGIDO: Popularidade mais realista e responsiva
  */
 export function calculateDynamicPopularity(economy) {
   let currentPopularity = economy.popularity || 50;
   
-  // Se popularidade estiver muito alta, aplicar realismo
-  if (currentPopularity > 85) {
-    currentPopularity = 55; // Resetar para valor mais realista
+  // CORREÇÃO: Se popularidade está artificialmente baixa sem justificativa, ajustar
+  if (currentPopularity < 25 && economy.unemployment < 10 && economy.inflation < 0.08) {
+    currentPopularity = 45; // Resetar para valor mais realista
   }
   
   // Efeito do crescimento econômico
   const gdpGrowth = economy.gdpGrowth || 0;
   let growthEffect = 0;
   
-  if (gdpGrowth > 0) {
-    growthEffect = gdpGrowth * 3; // Crescimento aumenta popularidade
-  } else if (gdpGrowth < 0) {
-    growthEffect = gdpGrowth * 5; // Recessão reduz mais a popularidade
+  if (gdpGrowth > 1) {
+    growthEffect = gdpGrowth * 4; // Crescimento positivo aumenta popularidade
+  } else if (gdpGrowth < -1) {
+    growthEffect = gdpGrowth * 6; // Recessão reduz mais a popularidade
   }
+  // Crescimento próximo de 0% não penaliza
   
   // Efeito da inflação
   const inflationPercent = (economy.inflation || 0.04) * 100;
-  const idealInflation = 4;
   let inflationEffect = 0;
   
-  const inflationDiff = inflationPercent - idealInflation;
-  if (inflationDiff > 0) {
-    // Inflação acima do ideal reduz popularidade
-    inflationEffect = -inflationDiff * 2;
-  } else if (inflationDiff < 0 && inflationPercent > 0) {
-    // Inflação abaixo do ideal (mas positiva) pode aumentar popularidade
-    inflationEffect = Math.abs(inflationDiff) * 0.5;
+  if (inflationPercent > 6) {
+    // Inflação alta prejudica popularidade
+    inflationEffect = -(inflationPercent - 4) * 3;
+  } else if (inflationPercent < 2 && inflationPercent > 0) {
+    // Inflação baixa (mas positiva) ajuda popularidade
+    inflationEffect = (2 - inflationPercent) * 2;
   } else if (inflationPercent <= 0) {
-    // Deflação é muito ruim para popularidade
+    // Deflação é prejudicial
     inflationEffect = inflationPercent * 10;
   }
   
-  // Efeito do desemprego (maior impacto)
+  // Efeito do desemprego (impacto maior)
   const unemploymentDiff = economy.unemployment - ECONOMIC_CONSTANTS.IDEAL_UNEMPLOYMENT;
   let unemploymentEffect = 0;
   
   if (unemploymentDiff > 0) {
     // Desemprego alto reduz popularidade drasticamente
     const penalty = 1 + Math.pow(unemploymentDiff / 10, 1.2);
-    unemploymentEffect = -unemploymentDiff * 2 * penalty;
+    unemploymentEffect = -unemploymentDiff * 3 * penalty;
   } else if (unemploymentDiff < 0) {
-    // Desemprego baixo aumenta popularidade
-    unemploymentEffect = Math.abs(unemploymentDiff) * 1.5;
+    // Desemprego baixo aumenta popularidade significativamente
+    unemploymentEffect = Math.abs(unemploymentDiff) * 4;
   }
   
   // Efeito dos impostos
@@ -243,9 +234,9 @@ export function calculateDynamicPopularity(economy) {
   let taxEffect = 0;
   
   if (taxDiff > 0) {
-    taxEffect = -taxDiff * 0.8; // Impostos altos reduzem popularidade
+    taxEffect = -taxDiff * 1.0; // Impostos altos reduzem popularidade
   } else if (taxDiff < 0) {
-    taxEffect = Math.abs(taxDiff) * 0.4; // Impostos baixos aumentam popularidade
+    taxEffect = Math.abs(taxDiff) * 0.6; // Impostos baixos aumentam popularidade
   }
   
   // Efeito do investimento público
@@ -255,10 +246,10 @@ export function calculateDynamicPopularity(economy) {
   
   if (investmentDiff > 0) {
     // Mais investimento público aumenta popularidade
-    investmentEffect = investmentDiff * 0.3;
+    investmentEffect = investmentDiff * 0.6;
   } else if (investmentDiff < 0) {
     // Menos investimento reduz popularidade
-    investmentEffect = investmentDiff * 0.5;
+    investmentEffect = investmentDiff * 0.8;
   }
   
   // Índice de miséria (desemprego alto + inflação alta)
@@ -275,21 +266,11 @@ export function calculateDynamicPopularity(economy) {
   let newPopularity = currentPopularity + growthEffect + inflationEffect + unemploymentEffect + 
                      taxEffect + investmentEffect + miseryEffect + randomVariation;
   
-  // Força de retorno ao equilíbrio (50%) - governos tendem ao centro
-  const distanceFrom50 = Math.abs(newPopularity - 50);
-  const returnForce = distanceFrom50 * 0.05;
-  
-  if (newPopularity > 50) {
-    newPopularity -= returnForce;
-  } else if (newPopularity < 50) {
-    newPopularity += returnForce;
-  }
-  
-  // Inércia da popularidade
+  // Inércia da popularidade (mais responsiva)
   newPopularity = currentPopularity * 0.7 + newPopularity * 0.3;
   
-  // Limites realistas (5% a 90%)
-  newPopularity = Math.max(5, Math.min(90, newPopularity));
+  // Limites realistas (10% a 90%)
+  newPopularity = Math.max(10, Math.min(90, newPopularity));
   
   return newPopularity;
 }
@@ -354,7 +335,87 @@ export function calculateDynamicGrowth(economy) {
 }
 
 /**
- * Processa pagamentos de dívida (CORRIGE: Dívida não sendo paga)
+ * Método para calcular rating de crédito dinamicamente
+ * CORRIGIDO: Rating mais contextual e realista
+ */
+export function calculateCreditRating(economy) {
+  const debtToGdpRatio = economy.publicDebt / economy.gdp;
+  const inflationPercent = economy.inflation * 100;
+  const growthPercent = economy.gdpGrowth || 0;
+  
+  // CORREÇÃO: Análise contextual considerando todos os indicadores
+  let baseRating;
+  
+  // Se a economia está saudável (dívida baixa + inflação controlada + desemprego baixo), merece rating alto
+  if (debtToGdpRatio < 0.4 && inflationPercent < 4 && economy.unemployment < 10) {
+    if (inflationPercent < 1 && economy.unemployment < 5) {
+      baseRating = "AAA"; // Economia excelente
+    } else if (inflationPercent < 2 && economy.unemployment < 7) {
+      baseRating = "AA"; // Economia muito boa
+    } else if (inflationPercent < 4 && economy.unemployment < 10) {
+      baseRating = "A"; // Economia boa
+    } else {
+      baseRating = "BBB";
+    }
+  } else {
+    // Análise padrão baseada na inflação
+    if (inflationPercent <= 2) {
+      baseRating = "AAA";
+    } else if (inflationPercent <= 4) {
+      baseRating = "AA";
+    } else if (inflationPercent <= 6) {
+      baseRating = "A";
+    } else if (inflationPercent <= 8) {
+      baseRating = "BBB";
+    } else if (inflationPercent <= 12) {
+      baseRating = "BB";
+    } else if (inflationPercent <= 18) {
+      baseRating = "B";
+    } else {
+      baseRating = "CCC";
+    }
+  }
+  
+  const levels = ["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "CC", "C", "D"];
+  let ratingIndex = levels.indexOf(baseRating);
+  
+  // Ajuste pela dívida (só penalizar se realmente alta)
+  if (debtToGdpRatio > 0.6 && debtToGdpRatio <= 0.9) {
+    ratingIndex += 1;
+  } else if (debtToGdpRatio > 0.9 && debtToGdpRatio <= 1.2) {
+    ratingIndex += 2;
+  } else if (debtToGdpRatio > 1.2) {
+    ratingIndex += 3;
+  }
+  
+  // Ajuste pelo crescimento (só penalizar recessão significativa)
+  if (growthPercent < -3) {
+    ratingIndex += 2; // Recessão severa
+  } else if (growthPercent < -1) {
+    ratingIndex += 1; // Recessão leve
+  } else if (growthPercent > 4) {
+    // Crescimento forte pode melhorar rating
+    ratingIndex = Math.max(0, ratingIndex - 1);
+  }
+  
+  // Casos especiais
+  if (inflationPercent > 20 && growthPercent < -3) {
+    return "D"; // Crise severa
+  }
+  
+  // Tripla ameaça
+  if (inflationPercent > 12 && debtToGdpRatio > 1.0 && growthPercent < -2) {
+    return "D";
+  }
+  
+  // Garantir que o índice não ultrapasse o tamanho do array
+  ratingIndex = Math.min(ratingIndex, levels.length - 1);
+  
+  return levels[ratingIndex];
+}
+
+/**
+ * Processa pagamentos de dívida
  */
 export function processDeptPayments(economy, debtContracts) {
   if (!debtContracts || debtContracts.length === 0) return 0;
@@ -536,8 +597,8 @@ export function resetUnrealisticIndicators(economy) {
     economy.unemployment = 12.5; // Valor mais realista
   }
   
-  // Popularidade muito alta
-  if (economy.popularity > 85 || economy.popularity === undefined) {
+  // Popularidade artificialmente baixa
+  if (economy.popularity < 20 || economy.popularity === undefined) {
     economy.popularity = 50; // Começar neutro
   }
   
@@ -579,9 +640,9 @@ export function debugEconomicCalculations(countryName, economy) {
     treasury: economy.treasury.toFixed(2),
     debt: economy.publicDebt.toFixed(2),
     debtRatio: `${((economy.publicDebt / economy.gdp) * 100).toFixed(1)}%`,
-    rating: economy.creditRating,
-    interestRate: `${economy.interestRate}%`,
-    taxBurden: `${economy.taxBurden}%`,
-    publicServices: `${economy.publicServices}%`
-  });
+   rating: economy.creditRating,
+   interestRate: `${economy.interestRate}%`,
+   taxBurden: `${economy.taxBurden}%`,
+   publicServices: `${economy.publicServices}%`
+ });
 }

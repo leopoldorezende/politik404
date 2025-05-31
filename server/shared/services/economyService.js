@@ -478,7 +478,10 @@ class EconomyService {
     const debtContracts = this.debtContracts.get(countryKey) || [];
     
     // Aplicar todos os cálculos econômicos dinâmicos
+    console.log(`[DEBUG] ${countryName} - Antes: inflação=${(economy.inflation*100).toFixed(2)}%, juros=${economy.interestRate}%`);
+    const oldInflation = economy.inflation;
     applyEconomicCalculations(economy, debtContracts);
+    console.log(`[DEBUG] ${countryName} - Depois: inflação=${(economy.inflation*100).toFixed(2)}%, mudança=${((economy.inflation-oldInflation)*100).toFixed(3)}%`);
     
     // Atualizar contratos de dívida processados
     if (debtContracts.length > 0) {
@@ -550,75 +553,68 @@ class EconomyService {
     const inflationPercent = economy.inflation * 100;
     const growthPercent = economy.gdpGrowth || 0;
     
-    // Determinação da nota base com base na inflação
+    // Base mais equilibrada considerando contexto geral
     let baseRating;
-    if (inflationPercent <= 2) {
-      baseRating = "AAA";
-    } else if (inflationPercent <= 3) {
-      baseRating = "AA";
-    } else if (inflationPercent <= 4) {
-      baseRating = "A";
-    } else if (inflationPercent <= 5.5) {
-      baseRating = "BBB";
-    } else if (inflationPercent <= 7) {
-      baseRating = "BB";
-    } else if (inflationPercent <= 9) {
-      baseRating = "B";
-    } else if (inflationPercent <= 12) {
-      baseRating = "CCC";
-    } else if (inflationPercent <= 15) {
-      baseRating = "CC";
+    
+    // Análise contextual: país em crescimento com inflação controlada merece nota melhor
+    if (growthPercent > 2 && inflationPercent <= 6) {
+      // País em crescimento saudável
+      if (inflationPercent <= 2) {
+        baseRating = "AAA";
+      } else if (inflationPercent <= 4) {
+        baseRating = "AA";
+      } else if (inflationPercent <= 6) {
+        baseRating = "A";
+      }
     } else {
-      baseRating = "C";
+      // Análise padrão baseada na inflação
+      if (inflationPercent <= 2) {
+        baseRating = "AAA";
+      } else if (inflationPercent <= 3) {
+        baseRating = "AA";
+      } else if (inflationPercent <= 4) {
+        baseRating = "A";
+      } else if (inflationPercent <= 6) {
+        baseRating = "BBB";
+      } else if (inflationPercent <= 8) {
+        baseRating = "BB";
+      } else if (inflationPercent <= 12) {
+        baseRating = "B";
+      } else if (inflationPercent <= 18) {
+        baseRating = "CCC";
+      } else {
+        baseRating = "CC";
+      }
     }
     
-    // Ajuste pela dívida
     const levels = ["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "CC", "C", "D"];
     let ratingIndex = levels.indexOf(baseRating);
     
-    // Impacto da dívida na classificação
-    if (debtToGdpRatio > 0.3 && debtToGdpRatio <= 0.6) {
+    // Ajuste pela dívida (mais equilibrado)
+    if (debtToGdpRatio > 0.4 && debtToGdpRatio <= 0.7) {
       ratingIndex += 1;
-    } else if (debtToGdpRatio > 0.6 && debtToGdpRatio <= 0.9) {
+    } else if (debtToGdpRatio > 0.7 && debtToGdpRatio <= 1.0) {
       ratingIndex += 2;
-    } else if (debtToGdpRatio > 0.9 && debtToGdpRatio <= 1.2) {
+    } else if (debtToGdpRatio > 1.0) {
       ratingIndex += 3;
-    } else if (debtToGdpRatio > 1.2) {
-      ratingIndex += 4;
     }
     
-    // Impacto do crescimento negativo
-    if (growthPercent < 0) {
-      if (growthPercent >= -1) {
-        ratingIndex += 1;
-      } else if (growthPercent >= -3) {
-        ratingIndex += 2;
-      } else if (growthPercent >= -5) {
-        ratingIndex += 3;
-      } else {
-        ratingIndex += 4;
-      }
-      
-      // Estagflação
-      if (inflationPercent > 7) {
-        ratingIndex += 1;
-      }
+    // Ajuste pelo crescimento (mais contextual)
+    if (growthPercent < -2) {
+      ratingIndex += 2; // Recessão forte
+    } else if (growthPercent < 0) {
+      ratingIndex += 1; // Recessão leve
+    } else if (growthPercent > 4) {
+      // Crescimento forte pode compensar outros problemas
+      ratingIndex = Math.max(0, ratingIndex - 1);
     }
     
     // Casos especiais
-    if (inflationPercent > 15 && economy.historicoInflacao && economy.historicoInflacao.length >= 3) {
-      const recent3 = economy.historicoInflacao.slice(-3).map(i => i * 100);
-      if (recent3[2] > recent3[0] || Math.abs(recent3[2] - recent3[1]) > 2) {
-        return "D";
-      }
+    if (inflationPercent > 20 && growthPercent < -3) {
+      return "D"; // Crise severa
     }
     
-    // Tripla ameaça
-    if (inflationPercent > 9 && debtToGdpRatio > 0.9 && growthPercent < -3) {
-      return "D";
-    }
-    
-    // Garantir que o índice não ultrapasse o tamanho do array
+    // Garantir limites
     ratingIndex = Math.min(ratingIndex, levels.length - 1);
     
     return levels[ratingIndex];
@@ -965,6 +961,11 @@ class EconomyService {
       
       // Broadcast após cálculos
       if (Object.keys(roomStates).length > 0 && global.io) {
+        console.log(`[BROADCAST] Enviando dados para ${roomName}:`, Object.keys(roomStates).map(country => ({
+          country,
+          inflation: (roomStates[country].economy.inflation * 100).toFixed(2) + '%'
+        })));
+
         global.io.to(`countryStates:${roomName}`).emit('countryStatesUpdated', {
           roomName,
           states: roomStates,

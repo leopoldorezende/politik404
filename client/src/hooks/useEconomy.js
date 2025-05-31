@@ -17,50 +17,49 @@ export const useEconomy = (roomName, countryName) => {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Adicione esta função antes do useEffect
+  const handleCountryStatesInitialized = (data) => {
+    console.log('[CLIENT] Estados inicializados:', data);
+    if (data.roomName === roomName && data.states && data.states[countryName]) {
+      setCountryData(data.states[countryName]);
+      setLastUpdated(data.timestamp);
+      setLoading(false);
+    }
+  };
+
   // Subscription para atualizações periódicas
   useEffect(() => {
-    if (!roomName || !countryName) {
-      setCountryData(null);
+  const socket = socketApi.getSocketInstance();
+  if (!socket || !roomName || !countryName) return;
+
+  // Handlers para atualizações
+  const handleCountryStatesUpdated = (data) => {
+    console.log('[CLIENT] Dados recebidos do servidor JUROS:', data.states[countryName]?.economy?.interestRate);
+    console.log('[CLIENT] Dados recebidos do servidor INFLACAO:', data.states[countryName]?.economy?.inflation);
+    
+    if (data.roomName === roomName && data.states && data.states[countryName]) {
+      console.log('[CLIENT] Atualizando dados para:', countryName, 'inflação:', data.states[countryName].economy.inflation);
+      setCountryData(data.states[countryName]);
+      setLastUpdated(data.timestamp);
       setLoading(false);
-      return;
+    } else {
+      console.log('[CLIENT] Dados não encontrados para:', countryName, 'room:', roomName, 'disponíveis:', Object.keys(data.states || {}));
     }
+  };
 
-    const socket = socketApi.getSocketInstance();
-    if (!socket) return;
+  // Registrar listeners
+  socket.on('countryStatesUpdated', handleCountryStatesUpdated);
+  socket.on('countryStatesInitialized', handleCountryStatesInitialized);
 
-    setLoading(true);
+  // Subscrever aos updates da sala
+  socket.emit('subscribeToCountryStates', roomName);
 
-    // Subscrever para atualizações de estados
-    socket.emit('subscribeToCountryStates', roomName);
-
-    // Handlers para atualizações
-    const handleCountryStatesUpdated = (data) => {
-      if (data.roomName === roomName && data.states && data.states[countryName]) {
-        setCountryData(data.states[countryName]);
-        setLastUpdated(data.timestamp);
-        setLoading(false);
-      }
-    };
-
-    const handleCountryStatesInitialized = (data) => {
-      if (data.roomName === roomName && data.states && data.states[countryName]) {
-        setCountryData(data.states[countryName]);
-        setLastUpdated(data.timestamp);
-        setLoading(false);
-      }
-    };
-
-    // Adicionar listeners
-    socket.on('countryStatesUpdated', handleCountryStatesUpdated);
-    socket.on('countryStatesInitialized', handleCountryStatesInitialized);
-
-    // Cleanup
-    return () => {
-      socket.off('countryStatesUpdated', handleCountryStatesUpdated);
-      socket.off('countryStatesInitialized', handleCountryStatesInitialized);
-      socket.emit('unsubscribeFromCountryStates', roomName);
-    };
-  }, [roomName, countryName]);
+  return () => {
+    socket.off('countryStatesUpdated', handleCountryStatesUpdated);
+    socket.off('countryStatesInitialized', handleCountryStatesInitialized);
+    socket.emit('unsubscribeFromCountryStates', roomName);
+  };
+}, [roomName, countryName]);
 
   // Função para obter valor numérico
   const getNumericValue = useCallback((property) => {
@@ -72,8 +71,8 @@ export const useEconomy = (roomName, countryName) => {
 
   // Formatar moeda
   const formatCurrency = useCallback((value) => {
-    if (value === undefined || value === null || isNaN(value)) return '0.0';
-    return Number(value).toFixed(1);
+    if (value === undefined || value === null || isNaN(value)) return '0.0%';
+    return Number(value).toFixed(1) + '%';
   }, []);
 
   // Formatar porcentagem
