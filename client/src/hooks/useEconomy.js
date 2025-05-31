@@ -19,7 +19,6 @@ export const useEconomy = (roomName, countryName) => {
 
   // Adicione esta função antes do useEffect
   const handleCountryStatesInitialized = (data) => {
-    console.log('[CLIENT] Estados inicializados:', data);
     if (data.roomName === roomName && data.states && data.states[countryName]) {
       setCountryData(data.states[countryName]);
       setLastUpdated(data.timestamp);
@@ -34,16 +33,13 @@ export const useEconomy = (roomName, countryName) => {
 
   // Handlers para atualizações
   const handleCountryStatesUpdated = (data) => {
-    console.log('[CLIENT] Dados recebidos do servidor JUROS:', data.states[countryName]?.economy?.interestRate);
-    console.log('[CLIENT] Dados recebidos do servidor INFLACAO:', data.states[countryName]?.economy?.inflation);
-    
     if (data.roomName === roomName && data.states && data.states[countryName]) {
-      console.log('[CLIENT] Atualizando dados para:', countryName, 'inflação:', data.states[countryName].economy.inflation);
+      // console.log('[CLIENT] Atualizando dados para:', countryName, 'inflação:', data.states[countryName].economy.inflation);
       setCountryData(data.states[countryName]);
       setLastUpdated(data.timestamp);
       setLoading(false);
     } else {
-      console.log('[CLIENT] Dados não encontrados para:', countryName, 'room:', roomName, 'disponíveis:', Object.keys(data.states || {}));
+      // console.log('[CLIENT] Dados não encontrados para:', countryName, 'room:', roomName, 'disponíveis:', Object.keys(data.states || {}));
     }
   };
 
@@ -78,7 +74,7 @@ export const useEconomy = (roomName, countryName) => {
   // Formatar porcentagem
   const formatPercent = useCallback((value) => {
     if (value === undefined || value === null || isNaN(value)) return '0.0%';
-    return Number(value).toFixed(1) + '%';
+    return Number(value).toFixed(2) + '%';
   }, []);
 
   // Indicadores econômicos calculados

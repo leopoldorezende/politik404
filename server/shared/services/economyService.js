@@ -961,10 +961,10 @@ class EconomyService {
       
       // Broadcast após cálculos
       if (Object.keys(roomStates).length > 0 && global.io) {
-        console.log(`[BROADCAST] Enviando dados para ${roomName}:`, Object.keys(roomStates).map(country => ({
-          country,
-          inflation: (roomStates[country].economy.inflation * 100).toFixed(2) + '%'
-        })));
+        // console.log(`[BROADCAST] Enviando dados para ${roomName}:`, Object.keys(roomStates).map(country => ({
+        //   country,
+        //   inflation: (roomStates[country].economy.inflation * 100).toFixed(2) + '%'
+        // })));
 
         global.io.to(`countryStates:${roomName}`).emit('countryStatesUpdated', {
           roomName,
@@ -975,9 +975,9 @@ class EconomyService {
     }
     
     // Log ocasional do status
-    if (Math.random() < 0.01) { // 1% de chance
-      console.log(`[ECONOMY] Updated ${updatedCountries} countries with dynamic calculations`);
-    }
+    // if (Math.random() < 0.01) { // 1% de chance
+    //   console.log(`[ECONOMY] Updated ${updatedCountries} countries with dynamic calculations`);
+    // }
   }
 
   // ========================================================================
@@ -1025,7 +1025,7 @@ class EconomyService {
       };
       
       await redis.set('economy_service_data', JSON.stringify(data));
-      console.log(`[ECONOMY] Data saved to Redis - ${this.debtContracts.size} debt contracts, ${this.countryStates.size} rooms`);
+      // console.log(`[ECONOMY] Data saved to Redis - ${this.debtContracts.size} debt contracts, ${this.countryStates.size} rooms`);
     } catch (error) {
       console.error('[ECONOMY] Error saving to Redis:', error);
     }
