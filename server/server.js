@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
-import economyService from './shared/services/EconomyService.js'; // Novo serviço centralizado
+import economyService from './shared/services/economyService.js'; // Novo serviço centralizado
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { initializeSocketHandlers } from './modules/index.js';
