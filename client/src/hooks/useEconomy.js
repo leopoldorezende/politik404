@@ -81,19 +81,19 @@ export const useEconomy = (roomName, countryName) => {
   const economicIndicators = countryData?.economy ? {
     gdp: getNumericValue(countryData.economy.gdp),
     treasury: getNumericValue(countryData.economy.treasury),
-    publicDebt: getNumericValue(countryData.economy.publicDebt) || 0,
+    publicDebt: getNumericValue(countryData.economy.publicDebt),
     
     // Indicadores avançados
-    inflation: getNumericValue(countryData.economy.inflation) || 0,
-    unemployment: getNumericValue(countryData.economy.unemployment) || 0,
-    popularity: getNumericValue(countryData.economy.popularity) || 0,
-    creditRating: countryData.economy.creditRating || 'N/A',
-    gdpGrowth: getNumericValue(countryData.economy.quarterlyGrowth) * 100 || 0,
+    inflation: getNumericValue(countryData.economy.inflation),
+    unemployment: getNumericValue(countryData.economy.unemployment),
+    popularity: getNumericValue(countryData.economy.popularity),
+    creditRating: countryData.economy.creditRating,
+    gdpGrowth: getNumericValue(countryData.economy.quarterlyGrowth) * 100,
     
     // Parâmetros de política
-    interestRate: getNumericValue(countryData.economy.interestRate) || 8.0,
-    taxBurden: getNumericValue(countryData.economy.taxBurden) || 40.0,
-    publicServices: getNumericValue(countryData.economy.publicServices) || 30.0,
+    interestRate: getNumericValue(countryData.economy.interestRate),
+    taxBurden: getNumericValue(countryData.economy.taxBurden),
+    publicServices: getNumericValue(countryData.economy.publicServices),
     
     // Outputs setoriais
     servicesOutput: getNumericValue(countryData.economy.servicesOutput),

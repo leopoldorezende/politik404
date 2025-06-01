@@ -35,9 +35,9 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   
   // Estados locais apenas para UI
   const [localParameters, setLocalParameters] = useState({
-    interestRate: 8.0,
-    taxBurden: 40.0,
-    publicServices: 30.0
+    interestRate: 0,
+    taxBurden: 0,
+    publicServices: 0
   });
   const [bondAmount, setBondAmount] = useState('');
   const [isIssuingBonds, setIsIssuingBonds] = useState(false);
@@ -47,10 +47,16 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   React.useEffect(() => {
     if (economicIndicators && pendingUpdates.size === 0) {
       const newParams = {
-        interestRate: economicIndicators.interestRate || 8.0,
-        taxBurden: economicIndicators.taxBurden || 40.0,
-        publicServices: economicIndicators.publicServices || 30.0
+        interestRate: economicIndicators.interestRate,
+        taxBurden: economicIndicators.taxBurden,
+        publicServices: economicIndicators.publicServices
       };
+
+      // console.log('[SYNC DEBUG] economicIndicators received:', {
+      //   interestRate: economicIndicators.interestRate,
+      //   taxBurden: economicIndicators.taxBurden,
+      //   publicServices: economicIndicators.publicServices
+      // });
       
       if (JSON.stringify(newParams) !== JSON.stringify(localParameters)) {
         setLocalParameters(newParams);
@@ -134,9 +140,9 @@ const applyAllParameters = useCallback(async () => {
   const cancelChanges = useCallback(() => {
     if (economicIndicators) {
       setLocalParameters({
-        interestRate: economicIndicators.interestRate || 8.0,
-        taxBurden: economicIndicators.taxBurden || 40.0,
-        publicServices: economicIndicators.publicServices || 30.0
+        interestRate: economicIndicators.interestRate,
+        taxBurden: economicIndicators.taxBurden,
+        publicServices: economicIndicators.publicServices
       });
     }
   }, [economicIndicators]);
