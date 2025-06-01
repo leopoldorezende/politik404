@@ -48,7 +48,7 @@ class EconomyService {
       await this.loadFromRedis();
       this.startPeriodicUpdates();
       this.initialized = true;
-      console.log('[ECONOMY] economyService initialized');
+      // console.log('[ECONOMY] economyService initialized');
     } catch (error) {
       console.error('[ECONOMY] Error initializing economyService:', error);
     }
@@ -82,7 +82,7 @@ class EconomyService {
     // Garantir que a estrutura da sala existe
     if (!this.countryStates.has(roomName)) {
       this.countryStates.set(roomName, {});
-      console.log(`[ECONOMY] Room ${roomName} structure created`);
+      // console.log(`[ECONOMY] Room ${roomName} structure created`);
     }
     
     const roomStates = this.countryStates.get(roomName);
@@ -103,15 +103,15 @@ class EconomyService {
           this.debtContracts.set(roomKey, initialContracts);
           this.debtContracts.delete(initialKey);
           
-          console.log(`[ECONOMY] ${countryName} debt contracts transferred to room ${roomName}: ${initialContracts.length} contracts`);
+          // console.log(`[ECONOMY] ${countryName} debt contracts transferred to room ${roomName}: ${initialContracts.length} contracts`);
         }
       }
     }
     
     if (countriesInitialized > 0) {
-      console.log(`[ECONOMY] Room ${roomName}: initialized ${countriesInitialized} new countries with debt contracts`);
+      // console.log(`[ECONOMY] Room ${roomName}: initialized ${countriesInitialized} new countries with debt contracts`);
     } else {
-      console.log(`[ECONOMY] Room ${roomName}: all countries already initialized`);
+      // console.log(`[ECONOMY] Room ${roomName}: all countries already initialized`);
     }
   }
 
@@ -126,7 +126,7 @@ class EconomyService {
     // GARANTIR que os setores somem exatamente 100% (normalizar se necessário)
     const totalSectors = services + commodities + manufactures;
     if (Math.abs(totalSectors - 100) > 0.01) {
-      console.log(`[ECONOMY] ${countryName} sectoral total was ${totalSectors}%, normalizing to 100%`);
+      // console.log(`[ECONOMY] ${countryName} sectoral total was ${totalSectors}%, normalizing to 100%`);
       // Normalizar proporcionalmente
       services = (services / totalSectors) * 100;
       commodities = (commodities / totalSectors) * 100;
@@ -310,7 +310,7 @@ class EconomyService {
     const countryKey = `${countryName}:initial`;
     this.debtContracts.set(countryKey, contracts);
     
-    console.log(`[ECONOMY] ${countryName} initial debt converted: ${totalDebt.toFixed(2)} bi -> 4 contracts totaling ${totalRemainingDebt.toFixed(2)} bi remaining`);
+    // console.log(`[ECONOMY] ${countryName} initial debt converted: ${totalDebt.toFixed(2)} bi -> 4 contracts totaling ${totalRemainingDebt.toFixed(2)} bi remaining`);
     
     return contracts;
   }
@@ -361,7 +361,7 @@ class EconomyService {
   // ========================================================================
 
   updateEconomicParameter(roomName, countryName, parameter, value) {
-    console.log(`[ECONOMY] updateEconomicParameter called: ${countryName} in ${roomName}, ${parameter} = ${value}`);
+    // console.log(`[ECONOMY] updateEconomicParameter called: ${countryName} in ${roomName}, ${parameter} = ${value}`);
     
     // Verificar se a sala existe
     if (!this.countryStates.has(roomName)) {
@@ -383,7 +383,7 @@ class EconomyService {
     }
     
     // Atualizar o parâmetro
-    console.log(`[ECONOMY] Current ${parameter}: ${countryState.economy[parameter]}, New value: ${value}`);
+    // console.log(`[ECONOMY] Current ${parameter}: ${countryState.economy[parameter]}, New value: ${value}`);
     countryState.economy[parameter] = value;
     
     // Armazenar parâmetro aplicado para referência futura
@@ -399,12 +399,12 @@ class EconomyService {
     const params = this.appliedParameters.get(countryKey);
     params[parameter] = value;
     
-    console.log(`[ECONOMY] Parameter ${parameter} updated to ${value} for ${countryName}`);
+    // console.log(`[ECONOMY] Parameter ${parameter} updated to ${value} for ${countryName}`);
     
     // Executar cálculos econômicos imediatamente
     try {
       this.performEconomicCalculations(roomName, countryName);
-      console.log(`[ECONOMY] Economic calculations completed for ${countryName}`);
+      // console.log(`[ECONOMY] Economic calculations completed for ${countryName}`);
       return countryState;
     } catch (error) {
       console.error(`[ECONOMY] Error in performEconomicCalculations:`, error);
@@ -478,10 +478,10 @@ class EconomyService {
     const debtContracts = this.debtContracts.get(countryKey) || [];
     
     // Aplicar todos os cálculos econômicos dinâmicos
-    console.log(`[DEBUG] ${countryName} - Antes: inflação=${(economy.inflation*100).toFixed(2)}%, juros=${economy.interestRate}%`);
+    // console.log(`[DEBUG] ${countryName} - Antes: inflação=${(economy.inflation*100).toFixed(2)}%, juros=${economy.interestRate}%`);
     const oldInflation = economy.inflation;
     applyEconomicCalculations(economy, debtContracts);
-    console.log(`[DEBUG] ${countryName} - Depois: inflação=${(economy.inflation*100).toFixed(2)}%, mudança=${((economy.inflation-oldInflation)*100).toFixed(3)}%`);
+    // console.log(`[DEBUG] ${countryName} - Depois: inflação=${(economy.inflation*100).toFixed(2)}%, mudança=${((economy.inflation-oldInflation)*100).toFixed(3)}%`);
     
     // Atualizar contratos de dívida processados
     if (debtContracts.length > 0) {
@@ -924,7 +924,7 @@ class EconomyService {
       this.saveToRedis();
     }, ECONOMIC_CONSTANTS.SAVE_INTERVAL);
     
-    console.log('[ECONOMY] Periodic updates started with dynamic calculations');
+    // console.log('[ECONOMY] Periodic updates started with dynamic calculations');
   }
 
   stopPeriodicUpdates() {
@@ -976,7 +976,7 @@ class EconomyService {
     
     // Log ocasional do status
     // if (Math.random() < 0.01) { // 1% de chance
-    //   console.log(`[ECONOMY] Updated ${updatedCountries} countries with dynamic calculations`);
+      // console.log(`[ECONOMY] Updated ${updatedCountries} countries with dynamic calculations`);
     // }
   }
 
@@ -1025,7 +1025,7 @@ class EconomyService {
       };
       
       await redis.set('economy_service_data', JSON.stringify(data));
-      // console.log(`[ECONOMY] Data saved to Redis - ${this.debtContracts.size} debt contracts, ${this.countryStates.size} rooms`);
+      console.log(`[ECONOMY] Data saved to Redis - ${this.debtContracts.size} debt contracts, ${this.countryStates.size} rooms`);
     } catch (error) {
       console.error('[ECONOMY] Error saving to Redis:', error);
     }
@@ -1078,13 +1078,13 @@ class EconomyService {
       }
     }
     
-    console.log(`[ECONOMY] Room ${roomName} removed with all economic data`);
+    // console.log(`[ECONOMY] Room ${roomName} removed with all economic data`);
   }
 
   cleanup() {
     this.stopPeriodicUpdates();
     this.saveToRedis();
-    console.log('[ECONOMY] EconomyService cleanup completed - all dynamic calculations stopped');
+    // console.log('[ECONOMY] EconomyService cleanup completed - all dynamic calculations stopped');
   }
 }
 

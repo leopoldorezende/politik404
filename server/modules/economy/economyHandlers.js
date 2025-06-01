@@ -21,7 +21,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     const roomName = getCurrentRoom(socket, gameState);
     const userCountry = getUserCountry(gameState, roomName, username);
     
-    console.log(`[ECONOMY] Parameter update request - User: ${username}, Room: ${roomName}, Country: ${userCountry}`);
+    // console.log(`[ECONOMY] Parameter update request - User: ${username}, Room: ${roomName}, Country: ${userCountry}`);
     
     if (!username || !roomName || !userCountry) {
       console.error(`[ECONOMY] Invalid request - missing data: username=${username}, roomName=${roomName}, userCountry=${userCountry}`);
@@ -31,31 +31,31 @@ function setupEconomyHandlers(io, socket, gameState) {
     
     const { parameter, value } = data;
     
-    console.log(`[ECONOMY] Updating parameter: ${parameter} = ${value} for ${userCountry} in ${roomName}`);
+    // console.log(`[ECONOMY] Updating parameter: ${parameter} = ${value} for ${userCountry} in ${roomName}`);
     
     // Validação básica
     if (!['interestRate', 'taxBurden', 'publicServices'].includes(parameter)) {
-      console.error(`[ECONOMY] Invalid parameter: ${parameter}`);
+      // console.error(`[ECONOMY] Invalid parameter: ${parameter}`);
       socket.emit('error', 'Invalid parameter');
       return;
     }
     
     if (typeof value !== 'number' || value < 0 || value > (parameter === 'interestRate' ? 25 : 60)) {
-      console.error(`[ECONOMY] Invalid value: ${value} for parameter ${parameter}`);
+      // console.error(`[ECONOMY] Invalid value: ${value} for parameter ${parameter}`);
       socket.emit('error', 'Invalid value');
       return;
     }
     
     // VERIFICAR se economyService existe
     if (!global.economyService) {
-      console.error('[ECONOMY] EconomyService not available');
+      // console.error('[ECONOMY] EconomyService not available');
       socket.emit('error', 'Economy service not available');
       return;
     }
     
     // VERIFICAR se economyService está inicializado
     if (!global.economyService.initialized) {
-      console.error('[ECONOMY] EconomyService not initialized');
+      // console.error('[ECONOMY] EconomyService not initialized');
       socket.emit('error', 'Economy service not initialized');
       return;
     }
@@ -65,7 +65,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       const result = global.economyService.updateEconomicParameter(roomName, userCountry, parameter, value);
       
       if (result) {
-        console.log(`[ECONOMY] Parameter updated successfully: ${parameter} = ${value} for ${userCountry}`);
+        // console.log(`[ECONOMY] Parameter updated successfully: ${parameter} = ${value} for ${userCountry}`);
         
         socket.emit('economicParameterUpdated', {
           roomName, 
@@ -402,7 +402,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    console.log(`[ECONOMY] ${username} subscribed to country states for room ${roomName}`);
+    // console.log(`[ECONOMY] ${username} subscribed to country states for room ${roomName}`);
     
     socket.join(`countryStates:${roomName}`);
     
@@ -416,7 +416,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
   
   socket.on('unsubscribeFromCountryStates', (roomName) => {
-    console.log(`[ECONOMY] User unsubscribed from country states for room ${roomName}`);
+    // console.log(`[ECONOMY] User unsubscribed from country states for room ${roomName}`);
     socket.leave(`countryStates:${roomName}`);
   });
 }
@@ -439,7 +439,7 @@ function getUserCountry(gameState, roomName, username) {
   });
   
   const country = player?.country || null;
-  console.log(`[ECONOMY] Getting user country: ${username} in ${roomName} = ${country}`);
+  // console.log(`[ECONOMY] Getting user country: ${username} in ${roomName} = ${country}`);
   
   return country;
 }

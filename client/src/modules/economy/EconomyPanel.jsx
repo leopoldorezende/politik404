@@ -64,7 +64,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
 
 const applyAllParameters = useCallback(async () => {
   if (!currentRoom?.name || !myCountry) {
-    console.error('[ECONOMY] Missing room or country:', { room: currentRoom?.name, country: myCountry });
+    // console.error('[ECONOMY] Missing room or country:', { room: currentRoom?.name, country: myCountry });
     MessageService.showError('Dados da sala ou país não encontrados');
     return;
   }
@@ -75,13 +75,13 @@ const applyAllParameters = useCallback(async () => {
     { name: 'publicServices', value: localParameters.publicServices, min: 0, max: 60 }
   ];
   
-  console.log('[ECONOMY] Applying parameters:', parameters);
-  console.log('[ECONOMY] Room:', currentRoom.name, 'Country:', myCountry);
+  // console.log('[ECONOMY] Applying parameters:', parameters);
+  // console.log('[ECONOMY] Room:', currentRoom.name, 'Country:', myCountry);
   
   // Validação
   for (const param of parameters) {
     if (isNaN(param.value) || param.value < param.min || param.value > param.max) {
-      console.error('[ECONOMY] Invalid parameter:', param);
+      // console.error('[ECONOMY] Invalid parameter:', param);
       MessageService.showError(`${param.name} deve estar entre ${param.min}% e ${param.max}%`);
       return;
     }
@@ -99,13 +99,13 @@ const applyAllParameters = useCallback(async () => {
       throw new Error('Socket não conectado');
     }
     
-    console.log('[ECONOMY] Socket status:', { 
-      connected: socket.connected, 
-      id: socket.id 
-    });
+    // console.log('[ECONOMY] Socket status:', { 
+    //   connected: socket.connected, 
+    //   id: socket.id 
+    // });
     
     for (const param of parameters) {
-      console.log('[ECONOMY] Sending parameter update:', param);
+      // console.log('[ECONOMY] Sending parameter update:', param);
       socket.emit('updateEconomicParameter', {
         parameter: param.name,
         value: param.value
@@ -116,7 +116,7 @@ const applyAllParameters = useCallback(async () => {
     setTimeout(() => {
       setPendingUpdates(prev => {
         if (prev.size > 0) {
-          console.warn('[ECONOMY] Timeout waiting for parameter updates');
+          // console.warn('[ECONOMY] Timeout waiting for parameter updates');
           MessageService.showWarning('Tempo limite para atualização. Tente novamente.');
           return new Set();
         }
@@ -125,7 +125,7 @@ const applyAllParameters = useCallback(async () => {
     }, 10000); // 10 segundos
     
   } catch (error) {
-    console.error('[ECONOMY] Error in applyAllParameters:', error);
+    // console.error('[ECONOMY] Error in applyAllParameters:', error);
     MessageService.showError(`Erro ao atualizar parâmetros: ${error.message}`);
     setPendingUpdates(new Set());
   }
@@ -190,7 +190,7 @@ const applyAllParameters = useCallback(async () => {
     if (!socket) return;
 
     const handleParameterUpdated = (data) => {
-      console.log('[ECONOMY] Parameter updated response:', data);
+      // console.log('[ECONOMY] Parameter updated response:', data);
       
       const { countryName, parameter, success } = data;
       
@@ -198,7 +198,7 @@ const applyAllParameters = useCallback(async () => {
         setPendingUpdates(prev => {
           const newSet = new Set(prev);
           newSet.delete(parameter);
-          console.log('[ECONOMY] Removed from pending:', parameter, 'Remaining:', Array.from(newSet));
+          // console.log('[ECONOMY] Removed from pending:', parameter, 'Remaining:', Array.from(newSet));
           return newSet;
         });
         
@@ -218,7 +218,7 @@ const applyAllParameters = useCallback(async () => {
     };
 
     const handleDebtBondsIssued = (data) => {
-      console.log('[ECONOMY] Debt bonds issued response:', data);
+      // console.log('[ECONOMY] Debt bonds issued response:', data);
       
       const { success, bondAmount: issuedAmount, message } = data;
       
