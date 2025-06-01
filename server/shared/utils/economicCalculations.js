@@ -180,101 +180,97 @@ export function calculateDynamicUnemployment(economy) {
 
 /**
  * Calcula a popularidade dinâmica baseada nos indicadores
- * INSPIRADO nos arquivos economy-economy.js e economy-game.js para maior estabilidade
+ * CORRIGIDO: Popularidade mais realista e responsiva
  */
 export function calculateDynamicPopularity(economy) {
   let currentPopularity = economy.popularity || 50;
   
-  // Efeito do crescimento econômico (baseado no economy-game.js)
+  // CORREÇÃO: Se popularidade está artificialmente baixa sem justificativa, ajustar
+  if (currentPopularity < 25 && economy.unemployment < 10 && economy.inflation < 0.08) {
+    currentPopularity = 45; // Resetar para valor mais realista
+  }
+  
+  // Efeito do crescimento econômico
   const gdpGrowth = economy.gdpGrowth || 0;
   let growthEffect = 0;
   
-  if (gdpGrowth > 0) {
-    // Crescimento positivo aumenta popularidade
-    growthEffect = gdpGrowth * 100 * 0.2; // Fator 0.2 como no arquivo original
-  } else if (gdpGrowth < 0) {
-    // Recessão reduz popularidade mais drasticamente
-    growthEffect = gdpGrowth * 100 * 0.3; // Fator 0.3 como no arquivo original
+  if (gdpGrowth > 1) {
+    growthEffect = gdpGrowth * 4; // Crescimento positivo aumenta popularidade
+  } else if (gdpGrowth < -1) {
+    growthEffect = gdpGrowth * 6; // Recessão reduz mais a popularidade
   }
+  // Crescimento próximo de 0% não penaliza
   
-  // Efeito da inflação na popularidade (baseado no economy-game.js)
-  const inflationIdeal = 0.04; // 4% como no arquivo original
-  const inflationDiff = economy.inflation - inflationIdeal;
+  // Efeito da inflação
+  const inflationPercent = (economy.inflation || 0.04) * 100;
   let inflationEffect = 0;
   
-  if (inflationDiff > 0) {
-    // Inflação acima do ideal reduz popularidade
-    inflationEffect = -inflationDiff * 100 * 0.25; // Fator 0.25 como no original
-  } else if (inflationDiff < 0 && economy.inflation > 0) {
-    // Inflação baixa (mas positiva) ajuda popularidade levemente
-    inflationEffect = Math.abs(inflationDiff) * 100 * 0.1; // Fator 0.1 como no original
+  if (inflationPercent > 6) {
+    // Inflação alta prejudica popularidade
+    inflationEffect = -(inflationPercent - 4) * 3;
+  } else if (inflationPercent < 2 && inflationPercent > 0) {
+    // Inflação baixa (mas positiva) ajuda popularidade
+    inflationEffect = (2 - inflationPercent) * 2;
+  } else if (inflationPercent <= 0) {
+    // Deflação é prejudicial
+    inflationEffect = inflationPercent * 10;
   }
   
-  // Efeito dos impostos na popularidade (baseado no economy-game.js)
-  const taxIdeal = 40; // Taxa ideal como no arquivo original
-  const taxDiff = economy.taxBurden - taxIdeal;
+  // Efeito do desemprego (impacto maior)
+  const unemploymentDiff = economy.unemployment - ECONOMIC_CONSTANTS.IDEAL_UNEMPLOYMENT;
+  let unemploymentEffect = 0;
+  
+  if (unemploymentDiff > 0) {
+    // Desemprego alto reduz popularidade drasticamente
+    const penalty = 1 + Math.pow(unemploymentDiff / 10, 1.2);
+    unemploymentEffect = -unemploymentDiff * 3 * penalty;
+  } else if (unemploymentDiff < 0) {
+    // Desemprego baixo aumenta popularidade significativamente
+    unemploymentEffect = Math.abs(unemploymentDiff) * 4;
+  }
+  
+  // Efeito dos impostos
+  const taxDiff = economy.taxBurden - ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE;
   let taxEffect = 0;
   
   if (taxDiff > 0) {
-    // Impostos altos reduzem popularidade
-    taxEffect = -taxDiff * 0.2; // Fator 0.2 como no original
+    taxEffect = -taxDiff * 1.0; // Impostos altos reduzem popularidade
   } else if (taxDiff < 0) {
-    // Impostos baixos aumentam popularidade
-    taxEffect = Math.abs(taxDiff) * 0.1; // Fator 0.1 como no original
+    taxEffect = Math.abs(taxDiff) * 0.6; // Impostos baixos aumentam popularidade
   }
   
-  // Efeito do investimento público na popularidade (baseado no economy-game.js)
-  const investmentReference = Math.round(economy.gdp / 3.33); // Referência proporcional ao PIB
-  const investmentDiff = economy.publicServices - investmentReference;
-  const responseRate = Math.tanh(investmentDiff / 10) * 0.8; // Função tanh para suavizar
-  let investmentEffect = responseRate * Math.abs(investmentDiff) * 0.15;
+  // Efeito do investimento público
+  const investmentRef = 30;
+  const investmentDiff = economy.publicServices - investmentRef;
+  let investmentEffect = 0;
   
-  // Efeito do desemprego na popularidade (baseado no economy-game.js com ajustes)
-  let unemploymentEffect = 0;
-  if (economy.unemployment !== undefined) {
-    const unemploymentIdeal = 15; // Valor mais realista considerando o novo padrão
-    const unemploymentDiff = economy.unemployment - unemploymentIdeal;
-    
-    if (unemploymentDiff > 0) {
-      // Desemprego acima do ideal reduz popularidade drasticamente
-      // Usando função não-linear para aumentar o impacto de desemprego muito alto
-      const penaltyFactor = 1 + Math.pow(unemploymentDiff / 10, 1.5);
-      unemploymentEffect = -unemploymentDiff * 0.3 * penaltyFactor;
-    } else if (unemploymentDiff < 0) {
-      // Desemprego abaixo do ideal aumenta popularidade, mas com impacto menor
-      unemploymentEffect = Math.abs(unemploymentDiff) * 0.3;
-    }
-    
-    // Efeito combinado de miséria econômica (desemprego alto + inflação alta)
-    if (economy.unemployment > 30 && economy.inflation > 0.08) {
-      const miseryIndex = (economy.unemployment - 30) * (economy.inflation - 0.08) * 100;
-      unemploymentEffect -= miseryIndex * 0.2;
-    }
+  if (investmentDiff > 0) {
+    // Mais investimento público aumenta popularidade
+    investmentEffect = investmentDiff * 0.6;
+  } else if (investmentDiff < 0) {
+    // Menos investimento reduz popularidade
+    investmentEffect = investmentDiff * 0.8;
   }
   
-  // Variação aleatória pequena (como no arquivo original)
-  const randomVariation = (Math.random() - 0.5) * 0.5;
+  // Índice de miséria (desemprego alto + inflação alta)
+  let miseryEffect = 0;
+  if (economy.unemployment > 15 && inflationPercent > 8) {
+    const miseryIndex = (economy.unemployment - 15) * (inflationPercent - 8);
+    miseryEffect = -miseryIndex * 0.3;
+  }
+  
+  // Variação aleatória pequena
+  const randomVariation = (Math.random() - 0.5) * 1;
   
   // Aplicar todos os efeitos
-  let newPopularity = currentPopularity + growthEffect + inflationEffect + 
-                     taxEffect + investmentEffect + unemploymentEffect + randomVariation;
+  let newPopularity = currentPopularity + growthEffect + inflationEffect + unemploymentEffect + 
+                     taxEffect + investmentEffect + miseryEffect + randomVariation;
   
-  // Força de retorno para o equilíbrio (50%) - inspirado no economy-game.js
-  const distanceFrom50 = Math.abs(newPopularity - 50);
-  const returnForce = distanceFrom50 * distanceFrom50 * 0.002;
-  
-  if (newPopularity > 50) {
-    newPopularity -= returnForce;
-  } else if (newPopularity < 50) {
-    newPopularity += returnForce;
-  }
-  
-  // Limites realistas (1% a 99% como no arquivo original)
-  newPopularity = Math.max(1, Math.min(99, newPopularity));
-  
-  // Inércia da popularidade (como nos arquivos originais - 70% atual + 30% nova)
-  // Mas aqui aplicamos após os cálculos para manter consistência
+  // Inércia da popularidade (mais responsiva)
   newPopularity = currentPopularity * 0.7 + newPopularity * 0.3;
+  
+  // Limites realistas (10% a 90%)
+  newPopularity = Math.max(10, Math.min(90, newPopularity));
   
   return newPopularity;
 }
