@@ -71,7 +71,7 @@
 .debt-summary-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  gap: 8px;
   margin-bottom: 40px;
 }
 
@@ -104,7 +104,7 @@
   font-size: 14px;
   font-weight: 700;
   color: #fff;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
   line-height: 1.2;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
@@ -155,7 +155,6 @@
   font-weight: 600;
   color: #fff;
   font-size: 12px;
-  text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -275,20 +274,13 @@
   .debt-popup-header h2 {
     font-size: 20px;
   }
-  
-  .debt-popup-content {
-    padding: 20px;
-  }
-  
+
   .debt-summary-cards {
     grid-template-columns: 1fr;
-    gap: 15px;
+    gap: 8px;
     margin-bottom: 30px;
   }
-  
-  .debt-card {
-    padding: 15px;
-  }
+
   
   .debt-card-value {
     font-size: 20px;

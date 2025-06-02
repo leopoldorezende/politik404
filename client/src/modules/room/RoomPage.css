@@ -77,11 +77,6 @@
   flex: 1;
 }
 
-.room-actions #room-name {
-  min-width: 300px;
-  max-width: 600px;
-}
-
 /* Estilo para o container do input com mensagem de erro */
 .input-with-error {
   position: relative;
@@ -348,12 +343,20 @@
     flex-direction: column;
     padding: 16px;
   }
-  
-  .room-actions div {
-    flex-direction: column;
-    width: 100%;
+
+  .room-actions > div {
+    display: flex;
+    gap: 8px;
   }
-  
+
+  .room-actions .input-with-error {
+    flex: 7;
+  }
+
+  .room-actions .select-with-icon {
+    flex: 3;
+  }
+    
   .room-actions input,
   .room-actions select,
   .select-with-icon,

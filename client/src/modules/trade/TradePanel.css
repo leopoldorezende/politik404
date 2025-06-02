@@ -369,7 +369,7 @@
 }
 
 .balance-item {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.3);
   border-radius: 6px;
   margin-bottom: 16px;
   overflow: hidden;
@@ -381,7 +381,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 6px 8px;
-  background-color: rgba(0, 20, 40, 0.15);
+  background-color: rgba(68, 80, 111, 0.1);
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 

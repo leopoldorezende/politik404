@@ -84,14 +84,7 @@
 
 /* Estilos responsivos */
 @media (max-width: 768px) {
-  .indicator {
-    flex-wrap: wrap;
-  }
-  
-  .indicator-label {
-    width: 100%;
-    margin-bottom: 5px;
-  }
+
   
   .progress-bar {
     margin: 0 5px;
@@ -115,7 +108,6 @@
   display: flex;
   align-items: center;
   margin-bottom: 8px;
-  flex-wrap: wrap;
 }
 
 .indicator-label {
@@ -130,11 +122,6 @@
 
 /* Responsive para telas menores */
 @media (max-width: 768px) {  
-  .indicator-label {
-    min-width: auto;
-    margin-bottom: 2px;
-  }
-  
   .indicator-percent {
     margin-left: 0;
   }

@@ -314,7 +314,7 @@ const GamePage = () => {
       </div>
       
       <button id="btn-open-sidetools" className="map-control" onClick={toggleSidetools}>
-        <span className="material-icons">sports_esports</span>
+        <span className="material-icons">ads_click</span>
       </button>
       
       <button id="btn-open-sideview" className="map-control" onClick={toggleSideview}>

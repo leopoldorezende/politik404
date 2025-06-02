@@ -78,18 +78,10 @@ const DebtSummaryPopup = ({
           </div>
           
           <div className="debt-card">
-            <div className="debt-card-title">Número de Contratos</div>
-            <div className="debt-card-value">{numberOfDebts}</div>
-            <div className="debt-card-description">
-              Títulos em circulação
-            </div>
-          </div>
-          
-          <div className="debt-card">
             <div className="debt-card-title">Pagamento Mensal</div>
             <div className="debt-card-value">{formatCurrency(totalMonthlyPayment)} bi USD</div>
             <div className="debt-card-description">
-              Compromisso mensal total
+              Taxa média de {formatPercent(averageInterestRate)}
             </div>
           </div>
           
@@ -97,34 +89,24 @@ const DebtSummaryPopup = ({
             <div className="debt-card-title">Total a Pagar</div>
             <div className="debt-card-value">{formatCurrency(totalFuturePayments)} bi USD</div>
             <div className="debt-card-description">
-              Valor total dos pagamentos futuros
+              {numberOfDebts} contratos
             </div>
           </div>
           
-          {averageInterestRate > 0 && (
-            <div className="debt-card">
-              <div className="debt-card-title">Taxa Média</div>
-              <div className="debt-card-value">{formatPercent(averageInterestRate)}</div>
-              <div className="debt-card-description">
-                Taxa de juros média ponderada
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Detalhes dos Títulos */}
         {safeDebtRecords.length > 0 ? (
           <div className="debt-details-section">
-            <h3>Detalhes dos Títulos</h3>
             <div className="debt-table-container">
               <table className="debt-table">
                 <thead>
                   <tr>
-                    <th>Valor Original</th>
-                    <th>Saldo Devedor</th>
-                    <th>Taxa de Juros</th>
-                    <th>Pagamento Mensal</th>
-                    <th>Parcelas Restantes</th>
+                    <th>Valor <br />Original</th>
+                    <th>Saldo <br />Devedor</th>
+                    <th>Taxa <br />de Juros</th>
+                    <th>Pagamento<br /> Mensal</th>
+                    <th>Parcelas <br />Restantes</th>
                   </tr>
                 </thead>
                 <tbody>

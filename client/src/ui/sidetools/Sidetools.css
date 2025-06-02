@@ -80,7 +80,7 @@
 
 #sidetools .tab {
   flex: 1;
-  padding: 8px 4px;
+  padding: 8px 4px 3px 4px;
   text-align: center;
   cursor: pointer;
   background: rgba(0, 0, 0, 0.1);
@@ -97,7 +97,7 @@
 }
 
 #sidetools .material-icons {
-  font-size: 20px;
+  font-size: 24px;
 }
 
 #sidetools .tab-contents {

@@ -30,7 +30,7 @@ const CountryState = ({ roomName, countryName }) => {
  // Formatar valor com sinal (2 casas decimais)
   const formatValueWithSign = (value) => {
     if (value === undefined || value === null) return '0.00';
-    return (value >= 0 ? '+' : '') + value.toFixed(2) + ' bi';
+    return (value >= 0 ? '+' : '') + value.toFixed(2);
   };
 
   if (!room || !country) {
@@ -66,20 +66,20 @@ const CountryState = ({ roomName, countryName }) => {
         <div className="indicator">
           <span className="indicator-label">PIB:</span>
           <span className="indicator-value">
-            {getNumericValue(economy.gdp).toFixed(2)} bi
+            {getNumericValue(economy.gdp).toFixed(2)}
           </span>
         </div>
         <div className="indicator">
           <span className="indicator-label">Tesouro:</span>
           <span className="indicator-value">
-            {getNumericValue(economy.treasury).toFixed(2)} bi
+            {getNumericValue(economy.treasury).toFixed(2)}
           </span>
         </div>
         
         {/* Indicadores de balanço comercial */}
         {economy.commoditiesBalance !== undefined && (
           <div className="indicator">
-            <span className="indicator-label">Saldo de Commodities:</span>
+            <span className="indicator-label">Commodities:</span>
             <span className={`indicator-value ${getNumericValue(economy.commoditiesBalance) >= 0 ? 'positive' : 'negative'}`}>
               {formatValueWithSign(getNumericValue(economy.commoditiesBalance))}
             </span>
@@ -88,7 +88,7 @@ const CountryState = ({ roomName, countryName }) => {
         
         {economy.manufacturesBalance !== undefined && (
           <div className="indicator">
-            <span className="indicator-label">Saldo de Manufaturas:</span>
+            <span className="indicator-label">Manufaturas:</span>
             <span className={`indicator-value ${getNumericValue(economy.manufacturesBalance) >= 0 ? 'positive' : 'negative'}`}>
               {formatValueWithSign(getNumericValue(economy.manufacturesBalance))}
             </span>

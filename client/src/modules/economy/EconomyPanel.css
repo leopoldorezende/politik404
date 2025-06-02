@@ -28,7 +28,6 @@
   padding: 12px;
   background: rgba(255, 255, 255, 0.3);
   border-radius: 8px;
-  border: 1px solid rgba(52, 73, 94, 0.2);
 }
 
 .advanced-economy-panel .indicator {
@@ -103,7 +102,6 @@
   padding: 12px 12px 20px 12px;
   background: rgba(255, 255, 255, 0.3);
   border-radius: 8px;
-  border: 1px solid rgba(52, 73, 94, 0.2);
 }
 
 .advanced-economy-panel .economic-controls h4 {
@@ -202,7 +200,6 @@
   padding: 12px;
   background: rgba(255, 255, 255, 0.3);
   border-radius: 8px;
-  border: 1px solid rgba(52, 73, 94, 0.2);
 }
 
 .advanced-economy-panel .bonds-section h4 {
@@ -286,7 +283,6 @@
   padding: 12px;
   background: rgba(255, 255, 255, 0.3);
   border-radius: 8px;
-  border: 1px solid rgba(52, 73, 94, 0.2);
   text-align: center;
 }
 
@@ -314,7 +310,6 @@
   padding: 12px;
   background: rgba(255, 255, 255, 0.3);
   border-radius: 8px;
-  border: 1px solid rgba(52, 73, 94, 0.2);
 }
 
 .advanced-economy-panel .sectoral-balance h4 {
