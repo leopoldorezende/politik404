@@ -71,7 +71,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
       return "Janeiro 2025";
     }
     
-    const MONTHLY_CYCLE = 30;
+    const MONTHLY_CYCLE = 10;
     const monthsPassed = Math.floor(economicIndicators._cycleCount / MONTHLY_CYCLE);
     
     // Data base: Janeiro 2025
