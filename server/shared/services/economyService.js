@@ -294,6 +294,14 @@ class EconomyService {
   /**
    * Executa os cálculos econômicos avançados para um país
    */
+// ========================================================================
+// CORREÇÃO: ATUALIZAÇÕES MAIS FREQUENTES PARA TODOS OS INDICADORES
+// ========================================================================
+
+/**
+ * Executa os cálculos econômicos avançados para um país
+ * CORRIGIDO: Todos os indicadores agora atualizam a cada ciclo (500ms)
+ */
   performAdvancedEconomicCalculations(roomName, countryName) {
     const countryState = this.getCountryState(roomName, countryName);
     if (!countryState) return;
@@ -303,38 +311,116 @@ class EconomyService {
     // Incrementar contador de ciclos
     economy._cycleCount++;
     
-    // ===== PROCESSAMENTO A CADA CICLO (500ms) =====
+    // ===== ATUALIZAÇÃO A CADA CICLO (500ms) - COMO NO SISTEMA INSPIRAÇÃO =====
     
-    // 1. Calcular outputs setoriais
+    // 1. Calcular outputs setoriais (A CADA CICLO)
     economy.servicesOutput = (economy.gdp * economy.services / 100);
     economy.commoditiesOutput = (economy.gdp * economy.commodities / 100);
     economy.manufacturesOutput = (economy.gdp * economy.manufactures / 100);
     
-    // 2. Calcular necessidades setoriais
+    // 2. Calcular necessidades setoriais (A CADA CICLO)
     this.calculateSectoralNeeds(economy);
     
-    // 3. Calcular balanços setoriais incluindo comércio
+    // 3. Calcular balanços setoriais incluindo comércio (A CADA CICLO)
     this.calculateSectoralBalances(roomName, countryName, economy);
     
-    // 4. Aplicar cálculos básicos
+    // 4. Aplicar cálculos básicos (A CADA CICLO)
     this.calculateAdvancedInflation(economy);
     this.calculateAdvancedUnemployment(economy);
     this.calculateAdvancedPopularity(economy);
     this.updateCreditRating(economy);
     
-    // ===== PROCESSAMENTO MENSAL (a cada 60 ciclos) =====
-    if (economy._cycleCount % ECONOMIC_CONSTANTS.MONTHLY_CYCLE === 0) {
-      this.processMonthlyUpdates(roomName, countryName, economy);
+    // ===== CORREÇÃO 1: PIB ATUALIZADO A CADA CICLO =====
+    // Antes: apenas a cada 180 ciclos (90 segundos)
+    // Agora: a cada ciclo (500ms) com crescimento proporcional
+    const growthRate = this.calculateAdvancedGrowth(economy);
+    const cyclicGrowth = growthRate / 180; // Divide o crescimento trimestral por 180 ciclos
+    economy.gdp *= (1 + cyclicGrowth);
+    economy.gdpGrowth = growthRate * 100; // Atualiza o percentual também
+    
+    // ===== CORREÇÃO 2: TESOURO ATUALIZADO A CADA CICLO =====
+    // Antes: apenas a cada 60 ciclos (30 segundos)  
+    // Agora: a cada ciclo (500ms) com receitas/gastos proporcionais
+    const cycleFactor = 1 / 60; // Fator para distribuir receitas mensais em ciclos
+    
+    // Receitas proporcionais por ciclo
+    const revenue = economy.gdp * (economy.taxBurden / 100) * 0.01 * cycleFactor;
+    
+    // Gastos proporcionais por ciclo
+    const expenses = economy.gdp * (economy.publicServices / 100) * 0.008 * cycleFactor;
+    
+    economy.treasury += revenue - expenses;
+    
+    // Garantir que tesouro não fique muito negativo
+    if (economy.treasury < -economy.gdp * 0.1) {
+      economy.treasury = -economy.gdp * 0.1;
     }
     
-    // ===== PROCESSAMENTO TRIMESTRAL (a cada 180 ciclos) =====
-    if (economy._cycleCount % ECONOMIC_CONSTANTS.QUARTERLY_CYCLE === 0) {
-      this.processQuarterlyUpdates(economy);
+    // ===== CORREÇÃO 3: DÍVIDA PROCESSADA A CADA CICLO =====
+    // Antes: apenas a cada 60 ciclos (30 segundos)
+    // Agora: a cada ciclo (500ms) com pagamentos proporcionais
+    const countryKey = `${countryName}:${roomName}`;
+    const debtContracts = this.debtContracts.get(countryKey) || [];
+    
+    if (debtContracts.length > 0) {
+      let totalPayment = 0;
+      
+      debtContracts.forEach(contract => {
+        if (contract.remainingInstallments > 0) {
+          const fractionalPayment = contract.monthlyPayment * cycleFactor;
+          const monthlyRate = contract.interestRate / 100 / 12;
+          const interestPayment = contract.remainingValue * monthlyRate * cycleFactor;
+          const principalPayment = fractionalPayment - interestPayment;
+          
+          totalPayment += fractionalPayment;
+          
+          // Atualizar contrato gradualmente
+          contract.remainingValue -= principalPayment;
+          if (contract.remainingValue < 0.01) {
+            contract.remainingValue = 0;
+            contract.remainingInstallments = 0;
+          }
+        }
+      });
+      
+      // Deduzir pagamento do tesouro
+      economy.treasury -= totalPayment;
+      
+      // Se tesouro insuficiente, emitir títulos de emergência
+      if (economy.treasury < 0) {
+        const shortfall = Math.abs(economy.treasury);
+        economy.treasury = 0;
+        
+        const emergencyAmount = shortfall * 1.1;
+        economy.treasury += emergencyAmount;
+        economy.publicDebt += emergencyAmount;
+      }
+      
+      // Atualizar dívida total
+      const remainingDebt = debtContracts.reduce((sum, contract) => sum + contract.remainingValue, 0);
+      economy.publicDebt = remainingDebt;
+      
+      // Filtrar contratos pagos
+      const activeContracts = debtContracts.filter(contract => contract.remainingInstallments > 0);
+      this.debtContracts.set(countryKey, activeContracts);
     }
+    
+    // ===== PROCESSAMENTO MENSAL MANTIDO PARA VARIAÇÕES SETORIAIS =====
+    if (economy._cycleCount % ECONOMIC_CONSTANTS.MONTHLY_CYCLE === 0) {
+      // Aplicar variação setorial aleatória apenas mensalmente
+      this.applySectoralRandomVariation(economy);
+      
+      // Atualizar históricos apenas mensalmente
+      this.updateHistoricalData(economy);
+    }
+    
+    // ===== PROCESSAMENTO TRIMESTRAL REMOVIDO =====
+    // O crescimento agora é aplicado a cada ciclo, não trimestralmente
     
     // Atualizar estado
     this.setCountryState(roomName, countryName, countryState);
   }
+
 
   /**
    * Calcula necessidades setoriais baseadas no sistema avançado
@@ -431,7 +517,7 @@ class EconomyService {
    * Calcula crescimento econômico trimestral avançado
    */
   calculateAdvancedGrowth(economy) {
-    // Efeito dos juros no crescimento
+    // Mesmo cálculo do crescimento, mas agora será aplicado gradualmente
     const interestDiff = economy.interestRate - ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE;
     let interestEffect;
     
@@ -442,11 +528,9 @@ class EconomyService {
       interestEffect = -(interestDiff * 0.0002) - (Math.pow(excessInterest, 1.5) * 0.0001);
     }
     
-    // Efeito dos impostos no crescimento
     const taxDiff = economy.taxBurden - ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE;
     const taxEffect = -taxDiff * 0.00015;
     
-    // Efeito do investimento público no crescimento
     let investmentEffect = 0;
     if (economy.publicServices >= 30) {
       investmentEffect = economy.publicServices * 0.0001;
@@ -456,15 +540,27 @@ class EconomyService {
       investmentEffect = economy.publicServices * 0.0001 * penaltyFactor;
     }
     
-    // Efeito da dívida pública na confiança dos investidores
     let debtEffect = 0;
     const debtToGDP = economy.publicDebt / economy.gdp;
     if (debtToGDP > 0.9) {
       debtEffect = -(debtToGDP - 0.9) * 0.05;
     }
     
-    const baseGrowth = interestEffect + taxEffect + investmentEffect + debtEffect;
-    return baseGrowth * 0.061; // Fator de ajuste
+    const tradeBalance = Math.abs(economy.commoditiesBalance || 0) + Math.abs(economy.manufacturesBalance || 0);
+    const tradeEffect = (tradeBalance / economy.gdp) * 0.1;
+    
+    const baseGrowth = interestEffect + taxEffect + investmentEffect + debtEffect + tradeEffect;
+    
+    // Crescimento base anual, que será dividido por 180 ciclos para aplicação gradual
+    let finalGrowth = 2.5 + (baseGrowth * 0.061 * 100); // Converter para percentual
+    
+    const randomVariation = (Math.random() - 0.5) * 0.5;
+    finalGrowth += randomVariation;
+    
+    // Limites realistas (-8% a +12% anuais)
+    finalGrowth = Math.max(-8, Math.min(12, finalGrowth));
+    
+    return finalGrowth / 100; // Retornar como decimal para compatibilidade
   }
 
   /**
