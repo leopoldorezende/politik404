@@ -30,6 +30,13 @@ export const useEconomy = (roomName, countryName) => {
   // Handler para atualizações periódicas
   const handleCountryStatesUpdated = useCallback((data) => {
     if (data.roomName === roomName && data.states && data.states[countryName]) {
+      console.log(`[CLIENT] Recebendo atualização para ${countryName}:`, {
+        gdp: data.states[countryName].economy.gdp,
+        inflation: (data.states[countryName].economy.inflation * 100).toFixed(3) + '%',
+        cycles: data.states[countryName].economy._cycleCount,
+        timestamp: new Date(data.timestamp).toLocaleTimeString()
+      });
+      
       setCountryData(data.states[countryName]);
       setLastUpdated(data.timestamp);
       setLoading(false);

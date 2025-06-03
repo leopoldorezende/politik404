@@ -745,7 +745,8 @@ class EconomyService {
     // 3. Armazenar PIB atual como PIB anterior do trimestre
     economy._lastQuarterGdp = economy.gdp;
     
-    console.log(`[ECONOMY] ${countryName} trimestral: PIB ${economy.gdp.toFixed(2)}, Crescimento ${economy.gdpGrowth.toFixed(2)}%`);
+    // Remover o log que causava erro ou torná-lo genérico
+    // console.log(`[ECONOMY] Trimestral: PIB ${economy.gdp.toFixed(2)}, Crescimento ${economy.gdpGrowth.toFixed(2)}%`);
   }
 
   /**
@@ -1244,12 +1245,38 @@ class EconomyService {
       const roomStates = this.getRoomStates(roomName);
       
       for (const countryName of Object.keys(roomStates)) {
+        // ADICIONAR LOG ANTES DO CÁLCULO
+        const beforeState = {
+          gdp: roomStates[countryName].economy.gdp,
+          inflation: roomStates[countryName].economy.inflation,
+          unemployment: roomStates[countryName].economy.unemployment,
+          cycles: roomStates[countryName].economy._cycleCount
+        };
+        
         this.performAdvancedEconomicCalculations(roomName, countryName);
+        
+        // ADICIONAR LOG DEPOIS DO CÁLCULO
+        const afterState = {
+          gdp: roomStates[countryName].economy.gdp,
+          inflation: roomStates[countryName].economy.inflation,
+          unemployment: roomStates[countryName].economy.unemployment,
+          cycles: roomStates[countryName].economy._cycleCount
+        };
+        
+        // LOG APENAS SE HOUVER MUDANÇA SIGNIFICATIVA
+        if (Math.abs(beforeState.inflation - afterState.inflation) > 0.001 || 
+            beforeState.cycles !== afterState.cycles) {
+          console.log(`[DEBUG] ${countryName} - Ciclo ${afterState.cycles}: Inflação ${(beforeState.inflation*100).toFixed(3)}% → ${(afterState.inflation*100).toFixed(3)}%`);
+        }
+        
         updatedCountries++;
       }
       
       // Broadcast após cálculos avançados
       if (Object.keys(roomStates).length > 0 && global.io) {
+        // ADICIONAR LOG DO BROADCAST
+        console.log(`[DEBUG] Broadcasting to room ${roomName} with ${Object.keys(roomStates).length} countries`);
+        
         global.io.to(`countryStates:${roomName}`).emit('countryStatesUpdated', {
           roomName,
           states: roomStates,
@@ -1259,7 +1286,7 @@ class EconomyService {
     }
     
     // Log ocasional do status dos cálculos avançados
-    if (Math.random() < 0.005) { // 0.5% de chance
+    if (Math.random() < 0.01) { // 1% de chance
       console.log(`[ECONOMY] Advanced calculations updated ${updatedCountries} countries`);
     }
   }

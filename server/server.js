@@ -89,7 +89,6 @@ app.get('/check-data-files', (req, res) => {
 
 const server = http.createServer(app);
 
-
 // Configuração simplificada do Socket.io
 const io = new Server(server, {
   cors: {
@@ -203,48 +202,32 @@ process.on('SIGTERM', shutdownHandler);
 
 // Iniciar servidor só depois que Redis restaurar
 restoreRoomsFromRedis().then(() => {
-  // CRÍTICO: Inicializar EconomyService
+  // CRÍTICO: Inicializar EconomyService com cálculos avançados
   economyService.initialize().then(() => {
-    console.log('✅ EconomyService initialized successfully');
+    console.log('✅ Advanced EconomyService initialized successfully');
     
-    restoreRoomsFromRedis().then(() => {
-      // CRÍTICO: Inicializar EconomyService com cálculos avançados
-      economyService.initialize().then(() => {
-        console.log('✅ Advanced EconomyService initialized successfully');
-        
-        // Validar se os cálculos avançados estão funcionando
-        const performanceStats = economyService.getPerformanceStats();
-        console.log('📊 Economy Performance Stats:', performanceStats);
-        
-        server.listen(PORT, () => {
-          console.log(`Server running on port ${PORT}`);
-          console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);
-          console.log(`EconomyService initialized: ${economyService.initialized ? 'Yes' : 'No'}`);
-          console.log(`Advanced calculations enabled: ${economyService.getPerformanceStats().isRunning ? 'Yes' : 'No'}`);
-          console.log(`Monthly cycle: ${economyService.getPerformanceStats().monthlySystemCycle} cycles`);
-          console.log(`Quarterly cycle: ${economyService.getPerformanceStats().quarterlySystemCycle} cycles`);
-          
-          // Configurar limpeza periódica
-          setupPeriodicCleanup(io, gameState);
-        });
-      }).catch(error => {
-        console.error('❌ Failed to initialize Advanced EconomyService:', error);
-        process.exit(1);
-      });
-    });
-
+    // Validar se os cálculos avançados estão funcionando
+    const performanceStats = economyService.getPerformanceStats();
+    console.log('📊 Economy Performance Stats:', performanceStats);
+    
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);
       console.log(`EconomyService initialized: ${economyService.initialized ? 'Yes' : 'No'}`);
+      console.log(`Advanced calculations enabled: ${economyService.getPerformanceStats().isRunning ? 'Yes' : 'No'}`);
+      console.log(`Monthly cycle: ${economyService.getPerformanceStats().monthlySystemCycle} cycles`);
+      console.log(`Quarterly cycle: ${economyService.getPerformanceStats().quarterlySystemCycle} cycles`);
       
       // Configurar limpeza periódica
       setupPeriodicCleanup(io, gameState);
     });
   }).catch(error => {
-    console.error('❌ Failed to initialize EconomyService:', error);
+    console.error('❌ Failed to initialize Advanced EconomyService:', error);
     process.exit(1);
   });
+}).catch(error => {
+  console.error('❌ Failed to restore rooms from Redis:', error);
+  process.exit(1);
 });
 
 io.use(createSocketMiddleware(io));
