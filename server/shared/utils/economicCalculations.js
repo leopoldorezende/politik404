@@ -206,7 +206,7 @@ export function calculateDynamicPopularity(economy) {
   }
   
   // CÓPIA EXATA do economy-game.js - Efeito do investimento público na popularidade
-  const investimentoReferencia = Math.round(economy.gdp / 3.33);
+  const investimentoReferencia = 30;
   const difInvestimento = economy.publicServices - investimentoReferencia;
   const taxaResposta = Math.tanh(difInvestimento / 10) * 0.8;
   novaPopularidade += taxaResposta * Math.abs(difInvestimento) * 0.15;

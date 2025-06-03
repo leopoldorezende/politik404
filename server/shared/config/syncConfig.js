@@ -4,7 +4,7 @@
  */
 
 export const SYNC_CONFIG = {
-  MASTER_CYCLE: 100,
+  MASTER_CYCLE: 500,
   
   // Economia
   get ECONOMY_UPDATE_INTERVAL() { return this.MASTER_CYCLE * 1 },

@@ -295,6 +295,23 @@ const applyAllParameters = useCallback(async () => {
       
       {/* Indicadores Principais */}
       <div className="main-indicators">
+
+        <div className="indicator">
+          <label>Popularidade:</label>
+          <span className={`value ${economicIndicators.popularity > 50 ? 'positive' : 'negative'}`}>
+            {formatPercent(economicIndicators.popularity)}
+          </span>
+        </div>
+
+        <div className="popularity-container">
+          <div className="popularity-bar">
+            <div 
+              className="popularity-fill" 
+              style={{ width: `${Math.min(100, Math.max(0, economicIndicators.popularity))}%` }}
+            ></div>
+          </div>
+        </div>
+        
         <div className="indicator">
           <label>PIB:</label>
           <div className="indicator-value">
@@ -336,12 +353,6 @@ const applyAllParameters = useCallback(async () => {
           </span>
         </div>
         
-        <div className="indicator">
-          <label>Popularidade:</label>
-          <span className={`value ${economicIndicators.popularity > 50 ? 'positive' : 'negative'}`}>
-            {formatPercent(economicIndicators.popularity)}
-          </span>
-        </div>
         
         <div className="indicator credit-indicator">
           <label>Rating:</label>

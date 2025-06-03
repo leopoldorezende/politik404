@@ -20,7 +20,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 
@@ -58,7 +58,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 
@@ -90,7 +90,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 
@@ -128,7 +128,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 
@@ -164,7 +164,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 
@@ -200,7 +200,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 
@@ -232,7 +232,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 
@@ -264,7 +264,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 
@@ -296,7 +296,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 
@@ -334,7 +334,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 
@@ -370,7 +370,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 
@@ -409,7 +409,7 @@
       "businessSupport": 50
     },
     "economy": {
-      "gdp": 100, 
+      "gdp": 1000, 
       "treasury": 100,
       "publicDebt": 50, 
       "popularity": 50, 

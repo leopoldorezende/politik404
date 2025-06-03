@@ -33,7 +33,7 @@
 .advanced-economy-panel .indicator {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: start;
 }
 
 .advanced-economy-panel .indicator label {
@@ -516,4 +516,37 @@
 
 .advanced-economy-panel .credit-rating {
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+
+/* Estilos para a barra de popularidade */
+.popularity-indicator {
+  flex-direction: column !important;
+  gap: 8px;
+}
+
+.popularity-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.popularity-bar {
+  flex: 1;
+  min-width: 0; /* Importante para flex funcionar corretamente */
+  height: 3px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  margin-top: -20px;
+}
+
+.popularity-fill {
+  height: 100%;
+  background: linear-gradient(to right, #b6cfd5,#00aa8e);
+  transition: width 0.3s ease;
+  border-radius: 10px;
+  max-width: 100%;
 }

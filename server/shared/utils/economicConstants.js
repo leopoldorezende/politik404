@@ -37,7 +37,7 @@ export const ECONOMIC_CONSTANTS = {
   POPULARITY_INERTIA: 0.7,
 
   // Configurações de tempo e sistema
-  UPDATE_INTERVAL: 100,
+  UPDATE_INTERVAL: 500,
   SAVE_INTERVAL: 10000,
   MAX_HISTORY_SIZE: 20,
 
