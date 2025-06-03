@@ -528,16 +528,17 @@ class EconomyService {
       interestEffect = -(interestDiff * 0.0002) - (Math.pow(excessInterest, 1.5) * 0.0001);
     }
     
-    const taxDiff = economy.taxBurden - ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE;
+    const taxDiff = (economy.taxBurden || ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE) - ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE;
     const taxEffect = -taxDiff * 0.00015;
     
     let investmentEffect = 0;
-    if (economy.publicServices >= 30) {
-      investmentEffect = economy.publicServices * 0.0001;
+    const publicServicesValue = economy.publicServices || economy.investimentoPublico || 30;
+    if (publicServicesValue >= 30) {
+      investmentEffect = publicServicesValue * 0.0001;
     } else {
-      const deficit = 30 - economy.publicServices;
+      const deficit = 30 - publicServicesValue;
       const penaltyFactor = 1 - Math.pow(deficit / 30, 1.5) * 0.5;
-      investmentEffect = economy.publicServices * 0.0001 * penaltyFactor;
+      investmentEffect = publicServicesValue * 0.0001 * penaltyFactor;
     }
     
     let debtEffect = 0;
@@ -1362,7 +1363,7 @@ class EconomyService {
         // LOG APENAS SE HOUVER MUDANÇA SIGNIFICATIVA
         if (Math.abs(beforeState.inflation - afterState.inflation) > 0.001 || 
             beforeState.cycles !== afterState.cycles) {
-          console.log(`[DEBUG] ${countryName} - Ciclo ${afterState.cycles}: Inflação ${(beforeState.inflation*100).toFixed(3)}% → ${(afterState.inflation*100).toFixed(3)}%`);
+          // console.log(`[DEBUG] ${countryName} - Ciclo ${afterState.cycles}: Inflação ${(beforeState.inflation*100).toFixed(3)}% → ${(afterState.inflation*100).toFixed(3)}%`);
         }
         
         updatedCountries++;
@@ -1371,7 +1372,7 @@ class EconomyService {
       // Broadcast após cálculos avançados
       if (Object.keys(roomStates).length > 0 && global.io) {
         // ADICIONAR LOG DO BROADCAST
-        console.log(`[DEBUG] Broadcasting to room ${roomName} with ${Object.keys(roomStates).length} countries`);
+        // console.log(`[DEBUG] Broadcasting to room ${roomName} with ${Object.keys(roomStates).length} countries`);
         
         global.io.to(`countryStates:${roomName}`).emit('countryStatesUpdated', {
           roomName,

@@ -247,7 +247,7 @@ export function calculateDynamicUnemployment(economy) {
   }
   
   // Efeito da inflação (Curva de Phillips modificada)
-  const inflationPercent = (economy.inflation || ECONOMIC_CONSTANTS.EQUILIBRIUM_INFLATION) * 100;
+  const inflationPercent = (economy.inflation || 0.04) * 100;
   let inflationEffect = 0;
   
   if (inflationPercent < 5) {
@@ -261,17 +261,10 @@ export function calculateDynamicUnemployment(economy) {
     inflationEffect = -((inflationPercent - 5) * 1);
   }
   
-  // Efeito do investimento público (mais significativo)
-  let investmentEffect = 0;
-  if (economy.publicServices > 35) {
-    // Investimento público alto reduz desemprego
-    investmentEffect = -((economy.publicServices - 35) * 0.3);
-  } else if (economy.publicServices < 25) {
-    // Investimento muito baixo aumenta desemprego
-    investmentEffect = (25 - economy.publicServices) * 0.25;
-  }
+  // CORREÇÃO 1: Remover efeito direto do investimento público no desemprego
+  // O sistema original não tem este efeito direto
   
-  // Efeito da carga tributária
+  // Efeito da carga tributária - SIMPLIFICADO como no original
   let taxEffect = 0;
   if (economy.taxBurden > 50) {
     // Impostos muito altos podem desencorajar contratações
@@ -292,13 +285,15 @@ export function calculateDynamicUnemployment(economy) {
   }
   
   // Aplicar todos os efeitos
-  let newUnemployment = currentUnemployment + growthEffect + inflationEffect + investmentEffect + taxEffect + interestEffect;
+  let newUnemployment = currentUnemployment + growthEffect + inflationEffect + taxEffect + interestEffect;
   
-  // Inércia do desemprego (muda mais lentamente)
-  newUnemployment = currentUnemployment * ECONOMIC_CONSTANTS.UNEMPLOYMENT_INERTIA + newUnemployment * (1 - ECONOMIC_CONSTANTS.UNEMPLOYMENT_INERTIA);
+  // CORREÇÃO 2: Reduzir inércia para tornar mais responsivo
+  // Original: 0.9 inércia / 0.1 mudança - MUITO LENTO
+  // Novo: 0.85 inércia / 0.15 mudança - MAIS RESPONSIVO
+  newUnemployment = currentUnemployment * 0.85 + newUnemployment * 0.15;
   
   // Limites realistas
-  newUnemployment = Math.max(ECONOMIC_CONSTANTS.MIN_UNEMPLOYMENT, Math.min(ECONOMIC_CONSTANTS.MAX_UNEMPLOYMENT, newUnemployment));
+  newUnemployment = Math.max(3, Math.min(40, newUnemployment));
   
   return newUnemployment;
 }
@@ -310,7 +305,7 @@ export function calculateDynamicUnemployment(economy) {
  * @returns {number} - Nova taxa de popularidade
  */
 export function calculateDynamicPopularity(economy) {
-  let currentPopularity = economy.popularity || ECONOMIC_CONSTANTS.IDEAL_POPULARITY;
+  let currentPopularity = economy.popularity || 50;
   
   // Se popularidade está artificialmente baixa sem justificativa, ajustar
   if (currentPopularity < 25 && economy.unemployment < 10 && (economy.inflation * 100) < 8) {
@@ -328,7 +323,7 @@ export function calculateDynamicPopularity(economy) {
   }
   
   // Efeito da inflação
-  const idealInflation = ECONOMIC_CONSTANTS.EQUILIBRIUM_INFLATION;
+  const idealInflation = 0.04;
   const inflationDiff = economy.inflation - idealInflation;
   let inflationEffect = 0;
   
@@ -343,8 +338,32 @@ export function calculateDynamicPopularity(economy) {
     inflationEffect = economy.inflation * 100 * 10;
   }
   
+  // CORREÇÃO 3: Aumentar significativamente o efeito dos impostos
+  // Original tinha efeito muito fraco
+  const idealTax = 40;
+  const taxDiff = economy.taxBurden - idealTax;
+  let taxEffect = 0;
+  
+  if (taxDiff > 0) {
+    // CORRIGIDO: Aumentar impacto de impostos altos (era 0.2, agora 0.5)
+    taxEffect = -taxDiff * 0.5; // Impostos altos reduzem popularidade MUITO MAIS
+  } else if (taxDiff < 0) {
+    // CORRIGIDO: Aumentar benefício de impostos baixos (era 0.1, agora 0.3)
+    taxEffect = Math.abs(taxDiff) * 0.3; // Impostos baixos aumentam popularidade MUITO MAIS
+  }
+  
+  // CORREÇÃO 4: Aumentar significativamente o efeito do investimento público
+  // Baseado no sistema original que funciona
+  const investmentRef = Math.round(economy.gdp / 3.33);
+  const investmentDiff = economy.publicServices - investmentRef;
+  const responseRate = Math.tanh(investmentDiff / 10) * 0.8;
+  
+  // CORRIGIDO: Aumentar multiplicador (era 0.15, agora 0.4)
+  let investmentEffect = responseRate * Math.abs(investmentDiff) * 0.4;
+  
   // Efeito do desemprego (impacto maior)
-  const unemploymentDiff = economy.unemployment - ECONOMIC_CONSTANTS.IDEAL_UNEMPLOYMENT;
+  const idealUnemployment = 15;
+  const unemploymentDiff = economy.unemployment - idealUnemployment;
   let unemploymentEffect = 0;
   
   if (unemploymentDiff > 0) {
@@ -355,22 +374,6 @@ export function calculateDynamicPopularity(economy) {
     // Desemprego baixo aumenta popularidade significativamente
     unemploymentEffect = Math.abs(unemploymentDiff) * 0.3;
   }
-  
-  // Efeito dos impostos
-  const taxDiff = economy.taxBurden - ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE;
-  let taxEffect = 0;
-  
-  if (taxDiff > 0) {
-    taxEffect = -taxDiff * 0.2; // Impostos altos reduzem popularidade
-  } else if (taxDiff < 0) {
-    taxEffect = Math.abs(taxDiff) * 0.1; // Impostos baixos aumentam popularidade
-  }
-  
-  // Efeito do investimento público
-  const investmentRef = Math.round(economy.gdp / 3.33);
-  const investmentDiff = economy.publicServices - investmentRef;
-  const responseRate = Math.tanh(investmentDiff / 10) * 0.8;
-  let investmentEffect = responseRate * Math.abs(investmentDiff) * 0.15;
   
   // Índice de miséria (desemprego alto + inflação alta)
   let miseryEffect = 0;
@@ -388,20 +391,22 @@ export function calculateDynamicPopularity(economy) {
                      taxEffect + investmentEffect + miseryEffect + randomVariation;
   
   // Força de retorno para o equilíbrio (50%)
-  const distanceFrom50 = Math.abs(newPopularity - ECONOMIC_CONSTANTS.IDEAL_POPULARITY);
+  const distanceFrom50 = Math.abs(newPopularity - 50);
   const returnForce = distanceFrom50 * distanceFrom50 * 0.002;
   
-  if (newPopularity > ECONOMIC_CONSTANTS.IDEAL_POPULARITY) {
+  if (newPopularity > 50) {
     newPopularity -= returnForce;
-  } else if (newPopularity < ECONOMIC_CONSTANTS.IDEAL_POPULARITY) {
+  } else if (newPopularity < 50) {
     newPopularity += returnForce;
   }
   
-  // Inércia da popularidade (mais responsiva)
-  newPopularity = currentPopularity * ECONOMIC_CONSTANTS.POPULARITY_INERTIA + newPopularity * (1 - ECONOMIC_CONSTANTS.POPULARITY_INERTIA);
+  // CORREÇÃO 5: Reduzir inércia para tornar mais responsivo
+  // Original: 0.7 inércia / 0.3 mudança - MUITO LENTO
+  // Novo: 0.5 inércia / 0.5 mudança - MUITO MAIS RESPONSIVO
+  newPopularity = currentPopularity * 0.5 + newPopularity * 0.5;
   
   // Limites realistas
-  newPopularity = Math.max(ECONOMIC_CONSTANTS.MIN_POPULARITY, Math.min(ECONOMIC_CONSTANTS.MAX_POPULARITY, newPopularity));
+  newPopularity = Math.max(1, Math.min(99, newPopularity));
   
   return newPopularity;
 }
