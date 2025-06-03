@@ -13,7 +13,6 @@ import {
   calculateDynamicUnemployment,
   calculateDynamicPopularity,
   calculateCreditRating,
-  applyAdvancedEconomicCalculations,
   processDeptPayments,
   applySectoralVariation,
   resetUnrealisticIndicators,
@@ -283,9 +282,6 @@ class EconomyService {
   // CÁLCULOS ECONÔMICOS DELEGADOS (SEM DUPLICAÇÃO)
   // ========================================================================
 
-  /**
-   * DELEGAÇÃO: Usa funções de economicCalculations.js em vez de reimplementar
-   */
   performAdvancedEconomicCalculations(roomName, countryName) {
     const countryState = this.getCountryState(roomName, countryName);
     if (!countryState) return;
@@ -295,7 +291,7 @@ class EconomyService {
     // Incrementar contador de ciclos
     economy._cycleCount++;
     
-    // ===== DELEGAÇÃO COMPLETA PARA economicCalculations.js =====
+    // ===== APLICAÇÃO DOS CÁLCULOS COMO NO economy-game.js =====
     
     // 1. Calcular outputs setoriais
     economy.servicesOutput = (economy.gdp * economy.services / 100);
@@ -308,58 +304,90 @@ class EconomyService {
     // 3. Calcular balanços setoriais incluindo comércio
     this.calculateSectoralBalances(roomName, countryName, economy);
     
-    // 4. Aplicar cálculos básicos DELEGADOS
+    // 4. ===== CRESCIMENTO APLICADO DIRETAMENTE COMO NO economy-game.js =====
+    const crescimento = calculateAdvancedGrowth(economy);
+    
+    // APLICAÇÃO DIRETA sem divisões extras - IGUAL AO economy-game.js
+    economy.gdp *= (1 + crescimento);
+    
+    // Converter crescimento para percentual para compatibilidade
+    economy.gdpGrowth = crescimento * 100;
+    
+    // 5. Aplicar cálculos básicos DELEGADOS (aplicação direta)
     economy.inflation = calculateDynamicInflation(economy);
     economy.unemployment = calculateDynamicUnemployment(economy);
     economy.popularity = calculateDynamicPopularity(economy);
     economy.creditRating = calculateCreditRating(economy);
     
-    // 5. PIB atualizado a cada ciclo DELEGADO
-    const growthRate = calculateAdvancedGrowth(economy);
-    const cyclicGrowth = growthRate / 180; // Divide o crescimento trimestral por 180 ciclos
-    economy.gdp *= (1 + cyclicGrowth);
-    economy.gdpGrowth = growthRate * 100; // Atualiza o percentual também
+    // 6. ===== CAIXA ATUALIZADO COMO NO economy-game.js =====
+    // Arrecadação via impostos - CÓPIA EXATA do economy-game.js
+    const arrecadacao = economy.gdp * (economy.taxBurden / 100) * 0.017;
     
-    // 6. Tesouro atualizado a cada ciclo
-    const cycleFactor = 1 / 60; // Fator para distribuir receitas mensais em ciclos
+    // Gastos com investimento público - CÓPIA EXATA do economy-game.js
+    let gastoInvestimento = 0;
     
-    // Receitas proporcionais por ciclo
-    const revenue = economy.gdp * (economy.taxBurden / 100) * 0.01 * cycleFactor;
-    
-    // Gastos proporcionais por ciclo
-    const expenses = economy.gdp * (economy.publicServices / 100) * 0.008 * cycleFactor;
-    
-    economy.treasury += revenue - expenses;
-    
-    // Garantir que tesouro não fique muito negativo
-    if (economy.treasury < -economy.gdp * 0.1) {
-      economy.treasury = -economy.gdp * 0.1;
+    if (economy.publicServices > 0) {
+      if (economy.publicServices <= 15) {
+        gastoInvestimento = economy.gdp * (economy.publicServices / 100) * 0.015;
+      } else {
+        const baseGasto = economy.gdp * (15 / 100) * 0.015;
+        const fatorExtra = 2.0;
+        const excedenteInvestimento = economy.publicServices - 15;
+        const gastoExcedente = economy.gdp * (excedenteInvestimento / 100) * 0.015 * fatorExtra;
+        
+        gastoInvestimento = baseGasto + gastoExcedente;
+      }
     }
     
-    // 7. Dívida processada a cada ciclo DELEGADA
-    const countryKey = `${countryName}:${roomName}`;
-    const debtContracts = this.debtContracts.get(countryKey) || [];
+    // Atualizar caixa - CÓPIA EXATA do economy-game.js
+    economy.treasury += arrecadacao - gastoInvestimento;
     
-    if (debtContracts.length > 0) {
-      processDeptPayments(economy, debtContracts, cycleFactor);
+    // Verificar se o caixa está negativo - COMO NO economy-game.js
+    if (economy.treasury <= 0) {
+      economy.treasury = 0;
+      // Emitir títulos de emergência seria aqui, mas simplificamos
+    }
+    
+    // 7. ===== EFEITO DA INFLAÇÃO NO PIB - COMO NO economy-game.js =====
+    if (economy.inflation > 0.1) {
+      const excesso = economy.inflation - 0.1;
+      const fatorPenalidade = 0.9998 - (excesso * 0.001);
+      economy.gdp *= Math.max(0.9995, fatorPenalidade);
+    }
+    
+    // 8. Processamento mensal das dívidas - COMO NO economy-game.js
+    if (economy._cycleCount % 30 === 0) {
+      const countryKey = `${countryName}:${roomName}`;
+      const debtContracts = this.debtContracts.get(countryKey) || [];
       
-      // Filtrar contratos pagos
-      const activeContracts = debtContracts.filter(contract => contract.remainingInstallments > 0);
-      this.debtContracts.set(countryKey, activeContracts);
+      if (debtContracts.length > 0) {
+        // USAR A FUNÇÃO IMPORTADA do economicCalculations.js
+        processDeptPayments(economy, debtContracts, 1); // Fator 1 para pagamento mensal completo
+        
+        // Filtrar contratos pagos
+        const activeContracts = debtContracts.filter(contract => contract.remainingInstallments > 0);
+        this.debtContracts.set(countryKey, activeContracts);
+      }
     }
     
-    // 8. Processamento mensal para variações setoriais
+    // 9. Processamento mensal para variações setoriais - COMO NO economy-game.js
     if (economy._cycleCount % ECONOMIC_CONSTANTS.MONTHLY_CYCLE === 0) {
-      // DELEGADO: Aplicar variação setorial aleatória
+      // USAR A FUNÇÃO IMPORTADA do economicCalculations.js
       applySectoralVariation(economy);
       
       // Atualizar históricos
       this.updateHistoricalData(economy);
     }
     
+    // Atualizar valores absolutos das necessidades - COMO NO economy-game.js
+    economy.commoditiesNeeds = economy.gdp * (economy._commoditiesNeedsBasePercent / 100);
+    economy.manufacturesNeeds = economy.gdp * (economy._manufacturesNeedsBasePercent / 100);
+    
     // Atualizar estado
     this.setCountryState(roomName, countryName, countryState);
   }
+
+
 
   /**
    * Calcula necessidades setoriais baseadas no sistema avançado

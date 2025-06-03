@@ -14,8 +14,7 @@
   │   │   ├── App.css
   │   │   ├── App.jsx  # Componente raiz
   │   │   ├── hooks
-  │   │   │   ├── useEconomy.js
-  │   │   │   └── useEconomy_ANTIGO.js
+  │   │   │   └── useEconomy.js
   │   │   ├── main.jsx  # Entry point (Vite)
   │   │   ├── modules
   │   │   │   ├── actions
@@ -120,8 +119,7 @@
   │   │   │   ├── countryAssignment.js  # Atribuições de países
   │   │   │   └── countryUtils.js  # Utilitários para países
   │   │   ├── economy
-  │   │   │   ├── economyHandlers.js
-  │   │   │   └── economyHandlers_ANTIGO.js
+  │   │   │   └── economyHandlers.js
   │   │   ├── index.js
   │   │   ├── player
   │   │   │   ├── playerRoomHandlers.js  # Handlers para jogadores na sala
@@ -137,18 +135,15 @@
   │   │       ├── countriesData-bkp.json
   │   │       └── countriesData.json
   │   ├── server.js  # Entry point do servidor
-  │   ├── server_ANTIGO.js
   │   └── shared
   │       ├── config
   │       │   └── syncConfig.js
   │       ├── firebaseAdmin.js
   │       ├── redisClient.js  # Infraestrutura do Redis
   │       ├── services
-  │       │   ├── economyService.js
-  │       │   └── economyService_ANTIGO.js
+  │       │   └── economyService.js
   │       └── utils
   │           ├── economicCalculations.js
-  │           ├── economicCalculations_ANTIGO.js
   │           ├── economicConstants.js
   │           ├── economicUtils.js
   │           └── gameStateUtils.js  # Utilitários de estado para o jogo
