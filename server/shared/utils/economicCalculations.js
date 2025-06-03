@@ -1,90 +1,16 @@
 /**
- * economicCalculations.js - Módulo específico para cálculos econômicos dinâmicos
- * VERSÃO EXPANDIDA COM CÁLCULOS SOFISTICADOS MIGRADOS
- * Localização: server/shared/utils/economicCalculations.js
+ * economicCalculations.js - VERSÃO CONSOLIDADA
+ * Remove duplicações com economyService.js
+ * Mantém os cálculos econômicos sofisticados baseados nos arquivos anexados
+ * FONTE ÚNICA DE VERDADE para todos os cálculos econômicos
  */
 
-/**
- * Constantes econômicas baseadas no sistema original
- */
-const ECONOMIC_CONSTANTS = {
-  EQUILIBRIUM_INTEREST_RATE: 8.0,
-  EQUILIBRIUM_TAX_RATE: 40.0,
-  EQUILIBRIUM_INFLATION: 0.04, // 4%
-  IDEAL_UNEMPLOYMENT: 15.0,
-  IDEAL_POPULARITY: 50.0,
-  
-  // Fatores de sensibilidade para cálculos avançados
-  INFLATION_SENSITIVITY: 0.001,
-  UNEMPLOYMENT_SENSITIVITY: 0.1,
-  POPULARITY_SENSITIVITY: 0.5,
-  GROWTH_SENSITIVITY: 0.0001,
-  
-  // Limites realistas
-  MIN_INFLATION: -0.02, // -2%
-  MAX_INFLATION: 0.18,  // 18%
-  MIN_UNEMPLOYMENT: 3,   // 3%
-  MAX_UNEMPLOYMENT: 40,  // 40%
-  MIN_POPULARITY: 1,     // 1%
-  MAX_POPULARITY: 99,    // 99%
-  
-  // Ciclos temporais
-  MONTHLY_CYCLE: 60,
-  QUARTERLY_CYCLE: 180,
-  
-  // Fatores de inércia
-  INFLATION_INERTIA: 0.8,
-  UNEMPLOYMENT_INERTIA: 0.9,
-  POPULARITY_INERTIA: 0.7,
-};
-
-/**
- * Get numeric value from property that can be in different formats
- * @param {any} property - Property that can be number or object with value
- * @returns {number} - Numeric value
- */
-export function getNumericValue(property) {
-  if (property === undefined || property === null) return 0;
-  if (typeof property === 'number') return property;
-  if (typeof property === 'object' && property.value !== undefined) return property.value;
-  return 0;
-}
-
-/**
- * Format currency value for display
- * @param {number} value - Numeric value
- * @param {number} decimals - Number of decimal places (default: 1)
- * @returns {string} - Formatted currency string
- */
-export function formatCurrency(value, decimals = 1) {
-  if (value === undefined || value === null || isNaN(value)) return '0.0';
-  return Number(value).toFixed(decimals);
-}
-
-/**
- * Format percentage value for display
- * @param {number} value - Numeric value
- * @returns {string} - Formatted percentage string
- */
-export function formatPercent(value) {
-  if (value === undefined || value === null || isNaN(value)) return '0.0%';
-  return Number(value).toFixed(1) + '%';
-}
-
-/**
- * Format value with sign for display
- * @param {number} value - Numeric value
- * @returns {string} - Formatted value with sign
- */
-export function formatValueWithSign(value) {
-  if (value === undefined || value === null || isNaN(value)) return '0.0';
-  const num = Number(value);
-  return (num >= 0 ? '+' : '') + num.toFixed(1);
-}
+import { ECONOMIC_CONSTANTS } from './economicConstants.js';
+import { getNumericValue, limitarComCurva, calcularMediaMovel } from './economicUtils.js';
 
 /**
  * Calcula o crescimento econômico trimestral avançado
- * Implementação baseada no sistema original com múltiplos fatores
+ * Implementação baseada no sistema sofisticado dos arquivos anexados
  * @param {Object} economy - Estado econômico
  * @returns {number} - Taxa de crescimento (como decimal, ex: 0.025 = 2.5%)
  */
@@ -141,7 +67,7 @@ export function calculateAdvancedGrowth(economy) {
 
 /**
  * Calcula a inflação dinâmica baseada nas políticas econômicas
- * Implementação fiel ao sistema original com todas as variáveis
+ * Implementação fiel ao sistema sofisticado dos arquivos anexados
  * @param {Object} economy - Estado econômico
  * @returns {number} - Nova taxa de inflação
  */
@@ -227,7 +153,7 @@ export function calculateDynamicInflation(economy) {
 
 /**
  * Calcula o desemprego dinâmico com Curva de Phillips
- * Implementação baseada no sistema original
+ * Implementação baseada no sistema sofisticado dos arquivos anexados
  * @param {Object} economy - Estado econômico
  * @returns {number} - Nova taxa de desemprego
  */
@@ -261,10 +187,7 @@ export function calculateDynamicUnemployment(economy) {
     inflationEffect = -((inflationPercent - 5) * 1);
   }
   
-  // CORREÇÃO 1: Remover efeito direto do investimento público no desemprego
-  // O sistema original não tem este efeito direto
-  
-  // Efeito da carga tributária - SIMPLIFICADO como no original
+  // Efeito da carga tributária
   let taxEffect = 0;
   if (economy.taxBurden > 50) {
     // Impostos muito altos podem desencorajar contratações
@@ -287,9 +210,7 @@ export function calculateDynamicUnemployment(economy) {
   // Aplicar todos os efeitos
   let newUnemployment = currentUnemployment + growthEffect + inflationEffect + taxEffect + interestEffect;
   
-  // CORREÇÃO 2: Reduzir inércia para tornar mais responsivo
-  // Original: 0.9 inércia / 0.1 mudança - MUITO LENTO
-  // Novo: 0.85 inércia / 0.15 mudança - MAIS RESPONSIVO
+  // Inércia reduzida para tornar mais responsivo
   newUnemployment = currentUnemployment * 0.85 + newUnemployment * 0.15;
   
   // Limites realistas
@@ -300,7 +221,7 @@ export function calculateDynamicUnemployment(economy) {
 
 /**
  * Calcula a popularidade dinâmica baseada nos indicadores
- * Implementação completa do sistema original com força de retorno
+ * Implementação completa do sistema sofisticado dos arquivos anexados
  * @param {Object} economy - Estado econômico
  * @returns {number} - Nova taxa de popularidade
  */
@@ -338,27 +259,25 @@ export function calculateDynamicPopularity(economy) {
     inflationEffect = economy.inflation * 100 * 10;
   }
   
-  // CORREÇÃO 3: Aumentar significativamente o efeito dos impostos
-  // Original tinha efeito muito fraco
+  // Efeito dos impostos na popularidade (aumentado significativamente)
   const idealTax = 40;
   const taxDiff = economy.taxBurden - idealTax;
   let taxEffect = 0;
   
   if (taxDiff > 0) {
-    // CORRIGIDO: Aumentar impacto de impostos altos (era 0.2, agora 0.5)
-    taxEffect = -taxDiff * 0.5; // Impostos altos reduzem popularidade MUITO MAIS
+    // Impostos altos reduzem popularidade MUITO MAIS
+    taxEffect = -taxDiff * 0.5;
   } else if (taxDiff < 0) {
-    // CORRIGIDO: Aumentar benefício de impostos baixos (era 0.1, agora 0.3)
-    taxEffect = Math.abs(taxDiff) * 0.3; // Impostos baixos aumentam popularidade MUITO MAIS
+    // Impostos baixos aumentam popularidade MUITO MAIS
+    taxEffect = Math.abs(taxDiff) * 0.3;
   }
   
-  // CORREÇÃO 4: Aumentar significativamente o efeito do investimento público
-  // Baseado no sistema original que funciona
+  // Efeito do investimento público (aumentado significativamente)
   const investmentRef = Math.round(economy.gdp / 3.33);
   const investmentDiff = economy.publicServices - investmentRef;
   const responseRate = Math.tanh(investmentDiff / 10) * 0.8;
   
-  // CORRIGIDO: Aumentar multiplicador (era 0.15, agora 0.4)
+  // Aumentar multiplicador
   let investmentEffect = responseRate * Math.abs(investmentDiff) * 0.4;
   
   // Efeito do desemprego (impacto maior)
@@ -400,9 +319,7 @@ export function calculateDynamicPopularity(economy) {
     newPopularity += returnForce;
   }
   
-  // CORREÇÃO 5: Reduzir inércia para tornar mais responsivo
-  // Original: 0.7 inércia / 0.3 mudança - MUITO LENTO
-  // Novo: 0.5 inércia / 0.5 mudança - MUITO MAIS RESPONSIVO
+  // Inércia reduzida para tornar mais responsivo
   newPopularity = currentPopularity * 0.5 + newPopularity * 0.5;
   
   // Limites realistas
@@ -413,7 +330,7 @@ export function calculateDynamicPopularity(economy) {
 
 /**
  * Calcula o rating de crédito dinamicamente
- * Implementação fiel ao sistema original com análise contextual
+ * Implementação fiel ao sistema sofisticado dos arquivos anexados
  * @param {Object} economy - Estado econômico
  * @returns {string} - Rating de crédito
  */
@@ -505,62 +422,6 @@ export function calculateCreditRating(economy) {
 }
 
 /**
- * Processa pagamentos de dívida de forma proporcional
- * @param {Object} economy - Estado econômico
- * @param {Array} debtContracts - Contratos de dívida
- * @param {number} cycleFactor - Fator do ciclo (ex: 1/60 para mensal)
- * @returns {number} - Total pago no ciclo
- */
-export function processDeptPayments(economy, debtContracts, cycleFactor = 1) {
-  if (!debtContracts || debtContracts.length === 0) return 0;
-  
-  let totalPayment = 0;
-  let totalInterest = 0;
-  let totalPrincipal = 0;
-  
-  // Calcular pagamentos proporcionais
-  debtContracts.forEach(contract => {
-    if (contract.remainingInstallments > 0) {
-      const fractionalPayment = contract.monthlyPayment * cycleFactor;
-      const monthlyRate = contract.interestRate / 100 / 12;
-      const interestPayment = contract.remainingValue * monthlyRate * cycleFactor;
-      const principalPayment = fractionalPayment - interestPayment;
-      
-      totalInterest += interestPayment;
-      totalPrincipal += principalPayment;
-      totalPayment += fractionalPayment;
-      
-      // Atualizar contrato gradualmente
-      contract.remainingValue -= principalPayment;
-      if (contract.remainingValue < 0.01) {
-        contract.remainingValue = 0;
-        contract.remainingInstallments = 0;
-      }
-    }
-  });
-  
-  // Deduzir pagamento do tesouro
-  economy.treasury -= totalPayment;
-  
-  // Se tesouro insuficiente, emitir títulos de emergência
-  if (economy.treasury < 0) {
-    const shortfall = Math.abs(economy.treasury);
-    economy.treasury = 0;
-    
-    // Emitir títulos para cobrir déficit (com juros mais altos)
-    const emergencyAmount = shortfall * 1.2; // 20% a mais devido aos juros altos
-    economy.treasury += emergencyAmount;
-    economy.publicDebt += emergencyAmount;
-  }
-  
-  // Atualizar dívida total
-  const remainingDebt = debtContracts.reduce((sum, contract) => sum + contract.remainingValue, 0);
-  economy.publicDebt = remainingDebt;
-  
-  return totalPayment;
-}
-
-/**
  * Função principal para aplicar todos os cálculos econômicos avançados
  * Esta é a função principal que integra todos os cálculos
  * @param {Object} economy - Estado econômico
@@ -634,38 +495,59 @@ export function applyAdvancedEconomicCalculations(economy, debtContracts = [], o
 }
 
 /**
- * Função utilitária para limitar valores com tendência de retorno
- * @param {number} value - Valor atual
- * @param {number} min - Limite mínimo
- * @param {number} max - Limite máximo
- * @param {number} target - Valor alvo para o qual o sistema tende a retornar
- * @returns {number} - Valor limitado com tendência
+ * Processa pagamentos de dívida de forma proporcional
+ * @param {Object} economy - Estado econômico
+ * @param {Array} debtContracts - Contratos de dívida
+ * @param {number} cycleFactor - Fator do ciclo (ex: 1/60 para mensal)
+ * @returns {number} - Total pago no ciclo
  */
-export function limitWithCurve(value, min, max, target) {
-  if (value < min) value = min;
-  if (value > max) value = max;
+export function processDeptPayments(economy, debtContracts, cycleFactor = 1) {
+  if (!debtContracts || debtContracts.length === 0) return 0;
   
-  const distanceFromTarget = Math.abs(value - target);
+  let totalPayment = 0;
+  let totalInterest = 0;
+  let totalPrincipal = 0;
   
-  if (value > target) {
-    const correctionFactor = 1 - Math.min(0.2, distanceFromTarget * 0.01);
-    return value * correctionFactor + target * (1 - correctionFactor);
-  } else if (value < target) {
-    const correctionFactor = 1 - Math.min(0.2, distanceFromTarget * 0.01);
-    return value * correctionFactor + target * (1 - correctionFactor);
+  // Calcular pagamentos proporcionais
+  debtContracts.forEach(contract => {
+    if (contract.remainingInstallments > 0) {
+      const fractionalPayment = contract.monthlyPayment * cycleFactor;
+      const monthlyRate = contract.interestRate / 100 / 12;
+      const interestPayment = contract.remainingValue * monthlyRate * cycleFactor;
+      const principalPayment = fractionalPayment - interestPayment;
+      
+      totalInterest += interestPayment;
+      totalPrincipal += principalPayment;
+      totalPayment += fractionalPayment;
+      
+      // Atualizar contrato gradualmente
+      contract.remainingValue -= principalPayment;
+      if (contract.remainingValue < 0.01) {
+        contract.remainingValue = 0;
+        contract.remainingInstallments = 0;
+      }
+    }
+  });
+  
+  // Deduzir pagamento do tesouro
+  economy.treasury -= totalPayment;
+  
+  // Se tesouro insuficiente, emitir títulos de emergência
+  if (economy.treasury < 0) {
+    const shortfall = Math.abs(economy.treasury);
+    economy.treasury = 0;
+    
+    // Emitir títulos para cobrir déficit (com juros mais altos)
+    const emergencyAmount = shortfall * 1.2; // 20% a mais devido aos juros altos
+    economy.treasury += emergencyAmount;
+    economy.publicDebt += emergencyAmount;
   }
   
-  return value;
-}
-
-/**
- * Calcula média móvel para históricos
- * @param {Array<number>} history - Array de valores históricos
- * @returns {number} - Média móvel
- */
-export function calculateMovingAverage(history) {
-  if (history.length === 0) return 0;
-  return history.reduce((a, b) => a + b, 0) / history.length;
+  // Atualizar dívida total
+  const remainingDebt = debtContracts.reduce((sum, contract) => sum + contract.remainingValue, 0);
+  economy.publicDebt = remainingDebt;
+  
+  return totalPayment;
 }
 
 /**
@@ -727,6 +609,54 @@ export function resetUnrealisticIndicators(economy) {
   if (!economy._historicUnemployment || economy._historicUnemployment.length === 0) {
     economy._historicUnemployment = [economy.unemployment];
   }
+  
+  return economy;
+}
+
+/**
+ * Função para aplicar variação setorial dinâmica
+ * @param {Object} economy - Estado econômico
+ * @returns {Object} - Estado econômico com setores atualizados
+ */
+export function applySectoralVariation(economy) {
+  // Se não existem setores base, salvar os atuais como base
+  if (!economy._servicesBase) {
+    economy._servicesBase = economy.services;
+    economy._commoditiesBase = economy.commodities;
+    economy._manufacturesBase = economy.manufactures;
+  }
+  
+  // Gerar variações aleatórias pequenas (±1 por ciclo mensal)
+  const commoditiesVariation = Math.floor(Math.random() * 3) - 1; // -1, 0, ou 1
+  const manufacturesVariation = Math.floor(Math.random() * 3) - 1;
+  
+  // Aplicar variações aos setores
+  let newCommodities = economy.commodities + commoditiesVariation;
+  let newManufactures = economy.manufactures + manufacturesVariation;
+  let newServices = 100 - newCommodities - newManufactures;
+  
+  // Garantir limites mínimos e máximos para cada setor (20-50%)
+  newCommodities = Math.max(20, Math.min(50, newCommodities));
+  newManufactures = Math.max(20, Math.min(50, newManufactures));
+  newServices = Math.max(20, Math.min(50, newServices));
+  
+  // Rebalancear para garantir soma = 100%
+  const currentTotal = newCommodities + newManufactures + newServices;
+  newCommodities = (newCommodities / currentTotal) * 100;
+  newManufactures = (newManufactures / currentTotal) * 100;
+  newServices = (newServices / currentTotal) * 100;
+  
+  // Aplicar força de retorno aos valores base (evita deriva excessiva)
+  const returnForce = 0.02; // 2% de força de retorno por ciclo
+  newCommodities = newCommodities * (1 - returnForce) + economy._commoditiesBase * returnForce;
+  newManufactures = newManufactures * (1 - returnForce) + economy._manufacturesBase * returnForce;
+  newServices = newServices * (1 - returnForce) + economy._servicesBase * returnForce;
+  
+  // Rebalancear novamente após força de retorno
+  const finalTotal = newCommodities + newManufactures + newServices;
+  economy.commodities = Math.round((newCommodities / finalTotal) * 100);
+  economy.manufactures = Math.round((newManufactures / finalTotal) * 100);
+  economy.services = 100 - economy.commodities - economy.manufactures;
   
   return economy;
 }
@@ -833,102 +763,3 @@ export function validateEconomicCalculations(economy) {
     score: Math.max(0, 100 - (errors.length * 20) - (warnings.length * 5))
   };
 }
-
-/**
- * Função para aplicar variação setorial dinâmica
- * @param {Object} economy - Estado econômico
- * @returns {Object} - Estado econômico com setores atualizados
- */
-export function applySectoralVariation(economy) {
-  // Se não existem setores base, salvar os atuais como base
-  if (!economy._servicesBase) {
-    economy._servicesBase = economy.services;
-    economy._commoditiesBase = economy.commodities;
-    economy._manufacturesBase = economy.manufactures;
-  }
-  
-  // Gerar variações aleatórias pequenas (±1 por ciclo mensal)
-  const commoditiesVariation = Math.floor(Math.random() * 3) - 1; // -1, 0, ou 1
-  const manufacturesVariation = Math.floor(Math.random() * 3) - 1;
-  
-  // Aplicar variações aos setores
-  let newCommodities = economy.commodities + commoditiesVariation;
-  let newManufactures = economy.manufactures + manufacturesVariation;
-  let newServices = 100 - newCommodities - newManufactures;
-  
-  // Garantir limites mínimos e máximos para cada setor (20-50%)
-  newCommodities = Math.max(20, Math.min(50, newCommodities));
-  newManufactures = Math.max(20, Math.min(50, newManufactures));
-  newServices = Math.max(20, Math.min(50, newServices));
-  
-  // Rebalancear para garantir soma = 100%
-  const currentTotal = newCommodities + newManufactures + newServices;
-  newCommodities = (newCommodities / currentTotal) * 100;
-  newManufactures = (newManufactures / currentTotal) * 100;
-  newServices = (newServices / currentTotal) * 100;
-  
-  // Aplicar força de retorno aos valores base (evita deriva excessiva)
-  const returnForce = 0.02; // 2% de força de retorno por ciclo
-  newCommodities = newCommodities * (1 - returnForce) + economy._commoditiesBase * returnForce;
-  newManufactures = newManufactures * (1 - returnForce) + economy._manufacturesBase * returnForce;
-  newServices = newServices * (1 - returnForce) + economy._servicesBase * returnForce;
-  
-  // Rebalancear novamente após força de retorno
-  const finalTotal = newCommodities + newManufactures + newServices;
-  economy.commodities = Math.round((newCommodities / finalTotal) * 100);
-  economy.manufactures = Math.round((newManufactures / finalTotal) * 100);
-  economy.services = 100 - economy.commodities - economy.manufactures;
-  
-  return economy;
-}
-
-/**
- * Função para calcular prêmio de risco baseado no rating
- * @param {string} creditRating - Rating de crédito
- * @param {number} debtToGdpRatio - Relação dívida/PIB
- * @returns {number} - Prêmio de risco em pontos percentuais
- */
-export function calculateRiskPremium(creditRating, debtToGdpRatio) {
-  const riskPremiums = {
-    "AAA": 0.0,
-    "AA": 0.5,
-    "A": 1.0,
-    "BBB": 2.0,
-    "BB": 3.5,
-    "B": 5.0,
-    "CCC": 8.0,
-    "CC": 12.0,
-    "C": 18.0,
-    "D": 25.0
-  };
-  
-  let premium = riskPremiums[creditRating] || 5.0;
-  
-  // Prêmio adicional pela alta dívida
-  if (debtToGdpRatio > 0.6) {
-    premium += (debtToGdpRatio - 0.6) * 20;
-  }
-  
-  return premium;
-}
-
-export default {
-  calculateAdvancedGrowth,
-  calculateDynamicInflation,
-  calculateDynamicUnemployment,
-  calculateDynamicPopularity,
-  calculateCreditRating,
-  processDeptPayments,
-  applyAdvancedEconomicCalculations,
-  limitWithCurve,
-  calculateMovingAverage,
-  resetUnrealisticIndicators,
-  debugAdvancedEconomicCalculations,
-  validateEconomicCalculations,
-  applySectoralVariation,
-  calculateRiskPremium,
-  getNumericValue,
-  formatCurrency,
-  formatPercent,
-  formatValueWithSign
-};

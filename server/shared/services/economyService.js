@@ -1,36 +1,25 @@
 /**
- * economyService.js - Serviço centralizado para toda economia
- * VERSÃO EXPANDIDA COM CÁLCULOS ECONÔMICOS SOFISTICADOS
- * Migração dos cálculos avançados mantendo arquitetura centralizada
+ * economyService.js - VERSÃO SIMPLIFICADA SEM DUPLICAÇÕES
+ * Remove todas as funções duplicadas e delega para economicCalculations.js
+ * Mantém apenas gerenciamento de estado e persistência
  */
 
 import redis from '../redisClient.js';
-import { getNumericValue } from '../utils/economicUtils.js';
-import { SYNC_CONFIG } from '../config/syncConfig.js';
-
-// Constantes econômicas consolidadas
-const ECONOMIC_CONSTANTS = {
-  EQUILIBRIUM_INTEREST_RATE: 8.0,
-  EQUILIBRIUM_TAX_RATE: 40.0,
-  EQUILIBRIUM_INFLATION: 0.04,
-  MAX_DEBT_TO_GDP_RATIO: 1.2,
-  IDEAL_UNEMPLOYMENT: 15.0,
-  IDEAL_POPULARITY: 50.0,
-
-  UPDATE_INTERVAL: SYNC_CONFIG.ECONOMY_UPDATE_INTERVAL,
-  SAVE_INTERVAL: SYNC_CONFIG.ECONOMY_SAVE_INTERVAL,
-  
-  // Novos ciclos temporais
-  MONTHLY_CYCLE: 60,    // 60 ciclos = 30 segundos = 1 mês
-  QUARTERLY_CYCLE: 180, // 180 ciclos = 90 segundos = 1 trimestre
-  
-  // Limites de histórico
-  MAX_HISTORY_SIZE: 20,
-  
-  // Limites setoriais
-  MIN_SECTOR_PERCENT: 20,
-  MAX_SECTOR_PERCENT: 50,
-};
+import { getNumericValue, calculateRiskPremium } from '../utils/economicUtils.js';
+import { ECONOMIC_CONSTANTS } from '../utils/economicConstants.js';
+import { 
+  calculateAdvancedGrowth,
+  calculateDynamicInflation,
+  calculateDynamicUnemployment,
+  calculateDynamicPopularity,
+  calculateCreditRating,
+  applyAdvancedEconomicCalculations,
+  processDeptPayments,
+  applySectoralVariation,
+  resetUnrealisticIndicators,
+  debugAdvancedEconomicCalculations,
+  validateEconomicCalculations
+} from '../utils/economicCalculations.js';
 
 class EconomyService {
   constructor() {
@@ -50,7 +39,7 @@ class EconomyService {
       await this.loadFromRedis();
       this.startPeriodicUpdates();
       this.initialized = true;
-      console.log('[ECONOMY] EconomyService initialized with advanced calculations');
+      console.log('[ECONOMY] EconomyService initialized with advanced calculations (delegated)');
     } catch (error) {
       console.error('[ECONOMY] Error initializing economyService:', error);
     }
@@ -77,7 +66,7 @@ class EconomyService {
   }
 
   // ========================================================================
-  // INICIALIZAÇÃO DE PAÍSES COM CAMPOS EXPANDIDOS
+  // INICIALIZAÇÃO DE PAÍSES (PRESERVADO)
   // ========================================================================
 
   initializeRoom(roomName, countriesData) {
@@ -109,7 +98,7 @@ class EconomyService {
     }
     
     if (countriesInitialized > 0) {
-      console.log(`[ECONOMY] Room ${roomName}: initialized ${countriesInitialized} countries with advanced calculations`);
+      console.log(`[ECONOMY] Room ${roomName}: initialized ${countriesInitialized} countries with delegated calculations`);
     }
   }
 
@@ -219,6 +208,9 @@ class EconomyService {
     // Calcular valores iniciais
     this.initializeCalculatedValues(countryState.economy);
 
+    // Aplicar reset de indicadores irreais
+    resetUnrealisticIndicators(countryState.economy);
+
     // Criar contratos de dívida inicial se necessário
     const initialDebt = getNumericValue(economy.publicDebt) || 0;
     if (initialDebt > 0) {
@@ -228,9 +220,6 @@ class EconomyService {
     return countryState;
   }
 
-  /**
-   * Migra estados existentes para incluir os novos campos
-   */
   migrateExistingState(countryState) {
     const economy = countryState.economy;
     
@@ -269,7 +258,10 @@ class EconomyService {
     // Calcular valores iniciais
     this.initializeCalculatedValues(economy);
     
-    console.log(`[ECONOMY] Migrated existing state with advanced calculations`);
+    // Aplicar reset de indicadores irreais
+    resetUnrealisticIndicators(economy);
+    
+    console.log(`[ECONOMY] Migrated existing state with delegated calculations`);
   }
 
   initializeCalculatedValues(economy) {
@@ -288,20 +280,12 @@ class EconomyService {
   }
 
   // ========================================================================
-  // CÁLCULOS ECONÔMICOS AVANÇADOS
+  // CÁLCULOS ECONÔMICOS DELEGADOS (SEM DUPLICAÇÃO)
   // ========================================================================
 
   /**
-   * Executa os cálculos econômicos avançados para um país
+   * DELEGAÇÃO: Usa funções de economicCalculations.js em vez de reimplementar
    */
-// ========================================================================
-// CORREÇÃO: ATUALIZAÇÕES MAIS FREQUENTES PARA TODOS OS INDICADORES
-// ========================================================================
-
-/**
- * Executa os cálculos econômicos avançados para um país
- * CORRIGIDO: Todos os indicadores agora atualizam a cada ciclo (500ms)
- */
   performAdvancedEconomicCalculations(roomName, countryName) {
     const countryState = this.getCountryState(roomName, countryName);
     if (!countryState) return;
@@ -311,36 +295,32 @@ class EconomyService {
     // Incrementar contador de ciclos
     economy._cycleCount++;
     
-    // ===== ATUALIZAÇÃO A CADA CICLO (500ms) - COMO NO SISTEMA INSPIRAÇÃO =====
+    // ===== DELEGAÇÃO COMPLETA PARA economicCalculations.js =====
     
-    // 1. Calcular outputs setoriais (A CADA CICLO)
+    // 1. Calcular outputs setoriais
     economy.servicesOutput = (economy.gdp * economy.services / 100);
     economy.commoditiesOutput = (economy.gdp * economy.commodities / 100);
     economy.manufacturesOutput = (economy.gdp * economy.manufactures / 100);
     
-    // 2. Calcular necessidades setoriais (A CADA CICLO)
+    // 2. Calcular necessidades setoriais
     this.calculateSectoralNeeds(economy);
     
-    // 3. Calcular balanços setoriais incluindo comércio (A CADA CICLO)
+    // 3. Calcular balanços setoriais incluindo comércio
     this.calculateSectoralBalances(roomName, countryName, economy);
     
-    // 4. Aplicar cálculos básicos (A CADA CICLO)
-    this.calculateAdvancedInflation(economy);
-    this.calculateAdvancedUnemployment(economy);
-    this.calculateAdvancedPopularity(economy);
-    this.updateCreditRating(economy);
+    // 4. Aplicar cálculos básicos DELEGADOS
+    economy.inflation = calculateDynamicInflation(economy);
+    economy.unemployment = calculateDynamicUnemployment(economy);
+    economy.popularity = calculateDynamicPopularity(economy);
+    economy.creditRating = calculateCreditRating(economy);
     
-    // ===== CORREÇÃO 1: PIB ATUALIZADO A CADA CICLO =====
-    // Antes: apenas a cada 180 ciclos (90 segundos)
-    // Agora: a cada ciclo (500ms) com crescimento proporcional
-    const growthRate = this.calculateAdvancedGrowth(economy);
+    // 5. PIB atualizado a cada ciclo DELEGADO
+    const growthRate = calculateAdvancedGrowth(economy);
     const cyclicGrowth = growthRate / 180; // Divide o crescimento trimestral por 180 ciclos
     economy.gdp *= (1 + cyclicGrowth);
     economy.gdpGrowth = growthRate * 100; // Atualiza o percentual também
     
-    // ===== CORREÇÃO 2: TESOURO ATUALIZADO A CADA CICLO =====
-    // Antes: apenas a cada 60 ciclos (30 segundos)  
-    // Agora: a cada ciclo (500ms) com receitas/gastos proporcionais
+    // 6. Tesouro atualizado a cada ciclo
     const cycleFactor = 1 / 60; // Fator para distribuir receitas mensais em ciclos
     
     // Receitas proporcionais por ciclo
@@ -356,71 +336,30 @@ class EconomyService {
       economy.treasury = -economy.gdp * 0.1;
     }
     
-    // ===== CORREÇÃO 3: DÍVIDA PROCESSADA A CADA CICLO =====
-    // Antes: apenas a cada 60 ciclos (30 segundos)
-    // Agora: a cada ciclo (500ms) com pagamentos proporcionais
+    // 7. Dívida processada a cada ciclo DELEGADA
     const countryKey = `${countryName}:${roomName}`;
     const debtContracts = this.debtContracts.get(countryKey) || [];
     
     if (debtContracts.length > 0) {
-      let totalPayment = 0;
-      
-      debtContracts.forEach(contract => {
-        if (contract.remainingInstallments > 0) {
-          const fractionalPayment = contract.monthlyPayment * cycleFactor;
-          const monthlyRate = contract.interestRate / 100 / 12;
-          const interestPayment = contract.remainingValue * monthlyRate * cycleFactor;
-          const principalPayment = fractionalPayment - interestPayment;
-          
-          totalPayment += fractionalPayment;
-          
-          // Atualizar contrato gradualmente
-          contract.remainingValue -= principalPayment;
-          if (contract.remainingValue < 0.01) {
-            contract.remainingValue = 0;
-            contract.remainingInstallments = 0;
-          }
-        }
-      });
-      
-      // Deduzir pagamento do tesouro
-      economy.treasury -= totalPayment;
-      
-      // Se tesouro insuficiente, emitir títulos de emergência
-      if (economy.treasury < 0) {
-        const shortfall = Math.abs(economy.treasury);
-        economy.treasury = 0;
-        
-        const emergencyAmount = shortfall * 1.1;
-        economy.treasury += emergencyAmount;
-        economy.publicDebt += emergencyAmount;
-      }
-      
-      // Atualizar dívida total
-      const remainingDebt = debtContracts.reduce((sum, contract) => sum + contract.remainingValue, 0);
-      economy.publicDebt = remainingDebt;
+      processDeptPayments(economy, debtContracts, cycleFactor);
       
       // Filtrar contratos pagos
       const activeContracts = debtContracts.filter(contract => contract.remainingInstallments > 0);
       this.debtContracts.set(countryKey, activeContracts);
     }
     
-    // ===== PROCESSAMENTO MENSAL MANTIDO PARA VARIAÇÕES SETORIAIS =====
+    // 8. Processamento mensal para variações setoriais
     if (economy._cycleCount % ECONOMIC_CONSTANTS.MONTHLY_CYCLE === 0) {
-      // Aplicar variação setorial aleatória apenas mensalmente
-      this.applySectoralRandomVariation(economy);
+      // DELEGADO: Aplicar variação setorial aleatória
+      applySectoralVariation(economy);
       
-      // Atualizar históricos apenas mensalmente
+      // Atualizar históricos
       this.updateHistoricalData(economy);
     }
-    
-    // ===== PROCESSAMENTO TRIMESTRAL REMOVIDO =====
-    // O crescimento agora é aplicado a cada ciclo, não trimestralmente
     
     // Atualizar estado
     this.setCountryState(roomName, countryName, countryState);
   }
-
 
   /**
    * Calcula necessidades setoriais baseadas no sistema avançado
@@ -514,431 +453,6 @@ class EconomyService {
   }
 
   /**
-   * Calcula crescimento econômico trimestral avançado
-   */
-  calculateAdvancedGrowth(economy) {
-    // Mesmo cálculo do crescimento, mas agora será aplicado gradualmente
-    const interestDiff = economy.interestRate - ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE;
-    let interestEffect;
-    
-    if (economy.interestRate <= 10) {
-      interestEffect = -interestDiff * 0.0002;
-    } else {
-      const excessInterest = economy.interestRate - 10;
-      interestEffect = -(interestDiff * 0.0002) - (Math.pow(excessInterest, 1.5) * 0.0001);
-    }
-    
-    const taxDiff = (economy.taxBurden || ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE) - ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE;
-    const taxEffect = -taxDiff * 0.00015;
-    
-    let investmentEffect = 0;
-    const publicServicesValue = economy.publicServices || economy.investimentoPublico || 30;
-    if (publicServicesValue >= 30) {
-      investmentEffect = publicServicesValue * 0.0001;
-    } else {
-      const deficit = 30 - publicServicesValue;
-      const penaltyFactor = 1 - Math.pow(deficit / 30, 1.5) * 0.5;
-      investmentEffect = publicServicesValue * 0.0001 * penaltyFactor;
-    }
-    
-    let debtEffect = 0;
-    const debtToGDP = economy.publicDebt / economy.gdp;
-    if (debtToGDP > 0.9) {
-      debtEffect = -(debtToGDP - 0.9) * 0.05;
-    }
-    
-    const tradeBalance = Math.abs(economy.commoditiesBalance || 0) + Math.abs(economy.manufacturesBalance || 0);
-    const tradeEffect = (tradeBalance / economy.gdp) * 0.1;
-    
-    const baseGrowth = interestEffect + taxEffect + investmentEffect + debtEffect + tradeEffect;
-    
-    // Crescimento base anual, que será dividido por 180 ciclos para aplicação gradual
-    let finalGrowth = 2.5 + (baseGrowth * 0.061 * 100); // Converter para percentual
-    
-    const randomVariation = (Math.random() - 0.5) * 0.5;
-    finalGrowth += randomVariation;
-    
-    // Limites realistas (-8% a +12% anuais)
-    finalGrowth = Math.max(-8, Math.min(12, finalGrowth));
-    
-    return finalGrowth / 100; // Retornar como decimal para compatibilidade
-  }
-
-  /**
-   * Calcula inflação avançada com inércia
-   */
-  calculateAdvancedInflation(economy) {
-    let newInflation = economy.inflation;
-    
-    // Efeito dos juros na inflação
-    const equilibriumRate = ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE;
-    if (economy.interestRate < equilibriumRate) {
-      const factor = 1 + ((equilibriumRate - economy.interestRate) * 0.03);
-      newInflation *= factor;
-    } else if (economy.interestRate > equilibriumRate) {
-      if (economy.interestRate <= 10) {
-        const factor = 1 - ((economy.interestRate - equilibriumRate) * 0.025);
-        newInflation *= Math.max(0.85, factor);
-      } else {
-        const normalReduction = 1 - ((10 - equilibriumRate) * 0.025);
-        const excessReduction = Math.pow(1.2, economy.interestRate - 10) * 0.05;
-        newInflation *= Math.max(0.65, normalReduction - excessReduction);
-      }
-    }
-    
-    // Efeito dos impostos na inflação
-    const equilibriumTax = ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE;
-    if (economy.taxBurden > equilibriumTax) {
-      const factor = 1 - ((economy.taxBurden - equilibriumTax) * 0.003);
-      newInflation *= Math.max(0.96, factor);
-    } else if (economy.taxBurden < equilibriumTax) {
-      const factor = 1 + ((equilibriumTax - economy.taxBurden) * 0.002);
-      newInflation *= factor;
-    }
-    
-    // Efeito do crescimento na inflação
-    const growthEquilibrium = 2.0;
-    if (economy.gdpGrowth > growthEquilibrium) {
-      const excess = economy.gdpGrowth - growthEquilibrium;
-      const emphasisFactor = 1 + (excess * 5);
-      newInflation += (excess / 100) * 0.12 * emphasisFactor;
-    } else if (economy.gdpGrowth > 0 && economy.gdpGrowth <= growthEquilibrium) {
-      newInflation += (economy.gdpGrowth / 100) * 0.005;
-    } else if (economy.gdpGrowth < 0) {
-      newInflation -= Math.abs(economy.gdpGrowth / 100) * 0.025;
-    }
-    
-    // Efeito da dívida na inflação estrutural
-    const debtToGDP = economy.publicDebt / economy.gdp;
-    if (debtToGDP > 0.7) {
-      const excessDebt = debtToGDP - 0.7;
-      newInflation += excessDebt * 0.02;
-    }
-    
-    // Variação aleatória e inércia
-    const randomVariation = (Math.random() - 0.5) * 0.0005;
-    newInflation += randomVariation;
-    newInflation = economy.inflation * 0.8 + newInflation * 0.2;
-    
-    // Limitar entre -2% e 18%
-    economy.inflation = Math.max(-0.02, Math.min(0.18, newInflation));
-  }
-
-  /**
-   * Calcula desemprego avançado com Curva de Phillips
-   */
-  calculateAdvancedUnemployment(economy) {
-    let newUnemployment = economy.unemployment;
-    
-    // Efeito do crescimento no desemprego
-    if (economy.gdpGrowth > 0) {
-      newUnemployment -= economy.gdpGrowth * 5;
-    } else {
-      newUnemployment += Math.abs(economy.gdpGrowth) * 8;
-    }
-    
-    // Efeito da inflação no desemprego (Curva de Phillips)
-    const inflationPercent = economy.inflation * 100;
-    if (inflationPercent < 5) {
-      newUnemployment += (5 - inflationPercent) * 2;
-    } else if (inflationPercent > 10) {
-      newUnemployment += (inflationPercent - 10) * 3;
-    } else {
-      newUnemployment -= (inflationPercent - 5) * 1;
-    }
-    
-    // Efeito dos impostos no desemprego
-    if (economy.taxBurden > ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE) {
-      newUnemployment += (economy.taxBurden - ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE) * 0.05;
-    }
-    
-    // Efeito dos juros no desemprego
-    if (economy.interestRate > 12) {
-      newUnemployment += (economy.interestRate - 12) * 0.4;
-    } else if (economy.interestRate < 5) {
-      newUnemployment -= (5 - economy.interestRate) * 0.3;
-    }
-    
-    // Aplicar inércia e limites
-    newUnemployment = economy.unemployment * 0.9 + newUnemployment * 0.1;
-    economy.unemployment = Math.max(3, Math.min(40, newUnemployment));
-  }
-
-  /**
-   * Calcula popularidade avançada com força de retorno
-   */
-  calculateAdvancedPopularity(economy) {
-    let newPopularity = economy.popularity;
-    
-    // Efeito do crescimento na popularidade
-    if (economy.gdpGrowth > 0) {
-      newPopularity += economy.gdpGrowth * 100 * 0.2;
-    } else if (economy.gdpGrowth < 0) {
-      newPopularity += economy.gdpGrowth * 100 * 0.3;
-    }
-    
-    // Efeito da inflação na popularidade
-    const idealInflation = ECONOMIC_CONSTANTS.EQUILIBRIUM_INFLATION;
-    const inflationDiff = economy.inflation - idealInflation;
-    if (inflationDiff > 0) {
-      newPopularity -= inflationDiff * 100 * 0.25;
-    } else if (inflationDiff < 0 && economy.inflation > 0) {
-      newPopularity += Math.abs(inflationDiff) * 100 * 0.1;
-    }
-    
-    // Efeito dos impostos na popularidade
-    const idealTax = ECONOMIC_CONSTANTS.EQUILIBRIUM_TAX_RATE;
-    const taxDiff = economy.taxBurden - idealTax;
-    if (taxDiff > 0) {
-      newPopularity -= taxDiff * 0.2;
-    } else if (taxDiff < 0) {
-      newPopularity += Math.abs(taxDiff) * 0.1;
-    }
-    
-    // Efeito do investimento público na popularidade
-    const investmentRef = Math.round(economy.gdp / 3.33);
-    const investmentDiff = economy.publicServices - investmentRef;
-    const responseRate = Math.tanh(investmentDiff / 10) * 0.8;
-    newPopularity += responseRate * Math.abs(investmentDiff) * 0.15;
-    
-    // Efeito do desemprego na popularidade
-    const idealUnemployment = ECONOMIC_CONSTANTS.IDEAL_UNEMPLOYMENT;
-    const unemploymentDiff = economy.unemployment - idealUnemployment;
-    
-    if (unemploymentDiff > 0) {
-      const penaltyFactor = 1 + Math.pow(unemploymentDiff / 10, 1.5);
-      newPopularity -= unemploymentDiff * 0.3 * penaltyFactor;
-    } else if (unemploymentDiff < 0) {
-      newPopularity += Math.abs(unemploymentDiff) * 0.3;
-    }
-    
-    // Índice de miséria (desemprego alto + inflação alta)
-    if (economy.unemployment > 30 && economy.inflation > 0.08) {
-      const miseryIndex = (economy.unemployment - 30) * (economy.inflation - 0.08) * 100;
-      newPopularity -= miseryIndex * 0.2;
-    }
-    
-    // Variação aleatória
-    const randomVariation = (Math.random() - 0.5) * 0.5;
-    newPopularity += randomVariation;
-    
-    // Força de retorno para o equilíbrio (50%)
-    const distanceFrom50 = Math.abs(newPopularity - ECONOMIC_CONSTANTS.IDEAL_POPULARITY);
-    const returnForce = distanceFrom50 * distanceFrom50 * 0.002;
-    
-    if (newPopularity > ECONOMIC_CONSTANTS.IDEAL_POPULARITY) {
-      newPopularity -= returnForce;
-    } else if (newPopularity < ECONOMIC_CONSTANTS.IDEAL_POPULARITY) {
-      newPopularity += returnForce;
-    }
-    
-    // Aplicar inércia e limites
-    newPopularity = economy.popularity * 0.7 + newPopularity * 0.3;
-    economy.popularity = Math.max(1, Math.min(99, newPopularity));
-  }
-
-  /**
-   * Atualiza rating de crédito dinâmico
-   */
-  updateCreditRating(economy) {
-    const debtToGdpRatio = economy.publicDebt / economy.gdp;
-    const inflationPercent = economy.inflation * 100;
-    const growthPercent = economy.gdpGrowth || 0;
-    
-    // Nota base baseada APENAS na inflação
-    let baseRating;
-    if (inflationPercent <= 2) {
-      baseRating = "AAA";
-    } else if (inflationPercent <= 3) {
-      baseRating = "AA";
-    } else if (inflationPercent <= 4) {
-      baseRating = "A";
-    } else if (inflationPercent <= 5.5) {
-      baseRating = "BBB";
-    } else if (inflationPercent <= 7) {
-      baseRating = "BB";
-    } else if (inflationPercent <= 9) {
-      baseRating = "B";
-    } else if (inflationPercent <= 12) {
-      baseRating = "CCC";
-    } else if (inflationPercent <= 15) {
-      baseRating = "CC";
-    } else {
-      baseRating = "C";
-    }
-    
-    const levels = ["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "CC", "C", "D"];
-    let ratingIndex = levels.indexOf(baseRating);
-    
-    // Ajuste pela dívida
-    if (debtToGdpRatio > 0.3 && debtToGdpRatio <= 0.6) {
-      ratingIndex += 1;
-    } else if (debtToGdpRatio > 0.6 && debtToGdpRatio <= 0.9) {
-      ratingIndex += 2;
-    } else if (debtToGdpRatio > 0.9 && debtToGdpRatio <= 1.2) {
-      ratingIndex += 3;
-    } else if (debtToGdpRatio > 1.2) {
-      ratingIndex += 4;
-    }
-    
-    // Ajuste pelo crescimento
-    if (growthPercent < -5) {
-      ratingIndex += 4;
-    } else if (growthPercent < -3) {
-      ratingIndex += 3;
-    } else if (growthPercent < -1) {
-      ratingIndex += 2;
-    } else if (growthPercent < 0) {
-      ratingIndex += 1;
-    }
-    
-    // Casos especiais
-    if (inflationPercent > 15 && economy._historicInflation.length >= 3) {
-      const last3 = economy._historicInflation.slice(-3).map(i => i * 100);
-      if (last3[2] > last3[0] || Math.abs(last3[2] - last3[1]) > 2) {
-        economy.creditRating = "D";
-        return;
-      }
-    }
-    
-    if (inflationPercent > 9 && debtToGdpRatio > 0.9 && growthPercent < -3) {
-      economy.creditRating = "D";
-      return;
-    }
-    
-    // Limitar índice e definir rating
-    ratingIndex = Math.min(ratingIndex, levels.length - 1);
-    economy.creditRating = levels[ratingIndex];
-  }
-
-  /**
-   * Processamento mensal (a cada 60 ciclos)
-   */
-  processMonthlyUpdates(roomName, countryName, economy) {
-    // 1. Aplicar variação setorial aleatória
-    this.applySectoralRandomVariation(economy);
-    
-    // 2. Processar pagamentos de dívida proporcionalmente
-    this.processProportionalDebtPayments(roomName, countryName, economy);
-    
-    // 3. Atualizar históricos
-    this.updateHistoricalData(economy);
-    
-    // 4. Calcular receitas e gastos do tesouro
-    this.updateTreasury(economy);
-  }
-
-  /**
-   * Processamento trimestral (a cada 180 ciclos)
-   */
-  processQuarterlyUpdates(economy) {
-    // 1. Calcular crescimento econômico
-    const growthRate = this.calculateAdvancedGrowth(economy);
-    economy.gdpGrowth = growthRate * 100; // Converter para percentual
-    
-    // 2. Atualizar PIB baseado no crescimento
-    economy.gdp *= (1 + growthRate);
-    
-    // 3. Armazenar PIB atual como PIB anterior do trimestre
-    economy._lastQuarterGdp = economy.gdp;
-    
-    // Remover o log que causava erro ou torná-lo genérico
-    // console.log(`[ECONOMY] Trimestral: PIB ${economy.gdp.toFixed(2)}, Crescimento ${economy.gdpGrowth.toFixed(2)}%`);
-  }
-
-  /**
-   * Aplica variação aleatória nos setores mantendo soma = 100%
-   */
-  applySectoralRandomVariation(economy) {
-    // Gerar variações aleatórias (+1, 0, -1)
-    const commoditiesVariation = Math.floor(Math.random() * 3) - 1;
-    const manufacturesVariation = Math.floor(Math.random() * 3) - 1;
-    
-    let newCommodities = economy.commodities + commoditiesVariation;
-    let newManufactures = economy.manufactures + manufacturesVariation;
-    let newServices = 100 - newCommodities - newManufactures;
-    
-    // Aplicar limites (20-50% para cada setor)
-    newCommodities = Math.max(ECONOMIC_CONSTANTS.MIN_SECTOR_PERCENT, 
-                             Math.min(ECONOMIC_CONSTANTS.MAX_SECTOR_PERCENT, newCommodities));
-    newManufactures = Math.max(ECONOMIC_CONSTANTS.MIN_SECTOR_PERCENT, 
-                              Math.min(ECONOMIC_CONSTANTS.MAX_SECTOR_PERCENT, newManufactures));
-    newServices = Math.max(ECONOMIC_CONSTANTS.MIN_SECTOR_PERCENT, 
-                          Math.min(ECONOMIC_CONSTANTS.MAX_SECTOR_PERCENT, newServices));
-    
-    // Rebalancear para somar 100%
-    const total = newCommodities + newManufactures + newServices;
-    newCommodities = (newCommodities / total) * 100;
-    newManufactures = (newManufactures / total) * 100;
-    newServices = (newServices / total) * 100;
-    
-    // Aplicar força de retorno aos valores base
-    const returnForce = 0.02;
-    newCommodities = newCommodities * (1 - returnForce) + economy._commoditiesBase * returnForce;
-    newManufactures = newManufactures * (1 - returnForce) + economy._manufacturesBase * returnForce;
-    newServices = newServices * (1 - returnForce) + economy._servicesBase * returnForce;
-    
-    // Rebalancear final e arredondar
-    const finalTotal = newCommodities + newManufactures + newServices;
-    economy.commodities = Math.round((newCommodities / finalTotal) * 100);
-    economy.manufactures = Math.round((newManufactures / finalTotal) * 100);
-    economy.services = 100 - economy.commodities - economy.manufactures;
-  }
-
-  /**
-   * Processa pagamentos de dívida proporcionalmente
-   */
-  processProportionalDebtPayments(roomName, countryName, economy) {
-    const countryKey = `${countryName}:${roomName}`;
-    const debtContracts = this.debtContracts.get(countryKey) || [];
-    
-    if (debtContracts.length === 0) return;
-    
-    // Calcular pagamento mensal proporcional (1/60 do pagamento mensal real)
-    const cycleFactor = 1 / ECONOMIC_CONSTANTS.MONTHLY_CYCLE;
-    let totalPayment = 0;
-    
-    debtContracts.forEach(contract => {
-      if (contract.remainingInstallments > 0) {
-        const fractionalPayment = contract.monthlyPayment * cycleFactor;
-        const monthlyRate = contract.interestRate / 100 / 12;
-        const interestPayment = contract.remainingValue * monthlyRate * cycleFactor;
-        const principalPayment = fractionalPayment - interestPayment;
-        
-        totalPayment += fractionalPayment;
-        
-        // Atualizar contrato gradualmente
-        contract.remainingValue -= principalPayment;
-        if (contract.remainingValue < 0.01) {
-          contract.remainingValue = 0;
-          contract.remainingInstallments = 0;
-        }
-      }
-    });
-    
-    // Deduzir pagamento do tesouro
-    economy.treasury -= totalPayment;
-    
-    // Se tesouro insuficiente, emitir títulos de emergência
-    if (economy.treasury < 0) {
-      const shortfall = Math.abs(economy.treasury);
-      economy.treasury = 0;
-      
-      const emergencyAmount = shortfall * 1.1;
-      economy.treasury += emergencyAmount;
-      economy.publicDebt += emergencyAmount;
-    }
-    
-    // Atualizar dívida total
-    const remainingDebt = debtContracts.reduce((sum, contract) => sum + contract.remainingValue, 0);
-    economy.publicDebt = remainingDebt;
-    
-    // Filtrar contratos pagos
-    const activeContracts = debtContracts.filter(contract => contract.remainingInstallments > 0);
-    this.debtContracts.set(countryKey, activeContracts);
-  }
-
-  /**
    * Atualiza dados históricos
    */
   updateHistoricalData(economy) {
@@ -962,36 +476,8 @@ class EconomyService {
     }
   }
 
-  /**
-   * Atualiza tesouro com receitas e gastos
-   */
-  updateTreasury(economy) {
-    const cycleFactor = 1 / ECONOMIC_CONSTANTS.MONTHLY_CYCLE;
-    
-    // Receitas (proporcionais)
-    const revenue = economy.gdp * (economy.taxBurden / 100) * 0.01 * cycleFactor;
-    
-    // Gastos (proporcionais)
-    const expenses = economy.gdp * (economy.publicServices / 100) * 0.008 * cycleFactor;
-    
-    economy.treasury += revenue - expenses;
-    
-    // Garantir que tesouro não fique muito negativo
-    if (economy.treasury < -economy.gdp * 0.1) {
-      economy.treasury = -economy.gdp * 0.1;
-    }
-  }
-
-  /**
-   * Função de média móvel para históricos
-   */
-  calculateMovingAverage(history) {
-    if (history.length === 0) return 0;
-    return history.reduce((a, b) => a + b, 0) / history.length;
-  }
-
   // ========================================================================
-  // SISTEMA DE DÍVIDA EXPANDIDO (PRESERVADO E MELHORADO)
+  // SISTEMA DE DÍVIDA (PRESERVADO)
   // ========================================================================
 
   issueDebtBonds(roomName, countryName, bondAmount) {
@@ -1013,8 +499,8 @@ class EconomyService {
       return { success: false, message: 'Emissão faria a dívida ultrapassar 120% do PIB' };
     }
 
-    // Calcular taxa de juros com sistema expandido
-    const riskPremium = this.calculateRiskPremium(economy);
+    // DELEGADO: Calcular taxa de juros com função de economicUtils
+    const riskPremium = calculateRiskPremium(economy.creditRating, debtToGdpRatio);
     const effectiveRate = economy.interestRate + riskPremium;
     
     // Criar contrato expandido
@@ -1052,34 +538,6 @@ class EconomyService {
       newContract: contract,
       effectiveRate
     };
-  }
-
-  /**
-   * Calcula prêmio de risco baseado no rating de crédito
-   */
-  calculateRiskPremium(economy) {
-    const riskPremiums = {
-      "AAA": 0.0,
-      "AA": 0.5,
-      "A": 1.0,
-      "BBB": 2.0,
-      "BB": 3.5,
-      "B": 5.0,
-      "CCC": 8.0,
-      "CC": 12.0,
-      "C": 18.0,
-      "D": 25.0
-    };
-    
-    let premium = riskPremiums[economy.creditRating] || 5.0;
-    
-    // Prêmio adicional pela alta dívida
-    const debtToGdpRatio = economy.publicDebt / economy.gdp;
-    if (debtToGdpRatio > 0.6) {
-      premium += (debtToGdpRatio - 0.6) * 20;
-    }
-    
-    return premium;
   }
 
   createInitialDebtContracts(countryName, countryState, totalDebt) {
@@ -1260,7 +718,7 @@ class EconomyService {
     
     room.tradeAgreements.push(originAgreement, targetAgreement);
     
-    // Recalcular economias com sistema avançado
+    // Recalcular economias com cálculos delegados
     this.performAdvancedEconomicCalculations(roomName, originCountry);
     this.performAdvancedEconomicCalculations(roomName, country);
     
@@ -1296,13 +754,13 @@ class EconomyService {
   }
 
   // ========================================================================
-  // ATUALIZAÇÕES PERIÓDICAS (MODIFICADO PARA USAR CÁLCULOS AVANÇADOS)
+  // ATUALIZAÇÕES PERIÓDICAS (PRESERVADO)
   // ========================================================================
 
   startPeriodicUpdates() {
     this.stopPeriodicUpdates();
     
-    // Atualizar economia a cada 500ms com cálculos avançados
+    // Atualizar economia a cada 500ms com cálculos delegados
     this.updateInterval = setInterval(() => {
       this.performPeriodicAdvancedUpdates();
     }, ECONOMIC_CONSTANTS.UPDATE_INTERVAL);
@@ -1312,7 +770,7 @@ class EconomyService {
       this.saveToRedis();
     }, ECONOMIC_CONSTANTS.SAVE_INTERVAL);
     
-    console.log('[ECONOMY] Periodic updates started with advanced economic calculations');
+    console.log('[ECONOMY] Periodic updates started with delegated economic calculations');
   }
 
   stopPeriodicUpdates() {
@@ -1342,38 +800,12 @@ class EconomyService {
       const roomStates = this.getRoomStates(roomName);
       
       for (const countryName of Object.keys(roomStates)) {
-        // ADICIONAR LOG ANTES DO CÁLCULO
-        const beforeState = {
-          gdp: roomStates[countryName].economy.gdp,
-          inflation: roomStates[countryName].economy.inflation,
-          unemployment: roomStates[countryName].economy.unemployment,
-          cycles: roomStates[countryName].economy._cycleCount
-        };
-        
         this.performAdvancedEconomicCalculations(roomName, countryName);
-        
-        // ADICIONAR LOG DEPOIS DO CÁLCULO
-        const afterState = {
-          gdp: roomStates[countryName].economy.gdp,
-          inflation: roomStates[countryName].economy.inflation,
-          unemployment: roomStates[countryName].economy.unemployment,
-          cycles: roomStates[countryName].economy._cycleCount
-        };
-        
-        // LOG APENAS SE HOUVER MUDANÇA SIGNIFICATIVA
-        if (Math.abs(beforeState.inflation - afterState.inflation) > 0.001 || 
-            beforeState.cycles !== afterState.cycles) {
-          // console.log(`[DEBUG] ${countryName} - Ciclo ${afterState.cycles}: Inflação ${(beforeState.inflation*100).toFixed(3)}% → ${(afterState.inflation*100).toFixed(3)}%`);
-        }
-        
         updatedCountries++;
       }
       
-      // Broadcast após cálculos avançados
+      // Broadcast após cálculos delegados
       if (Object.keys(roomStates).length > 0 && global.io) {
-        // ADICIONAR LOG DO BROADCAST
-        // console.log(`[DEBUG] Broadcasting to room ${roomName} with ${Object.keys(roomStates).length} countries`);
-        
         global.io.to(`countryStates:${roomName}`).emit('countryStatesUpdated', {
           roomName,
           states: roomStates,
@@ -1382,55 +814,44 @@ class EconomyService {
       }
     }
     
-    // Log ocasional do status dos cálculos avançados
+    // Log ocasional do status dos cálculos delegados
     if (Math.random() < 0.01) { // 1% de chance
-      console.log(`[ECONOMY] Advanced calculations updated ${updatedCountries} countries`);
+      console.log(`[ECONOMY] Delegated calculations updated ${updatedCountries} countries`);
     }
   }
 
   // ========================================================================
-  // MÉTODOS DE DEBUG EXPANDIDOS
+  // MÉTODOS DE DEBUG DELEGADOS
   // ========================================================================
 
   debugAdvancedCalculations(roomName, countryName) {
     const countryState = this.getCountryState(roomName, countryName);
     if (!countryState) return;
     
-    const economy = countryState.economy;
+    // DELEGADO: Usar função de economicCalculations.js
+    debugAdvancedEconomicCalculations(countryName, countryState.economy);
+  }
+
+  validateAdvancedCalculations(roomName, countryName) {
+    const countryState = this.getCountryState(roomName, countryName);
+    if (!countryState) return { valid: false, errors: ['Country state not found'] };
     
-    console.log(`[ECONOMY DEBUG] Advanced calculations for ${countryName} in ${roomName}:`);
-    console.log({
-      // Indicadores principais
-      gdp: economy.gdp.toFixed(2),
-      gdpGrowth: `${economy.gdpGrowth.toFixed(2)}%`,
-      inflation: `${(economy.inflation * 100).toFixed(2)}%`,
-      unemployment: `${economy.unemployment.toFixed(1)}%`,
-      popularity: `${economy.popularity.toFixed(1)}%`,
-      creditRating: economy.creditRating,
-      
-      // Ciclos
-      cycleCount: economy._cycleCount,
-      
-      // Setores
-      commodities: `${economy.commodities}%`,
-      manufactures: `${economy.manufactures}%`,
-      services: `${economy.services}%`,
-      
-      // Outputs e necessidades
-      commoditiesOutput: economy.commoditiesOutput.toFixed(2),
-      commoditiesNeeds: economy.commoditiesNeeds.toFixed(2),
-      commoditiesBalance: economy.commoditiesBalance.toFixed(2),
-      
-      // Controles
-      interestRate: `${economy.interestRate}%`,
-      taxBurden: `${economy.taxBurden}%`,
-      publicServices: `${economy.publicServices}%`,
-      
-      // Dívida
-      publicDebt: economy.publicDebt.toFixed(2),
-      debtToGdp: `${((economy.publicDebt / economy.gdp) * 100).toFixed(1)}%`,
-      treasury: economy.treasury.toFixed(2)
-    });
+    // DELEGADO: Usar função de economicCalculations.js
+    return validateEconomicCalculations(countryState.economy);
+  }
+
+  emergencyResetCountry(roomName, countryName) {
+    const countryState = this.getCountryState(roomName, countryName);
+    if (!countryState) return false;
+    
+    // DELEGADO: Usar função de economicCalculations.js
+    resetUnrealisticIndicators(countryState.economy);
+    
+    // Recalcular valores iniciais
+    this.initializeCalculatedValues(countryState.economy);
+    
+    console.log(`[ECONOMY] Emergency reset performed for ${countryName} in ${roomName} (delegated)`);
+    return true;
   }
 
   // ========================================================================
@@ -1447,7 +868,7 @@ class EconomyService {
       };
       
       await redis.set('economy_service_data', JSON.stringify(data));
-      console.log(`[ECONOMY] Advanced data saved to Redis - ${this.debtContracts.size} debt contracts, ${this.countryStates.size} rooms`);
+      console.log(`[ECONOMY] Delegated data saved to Redis - ${this.debtContracts.size} debt contracts, ${this.countryStates.size} rooms`);
     } catch (error) {
       console.error('[ECONOMY] Error saving to Redis:', error);
     }
@@ -1473,7 +894,7 @@ class EconomyService {
           }
         }
         
-        console.log(`[ECONOMY] Advanced calculations loaded from Redis: ${this.countryStates.size} rooms, ${this.debtContracts.size} debt contracts`);
+        console.log(`[ECONOMY] Delegated calculations loaded from Redis: ${this.countryStates.size} rooms, ${this.debtContracts.size} debt contracts`);
       }
     } catch (error) {
       console.error('[ECONOMY] Error loading from Redis:', error);
@@ -1500,13 +921,13 @@ class EconomyService {
       }
     }
     
-    console.log(`[ECONOMY] Room ${roomName} removed with all advanced economic data`);
+    console.log(`[ECONOMY] Room ${roomName} removed with all delegated economic data`);
   }
 
   cleanup() {
     this.stopPeriodicUpdates();
     this.saveToRedis();
-    console.log('[ECONOMY] EconomyService cleanup completed - all advanced calculations stopped');
+    console.log('[ECONOMY] EconomyService cleanup completed - all delegated calculations stopped');
   }
 
   // ========================================================================
@@ -1514,7 +935,7 @@ class EconomyService {
   // ========================================================================
 
   /**
-   * Método legado para compatibilidade - delegado para cálculos avançados
+   * Método legado para compatibilidade - delegado para cálculos
    */
   performEconomicCalculations(roomName, countryName) {
     return this.performAdvancedEconomicCalculations(roomName, countryName);
@@ -1577,100 +998,6 @@ class EconomyService {
   }
 
   /**
-   * Método para validar se todos os cálculos estão funcionando corretamente
-   */
-  validateAdvancedCalculations(roomName, countryName) {
-    const countryState = this.getCountryState(roomName, countryName);
-    if (!countryState) return { valid: false, errors: ['Country state not found'] };
-    
-    const economy = countryState.economy;
-    const errors = [];
-    
-    // Validar campos obrigatórios
-    const requiredFields = [
-      'gdp', 'inflation', 'unemployment', 'popularity', 'creditRating',
-      'gdpGrowth', '_cycleCount', 'commoditiesBalance', 'manufacturesBalance'
-    ];
-    
-    requiredFields.forEach(field => {
-      if (economy[field] === undefined || economy[field] === null) {
-        errors.push(`Missing required field: ${field}`);
-      }
-    });
-    
-    // Validar ranges
-    if (economy.inflation < -0.05 || economy.inflation > 0.5) {
-      errors.push('Inflation out of realistic range');
-    }
-    
-    if (economy.unemployment < 0 || economy.unemployment > 50) {
-      errors.push('Unemployment out of realistic range');
-    }
-    
-    if (economy.popularity < 0 || economy.popularity > 100) {
-      errors.push('Popularity out of realistic range');
-    }
-    
-    // Validar setores somam 100%
-    const sectorSum = economy.commodities + economy.manufactures + economy.services;
-    if (Math.abs(sectorSum - 100) > 0.1) {
-      errors.push(`Sectors don't sum to 100%: ${sectorSum}`);
-    }
-    
-    // Validar históricos
-    if (!Array.isArray(economy._historicInflation) || economy._historicInflation.length === 0) {
-      errors.push('Invalid inflation history');
-    }
-    
-    if (economy._historicInflation.length > ECONOMIC_CONSTANTS.MAX_HISTORY_SIZE) {
-      errors.push('History size exceeds maximum');
-    }
-    
-    // Validar valores não são NaN ou Infinity
-    const numericFields = ['gdp', 'inflation', 'unemployment', 'popularity', 'gdpGrowth'];
-    numericFields.forEach(field => {
-      if (!isFinite(economy[field])) {
-        errors.push(`Field ${field} is not a finite number: ${economy[field]}`);
-      }
-    });
-    
-    return {
-      valid: errors.length === 0,
-      errors: errors,
-      economy: economy
-    };
-  }
-
-  /**
-   * Método para reset de emergência de um país (preserva estrutura básica)
-   */
-  emergencyResetCountry(roomName, countryName) {
-    const countryState = this.getCountryState(roomName, countryName);
-    if (!countryState) return false;
-    
-    const economy = countryState.economy;
-    
-    // Reset apenas campos problemáticos, preserva outros
-    economy._cycleCount = 0;
-    economy.gdpGrowth = 2.5;
-    economy.inflation = Math.max(0.01, Math.min(0.15, economy.inflation || 0.04));
-    economy.unemployment = Math.max(5, Math.min(35, economy.unemployment || 12.5));
-    economy.popularity = Math.max(10, Math.min(90, economy.popularity || 50));
-    
-    // Reset históricos com valores atuais
-    economy._historicInflation = [economy.inflation];
-    economy._historicUnemployment = [economy.unemployment];
-    economy._historicPopularity = [economy.popularity];
-    economy._historicGdp = [economy.gdp];
-    
-    // Recalcular valores iniciais
-    this.initializeCalculatedValues(economy);
-    
-    console.log(`[ECONOMY] Emergency reset performed for ${countryName} in ${roomName}`);
-    return true;
-  }
-
-  /**
    * Método para obter estatísticas de performance dos cálculos
    */
   getPerformanceStats() {
@@ -1700,7 +1027,8 @@ class EconomyService {
       isRunning: this.updateInterval !== null,
       updateInterval: ECONOMIC_CONSTANTS.UPDATE_INTERVAL,
       monthlySystemCycle: ECONOMIC_CONSTANTS.MONTHLY_CYCLE,
-      quarterlySystemCycle: ECONOMIC_CONSTANTS.QUARTERLY_CYCLE
+      quarterlySystemCycle: ECONOMIC_CONSTANTS.QUARTERLY_CYCLE,
+      calculationsMethod: 'DELEGATED' // Indica que usa economicCalculations.js
     };
   }
 }

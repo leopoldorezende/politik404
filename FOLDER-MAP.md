@@ -149,6 +149,7 @@
   │       └── utils
   │           ├── economicCalculations.js
   │           ├── economicCalculations_ANTIGO.js
+  │           ├── economicConstants.js
   │           ├── economicUtils.js
   │           └── gameStateUtils.js  # Utilitários de estado para o jogo
   └── v22.md

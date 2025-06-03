@@ -6,6 +6,12 @@
 
 import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/utils/gameStateUtils.js';
 import { evaluateTradeProposal } from '../ai/aiCountryController.js';
+import { ECONOMIC_CONSTANTS } from '../../shared/utils/economicConstants.js';
+import { 
+  debugAdvancedEconomicCalculations, 
+  validateEconomicCalculations,
+  resetUnrealisticIndicators 
+} from '../../shared/utils/economicCalculations.js';
 
 /**
  * Setup economy-related socket event handlers com cálculos avançados
@@ -436,15 +442,17 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
 
-    if (global.economyService && global.economyService.debugAdvancedCalculations) {
-      global.economyService.debugAdvancedCalculations(roomName, userCountry);
+    // MUDANÇA: Usar função importada em vez de método do service
+    const countryState = global.economyService.getCountryState(roomName, userCountry);
+    if (countryState) {
+      debugAdvancedEconomicCalculations(userCountry, countryState.economy);
       socket.emit('debugResponse', { 
         message: 'Debug information logged to server console',
         roomName,
         countryName: userCountry
       });
     } else {
-      socket.emit('error', 'Debug function not available');
+      socket.emit('error', 'Country state not found');
     }
   });
 
@@ -473,15 +481,17 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
 
-    if (global.economyService && global.economyService.validateAdvancedCalculations) {
-      const validation = global.economyService.validateAdvancedCalculations(roomName, userCountry);
+    // MUDANÇA: Usar função importada em vez de método do service
+    const countryState = global.economyService.getCountryState(roomName, userCountry);
+    if (countryState) {
+      const validation = validateEconomicCalculations(countryState.economy);
       socket.emit('economicValidationResult', {
         countryName: userCountry,
         roomName,
         ...validation
       });
     } else {
-      socket.emit('error', 'Validation function not available');
+      socket.emit('error', 'Country state not found');
     }
   });
 
@@ -533,19 +543,25 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
 
-    if (global.economyService && global.economyService.emergencyResetCountry) {
-      const success = global.economyService.emergencyResetCountry(roomName, userCountry);
-      if (success) {
-        socket.emit('emergencyResetComplete', { 
-          message: 'Country economic indicators reset to realistic values',
-          roomName,
-          countryName: userCountry
-        });
-      } else {
-        socket.emit('error', 'Emergency reset failed');
-      }
+    // MUDANÇA: Usar função importada + método do service para salvar
+    const countryState = global.economyService.getCountryState(roomName, userCountry);
+    if (countryState) {
+      // Aplicar reset usando função importada
+      resetUnrealisticIndicators(countryState.economy);
+      
+      // Recalcular valores iniciais usando método do service
+      global.economyService.initializeCalculatedValues(countryState.economy);
+      
+      // Salvar estado atualizado
+      global.economyService.setCountryState(roomName, userCountry, countryState);
+      
+      socket.emit('emergencyResetComplete', { 
+        message: 'Country economic indicators reset to realistic values',
+        roomName,
+        countryName: userCountry
+      });
     } else {
-      socket.emit('error', 'Emergency reset not available');
+      socket.emit('error', 'Country state not found');
     }
   });
 }
