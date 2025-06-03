@@ -18,7 +18,13 @@ export const SYNC_CONFIG = {
   
   // Ciclos múltiplos
   get TRADE_PROCESSING_INTERVAL() { return this.MASTER_CYCLE * 1.2 },
-  get USER_CLEANUP_INTERVAL() { return this.MASTER_CYCLE * 30 },
+  get USER_CLEANUP_INTERVAL() { return this.MASTER_CYCLE * 40 },
+
+  // Mensal econômico
+  get MONTHLY_CYCLE() { return 10 },
+
+  // Trimestre econômico
+  get QUARTERLY_GDP_CALCULATION() { return 30 },
 };
 
 export default SYNC_CONFIG;

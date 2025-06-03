@@ -28,8 +28,8 @@ export const ECONOMIC_CONSTANTS = {
   MAX_POPULARITY: 99,    // 99%
 
   // Ciclos temporais
-  MONTHLY_CYCLE: 60,    // 60 ciclos = 1 mês
-  QUARTERLY_CYCLE: 180, // 180 ciclos = 1 trimestre
+  MONTHLY_CYCLE: 10,
+  QUARTERLY_CYCLE: 40,
   
   // Fatores de inércia
   INFLATION_INERTIA: 0.8,
@@ -37,7 +37,7 @@ export const ECONOMIC_CONSTANTS = {
   POPULARITY_INERTIA: 0.7,
 
   // Configurações de tempo e sistema
-  UPDATE_INTERVAL: 500,
+  UPDATE_INTERVAL: 100,
   SAVE_INTERVAL: 10000,
   MAX_HISTORY_SIZE: 20,
 
@@ -47,5 +47,5 @@ export const ECONOMIC_CONSTANTS = {
 
   // Sistema de dívidas
   DEBT_DURATION_YEARS: 10,
-  DEBT_DURATION_MONTHS: 120,
+  DEBT_DURATION_MONTHS: 12,
 };

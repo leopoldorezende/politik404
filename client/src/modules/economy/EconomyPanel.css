@@ -550,3 +550,21 @@
   border-radius: 10px;
   max-width: 100%;
 }
+
+.advanced-economy-panel .indicator.game-date {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.advanced-economy-panel .indicator.game-date .value {
+  color: #666;
+  font-weight: 600;
+}
+
+.advanced-economy-panel .indicator.game-date label {
+  color: #cbd5e1;
+  font-size: 0.85em;
+}

@@ -64,6 +64,28 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     }
   }, [economicIndicators?.interestRate, economicIndicators?.taxBurden, economicIndicators?.publicServices]);
 
+
+   // Função para calcular a data do jogo baseada nos ciclos
+  const calculateGameDate = () => {
+    if (!economicIndicators?._cycleCount) {
+      return "Janeiro 2025";
+    }
+    
+    const MONTHLY_CYCLE = 30;
+    const monthsPassed = Math.floor(economicIndicators._cycleCount / MONTHLY_CYCLE);
+    
+    // Data base: Janeiro 2025
+    const startDate = new Date(2025, 0, 1); // Janeiro = 0
+    startDate.setMonth(startDate.getMonth() + monthsPassed);
+    
+    const months = [
+      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ];
+    
+    return `${months[startDate.getMonth()]} ${startDate.getFullYear()}`;
+  };
+  
   // ======================================================================
   // HANDLERS SIMPLIFICADOS
   // ======================================================================
@@ -293,6 +315,12 @@ const applyAllParameters = useCallback(async () => {
   return (
     <div className="advanced-economy-panel">
       
+        {/* Data do Jogo */}
+        <div className="indicator game-date">
+          <label>Data:</label>
+          <span className="value">{calculateGameDate()}</span>
+        </div>
+
       {/* Indicadores Principais */}
       <div className="main-indicators">
 
@@ -317,7 +345,7 @@ const applyAllParameters = useCallback(async () => {
           <div className="indicator-value">
             <span className="value">{formatCurrency(economicIndicators.gdp)} bi</span>
             <span className={`growth ${economicIndicators.gdpGrowth >= 0 ? 'positive' : 'negative'}`}>
-              {formatValueWithSign(economicIndicators.gdpGrowth)}% anual
+              {formatValueWithSign(economicIndicators.gdpGrowth)}% Δ trimestral
             </span>
           </div>
         </div>
@@ -334,7 +362,7 @@ const applyAllParameters = useCallback(async () => {
           <div className="indicator-value">
             <span className="value">{formatCurrency(economicIndicators.publicDebt)} bi</span>
             <span className="debt-ratio">
-              {formatPercent((economicIndicators.publicDebt / economicIndicators.gdp) * 100)} PIB
+              {formatPercent((economicIndicators.publicDebt / economicIndicators.gdp) * 100)} PIB (mensal)
             </span>
           </div>
         </div>

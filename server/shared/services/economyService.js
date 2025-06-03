@@ -7,6 +7,7 @@
 import redis from '../redisClient.js';
 import { getNumericValue, calculateRiskPremium } from '../utils/economicUtils.js';
 import { ECONOMIC_CONSTANTS } from '../utils/economicConstants.js';
+import { SYNC_CONFIG } from '../config/syncConfig.js';
 import { 
   calculateAdvancedGrowth,
   calculateDynamicInflation,
@@ -155,7 +156,7 @@ class EconomyService {
         
         // ===== NOVOS CAMPOS EXPANDIDOS =====
         _cycleCount: 0,
-        _lastQuarterGdp: initialGdp,
+        _lastQuarterGdp: initialGdp * 0.975, // 2.5% menor para simular crescimento inicial
         gdpGrowth: 2.5, // Crescimento trimestral em percentual
         
         // Necessidades e outputs setoriais
@@ -298,14 +299,18 @@ class EconomyService {
     // 3. Calcular balanços setoriais incluindo comércio
     this.calculateSectoralBalances(roomName, countryName, economy);
     
-    // 4. ===== CRESCIMENTO APLICADO DIRETAMENTE COMO NO economy-game.js =====
+    // 4. CRESCIMENTO APLICADO
     const crescimento = calculateAdvancedGrowth(economy);
     
-    // APLICAÇÃO DIRETA sem divisões extras - IGUAL AO economy-game.js
     economy.gdp *= (1 + crescimento);
-    
-    // Converter crescimento para percentual para compatibilidade
-    economy.gdpGrowth = crescimento * 100;
+    // Atualiza crescimento trimestral a cada 180 ciclos (equivalente a 90 turnos no modelo)
+    if (economy._cycleCount % SYNC_CONFIG.QUARTERLY_GDP_CALCULATION === 0) {
+      const oldGdpGrowth = economy.gdpGrowth;
+      economy.gdpGrowth = ((economy.gdp - economy._lastQuarterGdp) / economy._lastQuarterGdp) * 100;
+      economy._lastQuarterGdp = economy.gdp;
+      
+      console.log(`[GROWTH] ${countryName}: GDP Growth updated from ${oldGdpGrowth.toFixed(2)}% to ${economy.gdpGrowth.toFixed(2)}% (cycle ${economy._cycleCount})`);
+    }
     
     // 5. Aplicar cálculos básicos DELEGADOS (aplicação direta)
     economy.inflation = calculateDynamicInflation(economy);
@@ -350,7 +355,7 @@ class EconomyService {
     }
     
     // 8. Processamento mensal das dívidas - COMO NO economy-game.js
-    if (economy._cycleCount % 30 === 0) {
+    if (economy._cycleCount % ECONOMIC_CONSTANTS.MONTHLY_CYCLE === 0) {
       const countryKey = `${countryName}:${roomName}`;
       const debtContracts = this.debtContracts.get(countryKey) || [];
       
