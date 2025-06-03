@@ -89,7 +89,6 @@ app.get('/check-data-files', (req, res) => {
 
 const server = http.createServer(app);
 
-
 // Configuração simplificada do Socket.io
 const io = new Server(server, {
   cors: {
@@ -179,16 +178,11 @@ app.get('/check-connection', (req, res) => {
 
 // Handler único para encerramento do servidor
 const shutdownHandler = () => {
-  console.log('Servidor está sendo encerrado. Limpando recursos avançados...');
+  console.log('Servidor está sendo encerrado. Limpando recursos...');
   
-  // Limpar o economyService com dados avançados
+  // Limpar o economyService
   if (global.economyService) {
-    // Salvar estatísticas finais antes do shutdown
-    const finalStats = global.economyService.getPerformanceStats();
-    console.log('📊 Final Economy Stats:', finalStats);
-    
     global.economyService.cleanup();
-    console.log('✅ Advanced EconomyService cleanup completed');
   }
   
   // Limpar os timers de expiração
@@ -207,32 +201,6 @@ restoreRoomsFromRedis().then(() => {
   economyService.initialize().then(() => {
     console.log('✅ EconomyService initialized successfully');
     
-    restoreRoomsFromRedis().then(() => {
-      // CRÍTICO: Inicializar EconomyService com cálculos avançados
-      economyService.initialize().then(() => {
-        console.log('✅ Advanced EconomyService initialized successfully');
-        
-        // Validar se os cálculos avançados estão funcionando
-        const performanceStats = economyService.getPerformanceStats();
-        console.log('📊 Economy Performance Stats:', performanceStats);
-        
-        server.listen(PORT, () => {
-          console.log(`Server running on port ${PORT}`);
-          console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);
-          console.log(`EconomyService initialized: ${economyService.initialized ? 'Yes' : 'No'}`);
-          console.log(`Advanced calculations enabled: ${economyService.getPerformanceStats().isRunning ? 'Yes' : 'No'}`);
-          console.log(`Monthly cycle: ${economyService.getPerformanceStats().monthlySystemCycle} cycles`);
-          console.log(`Quarterly cycle: ${economyService.getPerformanceStats().quarterlySystemCycle} cycles`);
-          
-          // Configurar limpeza periódica
-          setupPeriodicCleanup(io, gameState);
-        });
-      }).catch(error => {
-        console.error('❌ Failed to initialize Advanced EconomyService:', error);
-        process.exit(1);
-      });
-    });
-
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);

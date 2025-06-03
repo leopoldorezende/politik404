@@ -1,355 +1,319 @@
 /**
- * useEconomy.js - Hook para dados econômicos
- * VERSÃO ATUALIZADA para trabalhar com cálculos econômicos avançados
- * Preserva toda funcionalidade existente e adiciona novos campos
+ * useEconomy.js - Hook direto para dados econômicos com cálculos avançados
+ * Substitui toda complexidade do Redux com comunicação direta via socket
+ * VERSÃO ATUALIZADA para trabalhar com os cálculos econômicos sofisticados
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { socketApi } from '../services/socketClient';
 
 /**
- * Hook principal para dados econômicos - EXPANDIDO
+ * Hook principal para dados econômicos de um país com cálculos avançados
  * @param {string} roomName - Nome da sala
  * @param {string} countryName - Nome do país
- * @returns {Object} - Dados econômicos expandidos
+ * @returns {Object} - Dados econômicos e funções auxiliares
  */
-export function useEconomy(roomName, countryName) {
-  const [economicIndicators, setEconomicIndicators] = useState(null);
+export const useEconomy = (roomName, countryName) => {
   const [countryData, setCountryData] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
-  // Ref para evitar updates desnecessários
-  const lastDataRef = useRef(null);
-  const subscriptionRef = useRef(false);
 
-  /**
-   * Função para formatar percentuais
-   */
+  // Handler para inicialização dos estados
+  const handleCountryStatesInitialized = useCallback((data) => {
+    if (data.roomName === roomName && data.states && data.states[countryName]) {
+      setCountryData(data.states[countryName]);
+      setLastUpdated(data.timestamp);
+      setLoading(false);
+    }
+  }, [roomName, countryName]);
+
+  // Handler para atualizações periódicas
+  const handleCountryStatesUpdated = useCallback((data) => {
+    if (data.roomName === roomName && data.states && data.states[countryName]) {
+      setCountryData(data.states[countryName]);
+      setLastUpdated(data.timestamp);
+      setLoading(false);
+    }
+  }, [roomName, countryName]);
+
+  // Subscription para atualizações periódicas
+  useEffect(() => {
+    const socket = socketApi.getSocketInstance();
+    if (!socket || !roomName || !countryName) return;
+
+    // Registrar listeners
+    socket.on('countryStatesUpdated', handleCountryStatesUpdated);
+    socket.on('countryStatesInitialized', handleCountryStatesInitialized);
+
+    // Subscrever aos updates da sala
+    socket.emit('subscribeToCountryStates', roomName);
+
+    return () => {
+      socket.off('countryStatesUpdated', handleCountryStatesUpdated);
+      socket.off('countryStatesInitialized', handleCountryStatesInitialized);
+      socket.emit('unsubscribeFromCountryStates', roomName);
+    };
+  }, [roomName, countryName, handleCountryStatesUpdated, handleCountryStatesInitialized]);
+
+  // Função para obter valor numérico
+  const getNumericValue = useCallback((property) => {
+    if (property === undefined || property === null) return 0;
+    if (typeof property === 'number') return property;
+    if (typeof property === 'object' && property.value !== undefined) return property.value;
+    return 0;
+  }, []);
+
+  // Formatar moeda (corrigido para retornar apenas números)
+  const formatCurrency = useCallback((value) => {
+    if (value === undefined || value === null || isNaN(value)) return '0.0';
+    return Number(value).toFixed(1);
+  }, []);
+
+  // Formatar porcentagem
   const formatPercent = useCallback((value) => {
     if (value === undefined || value === null || isNaN(value)) return '0.0%';
     return Number(value).toFixed(1) + '%';
   }, []);
 
-  /**
-   * Função para formatar moeda
-   */
-  const formatCurrency = useCallback((value, decimals = 2) => {
-    if (value === undefined || value === null || isNaN(value)) return '0.00';
-    return Number(value).toFixed(decimals);
-  }, []);
-
-  /**
-   * Processar dados econômicos avançados recebidos do servidor
-   */
-  const processEconomicData = useCallback((states) => {
-    if (!states || !countryName || !states[countryName]) {
-      setEconomicIndicators(null);
-      setCountryData(null);
-      setLoading(false);
-      return;
-    }
-
-    const countryState = states[countryName];
-    const economy = countryState.economy || {};
-
-    // ===== INDICADORES EXPANDIDOS =====
-    const expandedIndicators = {
-      // Indicadores principais (preservados)
-      gdp: economy.gdp || 0,
-      gdpGrowth: economy.gdpGrowth || 0,
-      treasury: economy.treasury || 0,
-      publicDebt: economy.publicDebt || 0,
-      inflation: economy.inflation || 0,
-      unemployment: economy.unemployment || 0,
-      popularity: economy.popularity || 0,
-      creditRating: economy.creditRating || 'A',
-      
-      // Controles econômicos (preservados)
-      interestRate: economy.interestRate || 8,
-      taxBurden: economy.taxBurden || 40,
-      publicServices: economy.publicServices || 30,
-      
-      // Distribuição setorial (preservados)
-      services: economy.services || 35,
-      commodities: economy.commodities || 35,
-      manufactures: economy.manufactures || 30,
-      
-      // ===== NOVOS CAMPOS AVANÇADOS =====
-      
-      // Outputs setoriais
-      servicesOutput: economy.servicesOutput || 0,
-      commoditiesOutput: economy.commoditiesOutput || 0,
-      manufacturesOutput: economy.manufacturesOutput || 0,
-      
-      // Necessidades setoriais
-      commoditiesNeeds: economy.commoditiesNeeds || 0,
-      manufacturesNeeds: economy.manufacturesNeeds || 0,
-      
-      // Balanços setoriais
-      commoditiesBalance: economy.commoditiesBalance || 0,
-      manufacturesBalance: economy.manufacturesBalance || 0,
-      
-      // Estatísticas de comércio (preservadas)
-      tradeStats: economy.tradeStats || {
-        commodityImports: 0,
-        commodityExports: 0,
-        manufactureImports: 0,
-        manufactureExports: 0
-      },
-      
-      // ===== DADOS AVANÇADOS DE CICLOS =====
-      cycleCount: economy._cycleCount || 0,
-      lastQuarterGdp: economy._lastQuarterGdp || economy.gdp || 0,
-      
-      // Históricos expandidos (mantém compatibilidade)
-      historicoPIB: economy.historicoPIB || [economy.gdp || 100],
-      historicoInflacao: economy.historicoInflacao || [economy.inflation || 0.04],
-      historicoPopularidade: economy.historicoPopularidade || [economy.popularity || 50],
-      historicoDesemprego: economy.historicoDesemprego || [economy.unemployment || 12.5],
-      
-      // Históricos avançados (novos)
-      historicGdp: economy._historicGdp || [economy.gdp || 100],
-      historicInflation: economy._historicInflation || [economy.inflation || 0.04],
-      historicPopularity: economy._historicPopularity || [economy.popularity || 50],
-      historicUnemployment: economy._historicUnemployment || [economy.unemployment || 12.5],
-      
-      // ===== INDICADORES CALCULADOS =====
-      
-      // Relação dívida/PIB
-      debtToGdpRatio: economy.gdp > 0 ? (economy.publicDebt / economy.gdp) * 100 : 0,
-      
-      // Capacidade de endividamento restante
-      remainingDebtCapacity: Math.max(0, 120 - ((economy.publicDebt || 0) / (economy.gdp || 100)) * 100),
-      
-      // Produtividade setorial (output per capita)
-      servicesProductivity: economy.gdp > 0 ? (economy.servicesOutput || 0) / (economy.gdp / 100) : 0,
-      commoditiesProductivity: economy.gdp > 0 ? (economy.commoditiesOutput || 0) / (economy.gdp / 100) : 0,
-      manufacturesProductivity: economy.gdp > 0 ? (economy.manufacturesOutput || 0) / (economy.gdp / 100) : 0,
-      
-      // Autossuficiência setorial
-      commoditiesSelfSufficiency: economy.commoditiesNeeds > 0 ? 
-        Math.min(100, (economy.commoditiesOutput / economy.commoditiesNeeds) * 100) : 100,
-      manufacturesSelfSufficiency: economy.manufacturesNeeds > 0 ? 
-        Math.min(100, (economy.manufacturesOutput / economy.manufacturesNeeds) * 100) : 100,
-      
-      // ===== INDICADORES DE TENDÊNCIA =====
-      
-      // Tendência de inflação (baseada no histórico)
-      inflationTrend: economy._historicInflation && economy._historicInflation.length >= 3 ? 
-        ((economy._historicInflation.slice(-1)[0] - economy._historicInflation.slice(-3, -2)[0]) * 100).toFixed(2) : 0,
-      
-      // Tendência de desemprego
-      unemploymentTrend: economy._historicUnemployment && economy._historicUnemployment.length >= 3 ? 
-        (economy._historicUnemployment.slice(-1)[0] - economy._historicUnemployment.slice(-3, -2)[0]).toFixed(2) : 0,
-      
-      // Tendência de popularidade
-      popularityTrend: economy._historicPopularity && economy._historicPopularity.length >= 3 ? 
-        (economy._historicPopularity.slice(-1)[0] - economy._historicPopularity.slice(-3, -2)[0]).toFixed(2) : 0,
-      
-      // ===== STATUS DE SAÚDE ECONÔMICA =====
-      
-      // Score geral de saúde (0-100)
-      economicHealthScore: calculateEconomicHealthScore(economy),
-      
-      // Alertas econômicos
-      economicAlerts: generateEconomicAlerts(economy),
-      
-      // Classificação de estabilidade
-      stabilityRating: calculateStabilityRating(economy),
-    };
-
-    // Verificar se houve mudanças significativas
-    const currentDataString = JSON.stringify(expandedIndicators);
-    if (lastDataRef.current !== currentDataString) {
-      setEconomicIndicators(expandedIndicators);
-      setCountryData(countryState);
-      setLastUpdated(Date.now());
-      setLoading(false);
-      setError(null);
-      lastDataRef.current = currentDataString;
-    }
-  }, [countryName]);
-
-  /**
-   * Subscrever aos estados de países
-   */
-  const subscribeToStates = useCallback(() => {
-    if (!roomName || subscriptionRef.current) return;
-
-    const socket = socketApi.getSocketInstance();
-    if (!socket) return;
-
-    // Configurar listeners para dados expandidos
-    const handleStatesInitialized = (data) => {
-      if (data.roomName === roomName) {
-        processEconomicData(data.states);
-      }
-    };
-
-    const handleStatesUpdated = (data) => {
-      if (data.roomName === roomName) {
-        processEconomicData(data.states);
-      }
-    };
-
-    socket.on('countryStatesInitialized', handleStatesInitialized);
-    socket.on('countryStatesUpdated', handleStatesUpdated);
-
-    // Subscrever e solicitar dados iniciais
-    socket.emit('subscribeToCountryStates', roomName);
-    subscriptionRef.current = true;
-
-    // Cleanup function
-    return () => {
-      socket.off('countryStatesInitialized', handleStatesInitialized);
-      socket.off('countryStatesUpdated', handleStatesUpdated);
-      if (subscriptionRef.current) {
-        socket.emit('unsubscribeFromCountryStates', roomName);
-        subscriptionRef.current = false;
-      }
-    };
-  }, [roomName, processEconomicData]);
-
-  // Effect principal
-  useEffect(() => {
-    if (!roomName || !countryName) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
+  // Indicadores econômicos calculados com campos expandidos
+  const economicIndicators = countryData?.economy ? {
+    // ===== CAMPOS BÁSICOS PRESERVADOS =====
+    gdp: getNumericValue(countryData.economy.gdp),
+    treasury: getNumericValue(countryData.economy.treasury),
+    publicDebt: getNumericValue(countryData.economy.publicDebt),
     
-    const cleanup = subscribeToStates();
+    // ===== INDICADORES AVANÇADOS =====
+    inflation: getNumericValue(countryData.economy.inflation),
+    unemployment: getNumericValue(countryData.economy.unemployment),
+    popularity: getNumericValue(countryData.economy.popularity),
+    creditRating: countryData.economy.creditRating || 'A',
+    gdpGrowth: getNumericValue(countryData.economy.gdpGrowth),
     
-    return cleanup;
-  }, [roomName, countryName, subscribeToStates]);
+    // ===== PARÂMETROS DE POLÍTICA =====
+    interestRate: getNumericValue(countryData.economy.interestRate),
+    taxBurden: getNumericValue(countryData.economy.taxBurden),
+    publicServices: getNumericValue(countryData.economy.publicServices),
+    
+    // ===== ESTRUTURA SETORIAL =====
+    services: getNumericValue(countryData.economy.services),
+    commodities: getNumericValue(countryData.economy.commodities),
+    manufactures: getNumericValue(countryData.economy.manufactures),
+    
+    // ===== OUTPUTS SETORIAIS =====
+    servicesOutput: getNumericValue(countryData.economy.servicesOutput),
+    commoditiesOutput: getNumericValue(countryData.economy.commoditiesOutput),
+    manufacturesOutput: getNumericValue(countryData.economy.manufacturesOutput),
+    
+    // ===== NECESSIDADES E BALANÇOS =====
+    commoditiesNeeds: getNumericValue(countryData.economy.commoditiesNeeds),
+    manufacturesNeeds: getNumericValue(countryData.economy.manufacturesNeeds),
+    commoditiesBalance: getNumericValue(countryData.economy.commoditiesBalance),
+    manufacturesBalance: getNumericValue(countryData.economy.manufacturesBalance),
+    
+    // ===== ESTATÍSTICAS DE COMÉRCIO =====
+    tradeStats: countryData.economy.tradeStats || {
+      commodityImports: 0,
+      commodityExports: 0,
+      manufactureImports: 0,
+      manufactureExports: 0
+    },
+    
+    // ===== CAMPOS AVANÇADOS DE CONTROLE =====
+    _cycleCount: getNumericValue(countryData.economy._cycleCount),
+    _lastQuarterGdp: getNumericValue(countryData.economy._lastQuarterGdp),
+    
+    // ===== HISTÓRICOS EXPANDIDOS =====
+    _historicGdp: countryData.economy._historicGdp || [getNumericValue(countryData.economy.gdp)],
+    _historicInflation: countryData.economy._historicInflation || [getNumericValue(countryData.economy.inflation)],
+    _historicPopularity: countryData.economy._historicPopularity || [getNumericValue(countryData.economy.popularity)],
+    _historicUnemployment: countryData.economy._historicUnemployment || [getNumericValue(countryData.economy.unemployment)],
+    
+    // ===== COMPATIBILIDADE COM HISTÓRICOS ORIGINAIS =====
+    historicoPIB: countryData.economy.historicoPIB || [getNumericValue(countryData.economy.gdp)],
+    historicoInflacao: countryData.economy.historicoInflacao || [getNumericValue(countryData.economy.inflation)],
+    historicoPopularidade: countryData.economy.historicoPopularidade || [getNumericValue(countryData.economy.popularity)],
+    historicoDesemprego: countryData.economy.historicoDesemprego || [getNumericValue(countryData.economy.unemployment)]
+  } : null;
 
   return {
-    economicIndicators,
     countryData,
+    economicIndicators,
     lastUpdated,
     loading,
-    error,
-    formatPercent,
+    getNumericValue,
     formatCurrency,
-    
-    // ===== NOVOS MÉTODOS PARA CÁLCULOS AVANÇADOS =====
-    
-    /**
-     * Refrescar dados manualmente
-     */
-    refresh: useCallback(() => {
-      if (roomName) {
-        const socket = socketApi.getSocketInstance();
-        if (socket) {
-          socket.emit('subscribeToCountryStates', roomName);
-        }
-      }
-    }, [roomName]),
-    
-    /**
-     * Obter estatísticas de performance
-     */
-    getPerformanceStats: useCallback(() => {
-      const socket = socketApi.getSocketInstance();
-      if (socket) {
-        socket.emit('getEconomyPerformanceStats');
-      }
-    }, []),
-    
-    /**
-     * Validar cálculos econômicos
-     */
-    validateCalculations: useCallback(() => {
-      const socket = socketApi.getSocketInstance();
-      if (socket) {
-        socket.emit('validateEconomicCalculations');
-      }
-    }, []),
-    
-    /**
-     * Debug dos cálculos avançados (apenas desenvolvimento)
-     */
-    debugCalculations: useCallback(() => {
-      if (process.env.NODE_ENV === 'development') {
-        const socket = socketApi.getSocketInstance();
-        if (socket) {
-          socket.emit('debugAdvancedCalculations');
-        }
-      }
-    }, []),
+    formatPercent
   };
-}
+};
 
 /**
- * Hook específico para dívida pública com dados expandidos
+ * Hook para dados de dívida pública com sistema expandido
+ * @param {string} roomName - Nome da sala
+ * @param {string} countryName - Nome do país
+ * @returns {Object} - Dados de dívida e função de refresh
  */
-export function usePublicDebt(roomName, countryName) {
+export const usePublicDebt = (roomName, countryName) => {
   const [debtSummary, setDebtSummary] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
   const refresh = useCallback(() => {
     if (!roomName || !countryName) return;
 
     setLoading(true);
-    setError(null);
-
     const socket = socketApi.getSocketInstance();
-    if (!socket) {
-      setError('Socket not available');
-      setLoading(false);
-      return;
+    if (socket) {
+      socket.emit('getDebtSummary');
     }
+  }, [roomName, countryName]);
+
+  useEffect(() => {
+    const socket = socketApi.getSocketInstance();
+    if (!socket) return;
 
     const handleDebtSummaryResponse = (data) => {
       setDebtSummary(data);
       setLoading(false);
-      setError(null);
     };
 
-    const handleError = (errorMsg) => {
-      setError(errorMsg);
-      setLoading(false);
-    };
-
-    socket.once('debtSummaryResponse', handleDebtSummaryResponse);
-    socket.once('error', handleError);
-
-    socket.emit('getDebtSummary');
-
-    // Timeout
-    setTimeout(() => {
-      socket.off('debtSummaryResponse', handleDebtSummaryResponse);
-      socket.off('error', handleError);
-      if (loading) {
-        setError('Request timeout');
-        setLoading(false);
+    const handleDebtBondsIssued = (data) => {
+      if (data.success) {
+        // Auto-refresh após emissão bem-sucedida
+        setTimeout(() => {
+          refresh();
+        }, 500);
       }
-    }, 10000);
-  }, [roomName, countryName, loading]);
+    };
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+    socket.on('debtSummaryResponse', handleDebtSummaryResponse);
+    socket.on('debtBondsIssued', handleDebtBondsIssued);
+
+    // Buscar dados iniciais
+    if (roomName && countryName) {
+      refresh();
+    }
+
+    return () => {
+      socket.off('debtSummaryResponse', handleDebtSummaryResponse);
+      socket.off('debtBondsIssued', handleDebtBondsIssued);
+    };
+  }, [roomName, countryName, refresh]);
 
   return {
     debtSummary,
     loading,
-    error,
     refresh
   };
-}
+};
 
 /**
  * Hook para acordos comerciais
+ * @param {string} roomName - Nome da sala
+ * @returns {Object} - Acordos e função de refresh
  */
-export function useTradeAgreements(roomName) {
-  const [agreements, set
+export const useTradeAgreements = (roomName) => {
+  const [agreements, setAgreements] = useState([]);
+  const [loading, setLoading] = useState(false);
 
+  const refresh = useCallback(() => {
+    if (!roomName) return;
 
+    setLoading(true);
+    const socket = socketApi.getSocketInstance();
+    if (socket) {
+      socket.emit('getTradeAgreements');
+    }
+  }, [roomName]);
 
-    // PRECISA COMPLETAR O CÓDIGO A PARTIR DAQUI //
+  useEffect(() => {
+    const socket = socketApi.getSocketInstance();
+    if (!socket) return;
+
+    const handleTradeAgreementsList = (data) => {
+      setAgreements(data.agreements || []);
+      setLoading(false);
+    };
+
+    const handleTradeAgreementUpdated = (data) => {
+      setAgreements(data.agreements || []);
+      setLoading(false);
+    };
+
+    socket.on('tradeAgreementsList', handleTradeAgreementsList);
+    socket.on('tradeAgreementUpdated', handleTradeAgreementUpdated);
+
+    // Buscar dados iniciais
+    if (roomName) {
+      refresh();
+    }
+
+    return () => {
+      socket.off('tradeAgreementsList', handleTradeAgreementsList);
+      socket.off('tradeAgreementUpdated', handleTradeAgreementUpdated);
+    };
+  }, [roomName, refresh]);
+
+  return {
+    agreements,
+    loading,
+    refresh
+  };
+};
+
+/**
+ * Hook para estatísticas avançadas do sistema econômico
+ * @param {string} roomName - Nome da sala
+ * @param {string} countryName - Nome do país
+ * @returns {Object} - Estatísticas avançadas
+ */
+export const useAdvancedEconomyStats = (roomName, countryName) => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchStats = useCallback(() => {
+    if (!roomName || !countryName) return;
+
+    setLoading(true);
+    const socket = socketApi.getSocketInstance();
+    if (socket) {
+      socket.emit('getEconomyPerformanceStats');
+    }
+  }, [roomName, countryName]);
+
+  const validateCalculations = useCallback(() => {
+    if (!roomName || !countryName) return;
+
+    const socket = socketApi.getSocketInstance();
+    if (socket) {
+      socket.emit('validateEconomicCalculations');
+    }
+  }, [roomName, countryName]);
+
+  useEffect(() => {
+    const socket = socketApi.getSocketInstance();
+    if (!socket) return;
+
+    const handlePerformanceStats = (data) => {
+      setStats(data);
+      setLoading(false);
+    };
+
+    const handleValidationResult = (data) => {
+      console.log('[ECONOMY] Validation result:', data);
+    };
+
+    socket.on('economyPerformanceStats', handlePerformanceStats);
+    socket.on('economicValidationResult', handleValidationResult);
+
+    return () => {
+      socket.off('economyPerformanceStats', handlePerformanceStats);
+      socket.off('economicValidationResult', handleValidationResult);
+    };
+  }, []);
+
+  return {
+    stats,
+    loading,
+    fetchStats,
+    validateCalculations
+  };
+};
