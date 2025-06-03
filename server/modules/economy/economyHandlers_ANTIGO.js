@@ -1,26 +1,27 @@
 /**
- * economyHandlers.js - Handlers para economia com cálculos avançados
- * APENAS comunicação WebSocket - lógica delegada para EconomyService expandido
- * VERSÃO ATUALIZADA para integrar com os cálculos sofisticados
+ * economyHandlers.js - Handlers simplificados para economia
+ * APENAS comunicação WebSocket - lógica delegada para EconomyService
  */
 
 import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/utils/gameStateUtils.js';
 import { evaluateTradeProposal } from '../ai/aiCountryController.js';
 
 /**
- * Setup economy-related socket event handlers com cálculos avançados
+ * Setup economy-related socket event handlers
  */
 function setupEconomyHandlers(io, socket, gameState) {
-  console.log('Economy handlers initialized - delegated to Advanced EconomyService');
+  console.log('Economy handlers initialized - delegated to EconomyService');
 
   // ======================================================================
-  // PARÂMETROS ECONÔMICOS (PRESERVADO COM CÁLCULOS AVANÇADOS)
+  // PARÂMETROS ECONÔMICOS
   // ======================================================================
   
   socket.on('updateEconomicParameter', (data) => {
     const username = socket.username;
     const roomName = getCurrentRoom(socket, gameState);
     const userCountry = getUserCountry(gameState, roomName, username);
+    
+    // console.log(`[ECONOMY] Parameter update request - User: ${username}, Room: ${roomName}, Country: ${userCountry}`);
     
     if (!username || !roomName || !userCountry) {
       console.error(`[ECONOMY] Invalid request - missing data: username=${username}, roomName=${roomName}, userCountry=${userCountry}`);
@@ -30,34 +31,42 @@ function setupEconomyHandlers(io, socket, gameState) {
     
     const { parameter, value } = data;
     
+    // console.log(`[ECONOMY] Updating parameter: ${parameter} = ${value} for ${userCountry} in ${roomName}`);
+    
     // Validação básica
     if (!['interestRate', 'taxBurden', 'publicServices'].includes(parameter)) {
+      // console.error(`[ECONOMY] Invalid parameter: ${parameter}`);
       socket.emit('error', 'Invalid parameter');
       return;
     }
     
     if (typeof value !== 'number' || value < 0 || value > (parameter === 'interestRate' ? 25 : 60)) {
+      // console.error(`[ECONOMY] Invalid value: ${value} for parameter ${parameter}`);
       socket.emit('error', 'Invalid value');
       return;
     }
     
-    // Verificar se economyService existe
+    // VERIFICAR se economyService existe
     if (!global.economyService) {
+      // console.error('[ECONOMY] EconomyService not available');
       socket.emit('error', 'Economy service not available');
       return;
     }
     
-    // Verificar se economyService está inicializado
+    // VERIFICAR se economyService está inicializado
     if (!global.economyService.initialized) {
+      // console.error('[ECONOMY] EconomyService not initialized');
       socket.emit('error', 'Economy service not initialized');
       return;
     }
     
-    // Tentar atualizar o parâmetro (agora usa cálculos avançados automaticamente)
+    // Tentar atualizar o parâmetro
     try {
       const result = global.economyService.updateEconomicParameter(roomName, userCountry, parameter, value);
       
       if (result) {
+        // console.log(`[ECONOMY] Parameter updated successfully: ${parameter} = ${value} for ${userCountry}`);
+        
         socket.emit('economicParameterUpdated', {
           roomName, 
           countryName: userCountry, 
@@ -86,7 +95,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // EMISSÃO DE TÍTULOS (PRESERVADO COM SISTEMA EXPANDIDO)
+  // EMISSÃO DE TÍTULOS
   // ======================================================================
   
   socket.on('issueDebtBonds', (data) => {
@@ -101,7 +110,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     
     const { bondAmount } = data;
     
-    // Delegar para EconomyService (agora com sistema de rating avançado)
+    // Delegar para EconomyService
     const result = global.economyService.issueDebtBonds(roomName, userCountry, bondAmount);
     
     if (result.success) {
@@ -109,11 +118,8 @@ function setupEconomyHandlers(io, socket, gameState) {
       
       if (bondAmount >= 50) {
         socket.to(roomName).emit('economicNews', {
-          type: 'debtIssuance', 
-          country: userCountry, 
-          amount: bondAmount,
-          effectiveRate: result.effectiveRate,
-          message: `${userCountry} issued ${bondAmount} billion in government bonds at ${result.effectiveRate.toFixed(2)}% rate`
+          type: 'debtIssuance', country: userCountry, amount: bondAmount,
+          message: `${userCountry} issued ${bondAmount} billion in government bonds`
         });
       }
     } else {
@@ -122,7 +128,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // RESUMO DE DÍVIDAS (PRESERVADO COM DADOS EXPANDIDOS)
+  // RESUMO DE DÍVIDAS
   // ======================================================================
     
   socket.on('getDebtSummary', () => {
@@ -135,7 +141,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Verificação adicional: Garantir que o país existe no EconomyService
+    // VERIFICAÇÃO ADICIONAL: Garantir que o país existe no EconomyService
     if (!global.economyService) {
       socket.emit('error', 'Economy service not available');
       return;
@@ -162,7 +168,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       }
     }
     
-    // Prosseguir com a lógica normal (agora com dados expandidos)
+    // Prosseguir com a lógica normal
     const debtSummary = global.economyService.getDebtSummary(roomName, userCountry);
     const finalCountryState = global.economyService.getCountryState(roomName, userCountry);
     
@@ -178,14 +184,11 @@ function setupEconomyHandlers(io, socket, gameState) {
         debtToGdpRatio: ((economy.publicDebt || 0) / (economy.gdp || 100)) * 100,
         canIssueMoreDebt: ((economy.publicDebt || 0) / (economy.gdp || 100)) <= 1.2,
         debtRecords: debtSummary.contracts,
-        // Dados econômicos expandidos para o popup
+        // Dados econômicos completos para o popup
         economicData: {
           gdp: economy.gdp || 0,
           treasury: economy.treasury || 0,
-          publicDebt: economy.publicDebt || 0,
-          creditRating: economy.creditRating || 'A',
-          gdpGrowth: economy.gdpGrowth || 0,
-          cycleCount: economy._cycleCount || 0
+          publicDebt: economy.publicDebt || 0
         }
       });
     } else {
@@ -194,7 +197,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // PROPOSTAS COMERCIAIS (PRESERVADO COM CÁLCULOS AVANÇADOS)
+  // PROPOSTAS COMERCIAIS
   // ======================================================================
   
   socket.on('sendTradeProposal', (proposal) => {
@@ -253,12 +256,12 @@ function setupEconomyHandlers(io, socket, gameState) {
         socket.emit('error', 'Target player is not online');
       }
     } else {
-      // IA decision (agora considera cálculos avançados)
+      // IA decision
       const aiDecision = evaluateTradeProposal(gameState, roomName, tradeProposal);
       
       setTimeout(() => {
         if (aiDecision.accepted) {
-          // Criar acordo comercial (recalculará automaticamente com cálculos avançados)
+          // Criar acordo comercial
           global.economyService.createTradeAgreement(roomName, {
             type, product, country: targetCountry, value,
             originCountry: userCountry, originPlayer: username
@@ -279,7 +282,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
   
   // ======================================================================
-  // RESPOSTA A PROPOSTAS (PRESERVADO)
+  // RESPOSTA A PROPOSTAS
   // ======================================================================
   
   socket.on('respondToTradeProposal', (response) => {
@@ -300,7 +303,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     }
     
     if (accepted) {
-      // Criar acordo comercial (agora com recálculos avançados automáticos)
+      // Criar acordo comercial
       global.economyService.createTradeAgreement(roomName, {
         type: proposal.type,
         product: proposal.product,
@@ -337,7 +340,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // CANCELAMENTO DE ACORDOS (PRESERVADO)
+  // CANCELAMENTO DE ACORDOS
   // ======================================================================
   
   socket.on('cancelTradeAgreement', (agreementId) => {
@@ -355,7 +358,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     if (success) {
       socket.emit('tradeAgreementCancelled', agreementId);
       
-      // Broadcast acordos atualizados (recálculos avançados automáticos)
+      // Broadcast acordos atualizados
       const room = gameState.rooms.get(roomName);
       io.to(roomName).emit('tradeAgreementUpdated', {
         agreements: room.tradeAgreements || [],
@@ -367,7 +370,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
   
   // ======================================================================
-  // OBTER ACORDOS (PRESERVADO)
+  // OBTER ACORDOS
   // ======================================================================
   
   socket.on('getTradeAgreements', () => {
@@ -388,7 +391,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // SUBSCRIÇÃO A ESTADOS DE PAÍS (ESSENCIAL - PRESERVADO)
+  // SUBSCRIÇÃO A ESTADOS DE PAÍS (ESSENCIAL - NÃO PODE SER REMOVIDO)
   // ======================================================================
   
   socket.on('subscribeToCountryStates', (roomName) => {
@@ -399,9 +402,11 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
+    // console.log(`[ECONOMY] ${username} subscribed to country states for room ${roomName}`);
+    
     socket.join(`countryStates:${roomName}`);
     
-    // Enviar estados iniciais IMEDIATAMENTE (agora com dados avançados)
+    // Enviar estados iniciais IMEDIATAMENTE
     const roomStates = global.economyService.getRoomStates(roomName);
     socket.emit('countryStatesInitialized', {
       roomName,
@@ -411,151 +416,18 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
   
   socket.on('unsubscribeFromCountryStates', (roomName) => {
+    // console.log(`[ECONOMY] User unsubscribed from country states for room ${roomName}`);
     socket.leave(`countryStates:${roomName}`);
-  });
-
-  // ======================================================================
-  // NOVOS ENDPOINTS PARA CÁLCULOS AVANÇADOS
-  // ======================================================================
-
-  /**
-   * Debug dos cálculos avançados (apenas em desenvolvimento)
-   */
-  socket.on('debugAdvancedCalculations', (data) => {
-    if (process.env.NODE_ENV !== 'development') {
-      socket.emit('error', 'Debug endpoint only available in development');
-      return;
-    }
-
-    const username = socket.username;
-    const roomName = getCurrentRoom(socket, gameState);
-    const userCountry = getUserCountry(gameState, roomName, username);
-    
-    if (!username || !roomName || !userCountry) {
-      socket.emit('error', 'Invalid request');
-      return;
-    }
-
-    if (global.economyService && global.economyService.debugAdvancedCalculations) {
-      global.economyService.debugAdvancedCalculations(roomName, userCountry);
-      socket.emit('debugResponse', { 
-        message: 'Debug information logged to server console',
-        roomName,
-        countryName: userCountry
-      });
-    } else {
-      socket.emit('error', 'Debug function not available');
-    }
-  });
-
-  /**
-   * Obter estatísticas de performance dos cálculos
-   */
-  socket.on('getEconomyPerformanceStats', () => {
-    if (global.economyService && global.economyService.getPerformanceStats) {
-      const stats = global.economyService.getPerformanceStats();
-      socket.emit('economyPerformanceStats', stats);
-    } else {
-      socket.emit('error', 'Performance stats not available');
-    }
-  });
-
-  /**
-   * Validar cálculos econômicos de um país
-   */
-  socket.on('validateEconomicCalculations', () => {
-    const username = socket.username;
-    const roomName = getCurrentRoom(socket, gameState);
-    const userCountry = getUserCountry(gameState, roomName, username);
-    
-    if (!username || !roomName || !userCountry) {
-      socket.emit('error', 'Invalid request');
-      return;
-    }
-
-    if (global.economyService && global.economyService.validateAdvancedCalculations) {
-      const validation = global.economyService.validateAdvancedCalculations(roomName, userCountry);
-      socket.emit('economicValidationResult', {
-        countryName: userCountry,
-        roomName,
-        ...validation
-      });
-    } else {
-      socket.emit('error', 'Validation function not available');
-    }
-  });
-
-  /**
-   * Forçar recálculo completo (apenas para desenvolvimento/debug)
-   */
-  socket.on('forceRecalculation', () => {
-    if (process.env.NODE_ENV !== 'development') {
-      socket.emit('error', 'Force recalculation only available in development');
-      return;
-    }
-
-    const username = socket.username;
-    const roomName = getCurrentRoom(socket, gameState);
-    const userCountry = getUserCountry(gameState, roomName, username);
-    
-    if (!username || !roomName || !userCountry) {
-      socket.emit('error', 'Invalid request');
-      return;
-    }
-
-    if (global.economyService && global.economyService.performAdvancedEconomicCalculations) {
-      global.economyService.performAdvancedEconomicCalculations(roomName, userCountry);
-      socket.emit('recalculationComplete', { 
-        message: 'Advanced calculations forced for country',
-        roomName,
-        countryName: userCountry
-      });
-    } else {
-      socket.emit('error', 'Force recalculation not available');
-    }
-  });
-
-  /**
-   * Resetar indicadores irreais de emergência (desenvolvimento)
-   */
-  socket.on('emergencyResetCountry', () => {
-    if (process.env.NODE_ENV !== 'development') {
-      socket.emit('error', 'Emergency reset only available in development');
-      return;
-    }
-
-    const username = socket.username;
-    const roomName = getCurrentRoom(socket, gameState);
-    const userCountry = getUserCountry(gameState, roomName, username);
-    
-    if (!username || !roomName || !userCountry) {
-      socket.emit('error', 'Invalid request');
-      return;
-    }
-
-    if (global.economyService && global.economyService.emergencyResetCountry) {
-      const success = global.economyService.emergencyResetCountry(roomName, userCountry);
-      if (success) {
-        socket.emit('emergencyResetComplete', { 
-          message: 'Country economic indicators reset to realistic values',
-          roomName,
-          countryName: userCountry
-        });
-      } else {
-        socket.emit('error', 'Emergency reset failed');
-      }
-    } else {
-      socket.emit('error', 'Emergency reset not available');
-    }
   });
 }
 
 /**
- * Função auxiliar para obter país do usuário (PRESERVADA)
+ * Função auxiliar
  */
 function getUserCountry(gameState, roomName, username) {
   if (!roomName || !username) return null;
   
+  // Usar a mesma fonte que countryAssignment.js usa
   const room = gameState.rooms.get(roomName);
   if (!room || !room.players) return null;
   
@@ -567,6 +439,8 @@ function getUserCountry(gameState, roomName, username) {
   });
   
   const country = player?.country || null;
+  // console.log(`[ECONOMY] Getting user country: ${username} in ${roomName} = ${country}`);
+  
   return country;
 }
 
