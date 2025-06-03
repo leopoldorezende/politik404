@@ -504,23 +504,6 @@ export function resetUnrealisticIndicators(economy) {
     economy.gdpGrowth = 2.5; // 2.5% crescimento inicial
   }
   
-  // Históricos vazios
-  if (!economy.historicoPIB || economy.historicoPIB.length === 0) {
-    economy.historicoPIB = [economy.gdp || 100];
-  }
-  
-  if (!economy.historicoInflacao || economy.historicoInflacao.length === 0) {
-    economy.historicoInflacao = [economy.inflation];
-  }
-  
-  if (!economy.historicoPopularidade || economy.historicoPopularidade.length === 0) {
-    economy.historicoPopularidade = [economy.popularity];
-  }
-  
-  if (!economy.historicoDesemprego || economy.historicoDesemprego.length === 0) {
-    economy.historicoDesemprego = [economy.unemployment];
-  }
-  
   // Históricos avançados
   if (!economy._historicGdp || economy._historicGdp.length === 0) {
     economy._historicGdp = [economy.gdp || 100];

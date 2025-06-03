@@ -179,12 +179,6 @@ class EconomyService {
         _historicInflation: [initialInflation],
         _historicPopularity: [initialPopularity],
         _historicUnemployment: [initialUnemployment],
-        
-        // Mantém históricos originais para compatibilidade
-        historicoPIB: [initialGdp],
-        historicoInflacao: [initialInflation],
-        historicoPopularidade: [initialPopularity],
-        historicoDesemprego: [initialUnemployment],
       },
       
       // Outros campos preservados
@@ -489,12 +483,6 @@ class EconomyService {
     this.addToHistory(economy._historicInflation, economy.inflation);
     this.addToHistory(economy._historicPopularity, economy.popularity);
     this.addToHistory(economy._historicUnemployment, economy.unemployment);
-    
-    // Manter históricos originais para compatibilidade
-    this.addToHistory(economy.historicoPIB, economy.gdp);
-    this.addToHistory(economy.historicoInflacao, economy.inflation);
-    this.addToHistory(economy.historicoPopularidade, economy.popularity);
-    this.addToHistory(economy.historicoDesemprego, economy.unemployment);
   }
 
   addToHistory(historyArray, value) {
@@ -1012,12 +1000,6 @@ class EconomyService {
       
       // Comércio
       tradeStats: economy.tradeStats,
-      
-      // Históricos
-      historicoPIB: economy.historicoPIB,
-      historicoInflacao: economy.historicoInflacao,
-      historicoPopularidade: economy.historicoPopularidade,
-      historicoDesemprego: economy.historicoDesemprego,
       
       // Dados avançados
       _cycleCount: economy._cycleCount,
