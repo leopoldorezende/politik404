@@ -160,6 +160,12 @@ async function restoreRoomsFromRedis() {
         if (Object.keys(countriesData).length > 0) {
           economyService.initializeRoom(name, countriesData);
         }
+        
+        // Inicializar cardService para salas restauradas
+        // if (global.cardService && global.cardService.initialized) {
+        //   // O cardService ciente de que a sala existe
+        //   console.log(`[CARDS] Room ${name} restored and available for cardService`);
+        // }
       }
       console.log(`[REDIS] Salas restauradas: ${gameState.rooms.size}`);
       

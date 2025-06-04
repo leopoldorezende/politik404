@@ -1,6 +1,6 @@
 /**
- * useCards.js - Hook principal para gerenciar cards
- * Interface centralizada para consumir dados de cards
+ * useCards.js - Hook simplificado para gerenciar cards
+ * Removidas funcionalidades de filtros complexos, mantendo apenas o essencial
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -13,7 +13,6 @@ import {
   setPlayerPoints,
   setPlayerRankingLoading,
   setPlayerRanking,
-  selectFilteredPlayerCards,
   selectPlayerCardStats,
   getCardTypeLabel,
   getCardTypePoints,
@@ -30,7 +29,6 @@ export const useCards = (roomName, countryName) => {
   const dispatch = useDispatch();
   
   // Estados do Redux
-  const playerCards = useSelector(selectFilteredPlayerCards);
   const allPlayerCards = useSelector(state => state.cards.playerCards);
   const playerPoints = useSelector(state => state.cards.playerPoints);
   const playerRanking = useSelector(state => state.cards.playerRanking);
@@ -194,35 +192,9 @@ export const useCards = (roomName, countryName) => {
     return allPlayerCards.filter(card => card.status === 'active');
   }, [allPlayerCards]);
   
-  const getCancelledCards = useCallback(() => {
-    return allPlayerCards.filter(card => card.status === 'cancelled');
-  }, [allPlayerCards]);
-  
-  const getTransferredCards = useCallback(() => {
-    return allPlayerCards.filter(card => card.status === 'transferred');
-  }, [allPlayerCards]);
-  
   const getTotalPoints = useCallback(() => {
     return playerPoints.total || 0;
   }, [playerPoints.total]);
-  
-  const getPointsByType = useCallback((cardType) => {
-    return playerPoints.cardsByType[cardType] || 0;
-  }, [playerPoints.cardsByType]);
-  
-  const getRankingPosition = useCallback(() => {
-    if (!countryName || !playerRanking.length) return null;
-    
-    const position = playerRanking.findIndex(player => player.owner === countryName);
-    return position !== -1 ? position + 1 : null;
-  }, [countryName, playerRanking]);
-  
-  const isDataStale = useCallback((dataType, maxAge = 60000) => {
-    const lastUpdate = lastUpdated[dataType];
-    if (!lastUpdate) return true;
-    
-    return Date.now() - lastUpdate > maxAge;
-  }, [lastUpdated]);
   
   // ========================================================================
   // FUNÇÕES DE FORMATAÇÃO
@@ -256,7 +228,6 @@ export const useCards = (roomName, countryName) => {
   
   return {
     // Dados
-    playerCards,
     allPlayerCards,
     playerPoints,
     playerRanking: formatRankingForDisplay(playerRanking),
@@ -276,12 +247,7 @@ export const useCards = (roomName, countryName) => {
     // Funções utilitárias
     getCardsByType,
     getActiveCards,
-    getCancelledCards,
-    getTransferredCards,
     getTotalPoints,
-    getPointsByType,
-    getRankingPosition,
-    isDataStale,
     
     // Funções de formatação
     formatCardForDisplay,

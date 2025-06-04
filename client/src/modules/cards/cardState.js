@@ -44,13 +44,6 @@ const initialState = {
     playerCards: null,
     playerPoints: null,
     playerRanking: null
-  },
-  
-  // Filtros para a UI
-  filters: {
-    cardType: 'all',
-    status: 'active',
-    sortBy: 'timestamp'
   }
 };
 
@@ -169,23 +162,6 @@ export const cardState = createSlice({
     },
     
     // ========================================================================
-    // FILTROS E UI
-    // ========================================================================
-    
-    setCardFilter: (state, action) => {
-      const { filterType, value } = action.payload;
-      state.filters[filterType] = value;
-    },
-    
-    resetCardFilters: (state) => {
-      state.filters = {
-        cardType: 'all',
-        status: 'active',
-        sortBy: 'timestamp'
-      };
-    },
-    
-    // ========================================================================
     // RESET E LIMPEZA
     // ========================================================================
     
@@ -215,47 +191,10 @@ export const cardState = createSlice({
 });
 
 // ========================================================================
-// SELETORES DERIVADOS
+// SELETORES DERIVADOS SIMPLIFICADOS
 // ========================================================================
 
-// Seletor para obter cards filtrados
-export const selectFilteredPlayerCards = (state) => {
-  const { playerCards, filters } = state.cards;
-  
-  let filteredCards = [...playerCards];
-  
-  // Filtrar por tipo
-  if (filters.cardType !== 'all') {
-    filteredCards = filteredCards.filter(card => card.type === filters.cardType);
-  }
-  
-  // Filtrar por status
-  if (filters.status !== 'all') {
-    filteredCards = filteredCards.filter(card => card.status === filters.status);
-  }
-  
-  // Ordenar
-  switch (filters.sortBy) {
-    case 'timestamp':
-      filteredCards.sort((a, b) => b.timestamp - a.timestamp);
-      break;
-    case 'points':
-      filteredCards.sort((a, b) => b.points - a.points);
-      break;
-    case 'type':
-      filteredCards.sort((a, b) => a.type.localeCompare(b.type));
-      break;
-    case 'value':
-      filteredCards.sort((a, b) => (b.value || 0) - (a.value || 0));
-      break;
-    default:
-      break;
-  }
-  
-  return filteredCards;
-};
-
-// Seletor para obter estatísticas de cards
+// Seletor para obter estatísticas básicas de cards
 export const selectPlayerCardStats = (state) => {
   const { playerCards } = state.cards;
   
@@ -263,27 +202,15 @@ export const selectPlayerCardStats = (state) => {
     total: playerCards.length,
     active: 0,
     cancelled: 0,
-    transferred: 0,
-    byType: {},
     totalValue: 0,
     totalPoints: 0
   };
   
   playerCards.forEach(card => {
-    // Contar por status
     if (card.status === CARD_STATUS.ACTIVE) stats.active++;
     else if (card.status === CARD_STATUS.CANCELLED) stats.cancelled++;
-    else if (card.status === CARD_STATUS.TRANSFERRED) stats.transferred++;
     
-    // Contar por tipo (apenas ativos e transferidos)
-    if (card.status === CARD_STATUS.ACTIVE || card.status === CARD_STATUS.TRANSFERRED) {
-      if (!stats.byType[card.type]) {
-        stats.byType[card.type] = { count: 0, points: 0, value: 0 };
-      }
-      stats.byType[card.type].count++;
-      stats.byType[card.type].points += card.points;
-      stats.byType[card.type].value += card.value || 0;
-      
+    if (card.status === CARD_STATUS.ACTIVE) {
       stats.totalPoints += card.points;
       stats.totalValue += card.value || 0;
     }
@@ -316,8 +243,6 @@ export const {
   setPlayerRankingLoading,
   setPlayerRanking,
   updatePlayerInRanking,
-  setCardFilter,
-  resetCardFilters,
   resetCardState,
   resetPlayerData
 } = cardState.actions;
