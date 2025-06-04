@@ -734,7 +734,7 @@ export function issueEmergencyBonds(economy, shortfall) {
       const riskPremium = calculateEmergencyRiskPremium(economy.creditRating, currentDebtToGdp);
       const effectiveRate = baseRate + riskPremium;
       
-      console.log(`[EMERGENCY BONDS] Calculating ${limitedAmount.toFixed(2)} bi USD at ${effectiveRate.toFixed(2)}% rate (rating: ${economy.creditRating}) - AT DEBT LIMIT`);
+      // console.log(`[EMERGENCY BONDS] Calculating ${limitedAmount.toFixed(2)} bi USD at ${effectiveRate.toFixed(2)}% rate (rating: ${economy.creditRating}) - AT DEBT LIMIT`);
       
       // CORREÇÃO: Apenas retorna informações, não aplica valores
       return {
@@ -745,14 +745,14 @@ export function issueEmergencyBonds(economy, shortfall) {
         timestamp: Date.now()
       };
     } else {
-      console.warn(`[EMERGENCY BONDS] Cannot issue emergency bonds: already at 120% debt/GDP ratio (${(currentDebtToGdp * 100).toFixed(1)}%)`);
+      // console.warn(`[EMERGENCY BONDS] Cannot issue emergency bonds: already at 120% debt/GDP ratio (${(currentDebtToGdp * 100).toFixed(1)}%)`);
       return false;
     }
   }
   
   // Verificar se o rating permite emissão (rating D bloqueia emissão apenas se dívida já muito alta)
   if (economy.creditRating === 'D' && currentDebtToGdp > 1.0) {
-    console.warn(`[EMERGENCY BONDS] Cannot issue emergency bonds: credit rating is D and debt/GDP > 100%`);
+    // console.warn(`[EMERGENCY BONDS] Cannot issue emergency bonds: credit rating is D and debt/GDP > 100%`);
     return false;
   }
   
@@ -762,7 +762,7 @@ export function issueEmergencyBonds(economy, shortfall) {
   const effectiveRate = baseRate + riskPremium;
   
   const finalDebtToGdp = ((economy.publicDebt + emergencyAmount) / economy.gdp) * 100;
-  console.log(`[EMERGENCY BONDS] Calculating ${emergencyAmount.toFixed(2)} bi USD at ${effectiveRate.toFixed(2)}% rate (rating: ${economy.creditRating}) - Future Debt/GDP: ${finalDebtToGdp.toFixed(1)}%`);
+  // console.log(`[EMERGENCY BONDS] Calculating ${emergencyAmount.toFixed(2)} bi USD at ${effectiveRate.toFixed(2)}% rate (rating: ${economy.creditRating}) - Future Debt/GDP: ${finalDebtToGdp.toFixed(1)}%`);
   
   // CORREÇÃO: Apenas retorna informações, não aplica valores
   return {

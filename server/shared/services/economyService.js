@@ -382,7 +382,7 @@ class EconomyService {
             // CORREÇÃO: Notificar cliente apenas uma vez
             this.notifyEmergencyBondIssued(roomName, countryName, emergencyBondInfo);
             
-            console.log(`[EMERGENCY] Contract ${emergencyContract.id} created for ${countryName}: ${emergencyBondInfo.amount} bi USD at ${emergencyBondInfo.rate.toFixed(2)}%`);
+            // console.log(`[EMERGENCY] Contract ${emergencyContract.id} created for ${countryName}: ${emergencyBondInfo.amount} bi USD at ${emergencyBondInfo.rate.toFixed(2)}%`);
           }
         }
       }
