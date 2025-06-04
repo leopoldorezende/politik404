@@ -14,6 +14,7 @@
   │   │   ├── App.css
   │   │   ├── App.jsx  # Componente raiz
   │   │   ├── hooks
+  │   │   │   ├── useCards.js
   │   │   │   └── useEconomy.js
   │   │   ├── main.jsx  # Entry point (Vite)
   │   │   ├── modules
@@ -32,6 +33,10 @@
   │   │   │   │   ├── AuthPage.jsx  # Tela de autenticação/login
   │   │   │   │   ├── authState.js  # Estado de autenticação
   │   │   │   │   └── firebaseClient.js
+  │   │   │   ├── cards
+  │   │   │   │   ├── CardsPopup.css
+  │   │   │   │   ├── CardsPopup.jsx
+  │   │   │   │   └── cardState.js
   │   │   │   ├── chat
   │   │   │   │   ├── ChatPanel.css
   │   │   │   │   ├── ChatPanel.jsx  # Componente de chat
@@ -141,6 +146,7 @@
   │       ├── firebaseAdmin.js
   │       ├── redisClient.js  # Infraestrutura do Redis
   │       ├── services
+  │       │   ├── cardService.js
   │       │   └── economyService.js
   │       └── utils
   │           ├── economicCalculations.js

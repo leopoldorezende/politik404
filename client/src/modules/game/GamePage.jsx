@@ -362,7 +362,7 @@ const GamePage = () => {
       {/* Timer no topo da tela */}
       {currentRoom && (
         <div className="room-timer">
-          <div className="timer-content">
+          <div className="timer-content" onClick={handleOpenCardsPopup} style={{ cursor: 'pointer' }}>
             <span className={`timer-value ${timeRemaining <= roomData.duration * 0.2 ? 'timer-warning' : ''}`}>
               {formatTimeRemaining(timeRemaining)}
             </span>
@@ -471,6 +471,20 @@ const GamePage = () => {
         onClose={handleCloseDebtPopup}
         debtSummary={debtPopupData.debtSummary}
         debtRecords={debtPopupData.debtRecords}
+      />
+
+      {/* Popup de resumo de dívidas - z-index 2000 (maior que outros popups) */}
+      <DebtSummaryPopup
+        isOpen={showDebtPopup}
+        onClose={handleCloseDebtPopup}
+        debtSummary={debtPopupData.debtSummary}
+        debtRecords={debtPopupData.debtRecords}
+      />
+
+      {/* Popup de cards - z-index 1500 */}
+      <CardsPopup
+        isOpen={showCardsPopup}
+        onClose={handleCloseCardsPopup}
       />
     </div>
   );
