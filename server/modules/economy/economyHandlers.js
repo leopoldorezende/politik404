@@ -564,29 +564,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       socket.emit('error', 'Country state not found');
     }
   });
-}
 
-/**
- * Função auxiliar para obter país do usuário (PRESERVADA)
- */
-function getUserCountry(gameState, roomName, username) {
-  if (!roomName || !username) return null;
-  
-  const room = gameState.rooms.get(roomName);
-  if (!room || !room.players) return null;
-  
-  const player = room.players.find(p => {
-    if (typeof p === 'object') {
-      return p.username === username;
-    }
-    return false;
-  });
-  
-  const country = player?.country || null;
-  return country;
-}
-
-export { setupEconomyHandlers };
 
 
   // ======================================================================
@@ -739,3 +717,27 @@ export { setupEconomyHandlers };
       socket.emit('error', 'Failed to get card service stats');
     }
   });
+}
+
+/**
+ * Função auxiliar para obter país do usuário (PRESERVADA)
+ */
+function getUserCountry(gameState, roomName, username) {
+  if (!roomName || !username) return null;
+  
+  const room = gameState.rooms.get(roomName);
+  if (!room || !room.players) return null;
+  
+  const player = room.players.find(p => {
+    if (typeof p === 'object') {
+      return p.username === username;
+    }
+    return false;
+  });
+  
+  const country = player?.country || null;
+  return country;
+}
+
+export { setupEconomyHandlers };
+
