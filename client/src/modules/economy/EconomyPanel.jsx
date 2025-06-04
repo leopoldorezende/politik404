@@ -43,6 +43,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   const [isIssuingBonds, setIsIssuingBonds] = useState(false);
   const [pendingUpdates, setPendingUpdates] = useState(new Set());
   const [isBondInputFocused, setIsBondInputFocused] = useState(false);
+  const [controlsEnabled, setControlsEnabled] = useState(false);
 
   // Sincronizar parâmetros locais com dados do servidor
   React.useEffect(() => {
@@ -130,6 +131,7 @@ const applyAllParameters = useCallback(async () => {
 
   setPendingUpdates(new Set(['interestRate', 'taxBurden', 'publicServices']));
   
+  
   try {
     const socket = socketApi.getSocketInstance();
     if (!socket) {
@@ -140,13 +142,7 @@ const applyAllParameters = useCallback(async () => {
       throw new Error('Socket não conectado');
     }
     
-    // console.log('[ECONOMY] Socket status:', { 
-    //   connected: socket.connected, 
-    //   id: socket.id 
-    // });
-    
     for (const param of parameters) {
-      // console.log('[ECONOMY] Sending parameter update:', param);
       socket.emit('updateEconomicParameter', {
         parameter: param.name,
         value: param.value
@@ -157,7 +153,6 @@ const applyAllParameters = useCallback(async () => {
     setTimeout(() => {
       setPendingUpdates(prev => {
         if (prev.size > 0) {
-          // console.warn('[ECONOMY] Timeout waiting for parameter updates');
           MessageService.showWarning('Tempo limite para atualização. Tente novamente.');
           return new Set();
         }
@@ -165,8 +160,11 @@ const applyAllParameters = useCallback(async () => {
       });
     }, 10000); // 10 segundos
     
+    // NOVA AÇÃO: Desabilitar controles após aplicar
+    setControlsEnabled(false);
+    
   } catch (error) {
-    // console.error('[ECONOMY] Error in applyAllParameters:', error);
+    console.error('[ECONOMY] Error in applyAllParameters:', error);
     MessageService.showError(`Erro ao atualizar parâmetros: ${error.message}`);
     setPendingUpdates(new Set());
   }
@@ -180,7 +178,13 @@ const applyAllParameters = useCallback(async () => {
         publicServices: economicIndicators.publicServices
       });
     }
+    // Desabilitar controles após cancelar
+    setControlsEnabled(false);
   }, [economicIndicators]);
+
+  const handleEnableControls = useCallback(() => {
+    setControlsEnabled(true);
+  }, []);
 
   const handleIssueBonds = useCallback(async () => {
     const amount = parseFloat(bondAmount);
@@ -411,7 +415,7 @@ const applyAllParameters = useCallback(async () => {
                 ...prev,
                 interestRate: parseFloat(e.target.value)
               }))}
-              disabled={pendingUpdates.size > 0}
+              disabled={pendingUpdates.size > 0 || !controlsEnabled}
             />
           </div>
         </div>
@@ -429,7 +433,7 @@ const applyAllParameters = useCallback(async () => {
                 ...prev,
                 taxBurden: parseFloat(e.target.value)
               }))}
-              disabled={pendingUpdates.size > 0}
+              disabled={pendingUpdates.size > 0 || !controlsEnabled}
             />
           </div>
         </div>
@@ -447,29 +451,41 @@ const applyAllParameters = useCallback(async () => {
                 ...prev,
                 publicServices: parseFloat(e.target.value)
               }))}
-              disabled={pendingUpdates.size > 0}
+              disabled={pendingUpdates.size > 0 || !controlsEnabled}
             />
           </div>
         </div>
         
         {/* Botões para aplicar e cancelar parâmetros */}
    
-          <div className="apply-parameters">
+        <div className="apply-parameters">
+          {controlsEnabled ? (
+            // Mostrar botões Cancelar e Aplicar quando controles estão habilitados
+            <>
+              <button 
+                onClick={cancelChanges}
+                className="btn-cancel-parameters"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={applyAllParameters}
+                disabled={!hasChanges}
+                className="btn-apply-parameters"
+              >
+                {pendingUpdates.size > 0 ? 'Aplicando...' : 'Aplicar'}
+              </button>
+            </>
+          ) : (
+            // Mostrar botão Habilitar Controles quando controles estão desabilitados
             <button 
-              onClick={cancelChanges}
-              disabled={!hasChanges}
-              className="btn-cancel-parameters"
+              onClick={handleEnableControls}
+              className="btn-enable-controls"
             >
-              Cancelar
+              Habilitar Controles
             </button>
-            <button 
-              onClick={applyAllParameters}
-              disabled={!hasChanges}
-              className="btn-apply-parameters"
-            >
-              {pendingUpdates.size > 0 ? 'Aplicando...' : 'Aplicar'}
-            </button>
-          </div>
+          )}
+        </div>
       
       </div>
       

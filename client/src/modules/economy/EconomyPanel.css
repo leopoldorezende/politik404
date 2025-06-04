@@ -171,7 +171,7 @@
 .advanced-economy-panel .apply-parameters button {
   flex: 1;
   margin-top: 8px;
-  padding: 6px 12px;
+  padding: 10px 12px;
   font-size: 11px;
   border-radius: 4px;
   border: 1px solid #3498db;
@@ -581,4 +581,62 @@
 .advanced-economy-panel .indicator.game-date label {
   color: #cbd5e1;
   font-size: 0.85em;
+}
+
+/* Estilos para sliders desabilitados */
+.advanced-economy-panel .slider-container input[type="range"]:disabled {
+  background: #bdc3c7; /* Linha cinza quando desabilitado */
+  cursor: default;
+  opacity: 0.6;
+}
+
+.advanced-economy-panel .slider-container input[type="range"]:disabled::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #95a5a6; /* Bolinha cinza quando desabilitado */
+  border-radius: 50%;
+  cursor: default;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Sombra mais sutil */
+  transition: none; /* Remove transições quando desabilitado */
+}
+
+.advanced-economy-panel .slider-container input[type="range"]:disabled::-webkit-slider-thumb:hover {
+  background: #95a5a6; /* Mantém a cor cinza no hover quando desabilitado */
+}
+
+/* Para Firefox */
+.advanced-economy-panel .slider-container input[type="range"]:disabled::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #95a5a6;
+  border-radius: 50%;
+  cursor: default;
+  border: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.advanced-economy-panel .slider-container input[type="range"]:disabled::-moz-range-track {
+  background: #bdc3c7;
+  height: 2px;
+  border-radius: 2px;
+}
+
+/* Para Edge/IE */
+.advanced-economy-panel .slider-container input[type="range"]:disabled::-ms-thumb {
+  width: 16px;
+  height: 16px;
+  background: #95a5a6;
+  border-radius: 50%;
+  cursor: default;
+  border: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.advanced-economy-panel .slider-container input[type="range"]:disabled::-ms-track {
+  background: #bdc3c7;
+  height: 2px;
+  border-radius: 2px;
+  border: none;
+  color: transparent;
 }
