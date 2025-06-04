@@ -321,11 +321,10 @@ const GamePage = () => {
             <span className={`timer-value ${timeRemaining <= roomData.duration * 0.2 ? 'timer-warning' : ''}`}>
               {formatTimeRemaining(timeRemaining)}
             </span>
-          </div>
-          <div className="cards-indicator">
+            &nbsp;
             <span className="material-icons">style</span>
             <span className="cards-pts">
-              {getMyCountryPoints()} <small>pts</small>
+              {getMyCountryPoints()} 
             </span>
           </div>
         </div>
