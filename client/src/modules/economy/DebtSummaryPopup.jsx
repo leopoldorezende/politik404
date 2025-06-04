@@ -206,7 +206,7 @@ const DebtSummaryPopup = ({
                       <td className="debt-payment">{formatCurrency(debt.monthlyPayment)} bi</td>
                       <td className={`debt-installments ${isNearCompletion ? 'highlight' : ''}`}>
                         {debt.remainingInstallments}
-                        {isNearCompletion && <span className="completion-indicator">⏰</span>}
+                        {isNearCompletion && <span className="completion-indicator"> ⏰</span>}
                       </td>
                     </tr>
                   );

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Sideview from '../../ui/sideview/Sideview';
 import Sidetools from '../../ui/sidetools/Sidetools';
@@ -9,6 +9,7 @@ import { setCountriesCoordinates } from './gameState';
 import { socketApi } from '../../services/socketClient';
 import TradeProposalPopup from '../trade/TradeProposalPopup';
 import DebtSummaryPopup from '../economy/DebtSummaryPopup';
+import MessageService from '../../ui/toast/messageService';
 import './GamePage.css';
 
 
@@ -36,10 +37,12 @@ const GamePage = () => {
     debtSummary: null,
     debtRecords: null
   });
-  
-  // Atualizar o tempo a cada segundo
-  useEffect(() => {
 
+  // ✅ CORREÇÃO 1: useRef para controlar carregamento único
+  const hasLoadedData = useRef(false);
+  
+  // ✅ CORREÇÃO 2: Atualizar o tempo a cada segundo - sem mudanças
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
     }, CLIENT_UPDATE_INTERVAL);
@@ -47,7 +50,8 @@ const GamePage = () => {
     return () => clearInterval(timer);
   }, []);
   
-  const getMyCountryPoints = () => {
+  // ✅ CORREÇÃO 3: Memoizar função de pontos para evitar re-criação
+  const getMyCountryPoints = useCallback(() => {
     if (!myCountry || !tradeAgreements.length) return 0;
     
     // Contar acordos comerciais onde meu país é o originador
@@ -60,18 +64,21 @@ const GamePage = () => {
     const totalScore = myTradeAgreements;
     
     return totalScore;
-  };
+  }, [myCountry, tradeAgreements]);
 
-  // Função para formatar tempo em MM:SS
-  const formatTimeRemaining = (ms) => {
+  // ✅ CORREÇÃO 4: Memoizar função de formatação de tempo
+  const formatTimeRemaining = useCallback((ms) => {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
+  }, []);
   
-  // Buscar dados da sala atual na lista de salas para obter informações completas de tempo
-  const roomData = currentRoom ? rooms.find(room => room.name === currentRoom.name) : null;
+  // ✅ CORREÇÃO 5: Memoizar roomData para evitar recálculo constante
+  const roomData = useMemo(() => {
+    return currentRoom ? rooms.find(room => room.name === currentRoom.name) : null;
+  }, [currentRoom, rooms]);
+
   const timeRemaining = roomData?.expiresAt ? Math.max(0, roomData.expiresAt - currentTime) : 0;
   
   // Verificar se o tempo acabou e mostrar popup
@@ -81,7 +88,37 @@ const GamePage = () => {
     }
   }, [timeRemaining, roomData, showTimeupPopup]);
   
-  // Listener para propostas de comércio - CORRIGIDO para evitar duplicação de Toast
+  // ✅ CORREÇÃO 6: useEffect separado para carregamento de dados - EXECUTA APENAS UMA VEZ
+  useEffect(() => {
+    if (hasLoadedData.current) return;
+    
+    const loadAllData = async () => {
+      try {
+        await loadCountriesData();
+        
+        const coordinates = await loadCountriesCoordinates();
+        if (coordinates) {
+          dispatch(setCountriesCoordinates(coordinates));
+        }
+        
+        setDataLoaded(true);
+        hasLoadedData.current = true;
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      }
+    };
+    
+    loadAllData();
+  }, [dispatch]);
+
+  // ✅ CORREÇÃO 7: useEffect separado para atualizar lista de salas
+  useEffect(() => {
+    if (currentRoom) {
+      dispatch({ type: 'socket/getRooms' });
+    }
+  }, [currentRoom, dispatch]);
+  
+  // ✅ CORREÇÃO 8: Listener para propostas de comércio - dependências vazias para estabilidade
   useEffect(() => {
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
@@ -181,30 +218,6 @@ const GamePage = () => {
     setShowTimeupPopup(false);
   };
   
-  useEffect(() => {
-    const loadAllData = async () => {
-      try {
-        await loadCountriesData();
-        
-        const coordinates = await loadCountriesCoordinates();
-        if (coordinates) {
-          dispatch(setCountriesCoordinates(coordinates));
-        }
-        
-        setDataLoaded(true);
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-      }
-    };
-    
-    loadAllData();
-    
-    // Atualizar lista de salas quando entrar na GamePage
-    if (currentRoom) {
-      dispatch({ type: 'socket/getRooms' });
-    }
-  }, [dispatch, currentRoom]);
-  
   const handleExitRoom = () => {
     dispatch({ type: 'socket/leaveRoom' });
     dispatch({ type: 'rooms/leaveRoom' });
@@ -270,6 +283,7 @@ const GamePage = () => {
     };
   }, [sideviewActive, sidetoolsActive]);
 
+  // ✅ CORREÇÃO 9: useEffect de resize com dependências vazias para estabilidade
   useEffect(() => {
     const handleResize = () => {
       // Não feche os painéis se o chat está focado
@@ -424,6 +438,8 @@ const GamePage = () => {
       <DebtSummaryPopup
         isOpen={showDebtPopup}
         onClose={handleCloseDebtPopup}
+        debtSummary={debtPopupData.debtSummary}
+        debtRecords={debtPopupData.debtRecords}
       />
     </div>
   );

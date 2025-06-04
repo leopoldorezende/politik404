@@ -28,11 +28,35 @@ import MessageService from '../ui/toast/messageService';
 let isAuthenticated = false;
 let authenticationInProgress = false;
 
+// ✅ CORREÇÃO 1: Rate limiting para notificações duplicadas
+let lastNotificationTime = 0;
+const NOTIFICATION_COOLDOWN = 1000; // 1 segundo entre notificações similares
+
+const showNotificationWithCooldown = (type, message, duration = 4000) => {
+  const now = Date.now();
+  if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) {
+    console.log(`[NOTIFICATION] Blocked duplicate: ${message}`);
+    return;
+  }
+  
+  lastNotificationTime = now;
+  
+  if (type === 'success') {
+    MessageService.showSuccess(message, duration);
+  } else if (type === 'warning') {
+    MessageService.showWarning(message, duration);
+  } else if (type === 'error') {
+    MessageService.showError(message, duration);
+  } else {
+    MessageService.showInfo(message, duration);
+  }
+};
+
 // Configurar todos os eventos do socket - SIMPLIFICADO
 export const setupSocketEvents = (socket, socketApi) => {
   if (!socket) return;
   
-  // Remover listeners anteriores
+  // ✅ CORREÇÃO 2: Lista completa de eventos para limpeza garantida
   const eventsToClean = [
     'connect', 'disconnect', 'connect_error', 'authenticated', 'authenticationIgnored',
     'roomsList', 'roomJoined', 'roomLeft', 'roomCreated', 'roomDeleted',
@@ -41,16 +65,23 @@ export const setupSocketEvents = (socket, socketApi) => {
     'tradeProposalReceived', 'tradeProposalResponse', 'tradeProposalProcessed',
     'tradeAgreementCancelled', 'tradeAgreementsList', 'tradeAgreementUpdated',
     'debtBondsIssued', 'economicParameterUpdated', 'debtSummaryResponse',
+    'emergencyBondsIssued', 'countryStatesUpdated', 'countryStatesInitialized',
     'error', 'pong'
   ];
   
+  // ✅ Garantir limpeza completa usando removeAllListeners
   eventsToClean.forEach(eventName => {
-    socket.off(eventName);
+    socket.removeAllListeners(eventName);
   });
   
   // Reset de variáveis de controle
   isAuthenticated = false;
   authenticationInProgress = false;
+  
+  // ✅ CORREÇÃO 3: Timeouts para debounce de eventos duplicados
+  let proposalTimeout;
+  let responseTimeout;
+  let emergencyTimeout;
   
   // ======================================================================
   // EVENTOS BASE DO SOCKET
@@ -274,46 +305,52 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
   
   // ======================================================================
-  // NOVO: EVENTOS DE TÍTULOS DE EMERGÊNCIA
+  // ✅ CORREÇÃO 4: EVENTOS DE TÍTULOS DE EMERGÊNCIA com debounce
   // ======================================================================
   
   socket.on('emergencyBondsIssued', (data) => {
-    console.log('Títulos de emergência emitidos:', data);
+    // console.log('Títulos de emergência emitidos:', data);
     
-    const { amount, rate, rating, atLimit, message } = data;
-    
-    // Som de alerta (mais urgente que notificação normal)
-    if (window.Audio) {
-      try {
-        const alertSound = new Audio('/notification.mp3');
-        alertSound.volume = 0.8; // Volume alto para chamar atenção
-        alertSound.play().catch(() => {});
-      } catch (error) {
-        console.debug('Som de alerta não disponível');
+    // ✅ Debounce para evitar múltiplas notificações
+    clearTimeout(emergencyTimeout);
+    emergencyTimeout = setTimeout(() => {
+      const { amount, rate, rating, atLimit, message } = data;
+      
+      // Som de alerta (mais urgente que notificação normal)
+      if (window.Audio) {
+        try {
+          const alertSound = new Audio('/notification.mp3');
+          alertSound.volume = 0.8; // Volume alto para chamar atenção
+          alertSound.play().catch(() => {});
+        } catch (error) {
+          console.debug('Som de alerta não disponível');
+        }
       }
-    }
-    
-    // Toast de alerta com estilo diferenciado
-    if (atLimit) {
-      MessageService.showError(
-        `LIMITE DE DÍVIDA ATINGIDO! Títulos emitidos: ${amount.toFixed(1)} bi USD`,
-        8000 // 8 segundos para dar tempo de ler
-      );
-    } else {
-      MessageService.showWarning(
-        `Títulos de Emergência: ${amount.toFixed(1)} bi USD (${rate.toFixed(1)}% - ${rating})`,
-        6000 // 6 segundos
-      );
-    }
-    
-    // Log detalhado para debug
-    console.log(`[EMERGENCY BONDS] Received notification:`, {
-      amount: `${amount} bi USD`,
-      interestRate: `${rate}%`,
-      creditRating: rating,
-      atDebtLimit: atLimit,
-      timestamp: new Date().toLocaleTimeString()
-    });
+      
+      // Toast de alerta com estilo diferenciado - usando função com cooldown
+      if (atLimit) {
+        showNotificationWithCooldown(
+          'error',
+          `LIMITE DE DÍVIDA ATINGIDO! Títulos emitidos: ${amount.toFixed(1)} bi USD`,
+          8000 // 8 segundos para dar tempo de ler
+        );
+      } else {
+        showNotificationWithCooldown(
+          'warning',
+          `Títulos de Emergência: ${amount.toFixed(1)} bi USD (${rate.toFixed(1)}% - ${rating})`,
+          6000 // 6 segundos
+        );
+      }
+      
+      // Log detalhado para debug
+      console.log(`[EMERGENCY BONDS] Received notification:`, {
+        amount: `${amount} bi USD`,
+        interestRate: `${rate}%`,
+        creditRating: rating,
+        atDebtLimit: atLimit,
+        timestamp: new Date().toLocaleTimeString()
+      });
+    }, 100); // Pequeno delay para agrupar eventos
   });
 
   // ======================================================================
@@ -336,47 +373,59 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
 
   // ======================================================================
-  // EVENTOS DE COMÉRCIO SIMPLIFICADOS
+  // ✅ CORREÇÃO 5: EVENTOS DE COMÉRCIO com debounce
   // ======================================================================
   
   socket.on('tradeProposalReceived', (proposal) => {
     console.log('Proposta de comércio recebida:', proposal);
     
-    if (window.Audio) {
-      try {
-        const notificationSound = new Audio('/notification.mp3');
-        notificationSound.play().catch(() => {});
-      } catch (error) {
-        console.debug('Som de notificação não disponível');
+    // ✅ Debounce para evitar múltiplas notificações de propostas
+    clearTimeout(proposalTimeout);
+    proposalTimeout = setTimeout(() => {
+      if (window.Audio) {
+        try {
+          const notificationSound = new Audio('/notification.mp3');
+          notificationSound.play().catch(() => {});
+        } catch (error) {
+          console.debug('Som de notificação não disponível');
+        }
       }
-    }
-    
-    const { originCountry, type, product, value } = proposal;
-    const productName = product === 'commodity' ? 'commodities' : 'manufaturas';
-    const actionType = type === 'export' ? 'exportar para você' : 'importar de você';
-    
-    MessageService.showInfo(
-      `${originCountry} quer ${actionType} ${productName} (${value} bi USD)`,
-      4000
-    );
+      
+      const { originCountry, type, product, value } = proposal;
+      const productName = product === 'commodity' ? 'commodities' : 'manufaturas';
+      const actionType = type === 'export' ? 'exportar para você' : 'importar de você';
+      
+      // ✅ Usar função com cooldown para evitar toasts duplicados
+      showNotificationWithCooldown(
+        'info',
+        `${originCountry} quer ${actionType} ${productName} (${value} bi USD)`,
+        4000
+      );
+    }, 100); // Pequeno delay para agrupar eventos
   });
   
   socket.on('tradeProposalResponse', (response) => {
     console.log('Resposta à proposta de comércio recebida:', response);
     
-    const { accepted, targetCountry } = response;
-    
-    if (accepted) {
-      MessageService.showSuccess(
-        `${targetCountry} aceitou sua proposta comercial!`,
-        4000
-      );
-    } else {
-      MessageService.showWarning(
-        `${targetCountry} recusou sua proposta comercial.`,
-        4000
-      );
-    }
+    // ✅ Debounce para evitar múltiplas notificações de resposta
+    clearTimeout(responseTimeout);
+    responseTimeout = setTimeout(() => {
+      const { accepted, targetCountry } = response;
+      
+      if (accepted) {
+        showNotificationWithCooldown(
+          'success',
+          `${targetCountry} aceitou sua proposta comercial!`,
+          4000
+        );
+      } else {
+        showNotificationWithCooldown(
+          'warning',
+          `${targetCountry} recusou sua proposta comercial.`,
+          4000
+        );
+      }
+    }, 100);
   });
 
   socket.on('tradeProposalProcessed', (response) => {
@@ -458,26 +507,15 @@ export const setupSocketEvents = (socket, socketApi) => {
     }
   });
 
-  // ===== ATUALIZAÇÃO DE EMISSÃO DE TÍTULOS
-  socket.on('debtContractsUpdated', (data) => {
-    console.log('Contratos de dívida atualizados:', data);
-    
-    const { contractsCompleted, activeContracts, totalRemainingDebt } = data;
-    
-    // Mostrar toast informativo sobre contratos quitados
-    if (contractsCompleted > 0) {
-      MessageService.showSuccess(
-        `${contractsCompleted} contrato${contractsCompleted > 1 ? 's' : ''} de dívida quitado${contractsCompleted > 1 ? 's' : ''}!`,
-        4000
-      );
-    }
-    
-    // Log detalhado para debug
-    console.log(`[DEBT] Contratos atualizados:`, {
-      completed: contractsCompleted,
-      active: activeContracts,
-      remainingDebt: `${totalRemainingDebt.toFixed(2)} bi USD`,
-      timestamp: new Date(data.timestamp).toLocaleTimeString()
-    });
-  });
+  // ======================================================================
+  // ✅ CORREÇÃO 6: Cleanup function para limpar timeouts
+  // ======================================================================
+  const cleanup = () => {
+    clearTimeout(proposalTimeout);
+    clearTimeout(responseTimeout);
+    clearTimeout(emergencyTimeout);
+  };
+
+  // ✅ Retornar função de cleanup (mesmo que não seja usada atualmente)
+  return cleanup;
 };
