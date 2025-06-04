@@ -21,7 +21,8 @@ const GamePage = () => {
   const rooms = useSelector(state => state.rooms.rooms);
   const players = useSelector(state => state.game.players);
   const countriesData = useSelector(state => state.game.countriesData);
-  
+  const tradeAgreements = useSelector(state => state.trade?.tradeAgreements || []);
+
   const [sideviewActive, setSideviewActive] = useState(true);
   const [sidetoolsActive, setSidetoolsActive] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -46,6 +47,21 @@ const GamePage = () => {
     return () => clearInterval(timer);
   }, []);
   
+  const getMyCountryPoints = () => {
+    if (!myCountry || !tradeAgreements.length) return 0;
+    
+    // Contar acordos comerciais onde meu país é o originador
+    const myTradeAgreements = tradeAgreements.filter(agreement => 
+      agreement.originCountry === myCountry
+    ).length;
+    
+    // Por enquanto, apenas acordos comerciais (como no RankingPanel)
+    // No futuro: alianças militares * 2
+    const totalScore = myTradeAgreements;
+    
+    return totalScore;
+  };
+
   // Função para formatar tempo em MM:SS
   const formatTimeRemaining = (ms) => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -309,7 +325,7 @@ const GamePage = () => {
           <div className="cards-indicator">
             <span className="material-icons">style</span>
             <span className="cards-pts">
-              12 <small>pts</small>
+              {getMyCountryPoints()} <small>pts</small>
             </span>
           </div>
         </div>
