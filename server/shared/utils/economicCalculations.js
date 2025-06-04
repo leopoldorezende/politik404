@@ -439,11 +439,20 @@ export function processDeptPayments(economy, debtContracts, cycleFactor = 1) {
       totalPrincipal += principalPayment;
       totalPayment += fractionalPayment;
       
-      // Atualizar contrato gradualmente
+      // ===== CORREÇÃO: Atualizar contrato gradualmente =====
       contract.remainingValue -= principalPayment;
-      if (contract.remainingValue < 0.01) {
+      
+      // ===== CRÍTICO: Decrementar parcelas apenas em ciclos mensais completos =====
+      if (cycleFactor >= 1.0) { // Ciclo mensal completo
+        contract.remainingInstallments -= 1;
+        // console.log(`[DEBT] Contrato ${contract.id}: Parcela paga. Restantes: ${contract.remainingInstallments}`);
+      }
+      
+      // ===== CORREÇÃO: Finalizar contrato quando quitado =====
+      if (contract.remainingValue <= 0.01 || contract.remainingInstallments <= 0) {
         contract.remainingValue = 0;
         contract.remainingInstallments = 0;
+        // console.log(`[DEBT] Contrato ${contract.id}: QUITADO!`);
       }
     }
   });

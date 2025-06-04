@@ -424,8 +424,6 @@ const GamePage = () => {
       <DebtSummaryPopup
         isOpen={showDebtPopup}
         onClose={handleCloseDebtPopup}
-        debtSummary={debtPopupData.debtSummary}
-        debtRecords={debtPopupData.debtRecords}
       />
     </div>
   );

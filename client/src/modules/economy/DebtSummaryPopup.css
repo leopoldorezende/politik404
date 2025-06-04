@@ -379,3 +379,23 @@
   margin-bottom: 16px;
   display: block;
 }
+
+.debt-update-indicator {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #007bff;
+}
+
+.debt-update-indicator small {
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+.contracts-count {
+  font-weight: 500;
+  color: #495057;
+}
+

@@ -457,4 +457,27 @@ export const setupSocketEvents = (socket, socketApi) => {
       });
     }
   });
+
+  // ===== ATUALIZAÇÃO DE EMISSÃO DE TÍTULOS
+  socket.on('debtContractsUpdated', (data) => {
+    console.log('Contratos de dívida atualizados:', data);
+    
+    const { contractsCompleted, activeContracts, totalRemainingDebt } = data;
+    
+    // Mostrar toast informativo sobre contratos quitados
+    if (contractsCompleted > 0) {
+      MessageService.showSuccess(
+        `${contractsCompleted} contrato${contractsCompleted > 1 ? 's' : ''} de dívida quitado${contractsCompleted > 1 ? 's' : ''}!`,
+        4000
+      );
+    }
+    
+    // Log detalhado para debug
+    console.log(`[DEBT] Contratos atualizados:`, {
+      completed: contractsCompleted,
+      active: activeContracts,
+      remainingDebt: `${totalRemainingDebt.toFixed(2)} bi USD`,
+      timestamp: new Date(data.timestamp).toLocaleTimeString()
+    });
+  });
 };

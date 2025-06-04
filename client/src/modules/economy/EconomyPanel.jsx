@@ -193,21 +193,11 @@ const applyAllParameters = useCallback(async () => {
   }, [bondAmount]);
 
   const handleOpenDebtPopup = useCallback(() => {
-    if (debtSummary && onOpenDebtPopup) {
-      // Usar dados do debtSummary que já contém economicData
-      const economicData = debtSummary.economicData || {
-        gdp: economicIndicators?.gdp || 0,
-        treasury: economicIndicators?.treasury || 0,
-        publicDebt: economicIndicators?.publicDebt || 0
-      };
-      
-      onOpenDebtPopup(debtSummary, debtSummary.debtRecords || [], economicData);
-    } else {
-      MessageService.showWarning('Aguardando dados de dívida...');
-      // Tentar buscar dados novamente
-      refreshDebt();
+    // O popup agora usa hook próprio, não precisa passar dados
+    if (onOpenDebtPopup) {
+      onOpenDebtPopup(); // Chamar sem parâmetros
     }
-  }, [debtSummary, onOpenDebtPopup, economicIndicators, refreshDebt]);
+  }, [onOpenDebtPopup]);
 
   // ======================================================================
   // HANDLERS DE EVENTOS DO SERVIDOR

@@ -310,7 +310,7 @@ class EconomyService {
       economy.gdpGrowth = ((economy.gdp - economy._lastQuarterGdp) / economy._lastQuarterGdp) * 100;
       economy._lastQuarterGdp = economy.gdp;
       
-      console.log(`[GROWTH] ${countryName}: GDP Growth updated from ${oldGdpGrowth.toFixed(2)}% to ${economy.gdpGrowth.toFixed(2)}% (cycle ${economy._cycleCount})`);
+      // console.log(`[GROWTH] ${countryName}: GDP Growth updated from ${oldGdpGrowth.toFixed(2)}% to ${economy.gdpGrowth.toFixed(2)}% (cycle ${economy._cycleCount})`);
     }
     
     // 5. Aplicar cálculos básicos DELEGADOS (aplicação direta)
@@ -400,15 +400,56 @@ class EconomyService {
       const debtContracts = this.debtContracts.get(countryKey) || [];
       
       if (debtContracts.length > 0) {
-        // USAR A FUNÇÃO IMPORTADA do economicCalculations.js
-        processDeptPayments(economy, debtContracts, 1); // Fator 1 para pagamento mensal completo
+        // Capturar estado antes dos pagamentos
+        const contractsBeforePayment = [...debtContracts]; // Cópia para comparação
+        const contractsCountBefore = debtContracts.length;
         
-        // Filtrar contratos pagos
+        // console.log(`[DEBT] ${countryName}: Processando ${contractsCountBefore} contratos no ciclo ${economy._cycleCount}`);
+        
+        // Log detalhado antes do pagamento
+        debtContracts.forEach((contract, index) => {
+          // console.log(`[DEBT] Contrato ${contract.id} antes: Valor=${contract.remainingValue.toFixed(2)}, Parcelas=${contract.remainingInstallments}`);
+        });
+        
+        // ===== USAR PROCESSAMENTO MENSAL COMPLETO (cycleFactor = 1) =====
+        const totalPayment = processDeptPayments(economy, debtContracts, 1.0); // GARANTIR cycleFactor = 1
+        
+        // Log detalhado após o pagamento
+        // debtContracts.forEach((contract, index) => {
+        //   console.log(`[DEBT] Contrato ${contract.id} depois: Valor=${contract.remainingValue.toFixed(2)}, Parcelas=${contract.remainingInstallments}`);
+        // });
+        
+        // Filtrar contratos ativos (remainingInstallments > 0)
         const activeContracts = debtContracts.filter(contract => contract.remainingInstallments > 0);
+        const contractsCountAfter = activeContracts.length;
+        const contractsCompleted = contractsCountBefore - contractsCountAfter;
+        
+        // ===== ATUALIZAR ARRAY DE CONTRATOS =====
         this.debtContracts.set(countryKey, activeContracts);
+        
+        // Log do resultado
+        // console.log(`[DEBT] ${countryName}: Pagamento total=${totalPayment.toFixed(2)}, Contratos quitados=${contractsCompleted}, Ativos restantes=${contractsCountAfter}`);
+        
+        // ===== NOTIFICAÇÃO DETALHADA =====
+        if (totalPayment > 0 || contractsCompleted > 0) {
+          this.notifyDebtContractsUpdated(roomName, countryName, {
+            contractsCompleted,
+            activeContracts: contractsCountAfter,
+            totalRemainingDebt: activeContracts.reduce((sum, contract) => sum + contract.remainingValue, 0),
+            totalPayment,
+            cycle: economy._cycleCount,
+            // ===== NOVO: Incluir detalhes dos contratos atualizados =====
+            contractDetails: activeContracts.map(contract => ({
+              id: contract.id,
+              remainingValue: contract.remainingValue,
+              remainingInstallments: contract.remainingInstallments,
+              monthlyPayment: contract.monthlyPayment
+            }))
+          });
+        }
       }
     }
-    
+      
     // 9. Processamento mensal para variações setoriais - COMO NO economy-game.js
     if (economy._cycleCount % SYNC_CONFIG.MONTHLY_CYCLE === 0) {
       // USAR A FUNÇÃO IMPORTADA do economicCalculations.js
@@ -425,6 +466,46 @@ class EconomyService {
     // Atualizar estado
     this.setCountryState(roomName, countryName, countryState);
   }
+
+
+/**
+ * NOVA FUNÇÃO: Notifica cliente sobre atualização de contratos de dívida
+ * @param {string} roomName - Nome da sala
+ * @param {string} countryName - Nome do país
+ * @param {Object} updateInfo - Informações da atualização
+ */
+notifyDebtContractsUpdated(roomName, countryName, updateInfo) {
+  if (!global.io) return;
+  
+  // Encontrar o jogador que controla este país
+  const gameState = global.gameState;
+  const room = gameState?.rooms?.get(roomName);
+  
+  if (!room || !room.players) return;
+  
+  const player = room.players.find(p => 
+    typeof p === 'object' && p.country === countryName && p.isOnline
+  );
+  
+  if (!player) return;
+  
+  // Encontrar o socket do jogador
+  const socketId = gameState.usernameToSocketId?.get(player.username);
+  const socket = socketId ? global.io.sockets.sockets.get(socketId) : null;
+  
+  if (socket && socket.connected) {
+    // Enviar notificação de atualização de contratos
+    socket.emit('debtContractsUpdated', {
+      roomName,
+      countryName,
+      contractsCompleted: updateInfo.contractsCompleted,
+      activeContracts: updateInfo.activeContracts,
+      totalRemainingDebt: updateInfo.totalRemainingDebt,
+      timestamp: Date.now()
+    });
+  }
+}
+
 
 
 /**
@@ -722,19 +803,28 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
            (Math.pow(1 + monthlyRate, months) - 1);
   }
 
-  getDebtSummary(roomName, countryName) {
+ getDebtSummary(roomName, countryName) {
     const countryKey = `${countryName}:${roomName}`;
     const contracts = this.debtContracts.get(countryKey) || [];
     const countryState = this.getCountryState(roomName, countryName);
     const economy = countryState?.economy || {};
     
-    if (contracts.length === 0) {
+    // ===== FILTRAR APENAS CONTRATOS ATIVOS =====
+    const activeContracts = contracts.filter(contract => 
+      contract.remainingInstallments > 0 && contract.remainingValue > 0.01
+    );
+    
+    // ===== LOG PARA DEBUG =====
+    // console.log(`[DEBT SUMMARY] ${countryName}: ${activeContracts.length} contratos ativos de ${contracts.length} totais`);
+    
+    if (activeContracts.length === 0) {
       return {
         totalMonthlyPayment: 0,
         principalRemaining: 0,
         totalFuturePayments: 0,
         numberOfContracts: 0,
         contracts: [],
+        debtRecords: [], // ===== GARANTIR AMBOS OS CAMPOS =====
         economicData: {
           gdp: economy.gdp || 0,
           treasury: economy.treasury || 0,
@@ -743,18 +833,31 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
       };
     }
     
-    const totalMonthlyPayment = contracts.reduce((sum, contract) => sum + contract.monthlyPayment, 0);
-    const principalRemaining = contracts.reduce((sum, contract) => sum + contract.remainingValue, 0);
-    const totalFuturePayments = contracts.reduce((sum, contract) => 
+    const totalMonthlyPayment = activeContracts.reduce((sum, contract) => sum + contract.monthlyPayment, 0);
+    const principalRemaining = activeContracts.reduce((sum, contract) => sum + contract.remainingValue, 0);
+    const totalFuturePayments = activeContracts.reduce((sum, contract) => 
       sum + (contract.monthlyPayment * contract.remainingInstallments), 0
     );
     
+    // ===== GARANTIR DADOS COMPLETOS E ATUALIZADOS =====
+    const detailedContracts = activeContracts.map(contract => ({
+      id: contract.id,
+      originalValue: contract.originalValue,
+      remainingValue: Number(contract.remainingValue.toFixed(2)), // Arredondar para evitar imprecisões
+      interestRate: contract.interestRate,
+      monthlyPayment: Number(contract.monthlyPayment.toFixed(2)),
+      remainingInstallments: Math.max(0, contract.remainingInstallments), // ===== GARANTIR QUE NÃO SEJA NEGATIVO =====
+      issueDate: contract.issueDate,
+      emergencyBond: contract.emergencyBond || false
+    }));
+    
     return {
-      totalMonthlyPayment,
-      principalRemaining,
-      totalFuturePayments,
-      numberOfContracts: contracts.length,
-      contracts,
+      totalMonthlyPayment: Number(totalMonthlyPayment.toFixed(2)),
+      principalRemaining: Number(principalRemaining.toFixed(2)),
+      totalFuturePayments: Number(totalFuturePayments.toFixed(2)),
+      numberOfContracts: activeContracts.length,
+      contracts: detailedContracts,
+      debtRecords: detailedContracts, // ===== DUPLICAR PARA COMPATIBILIDADE =====
       economicData: {
         gdp: economy.gdp || 0,
         treasury: economy.treasury || 0,

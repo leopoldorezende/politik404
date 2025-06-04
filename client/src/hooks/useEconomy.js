@@ -30,12 +30,12 @@ export const useEconomy = (roomName, countryName) => {
   // Handler para atualizações periódicas
   const handleCountryStatesUpdated = useCallback((data) => {
     if (data.roomName === roomName && data.states && data.states[countryName]) {
-      console.log(`[CLIENT] Recebendo atualização para ${countryName}:`, {
-        gdp: data.states[countryName].economy.gdp,
-        inflation: (data.states[countryName].economy.inflation * 100).toFixed(3) + '%',
-        cycles: data.states[countryName].economy._cycleCount,
-        timestamp: new Date(data.timestamp).toLocaleTimeString()
-      });
+      // console.log(`[CLIENT] Recebendo atualização para ${countryName}:`, {
+      //   gdp: data.states[countryName].economy.gdp,
+      //   inflation: (data.states[countryName].economy.inflation * 100).toFixed(3) + '%',
+      //   cycles: data.states[countryName].economy._cycleCount,
+      //   timestamp: new Date(data.timestamp).toLocaleTimeString()
+      // });
       
       setCountryData(data.states[countryName]);
       setLastUpdated(data.timestamp);
@@ -173,6 +173,7 @@ export const usePublicDebt = (roomName, countryName) => {
     }
   }, [roomName, countryName]);
 
+
   useEffect(() => {
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
@@ -198,10 +199,22 @@ export const usePublicDebt = (roomName, countryName) => {
       }, 500);
     };
 
+    // ===== NOVA FUNCIONALIDADE: LISTENER PARA ATUALIZAÇÕES DE CONTRATOS =====
+    const handleDebtContractsUpdated = (data) => {
+      if (data.roomName === roomName && data.countryName === countryName) {
+        console.log(`[DEBT] Contratos atualizados para ${countryName}: ${data.contractsCompleted} quitados, ${data.activeContracts} ativos`);
+        
+        // Auto-refresh para obter dados atualizados
+        setTimeout(() => {
+          refresh();
+        }, 200);
+      }
+    };
 
     socket.on('debtSummaryResponse', handleDebtSummaryResponse);
     socket.on('debtBondsIssued', handleDebtBondsIssued);
     socket.on('emergencyBondsIssued', handleEmergencyBondsIssued);
+    socket.on('debtContractsUpdated', handleDebtContractsUpdated); // NOVO LISTENER
 
     // Buscar dados iniciais
     if (roomName && countryName) {
@@ -211,9 +224,12 @@ export const usePublicDebt = (roomName, countryName) => {
     return () => {
       socket.off('debtSummaryResponse', handleDebtSummaryResponse);
       socket.off('debtBondsIssued', handleDebtBondsIssued);
+      socket.off('emergencyBondsIssued', handleEmergencyBondsIssued);
+      socket.off('debtContractsUpdated', handleDebtContractsUpdated); // LIMPAR NOVO LISTENER
     };
   }, [roomName, countryName, refresh]);
 
+  
   return {
     debtSummary,
     loading,
