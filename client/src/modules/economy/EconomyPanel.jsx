@@ -42,6 +42,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   const [bondAmount, setBondAmount] = useState('');
   const [isIssuingBonds, setIsIssuingBonds] = useState(false);
   const [pendingUpdates, setPendingUpdates] = useState(new Set());
+  const [isBondInputFocused, setIsBondInputFocused] = useState(false);
 
   // Sincronizar parâmetros locais com dados do servidor
   React.useEffect(() => {
@@ -65,7 +66,7 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
   }, [economicIndicators?.interestRate, economicIndicators?.taxBurden, economicIndicators?.publicServices]);
 
 
-   // Função para calcular a data do jogo baseada nos ciclos
+  // Função para calcular a data do jogo baseada nos ciclos
   const calculateGameDate = () => {
     if (!economicIndicators?._cycleCount) {
       return "Janeiro 2025";
@@ -86,6 +87,18 @@ const EconomyPanel = ({ onOpenDebtPopup }) => {
     return `${months[startDate.getMonth()]} ${startDate.getFullYear()}`;
   };
   
+  // Handlers para foco do input de títulos
+  const handleBondInputFocus = () => {
+    setIsBondInputFocused(true);
+    document.body.classList.add('bond-input-focused');
+  };
+
+  const handleBondInputBlur = () => {
+    setIsBondInputFocused(false);
+    document.body.classList.remove('bond-input-focused');
+  };
+
+
   // ======================================================================
   // HANDLERS SIMPLIFICADOS
   // ======================================================================
@@ -473,6 +486,8 @@ const applyAllParameters = useCallback(async () => {
             step="0.1"
             value={bondAmount}
             onChange={(e) => setBondAmount(e.target.value)}
+            onFocus={handleBondInputFocus}
+            onBlur={handleBondInputBlur}
             disabled={isIssuingBonds}
           />
           <button 

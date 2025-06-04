@@ -38,10 +38,10 @@ const GamePage = () => {
     debtRecords: null
   });
 
-  // ✅ CORREÇÃO 1: useRef para controlar carregamento único
+  // useRef para controlar carregamento único
   const hasLoadedData = useRef(false);
   
-  // ✅ CORREÇÃO 2: Atualizar o tempo a cada segundo - sem mudanças
+  // Atualizar o tempo a cada segundo - sem mudanças
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
@@ -50,7 +50,7 @@ const GamePage = () => {
     return () => clearInterval(timer);
   }, []);
   
-  // ✅ CORREÇÃO 3: Memoizar função de pontos para evitar re-criação
+  // Memoizar função de pontos para evitar re-criação
   const getMyCountryPoints = useCallback(() => {
     if (!myCountry || !tradeAgreements.length) return 0;
     
@@ -66,7 +66,7 @@ const GamePage = () => {
     return totalScore;
   }, [myCountry, tradeAgreements]);
 
-  // ✅ CORREÇÃO 4: Memoizar função de formatação de tempo
+  // Memoizar função de formatação de tempo
   const formatTimeRemaining = useCallback((ms) => {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -74,7 +74,7 @@ const GamePage = () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
   
-  // ✅ CORREÇÃO 5: Memoizar roomData para evitar recálculo constante
+  // Memoizar roomData para evitar recálculo constante
   const roomData = useMemo(() => {
     return currentRoom ? rooms.find(room => room.name === currentRoom.name) : null;
   }, [currentRoom, rooms]);
@@ -111,14 +111,14 @@ const GamePage = () => {
     loadAllData();
   }, [dispatch]);
 
-  // ✅ CORREÇÃO 7: useEffect separado para atualizar lista de salas
+  // useEffect separado para atualizar lista de salas
   useEffect(() => {
     if (currentRoom) {
       dispatch({ type: 'socket/getRooms' });
     }
   }, [currentRoom, dispatch]);
   
-  // ✅ CORREÇÃO 8: Listener para propostas de comércio - dependências vazias para estabilidade
+  // Listener para propostas de comércio - dependências vazias para estabilidade
   useEffect(() => {
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
@@ -283,11 +283,15 @@ const GamePage = () => {
     };
   }, [sideviewActive, sidetoolsActive]);
 
-  // ✅ CORREÇÃO 9: useEffect de resize com dependências vazias para estabilidade
+  // useEffect de resize com dependências vazias para estabilidade
   useEffect(() => {
     const handleResize = () => {
       // Não feche os painéis se o chat está focado
       if (document.body.classList.contains('chat-input-focused')) {
+        return;
+      }
+      
+      if (document.body.classList.contains('bond-input-focused')) {
         return;
       }
       
