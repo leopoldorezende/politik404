@@ -184,27 +184,49 @@
 }
 
 /* Timer styles */
+/* Atualização para o timer com cards */
 .room-timer {
   position: fixed;
   top: 16px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 500;
+  z-index: 100;
+  display: flex;
+  gap: 8px;
+}
+
+.timer-content, .cards-indicator {
+  display: flex;
+  gap: 4px;
+  align-items: center;
   background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  padding: 8px 20px;
-  border-radius: 20px;
+  padding: 8px 16px;
+  border-radius: 24px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .timer-content {
-  display: flex;
-  align-items: center;
   gap: 8px;
   font-size: 16px;
   font-weight: 500;
 }
+
+.cards-indicator {
+  justify-content: center;
+  height: 48px;
+}
+
+.cards-indicator .material-icons {
+  color: #fff;
+  font-size: 24px;
+}
+
+.cards-pts {
+  font-weight: bold;
+  font-size: 18px;
+}
+
 
 .timer-label {
   color: #ccc;
@@ -262,7 +284,7 @@
 #btn-open-sideview {
   position: fixed;
   z-index: 400;
-  background: #333;
+  background: rgba(0, 0, 0, 0.8);
   color: #fff;
   border: none;
   padding: 7px 8px 4px;
@@ -270,9 +292,9 @@
   font-size: 20px;
   box-sizing: border-box;
   display: block; /* Sempre visível */
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
   transition: background-color 0.3s; /* Apenas transição de cor */
 }
 

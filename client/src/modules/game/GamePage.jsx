@@ -306,6 +306,12 @@ const GamePage = () => {
               {formatTimeRemaining(timeRemaining)}
             </span>
           </div>
+          <div className="cards-indicator">
+            <span className="material-icons">style</span>
+            <span className="cards-pts">
+              12 <small>pts</small>
+            </span>
+          </div>
         </div>
       )}
       
