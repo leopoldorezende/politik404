@@ -431,24 +431,19 @@ export function processDeptPayments(economy, debtContracts, cycleFactor = 1) {
   debtContracts.forEach(contract => {
     if (contract.remainingInstallments > 0) {
       const fractionalPayment = contract.monthlyPayment * cycleFactor;
-      const monthlyRate = contract.interestRate / 100 / 12;
-      const interestPayment = contract.remainingValue * monthlyRate * cycleFactor;
-      const principalPayment = fractionalPayment - interestPayment;
       
-      totalInterest += interestPayment;
-      totalPrincipal += principalPayment;
       totalPayment += fractionalPayment;
       
-      // ===== CORREÇÃO: Atualizar contrato gradualmente =====
-      contract.remainingValue -= principalPayment;
+      // ===== CORREÇÃO: Desconta pagamento total do saldo devedor =====
+      contract.remainingValue -= fractionalPayment;
       
-      // ===== CRÍTICO: Decrementar parcelas apenas em ciclos mensais completos =====
+      // ===== Decrementar parcelas apenas em ciclos mensais completos =====
       if (cycleFactor >= 1.0) { // Ciclo mensal completo
         contract.remainingInstallments -= 1;
         // console.log(`[DEBT] Contrato ${contract.id}: Parcela paga. Restantes: ${contract.remainingInstallments}`);
       }
       
-      // ===== CORREÇÃO: Finalizar contrato quando quitado =====
+      // ===== Finalizar contrato quando quitado =====
       if (contract.remainingValue <= 0.01 || contract.remainingInstallments <= 0) {
         contract.remainingValue = 0;
         contract.remainingInstallments = 0;

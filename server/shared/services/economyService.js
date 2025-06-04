@@ -517,11 +517,15 @@ notifyDebtContractsUpdated(roomName, countryName, updateInfo) {
  * @returns {Object} - Contrato criado
  */
 createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
+    
   // Criar contrato emergencial
+  const monthlyRate = effectiveRate / 100 / 12;
+  const totalDebtWithInterest = bondAmount * Math.pow(1 + monthlyRate, 120);
+
   const contract = {
     id: this.nextDebtId++,
     originalValue: bondAmount,
-    remainingValue: bondAmount,
+    remainingValue: totalDebtWithInterest, // ← CORREÇÃO: Valor total com juros compostos
     interestRate: effectiveRate,
     baseRate: 0, // Emergencial não tem taxa base
     riskPremium: effectiveRate, // Todo o valor é prêmio de risco
@@ -530,7 +534,7 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
     issueDate: new Date(),
     emergencyBond: true // MARCADOR DE EMERGÊNCIA
   };
-  
+    
   // Armazenar contrato
   const countryKey = `${countryName}:${roomName}`;
   const contracts = this.debtContracts.get(countryKey) || [];
@@ -717,10 +721,13 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
     const effectiveRate = economy.interestRate + riskPremium;
     
     // Criar contrato expandido
+    const monthlyRate = effectiveRate / 100 / 12;
+    const totalDebtWithInterest = bondAmount * Math.pow(1 + monthlyRate, 120);
+
     const contract = {
       id: this.nextDebtId++,
       originalValue: bondAmount,
-      remainingValue: bondAmount,
+      remainingValue: totalDebtWithInterest, // ← CORREÇÃO: Valor total com juros compostos
       interestRate: effectiveRate,
       baseRate: economy.interestRate,
       riskPremium: riskPremium,
@@ -768,14 +775,20 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
       const rateAdjustment = index === 0 ? -1 : index === 3 ? 0.5 : 0;
       const effectiveRate = Math.max(3, economy.interestRate + rateAdjustment);
       
+      // Calcular valor total com juros e simular pagamentos já feitos
+      const monthlyRate = effectiveRate / 100 / 12;
+      const totalDebtWithInterest = bondValue * Math.pow(1 + monthlyRate, 120);
+      const monthlyPayment = this.calculateMonthlyPayment(bondValue, effectiveRate, 120);
+      const alreadyPaid = monthlyPayment * age; // Pagamentos já realizados
+      
       const contract = {
         id: this.nextDebtId++,
         originalValue: bondValue,
-        remainingValue: bondValue * (1 - age * 0.008), // Simulação de pagamentos anteriores
+        remainingValue: totalDebtWithInterest - alreadyPaid, // ← CORREÇÃO: Valor com juros menos pagamentos
         interestRate: effectiveRate,
         baseRate: economy.interestRate,
         riskPremium: rateAdjustment,
-        monthlyPayment: this.calculateMonthlyPayment(bondValue, effectiveRate, 120),
+        monthlyPayment: monthlyPayment,
         remainingInstallments: 120 - age,
         issueDate: new Date(Date.now() - (age * 30 * 24 * 60 * 60 * 1000)),
         emergencyBond: false
