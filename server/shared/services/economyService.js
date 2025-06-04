@@ -344,18 +344,48 @@ class EconomyService {
     
     // ===== NOVA CORREÇÃO: VERIFICAR TESOURO A CADA CICLO =====
     if (economy.treasury <= 0) {
-      const shortfall = Math.abs(economy.treasury);
-      economy.treasury = 0;
-      
-      // Emitir títulos de emergência (20 bi fixo)
-      const issued = issueEmergencyBonds(economy, shortfall);
-      
-      // Se emitiu títulos, enviar notificação ao cliente
-      if (issued && economy._emergencyBondIssued) {
-        this.notifyEmergencyBondIssued(roomName, countryName, economy._emergencyBondIssued);
-        delete economy._emergencyBondIssued; // Limpar flag
+        const shortfall = Math.abs(economy.treasury);
+        economy.treasury = 0;
+        
+        // CORREÇÃO: Verificar se já foi emitido neste ciclo
+        const cycleKey = `emergency_${countryName}_${roomName}_${economy._cycleCount}`;
+        if (!this.emergencyBondsIssued) {
+          this.emergencyBondsIssued = new Set();
+        }
+        
+        if (!this.emergencyBondsIssued.has(cycleKey)) {
+          // Marcar como emitido neste ciclo
+          this.emergencyBondsIssued.add(cycleKey);
+          
+          // Limpar emissões antigas (manter apenas últimos 10 ciclos)
+          if (this.emergencyBondsIssued.size > 50) {
+            const oldEntries = Array.from(this.emergencyBondsIssued).slice(0, 40);
+            oldEntries.forEach(entry => this.emergencyBondsIssued.delete(entry));
+          }
+          
+          // CORREÇÃO: Usar função que retorna dados em vez de flag
+          const emergencyBondInfo = issueEmergencyBonds(economy, shortfall);
+          
+          if (emergencyBondInfo) {
+            // CORREÇÃO: Criar contrato de dívida emergencial
+            const emergencyContract = this.createEmergencyDebtContract(
+              roomName, 
+              countryName, 
+              emergencyBondInfo.amount, 
+              emergencyBondInfo.rate
+            );
+            
+            // CORREÇÃO: Atualizar tesouro e dívida através do contrato
+            economy.treasury += emergencyBondInfo.amount;
+            economy.publicDebt += emergencyBondInfo.amount;
+            
+            // CORREÇÃO: Notificar cliente apenas uma vez
+            this.notifyEmergencyBondIssued(roomName, countryName, emergencyBondInfo);
+            
+            console.log(`[EMERGENCY] Contract ${emergencyContract.id} created for ${countryName}: ${emergencyBondInfo.amount} bi USD at ${emergencyBondInfo.rate.toFixed(2)}%`);
+          }
+        }
       }
-    }
     
     // 7. ===== EFEITO DA INFLAÇÃO NO PIB - COMO NO economy-game.js =====
     if (economy.inflation > 0.1) {
@@ -395,6 +425,40 @@ class EconomyService {
     // Atualizar estado
     this.setCountryState(roomName, countryName, countryState);
   }
+
+
+/**
+ * NOVA FUNÇÃO: Cria contrato de dívida emergencial
+ * @param {string} roomName - Nome da sala
+ * @param {string} countryName - Nome do país
+ * @param {number} bondAmount - Valor do título
+ * @param {number} effectiveRate - Taxa efetiva
+ * @returns {Object} - Contrato criado
+ */
+createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
+  // Criar contrato emergencial
+  const contract = {
+    id: this.nextDebtId++,
+    originalValue: bondAmount,
+    remainingValue: bondAmount,
+    interestRate: effectiveRate,
+    baseRate: 0, // Emergencial não tem taxa base
+    riskPremium: effectiveRate, // Todo o valor é prêmio de risco
+    monthlyPayment: this.calculateMonthlyPayment(bondAmount, effectiveRate, 120),
+    remainingInstallments: 120,
+    issueDate: new Date(),
+    emergencyBond: true // MARCADOR DE EMERGÊNCIA
+  };
+  
+  // Armazenar contrato
+  const countryKey = `${countryName}:${roomName}`;
+  const contracts = this.debtContracts.get(countryKey) || [];
+  contracts.push(contract);
+  this.debtContracts.set(countryKey, contracts);
+  
+  return contract;
+}
+
 
   /**
    * NOVA FUNÇÃO: Notifica cliente sobre emissão de títulos de emergência
@@ -995,6 +1059,12 @@ class EconomyService {
   cleanup() {
     this.stopPeriodicUpdates();
     this.saveToRedis();
+    
+    // CORREÇÃO: Limpar controle de títulos emergenciais
+    if (this.emergencyBondsIssued) {
+      this.emergencyBondsIssued.clear();
+    }
+    
     console.log('[ECONOMY] EconomyService cleanup completed - all delegated calculations stopped');
   }
 

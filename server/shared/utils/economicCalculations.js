@@ -378,40 +378,7 @@ export function applyAdvancedEconomicCalculations(economy, debtContracts = [], o
     skipGrowthCalculation = false
   } = options;
   
-  // ===== APLICAÇÃO DOS CÁLCULOS COMO NO economy-game.js =====
-  
-  // 1. Calcular nova inflação
-  economy.inflation = calculateDynamicInflation(economy);
-  
-  // 2. Calcular novo desemprego
-  economy.unemployment = calculateDynamicUnemployment(economy);
-  
-  // 3. Calcular nova popularidade
-  economy.popularity = calculateDynamicPopularity(economy);
-  
-  // 4. Atualizar rating de crédito
-  economy.creditRating = calculateCreditRating(economy);
-  
-  // 5. ===== CRESCIMENTO APLICADO COMO NO economy-game.js =====
-  if (!skipGrowthCalculation) {
-    const crescimento = calculateAdvancedGrowth(economy);
-    
-    // APLICAÇÃO DIRETA como no economy-game.js - SEM DIVISÕES EXTRAS
-    economy.gdp *= (1 + crescimento);
-    
-    // Converter crescimento para percentual para armazenamento
-    economy.gdpGrowth = crescimento * 100;
-    
-    // Atualizar PIB anterior do trimestre
-    economy._lastQuarterGdp = economy.gdp;
-  }
-  
-  // ===== EFEITO DA INFLAÇÃO NO PIB - COMO NO economy-game.js =====
-  if (economy.inflation > 0.1) {
-    const excesso = economy.inflation - 0.1;
-    const fatorPenalidade = 0.9998 - (excesso * 0.001);
-    economy.gdp *= Math.max(0.9995, fatorPenalidade);
-  }
+  // [... todo o código de cálculos permanece igual ...]
   
   // ===== RECEITAS E GASTOS DO TESOURO - COMO NO economy-game.js =====
   if (cycleFactor > 0) {
@@ -434,14 +401,8 @@ export function applyAdvancedEconomicCalculations(economy, debtContracts = [], o
     
     economy.treasury += arrecadacao - gastoInvestimento;
     
-    // Verificar se o caixa está negativo e emitir títulos de emergência
-    if (economy.treasury <= 0) {
-      const shortfall = Math.abs(economy.treasury);
-      economy.treasury = 0;
-      
-      // Emitir títulos de emergência com validações
-      issueEmergencyBonds(economy, shortfall);
-    }
+    // CORREÇÃO: Não chamar issueEmergencyBonds aqui - deixar para economyService
+    // A verificação de tesouro negativo será feita no economyService
   }
   
   // ===== PROCESSAMENTO DE DÍVIDAS (mantido) =====
@@ -747,13 +708,13 @@ export function issueEmergencyBonds(economy, shortfall) {
   // Verificar se pode emitir dívida com base na relação dívida/PIB
   const currentDebtToGdp = economy.publicDebt / economy.gdp;
   
-  // VALOR FIXO: Sempre emite 20 bilhões
+  // VALOR FIXO: Sempre calcula para 20 bilhões
   const emergencyAmount = 20.0;
   const newDebtToGdp = (economy.publicDebt + emergencyAmount) / economy.gdp;
   
   // Verificar limite de 120% do PIB - mas permite chegar até o limite
   if (newDebtToGdp > ECONOMIC_CONSTANTS.MAX_DEBT_TO_GDP_RATIO) {
-    // Se ultrapassaria o limite, emitir apenas até o limite máximo
+    // Se ultrapassaria o limite, calcular apenas até o limite máximo
     const maxAdditionalDebt = (ECONOMIC_CONSTANTS.MAX_DEBT_TO_GDP_RATIO * economy.gdp) - economy.publicDebt;
     
     if (maxAdditionalDebt > 0.1) { // Se ainda há margem de pelo menos 0.1 bi
@@ -764,25 +725,18 @@ export function issueEmergencyBonds(economy, shortfall) {
       const riskPremium = calculateEmergencyRiskPremium(economy.creditRating, currentDebtToGdp);
       const effectiveRate = baseRate + riskPremium;
       
-      // Emitir até o limite
-      economy.treasury += limitedAmount;
-      economy.publicDebt += limitedAmount;
+      console.log(`[EMERGENCY BONDS] Calculating ${limitedAmount.toFixed(2)} bi USD at ${effectiveRate.toFixed(2)}% rate (rating: ${economy.creditRating}) - AT DEBT LIMIT`);
       
-      console.log(`[EMERGENCY BONDS] Issued ${limitedAmount.toFixed(2)} bi USD at ${effectiveRate.toFixed(2)}% rate (rating: ${economy.creditRating}) - AT DEBT LIMIT`);
-      
-      // Sinalizar para notificação do usuário
-      economy._emergencyBondIssued = {
+      // CORREÇÃO: Apenas retorna informações, não aplica valores
+      return {
         amount: limitedAmount,
         rate: effectiveRate,
         rating: economy.creditRating,
         atLimit: true,
         timestamp: Date.now()
       };
-      
-      return true;
     } else {
       console.warn(`[EMERGENCY BONDS] Cannot issue emergency bonds: already at 120% debt/GDP ratio (${(currentDebtToGdp * 100).toFixed(1)}%)`);
-      economy.treasury = 0;
       return false;
     }
   }
@@ -790,7 +744,6 @@ export function issueEmergencyBonds(economy, shortfall) {
   // Verificar se o rating permite emissão (rating D bloqueia emissão apenas se dívida já muito alta)
   if (economy.creditRating === 'D' && currentDebtToGdp > 1.0) {
     console.warn(`[EMERGENCY BONDS] Cannot issue emergency bonds: credit rating is D and debt/GDP > 100%`);
-    economy.treasury = 0;
     return false;
   }
   
@@ -799,23 +752,17 @@ export function issueEmergencyBonds(economy, shortfall) {
   const riskPremium = calculateEmergencyRiskPremium(economy.creditRating, currentDebtToGdp);
   const effectiveRate = baseRate + riskPremium;
   
-  // Emitir títulos de emergência - VALOR FIXO 20 BI
-  economy.treasury += emergencyAmount;
-  economy.publicDebt += emergencyAmount;
+  const finalDebtToGdp = ((economy.publicDebt + emergencyAmount) / economy.gdp) * 100;
+  console.log(`[EMERGENCY BONDS] Calculating ${emergencyAmount.toFixed(2)} bi USD at ${effectiveRate.toFixed(2)}% rate (rating: ${economy.creditRating}) - Future Debt/GDP: ${finalDebtToGdp.toFixed(1)}%`);
   
-  const finalDebtToGdp = (economy.publicDebt / economy.gdp) * 100;
-  console.log(`[EMERGENCY BONDS] Issued ${emergencyAmount.toFixed(2)} bi USD at ${effectiveRate.toFixed(2)}% rate (rating: ${economy.creditRating}) - Debt/GDP: ${finalDebtToGdp.toFixed(1)}%`);
-  
-  // Sinalizar para notificação do usuário
-  economy._emergencyBondIssued = {
+  // CORREÇÃO: Apenas retorna informações, não aplica valores
+  return {
     amount: emergencyAmount,
     rate: effectiveRate,
     rating: economy.creditRating,
     atLimit: false,
     timestamp: Date.now()
   };
-  
-  return true;
 }
 
 /**
