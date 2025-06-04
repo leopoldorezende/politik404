@@ -98,9 +98,9 @@ class EconomyService {
       }
     }
     
-    if (countriesInitialized > 0) {
-      console.log(`[ECONOMY] Room ${roomName}: initialized ${countriesInitialized} countries with delegated calculations`);
-    }
+    // if (countriesInitialized > 0) {
+    //   console.log(`[ECONOMY] Room ${roomName}: initialized ${countriesInitialized} countries with delegated calculations`);
+    // }
   }
 
   createExpandedCountryState(countryName, countryData) {
@@ -1050,9 +1050,9 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
     }
     
     // Log ocasional do status dos cálculos delegados
-    if (Math.random() < 0.01) { // 1% de chance
-      console.log(`[ECONOMY] Delegated calculations updated ${updatedCountries} countries`);
-    }
+    // if (Math.random() < 0.01) { // 1% de chance
+    //   console.log(`[ECONOMY] Delegated calculations updated ${updatedCountries} countries`);
+    // }
   }
 
   // ========================================================================
@@ -1103,7 +1103,7 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
       };
       
       await redis.set('economy_service_data', JSON.stringify(data));
-      console.log(`[ECONOMY] Delegated data saved to Redis - ${this.debtContracts.size} debt contracts, ${this.countryStates.size} rooms`);
+      // console.log(`[ECONOMY] Delegated data saved to Redis - ${this.debtContracts.size} debt contracts, ${this.countryStates.size} rooms`);
     } catch (error) {
       console.error('[ECONOMY] Error saving to Redis:', error);
     }
@@ -1129,7 +1129,7 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
           }
         }
         
-        console.log(`[ECONOMY] Delegated calculations loaded from Redis: ${this.countryStates.size} rooms, ${this.debtContracts.size} debt contracts`);
+        // console.log(`[ECONOMY] Delegated calculations loaded from Redis: ${this.countryStates.size} rooms, ${this.debtContracts.size} debt contracts`);
       }
     } catch (error) {
       console.error('[ECONOMY] Error loading from Redis:', error);
@@ -1168,7 +1168,7 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
       this.emergencyBondsIssued.clear();
     }
     
-    console.log('[ECONOMY] EconomyService cleanup completed - all delegated calculations stopped');
+    // console.log('[ECONOMY] EconomyService cleanup completed - all delegated calculations stopped');
   }
 
   // ========================================================================

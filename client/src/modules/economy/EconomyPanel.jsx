@@ -440,24 +440,24 @@ const applyAllParameters = useCallback(async () => {
         </div>
         
         {/* Botões para aplicar e cancelar parâmetros */}
-        {hasChanges && (
+   
           <div className="apply-parameters">
             <button 
               onClick={cancelChanges}
-              disabled={pendingUpdates.size > 0}
+              disabled={!hasChanges}
               className="btn-cancel-parameters"
             >
               Cancelar
             </button>
             <button 
               onClick={applyAllParameters}
-              disabled={pendingUpdates.size > 0}
+              disabled={!hasChanges}
               className="btn-apply-parameters"
             >
               {pendingUpdates.size > 0 ? 'Aplicando...' : 'Aplicar'}
             </button>
           </div>
-        )}
+      
       </div>
       
       {/* Emissão de Títulos */}
