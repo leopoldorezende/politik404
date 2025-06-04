@@ -304,7 +304,7 @@ class EconomyService {
     
     economy.gdp *= (1 + crescimento);
     // Atualiza crescimento trimestral a cada 180 ciclos (equivalente a 90 turnos no modelo)
-    if (economy._cycleCount % SYNC_CONFIG.QUARTERLY_GDP_CALCULATION === 0) {
+    if (economy._cycleCount % SYNC_CONFIG.QUARTERLY_CYCLE === 0) {
       const oldGdpGrowth = economy.gdpGrowth;
       economy.gdpGrowth = ((economy.gdp - economy._lastQuarterGdp) / economy._lastQuarterGdp) * 100;
       economy._lastQuarterGdp = economy.gdp;
@@ -355,7 +355,7 @@ class EconomyService {
     }
     
     // 8. Processamento mensal das dívidas - COMO NO economy-game.js
-    if (economy._cycleCount % ECONOMIC_CONSTANTS.MONTHLY_CYCLE === 0) {
+    if (economy._cycleCount % SYNC_CONFIG.MONTHLY_CYCLE === 0) {
       const countryKey = `${countryName}:${roomName}`;
       const debtContracts = this.debtContracts.get(countryKey) || [];
       
@@ -370,7 +370,7 @@ class EconomyService {
     }
     
     // 9. Processamento mensal para variações setoriais - COMO NO economy-game.js
-    if (economy._cycleCount % ECONOMIC_CONSTANTS.MONTHLY_CYCLE === 0) {
+    if (economy._cycleCount % SYNC_CONFIG.MONTHLY_CYCLE === 0) {
       // USAR A FUNÇÃO IMPORTADA do economicCalculations.js
       applySectoralVariation(economy);
       
@@ -784,12 +784,12 @@ class EconomyService {
     // Atualizar economia a cada 500ms com cálculos delegados
     this.updateInterval = setInterval(() => {
       this.performPeriodicAdvancedUpdates();
-    }, ECONOMIC_CONSTANTS.UPDATE_INTERVAL);
+    }, SYNC_CONFIG.ECONOMY_UPDATE_INTERVAL);
     
     // Salvar no Redis a cada 50 segundos
     this.saveInterval = setInterval(() => {
       this.saveToRedis();
-    }, ECONOMIC_CONSTANTS.SAVE_INTERVAL);
+    }, SYNC_CONFIG.SAVE_INTERVAL);
     
     console.log('[ECONOMY] Periodic updates started with delegated economic calculations');
   }
@@ -1040,9 +1040,8 @@ class EconomyService {
       averageCyclesPerCountry: Math.round(averageCycles),
       totalCyclesProcessed: totalCycles,
       isRunning: this.updateInterval !== null,
-      updateInterval: ECONOMIC_CONSTANTS.UPDATE_INTERVAL,
-      monthlySystemCycle: ECONOMIC_CONSTANTS.MONTHLY_CYCLE,
-      quarterlySystemCycle: ECONOMIC_CONSTANTS.QUARTERLY_CYCLE,
+      updateInterval: SYNC_CONFIG.ECONOMY_UPDATE_INTERVAL,
+      monthlySystemCycle: SYNC_CONFIG.MONTHLY_CYCLE,
       calculationsMethod: 'DELEGATED' // Indica que usa economicCalculations.js
     };
   }

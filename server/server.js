@@ -216,7 +216,6 @@ restoreRoomsFromRedis().then(() => {
       console.log(`EconomyService initialized: ${economyService.initialized ? 'Yes' : 'No'}`);
       console.log(`Advanced calculations enabled: ${economyService.getPerformanceStats().isRunning ? 'Yes' : 'No'}`);
       console.log(`Monthly cycle: ${economyService.getPerformanceStats().monthlySystemCycle} cycles`);
-      console.log(`Quarterly cycle: ${economyService.getPerformanceStats().quarterlySystemCycle} cycles`);
       
       // Configurar limpeza periódica
       setupPeriodicCleanup(io, gameState);

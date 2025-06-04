@@ -20,25 +20,19 @@ export const ECONOMIC_CONSTANTS = {
   GROWTH_SENSITIVITY: 0.0001,
 
   // Limites realistas
-  MIN_INFLATION: -0.02, // -2%
-  MAX_INFLATION: 0.18,  // 18%
-  MIN_UNEMPLOYMENT: 3,   // 3%
-  MAX_UNEMPLOYMENT: 40,  // 40%
-  MIN_POPULARITY: 1,     // 1%
-  MAX_POPULARITY: 99,    // 99%
+  MIN_INFLATION: -0.02,
+  MAX_INFLATION: 0.18,
+  MIN_UNEMPLOYMENT: 3,
+  MAX_UNEMPLOYMENT: 40,
+  MIN_POPULARITY: 1,
+  MAX_POPULARITY: 99,
 
-  // Ciclos temporais
-  MONTHLY_CYCLE: 10,
-  QUARTERLY_CYCLE: 40,
-  
   // Fatores de inércia
   INFLATION_INERTIA: 0.8,
   UNEMPLOYMENT_INERTIA: 0.9,
   POPULARITY_INERTIA: 0.7,
 
-  // Configurações de tempo e sistema
-  UPDATE_INTERVAL: 500,
-  SAVE_INTERVAL: 10000,
+  // Configuração de histórico
   MAX_HISTORY_SIZE: 20,
 
   // Limites setoriais

@@ -237,6 +237,38 @@ export function calculateDynamicPopularity(economy) {
   const variacaoAleatoria = (Math.random() - 0.5) * 0.5;
   novaPopularidade += variacaoAleatoria;
   
+  // NOVA IMPLEMENTAÇÃO - Curva de dificuldade para popularidade alta
+  const popularidadeAtual = economy.popularity || 50;
+  
+  // Aplicar resistência progressiva apenas para aumentos de popularidade acima de 60%
+  if (novaPopularidade > popularidadeAtual && popularidadeAtual >= 60) {
+    const ganho = novaPopularidade - popularidadeAtual;
+    let fatorResistencia = 1.0;
+    
+    // 60% - 70%: Difícil (reduz ganho em 20%)
+    if (popularidadeAtual >= 60 && popularidadeAtual < 70) {
+      fatorResistencia = 0.8;
+    }
+    // 70% - 80%: Muito difícil (reduz ganho em 40%) 
+    else if (popularidadeAtual >= 70 && popularidadeAtual < 80) {
+      fatorResistencia = 0.6;
+    }
+    // 80% - 90%: Quase impossível (reduz ganho em 60%)
+    else if (popularidadeAtual >= 80 && popularidadeAtual < 90) {
+      fatorResistencia = 0.4;
+    }
+    // 90%+: Extremamente difícil (reduz ganho em 80%)
+    else if (popularidadeAtual >= 90) {
+      fatorResistencia = 0.2;
+    }
+    
+    // Aplicar o fator de resistência apenas ao ganho
+    const ganhoReduzido = ganho * fatorResistencia;
+    novaPopularidade = popularidadeAtual + ganhoReduzido;
+    
+    console.log(`[POPULARITY-RESISTANCE] ${popularidadeAtual.toFixed(1)}% -> ${novaPopularidade.toFixed(1)}% (ganho original: ${ganho.toFixed(2)}, fator: ${fatorResistencia}, ganho final: ${ganhoReduzido.toFixed(2)})`);
+  }
+  
   // CÓPIA EXATA do economy-game.js - Força de retorno para o equilíbrio (50%)
   const distanciaDe50 = Math.abs(novaPopularidade - 50);
   const forcaDeRetorno = distanciaDe50 * distanciaDe50 * 0.002;

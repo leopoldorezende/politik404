@@ -362,7 +362,7 @@ const applyAllParameters = useCallback(async () => {
           <div className="indicator-value">
             <span className="value">{formatCurrency(economicIndicators.publicDebt)} bi</span>
             <span className="debt-ratio">
-              {formatPercent((economicIndicators.publicDebt / economicIndicators.gdp) * 100)} PIB (mensal)
+              {formatPercent((economicIndicators.publicDebt / economicIndicators.gdp) * 100)} PIB
             </span>
           </div>
         </div>

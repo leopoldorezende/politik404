@@ -20,11 +20,11 @@ export const SYNC_CONFIG = {
   get TRADE_PROCESSING_INTERVAL() { return this.MASTER_CYCLE * 1.2 },
   get USER_CLEANUP_INTERVAL() { return this.MASTER_CYCLE * 40 },
 
-  // Mensal econômico
+  // CICLOS
   get MONTHLY_CYCLE() { return 10 },
-
-  // Trimestre econômico
-  get QUARTERLY_GDP_CALCULATION() { return 30 },
+  get QUARTERLY_CYCLE() { return 30 },
+  
+  get SAVE_INTERVAL() { return 10000 },
 };
 
 export default SYNC_CONFIG;
