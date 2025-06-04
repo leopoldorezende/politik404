@@ -9,7 +9,6 @@ import { setCountriesCoordinates } from './gameState';
 import { socketApi } from '../../services/socketClient';
 import TradeProposalPopup from '../trade/TradeProposalPopup';
 import DebtSummaryPopup from '../economy/DebtSummaryPopup';
-import MessageService from '../../ui/toast/messageService';
 import './GamePage.css';
 
 
@@ -40,6 +39,7 @@ const GamePage = () => {
   
   // Atualizar o tempo a cada segundo
   useEffect(() => {
+
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
     }, CLIENT_UPDATE_INTERVAL);

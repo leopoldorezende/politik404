@@ -296,12 +296,12 @@ export const setupSocketEvents = (socket, socketApi) => {
     // Toast de alerta com estilo diferenciado
     if (atLimit) {
       MessageService.showError(
-        `⚠️ LIMITE DE DÍVIDA ATINGIDO! Títulos emitidos: ${amount.toFixed(1)} bi USD`,
+        `LIMITE DE DÍVIDA ATINGIDO! Títulos emitidos: ${amount.toFixed(1)} bi USD`,
         8000 // 8 segundos para dar tempo de ler
       );
     } else {
       MessageService.showWarning(
-        `💳 Títulos de Emergência: ${amount.toFixed(1)} bi USD (${rate.toFixed(1)}% - ${rating})`,
+        `Títulos de Emergência: ${amount.toFixed(1)} bi USD (${rate.toFixed(1)}% - ${rating})`,
         6000 // 6 segundos
       );
     }
