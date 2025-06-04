@@ -274,6 +274,49 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
   
   // ======================================================================
+  // NOVO: EVENTOS DE TÍTULOS DE EMERGÊNCIA
+  // ======================================================================
+  
+  socket.on('emergencyBondsIssued', (data) => {
+    console.log('Títulos de emergência emitidos:', data);
+    
+    const { amount, rate, rating, atLimit, message } = data;
+    
+    // Som de alerta (mais urgente que notificação normal)
+    if (window.Audio) {
+      try {
+        const alertSound = new Audio('/notification.mp3');
+        alertSound.volume = 0.8; // Volume alto para chamar atenção
+        alertSound.play().catch(() => {});
+      } catch (error) {
+        console.debug('Som de alerta não disponível');
+      }
+    }
+    
+    // Toast de alerta com estilo diferenciado
+    if (atLimit) {
+      MessageService.showError(
+        `⚠️ LIMITE DE DÍVIDA ATINGIDO! Títulos emitidos: ${amount.toFixed(1)} bi USD`,
+        8000 // 8 segundos para dar tempo de ler
+      );
+    } else {
+      MessageService.showWarning(
+        `💳 Títulos de Emergência: ${amount.toFixed(1)} bi USD (${rate.toFixed(1)}% - ${rating})`,
+        6000 // 6 segundos
+      );
+    }
+    
+    // Log detalhado para debug
+    console.log(`[EMERGENCY BONDS] Received notification:`, {
+      amount: `${amount} bi USD`,
+      interestRate: `${rate}%`,
+      creditRating: rating,
+      atDebtLimit: atLimit,
+      timestamp: new Date().toLocaleTimeString()
+    });
+  });
+
+  // ======================================================================
   // EVENTOS ECONÔMICOS SIMPLIFICADOS
   // ======================================================================
   

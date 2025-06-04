@@ -18,7 +18,8 @@ import {
   applySectoralVariation,
   resetUnrealisticIndicators,
   debugAdvancedEconomicCalculations,
-  validateEconomicCalculations
+  validateEconomicCalculations,
+  issueEmergencyBonds
 } from '../utils/economicCalculations.js';
 
 class EconomyService {
@@ -341,10 +342,19 @@ class EconomyService {
     // Atualizar caixa - CÓPIA EXATA do economy-game.js
     economy.treasury += arrecadacao - gastoInvestimento;
     
-    // Verificar se o caixa está negativo - COMO NO economy-game.js
+    // ===== NOVA CORREÇÃO: VERIFICAR TESOURO A CADA CICLO =====
     if (economy.treasury <= 0) {
+      const shortfall = Math.abs(economy.treasury);
       economy.treasury = 0;
-      // Emitir títulos de emergência seria aqui, mas simplificamos
+      
+      // Emitir títulos de emergência (20 bi fixo)
+      const issued = issueEmergencyBonds(economy, shortfall);
+      
+      // Se emitiu títulos, enviar notificação ao cliente
+      if (issued && economy._emergencyBondIssued) {
+        this.notifyEmergencyBondIssued(roomName, countryName, economy._emergencyBondIssued);
+        delete economy._emergencyBondIssued; // Limpar flag
+      }
     }
     
     // 7. ===== EFEITO DA INFLAÇÃO NO PIB - COMO NO economy-game.js =====
@@ -386,7 +396,44 @@ class EconomyService {
     this.setCountryState(roomName, countryName, countryState);
   }
 
-
+  /**
+   * NOVA FUNÇÃO: Notifica cliente sobre emissão de títulos de emergência
+   * @param {string} roomName - Nome da sala
+   * @param {string} countryName - Nome do país
+   * @param {Object} bondInfo - Informações do título emitido
+   */
+  notifyEmergencyBondIssued(roomName, countryName, bondInfo) {
+    if (!global.io) return;
+    
+    // Encontrar o jogador que controla este país
+    const gameState = global.gameState;
+    const room = gameState?.rooms?.get(roomName);
+    
+    if (!room || !room.players) return;
+    
+    const player = room.players.find(p => 
+      typeof p === 'object' && p.country === countryName && p.isOnline
+    );
+    
+    if (!player) return;
+    
+    // Encontrar o socket do jogador
+    const socketId = gameState.usernameToSocketId?.get(player.username);
+    const socket = socketId ? global.io.sockets.sockets.get(socketId) : null;
+    
+    if (socket && socket.connected) {
+      // Enviar notificação específica de títulos de emergência
+      socket.emit('emergencyBondsIssued', {
+        amount: bondInfo.amount,
+        rate: bondInfo.rate,
+        rating: bondInfo.rating,
+        atLimit: bondInfo.atLimit,
+        message: bondInfo.atLimit 
+          ? `Títulos de emergência emitidos: ${bondInfo.amount.toFixed(1)} bi USD (LIMITE DE DÍVIDA ATINGIDO)`
+          : `Títulos de emergência emitidos: ${bondInfo.amount.toFixed(1)} bi USD a ${bondInfo.rate.toFixed(1)}%`
+      });
+    }
+  }
 
   /**
    * Calcula necessidades setoriais baseadas no sistema avançado
