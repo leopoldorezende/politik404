@@ -266,7 +266,7 @@ export function calculateDynamicPopularity(economy) {
     const ganhoReduzido = ganho * fatorResistencia;
     novaPopularidade = popularidadeAtual + ganhoReduzido;
     
-    console.log(`[POPULARITY-RESISTANCE] ${popularidadeAtual.toFixed(1)}% -> ${novaPopularidade.toFixed(1)}% (ganho original: ${ganho.toFixed(2)}, fator: ${fatorResistencia}, ganho final: ${ganhoReduzido.toFixed(2)})`);
+    // console.log(`[POPULARITY-RESISTANCE] ${popularidadeAtual.toFixed(1)}% -> ${novaPopularidade.toFixed(1)}% (ganho original: ${ganho.toFixed(2)}, fator: ${fatorResistencia}, ganho final: ${ganhoReduzido.toFixed(2)})`);
   }
   
   // CÓPIA EXATA do economy-game.js - Força de retorno para o equilíbrio (50%)

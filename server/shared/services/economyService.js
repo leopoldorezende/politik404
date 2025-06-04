@@ -255,7 +255,7 @@ class EconomyService {
     // Aplicar reset de indicadores irreais
     resetUnrealisticIndicators(economy);
     
-    console.log(`[ECONOMY] Migrated existing state with delegated calculations`);
+    // console.log(`[ECONOMY] Migrated existing state with delegated calculations`);
   }
 
   initializeCalculatedValues(economy) {

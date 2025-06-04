@@ -191,14 +191,14 @@ class StorageService {
           this.set(newKeyConfig, localValue);
           localStorage.removeItem(oldKey);
           migrated++;
-          console.log(`[STORAGE] Migrated ${oldKey} from localStorage to ${newKeyConfig.type}`);
+          // console.log(`[STORAGE] Migrated ${oldKey} from localStorage to ${newKeyConfig.type}`);
         }
         
         if (sessionValue !== null) {
           this.set(newKeyConfig, sessionValue);
           sessionStorage.removeItem(oldKey);
           migrated++;
-          console.log(`[STORAGE] Migrated ${oldKey} from sessionStorage to ${newKeyConfig.type}`);
+          // console.log(`[STORAGE] Migrated ${oldKey} from sessionStorage to ${newKeyConfig.type}`);
         }
       } catch (error) {
         console.error(`[STORAGE] Failed to migrate ${oldKey}:`, error);
@@ -206,7 +206,7 @@ class StorageService {
     });
     
     if (migrated > 0) {
-      console.log(`[STORAGE] Migration completed: ${migrated} keys migrated`);
+      // console.log(`[STORAGE] Migration completed: ${migrated} keys migrated`);
     }
     
     return migrated;
