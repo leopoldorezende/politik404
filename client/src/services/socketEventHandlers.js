@@ -32,6 +32,12 @@ let authenticationInProgress = false;
 let lastNotificationTime = 0;
 const NOTIFICATION_COOLDOWN = 1000; // 1 segundo entre notificações similares
 
+// Adicionar função para verificar se está na GamePage
+const isInGamePage = () => {
+  return window.location.pathname === '/game' || 
+         document.getElementById('game-screen') !== null;
+};
+
 const showNotificationWithCooldown = (type, message, duration = 4000) => {
   const now = Date.now();
   if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) {
@@ -310,7 +316,11 @@ export const setupSocketEvents = (socket, socketApi) => {
   
   socket.on('emergencyBondsIssued', (data) => {
     // console.log('Títulos de emergência emitidos:', data);
-    
+    if (!isInGamePage()) {
+      console.log('[TOAST BLOCKED] Emergency bonds notification blocked - not in game page');
+      return;
+    }
+
     // ✅ Debounce para evitar múltiplas notificações
     clearTimeout(emergencyTimeout);
     emergencyTimeout = setTimeout(() => {
@@ -390,17 +400,20 @@ export const setupSocketEvents = (socket, socketApi) => {
           console.debug('Som de notificação não disponível');
         }
       }
-      
-      const { originCountry, type, product, value } = proposal;
-      const productName = product === 'commodity' ? 'commodities' : 'manufaturas';
-      const actionType = type === 'export' ? 'exportar para você' : 'importar de você';
-      
-      // ✅ Usar função com cooldown para evitar toasts duplicados
-      showNotificationWithCooldown(
-        'info',
-        `${originCountry} quer ${actionType} ${productName} (${value} bi USD)`,
-        4000
-      );
+      if (isInGamePage()) {
+        const { originCountry, type, product, value } = proposal;
+        const productName = product === 'commodity' ? 'commodities' : 'manufaturas';
+        const actionType = type === 'export' ? 'exportar para você' : 'importar de você';
+        
+        // ✅ Usar função com cooldown para evitar toasts duplicados
+        showNotificationWithCooldown(
+          'info',
+          `${originCountry} quer ${actionType} ${productName} (${value} bi USD)`,
+          4000
+        );
+      } else {
+        console.log('[TOAST BLOCKED] Trade proposal notification blocked - not in game page');
+      }
     }, 100); // Pequeno delay para agrupar eventos
   });
   
@@ -410,6 +423,12 @@ export const setupSocketEvents = (socket, socketApi) => {
     // ✅ Debounce para evitar múltiplas notificações de resposta
     clearTimeout(responseTimeout);
     responseTimeout = setTimeout(() => {
+      
+      if (!isInGamePage()) {
+        console.log('[TOAST BLOCKED] Trade response notification blocked - not in game page');
+        return;
+      }
+      
       const { accepted, targetCountry } = response;
       
       if (accepted) {
