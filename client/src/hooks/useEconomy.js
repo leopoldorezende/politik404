@@ -191,8 +191,17 @@ export const usePublicDebt = (roomName, countryName) => {
       }
     };
 
+    const handleEmergencyBondsIssued = (data) => {
+      // Auto-refresh após emissão de títulos de emergência
+      setTimeout(() => {
+        refresh();
+      }, 500);
+    };
+
+
     socket.on('debtSummaryResponse', handleDebtSummaryResponse);
     socket.on('debtBondsIssued', handleDebtBondsIssued);
+    socket.on('emergencyBondsIssued', handleEmergencyBondsIssued);
 
     // Buscar dados iniciais
     if (roomName && countryName) {
