@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import Popup from '../../ui/popup/Popup';
 import { useCards } from '../../hooks/useCards';
+import { socketApi } from '../../services/socketClient';
 import './CardsPopup.css';
 
 /**
@@ -32,6 +33,16 @@ const CardsPopup = ({ isOpen, onClose }) => {
     }
   }, [isOpen, currentRoom?.name, myCountry, refreshAll]);
   
+  const handleRemoveCard = (card) => {
+    if (window.confirm(`Tem certeza que deseja remover este card e cancelar o acordo comercial?`)) {
+      const socket = socketApi.getSocketInstance();
+      if (socket && card.sourceAgreementId) {
+        // Cancelar o acordo comercial que gerou este card
+        socket.emit('cancelTradeAgreement', card.sourceAgreementId);
+      }
+    }
+  };
+
   // Definir grupos de cards
   const cardGroups = {
     'acordo-importacao': {
@@ -198,13 +209,9 @@ const CardsPopup = ({ isOpen, onClose }) => {
                         className="card-item-simple"
                         style={{ '--card-color': getCardColor(card.type) }}
                       >
-                        <div className="card-icon">
-                          <span 
-                            className="material-icons"
-                            style={{ color: getCardColor(card.type) }}
-                          >
-                            {getCardIcon(card.type)}
-                          </span>
+
+                        <div className="card-points">
+                          {card.points}pt{card.points !== 1 ? 's' : ''}
                         </div>
                         
                         <div className="card-info">
@@ -219,8 +226,16 @@ const CardsPopup = ({ isOpen, onClose }) => {
                           )}
                         </div>
                         
-                        <div className="card-points">
-                          {card.points}pt{card.points !== 1 ? 's' : ''}
+                        <div className="card-actions">
+                          {card.sourceAgreementId && (
+                            <button 
+                              className="card-remove-btn"
+                              onClick={() => handleRemoveCard(card)}
+                              title="Remover card e cancelar acordo"
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}

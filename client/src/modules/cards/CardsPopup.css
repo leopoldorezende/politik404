@@ -137,7 +137,7 @@
 .card-target {
   font-weight: 600;
   color: #333;
-  font-size: 13px;
+  font-size: 14px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -145,14 +145,14 @@
 
 .card-value,
 .card-product {
-  font-size: 11px;
+  font-size: 14px;
   color: #666;
   line-height: 1;
 }
 
 .card-points {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--card-color);
   background: rgba(0, 0, 0, 0.05);
@@ -259,3 +259,54 @@
     align-self: flex-end;
   }
 }
+
+/* ========================================================================
+   AÇÕES DOS CARDS (REMOÇÃO)
+   ======================================================================== */
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.card-remove-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.card-remove-btn:hover {
+  background: #c0392b;
+  transform: scale(1.1);
+}
+
+.card-remove-btn:active {
+  transform: scale(0.95);
+}
+
+/* Ajustar card-points para funcionar com card-actions */
+.card-actions .card-points {
+  min-width: 35px;
+}
+
+
+
+
+
+
+
