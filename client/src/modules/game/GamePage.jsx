@@ -4,6 +4,8 @@ import Sideview from '../../ui/sideview/Sideview';
 import Sidetools from '../../ui/sidetools/Sidetools';
 import MapView from '../map/MapView';
 import ActionMenu from '../actions/ActionMenu';
+import CardsPopup from '../cards/CardsPopup';
+import { usePlayerPoints } from '../../hooks/useCards';
 import { loadCountriesData, loadCountriesCoordinates } from '../country/countryService';
 import { setCountriesCoordinates } from './gameState';
 import { socketApi } from '../../services/socketClient';
@@ -38,9 +40,19 @@ const GamePage = () => {
     debtRecords: null
   });
 
+  // Estados para o popup de cards
+  const [showCardsPopup, setShowCardsPopup] = useState(false);
+
   // useRef para controlar carregamento único
   const hasLoadedData = useRef(false);
   
+  // Hook para pontuação usando o novo sistema de cards
+  const { totalPoints, loading: pointsLoading } = usePlayerPoints(
+    currentRoom?.name, 
+    myCountry
+  );
+
+
   // Atualizar o tempo a cada segundo - sem mudanças
   useEffect(() => {
     const timer = setInterval(() => {
@@ -52,6 +64,11 @@ const GamePage = () => {
   
   // Memoizar função de pontos para evitar re-criação
   const getMyCountryPoints = useCallback(() => {
+    // Usar sistema de cards
+    if (totalPoints !== undefined && !pointsLoading) {
+      return totalPoints;
+    }
+
     if (!myCountry || !tradeAgreements.length) return 0;
     
     // Contar acordos comerciais onde meu país é o originador
@@ -171,6 +188,16 @@ const GamePage = () => {
     });
   };
   
+  // Função para abrir o popup de cards (clique no timer)
+  const handleOpenCardsPopup = () => {
+    setShowCardsPopup(true);
+  };
+  
+  // Função para fechar o popup de cards
+  const handleCloseCardsPopup = () => {
+    setShowCardsPopup(false);
+  };
+
   // Obter países com jogadores humanos e seus nomes
   const getCountriesWithPlayers = () => {
     if (!players) return {};

@@ -931,7 +931,7 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
   // ACORDOS COMERCIAIS (PRESERVADO)
   // ========================================================================
 
-  createTradeAgreement(roomName, agreementData) {
+ createTradeAgreement(roomName, agreementData) {
     const gameState = global.gameState;
     const room = gameState?.rooms?.get(roomName);
     if (!room) return null;
@@ -966,6 +966,40 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
     
     room.tradeAgreements.push(originAgreement, targetAgreement);
     
+    // Integração com cardService
+    if (global.cardService && global.cardService.initialized) {
+      try {
+        // Criar cards para o acordo comercial
+        const cards = global.cardService.createTradeAgreementCards(roomName, {
+          type: type,
+          product: product,
+          country: country,
+          value: value,
+          originCountry: originCountry,
+          originPlayer: originPlayer,
+          agreementId: originAgreement.id // Vincular ao acordo original
+        });
+        
+        console.log(`[ECONOMY-CARDS] Created ${cards.length} cards for trade agreement ${originAgreement.id}`);
+        
+        // Notificar criação de cards se necessário
+        if (global.io) {
+          global.io.to(roomName).emit('cardsUpdated', {
+            roomName: roomName,
+            action: 'created',
+            cards: cards.map(card => ({
+              id: card.id,
+              type: card.type,
+              owner: card.owner,
+              points: card.points
+            }))
+          });
+        }
+      } catch (error) {
+        console.error('[ECONOMY-CARDS] Error creating cards for trade agreement:', error);
+      }
+    }
+    
     // Recalcular economias com cálculos delegados
     this.performAdvancedEconomicCalculations(roomName, originCountry);
     this.performAdvancedEconomicCalculations(roomName, country);
@@ -973,7 +1007,7 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
     return originAgreement;
   }
 
-  cancelTradeAgreement(roomName, agreementId) {
+ cancelTradeAgreement(roomName, agreementId) {
     const gameState = global.gameState;
     const room = gameState?.rooms?.get(roomName);
     if (!room || !room.tradeAgreements) return false;
@@ -993,6 +1027,29 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
     if (mirroredIndex !== -1) {
       room.tradeAgreements.splice(mirroredIndex, 1);
     }
+    
+    // ===== NOVA INTEGRAÇÃO COM CARDSERVICE =====
+    if (global.cardService && global.cardService.initialized) {
+      try {
+        // Cancelar cards relacionados ao acordo
+        const cancelledCount = global.cardService.cancelCardsByAgreement(roomName, agreementId);
+        
+        console.log(`[ECONOMY-CARDS] Cancelled ${cancelledCount} cards for agreement ${agreementId}`);
+        
+        // Notificar cancelamento de cards
+        if (global.io && cancelledCount > 0) {
+          global.io.to(roomName).emit('cardsUpdated', {
+            roomName: roomName,
+            action: 'cancelled',
+            agreementId: agreementId,
+            cancelledCount: cancelledCount
+          });
+        }
+      } catch (error) {
+        console.error('[ECONOMY-CARDS] Error cancelling cards for agreement:', error);
+      }
+    }
+    // ===== FIM DA INTEGRAÇÃO =====
     
     // Recalcular economias
     this.performAdvancedEconomicCalculations(roomName, agreement.originCountry);
@@ -1153,7 +1210,7 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
   // CLEANUP (PRESERVADO)
   // ========================================================================
 
-  removeRoom(roomName) {
+removeRoom(roomName) {
     this.countryStates.delete(roomName);
     
     // Limpar dados relacionados
@@ -1169,7 +1226,12 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
       }
     }
     
-    console.log(`[ECONOMY] Room ${roomName} removed with all delegated economic data`);
+    // Integação com cardService
+    if (global.cardService && global.cardService.initialized) {
+      global.cardService.removeRoom(roomName);
+    }
+    
+    console.log(`[ECONOMY] Room ${roomName} removed with all delegated economic data and cards`);
   }
 
   cleanup() {

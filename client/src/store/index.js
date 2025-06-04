@@ -4,6 +4,7 @@ import roomsReducer from '../modules/room/roomState';
 import gameReducer from '../modules/game/gameState';
 import chatReducer from '../modules/chat/chatState';
 import tradeReducer from '../modules/trade/tradeState';
+import cardReducer from '../modules/cards/cardState';
 
 export const store = configureStore({
   reducer: {
@@ -11,7 +12,8 @@ export const store = configureStore({
     rooms: roomsReducer,
     game: gameReducer,
     chat: chatReducer,
-    trade: tradeReducer
+    trade: tradeReducer,
+    cards: cardReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

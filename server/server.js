@@ -6,7 +6,8 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
-import economyService from './shared/services/economyService.js'; // Novo serviço centralizado
+import economyService from './shared/services/economyService.js';
+import cardService from './shared/services/cardService.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { initializeSocketHandlers } from './modules/index.js';
@@ -139,13 +140,13 @@ try {
 
 // Criamos o estado global do jogo usando a função centralizada
 const gameState = createDefaultGameState();
+
 // Adicionamos os dados dos países carregados
 gameState.countriesData = countriesData;
-// Disponibilizamos o gameState globalmente para acesso em outros módulos
-global.gameState = gameState;
 
-// Disponibiliza o economyService globalmente (substitui countryStateManager)
+global.gameState = gameState;
 global.economyService = economyService;
+global.cardService = cardService;
 
 async function restoreRoomsFromRedis() {
   try {
@@ -182,12 +183,18 @@ const shutdownHandler = () => {
   
   // Limpar o economyService com dados avançados
   if (global.economyService) {
-    // Salvar estatísticas finais antes do shutdown
     const finalStats = global.economyService.getPerformanceStats();
     console.log('📊 Final Economy Stats:', finalStats);
-    
     global.economyService.cleanup();
     console.log('✅ Advanced EconomyService cleanup completed');
+  }
+  
+  // Limpar o cardService
+  if (global.cardService) {
+    const finalCardStats = global.cardService.getStats();
+    console.log('🎯 Final Card Stats:', finalCardStats);
+    global.cardService.cleanup();
+    console.log('✅ CardService cleanup completed');
   }
   
   // Limpar os timers de expiração
@@ -203,29 +210,31 @@ process.on('SIGTERM', shutdownHandler);
 // Iniciar servidor só depois que Redis restaurar
 restoreRoomsFromRedis().then(() => {
   // CRÍTICO: Inicializar EconomyService com cálculos avançados
-  economyService.initialize().then(() => {
-    console.log('✅ Advanced EconomyService initialized successfully');
+  Promise.all([
+    economyService.initialize(),
+    cardService.initialize()
+  ]).then(() => {
+    console.log('✅ Advanced EconomyService and CardService initialized successfully');
     
     // Validar se os cálculos avançados estão funcionando
     const performanceStats = economyService.getPerformanceStats();
+    const cardStats = cardService.getStats();
     console.log('📊 Economy Performance Stats:', performanceStats);
+    console.log('🎯 Card Service Stats:', cardStats);
     
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Countries data loaded: ${Object.keys(countriesData).length} countries`);
       console.log(`EconomyService initialized: ${economyService.initialized ? 'Yes' : 'No'}`);
+      console.log(`CardService initialized: ${cardService.initialized ? 'Yes' : 'No'}`);
       console.log(`Advanced calculations enabled: ${economyService.getPerformanceStats().isRunning ? 'Yes' : 'No'}`);
-      console.log(`Monthly cycle: ${economyService.getPerformanceStats().monthlySystemCycle} cycles`);
-      
-      // Configurar limpeza periódica
-      setupPeriodicCleanup(io, gameState);
     });
   }).catch(error => {
-    console.error('❌ Failed to initialize Advanced EconomyService:', error);
+    console.error('Failed to initialize services:', error);
     process.exit(1);
   });
 }).catch(error => {
-  console.error('❌ Failed to restore rooms from Redis:', error);
+  console.error('Failed to restore rooms from Redis:', error);
   process.exit(1);
 });
 

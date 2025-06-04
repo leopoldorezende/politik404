@@ -1,0 +1,325 @@
+import { createSlice } from '@reduxjs/toolkit';
+
+// Tipos de cards e suas pontuações (sincronizado com backend)
+export const CARD_TYPES = {
+  EXPORT: { name: 'export', points: 2, label: 'Exportação' },
+  IMPORT: { name: 'import', points: 1, label: 'Importação' },
+  POLITICAL_PACT: { name: 'political_pact', points: 3, label: 'Pacto Político' },
+  BUSINESS_PARTNERSHIP: { name: 'business_partnership', points: 3, label: 'Parceria Empresarial' },
+  MEDIA_CONTROL: { name: 'media_control', points: 3, label: 'Controle de Mídia' },
+  STRATEGIC_COOPERATION: { name: 'strategic_cooperation', points: 4, label: 'Cooperação Estratégica' },
+  MILITARY_ALLIANCE: { name: 'military_alliance', points: 5, label: 'Aliança Militar' }
+};
+
+// Status dos cards
+export const CARD_STATUS = {
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+  TRANSFERRED: 'transferred'
+};
+
+const initialState = {
+  // Cards do jogador atual
+  playerCards: [],
+  
+  // Pontuação do jogador atual
+  playerPoints: {
+    total: 0,
+    cardsByType: {}
+  },
+  
+  // Ranking de todos os jogadores
+  playerRanking: [],
+  
+  // Estados de carregamento
+  loading: {
+    playerCards: false,
+    playerPoints: false,
+    playerRanking: false
+  },
+  
+  // Última atualização
+  lastUpdated: {
+    playerCards: null,
+    playerPoints: null,
+    playerRanking: null
+  },
+  
+  // Filtros para a UI
+  filters: {
+    cardType: 'all',
+    status: 'active',
+    sortBy: 'timestamp'
+  }
+};
+
+export const cardState = createSlice({
+  name: 'cards',
+  initialState,
+  reducers: {
+    // ========================================================================
+    // CARDS DO JOGADOR
+    // ========================================================================
+    
+    setPlayerCardsLoading: (state, action) => {
+      state.loading.playerCards = action.payload;
+    },
+    
+    setPlayerCards: (state, action) => {
+      const { cards, timestamp } = action.payload;
+      state.playerCards = cards;
+      state.lastUpdated.playerCards = timestamp;
+      state.loading.playerCards = false;
+    },
+    
+    addPlayerCard: (state, action) => {
+      const card = action.payload;
+      const existingIndex = state.playerCards.findIndex(c => c.id === card.id);
+      
+      if (existingIndex !== -1) {
+        state.playerCards[existingIndex] = card;
+      } else {
+        state.playerCards.push(card);
+      }
+    },
+    
+    removePlayerCard: (state, action) => {
+      const cardId = action.payload;
+      state.playerCards = state.playerCards.filter(card => card.id !== cardId);
+    },
+    
+    updatePlayerCardStatus: (state, action) => {
+      const { cardId, status, metadata } = action.payload;
+      const cardIndex = state.playerCards.findIndex(card => card.id === cardId);
+      
+      if (cardIndex !== -1) {
+        state.playerCards[cardIndex].status = status;
+        if (metadata) {
+          state.playerCards[cardIndex].metadata = {
+            ...state.playerCards[cardIndex].metadata,
+            ...metadata
+          };
+        }
+      }
+    },
+    
+    // ========================================================================
+    // PONTUAÇÃO DO JOGADOR
+    // ========================================================================
+    
+    setPlayerPointsLoading: (state, action) => {
+      state.loading.playerPoints = action.payload;
+    },
+    
+    setPlayerPoints: (state, action) => {
+      const { totalPoints, cardsByType, timestamp } = action.payload;
+      state.playerPoints = {
+        total: totalPoints,
+        cardsByType: cardsByType
+      };
+      state.lastUpdated.playerPoints = timestamp;
+      state.loading.playerPoints = false;
+    },
+    
+    updatePlayerPoints: (state, action) => {
+      const { pointsChange, cardType } = action.payload;
+      
+      state.playerPoints.total += pointsChange;
+      
+      if (cardType) {
+        if (!state.playerPoints.cardsByType[cardType]) {
+          state.playerPoints.cardsByType[cardType] = 0;
+        }
+        
+        if (pointsChange > 0) {
+          state.playerPoints.cardsByType[cardType]++;
+        } else {
+          state.playerPoints.cardsByType[cardType] = Math.max(0, state.playerPoints.cardsByType[cardType] - 1);
+        }
+      }
+    },
+    
+    // ========================================================================
+    // RANKING DOS JOGADORES
+    // ========================================================================
+    
+    setPlayerRankingLoading: (state, action) => {
+      state.loading.playerRanking = action.payload;
+    },
+    
+    setPlayerRanking: (state, action) => {
+      const { ranking, timestamp } = action.payload;
+      state.playerRanking = ranking;
+      state.lastUpdated.playerRanking = timestamp;
+      state.loading.playerRanking = false;
+    },
+    
+    updatePlayerInRanking: (state, action) => {
+      const { owner, totalPoints, cardsByType } = action.payload;
+      const playerIndex = state.playerRanking.findIndex(p => p.owner === owner);
+      
+      if (playerIndex !== -1) {
+        state.playerRanking[playerIndex].totalPoints = totalPoints;
+        state.playerRanking[playerIndex].cardsByType = cardsByType;
+        
+        // Reordenar ranking
+        state.playerRanking.sort((a, b) => b.totalPoints - a.totalPoints);
+      }
+    },
+    
+    // ========================================================================
+    // FILTROS E UI
+    // ========================================================================
+    
+    setCardFilter: (state, action) => {
+      const { filterType, value } = action.payload;
+      state.filters[filterType] = value;
+    },
+    
+    resetCardFilters: (state) => {
+      state.filters = {
+        cardType: 'all',
+        status: 'active',
+        sortBy: 'timestamp'
+      };
+    },
+    
+    // ========================================================================
+    // RESET E LIMPEZA
+    // ========================================================================
+    
+    resetCardState: (state) => {
+      state.playerCards = [];
+      state.playerPoints = { total: 0, cardsByType: {} };
+      state.playerRanking = [];
+      state.loading = {
+        playerCards: false,
+        playerPoints: false,
+        playerRanking: false
+      };
+      state.lastUpdated = {
+        playerCards: null,
+        playerPoints: null,
+        playerRanking: null
+      };
+    },
+    
+    resetPlayerData: (state) => {
+      state.playerCards = [];
+      state.playerPoints = { total: 0, cardsByType: {} };
+      state.lastUpdated.playerCards = null;
+      state.lastUpdated.playerPoints = null;
+    }
+  },
+});
+
+// ========================================================================
+// SELETORES DERIVADOS
+// ========================================================================
+
+// Seletor para obter cards filtrados
+export const selectFilteredPlayerCards = (state) => {
+  const { playerCards, filters } = state.cards;
+  
+  let filteredCards = [...playerCards];
+  
+  // Filtrar por tipo
+  if (filters.cardType !== 'all') {
+    filteredCards = filteredCards.filter(card => card.type === filters.cardType);
+  }
+  
+  // Filtrar por status
+  if (filters.status !== 'all') {
+    filteredCards = filteredCards.filter(card => card.status === filters.status);
+  }
+  
+  // Ordenar
+  switch (filters.sortBy) {
+    case 'timestamp':
+      filteredCards.sort((a, b) => b.timestamp - a.timestamp);
+      break;
+    case 'points':
+      filteredCards.sort((a, b) => b.points - a.points);
+      break;
+    case 'type':
+      filteredCards.sort((a, b) => a.type.localeCompare(b.type));
+      break;
+    case 'value':
+      filteredCards.sort((a, b) => (b.value || 0) - (a.value || 0));
+      break;
+    default:
+      break;
+  }
+  
+  return filteredCards;
+};
+
+// Seletor para obter estatísticas de cards
+export const selectPlayerCardStats = (state) => {
+  const { playerCards } = state.cards;
+  
+  const stats = {
+    total: playerCards.length,
+    active: 0,
+    cancelled: 0,
+    transferred: 0,
+    byType: {},
+    totalValue: 0,
+    totalPoints: 0
+  };
+  
+  playerCards.forEach(card => {
+    // Contar por status
+    if (card.status === CARD_STATUS.ACTIVE) stats.active++;
+    else if (card.status === CARD_STATUS.CANCELLED) stats.cancelled++;
+    else if (card.status === CARD_STATUS.TRANSFERRED) stats.transferred++;
+    
+    // Contar por tipo (apenas ativos e transferidos)
+    if (card.status === CARD_STATUS.ACTIVE || card.status === CARD_STATUS.TRANSFERRED) {
+      if (!stats.byType[card.type]) {
+        stats.byType[card.type] = { count: 0, points: 0, value: 0 };
+      }
+      stats.byType[card.type].count++;
+      stats.byType[card.type].points += card.points;
+      stats.byType[card.type].value += card.value || 0;
+      
+      stats.totalPoints += card.points;
+      stats.totalValue += card.value || 0;
+    }
+  });
+  
+  return stats;
+};
+
+// Obter label de um tipo de card
+export const getCardTypeLabel = (cardType) => {
+  const typeInfo = Object.values(CARD_TYPES).find(ct => ct.name === cardType);
+  return typeInfo ? typeInfo.label : cardType;
+};
+
+// Obter pontos de um tipo de card
+export const getCardTypePoints = (cardType) => {
+  const typeInfo = Object.values(CARD_TYPES).find(ct => ct.name === cardType);
+  return typeInfo ? typeInfo.points : 0;
+};
+
+export const {
+  setPlayerCardsLoading,
+  setPlayerCards,
+  addPlayerCard,
+  removePlayerCard,
+  updatePlayerCardStatus,
+  setPlayerPointsLoading,
+  setPlayerPoints,
+  updatePlayerPoints,
+  setPlayerRankingLoading,
+  setPlayerRanking,
+  updatePlayerInRanking,
+  setCardFilter,
+  resetCardFilters,
+  resetCardState,
+  resetPlayerData
+} = cardState.actions;
+
+export default cardState.reducer;
