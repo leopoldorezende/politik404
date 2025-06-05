@@ -125,31 +125,17 @@ const AlliancePopup = ({
       <div className="popup-info">
         <ul className="popup-info-list">
           <li>
-            <strong>Aliança Militar Exclusiva:</strong> Você só pode ter UMA aliança militar ativa. 
-            Se quiser fazer outra aliança, precisará desfazer a atual primeiro.
-          </li>
-          <li>
             Em caso de guerra, os países aliados são <strong>obrigados</strong> a prestar 
-            assistência militar. A aliança fortalece a posição diplomática internacional de 
-            ambos os países.
+            assistência militar.
           </li>
           <li>
-            Este acordo permite o livre trânsito de tropas e equipamentos militares entre 
-            os países signatários.
+            Você só pode ter uma aliança militar ativa. Para fazer outra aliança, precisará desfazer a atual.
           </li>
           <li>
-            <strong>Pontuação:</strong> A aliança militar gera 5 pontos para cada país.
+            <br />
+            <i>A aliança militar gera 5 pontos para cada país.</i>
           </li>
         </ul>
-      </div>
-
-      <div className="popup-info">
-        <p>
-          {isControlledByPlayer 
-            ? `${selectedCountry} é controlado por outro jogador e precisará aprovar esta proposta.`
-            : `${selectedCountry} é controlado pelo sistema e tem 50% de chance de aceitar esta proposta.`
-          }
-        </p>
       </div>
 
       <div className="popup-actions">

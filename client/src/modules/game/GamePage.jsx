@@ -237,11 +237,44 @@ const GamePage = () => {
     
     const countryPlayerMap = getCountriesWithPlayers();
     
-    return Object.keys(countriesData).map(countryName => ({
-      name: countryName,
-      hasPlayer: !!countryPlayerMap[countryName],
-      playerName: countryPlayerMap[countryName] || null
-    })).sort((a, b) => a.name.localeCompare(b.name));
+    // Criar lista com pontos calculados
+    const countriesWithPoints = Object.keys(countriesData).map(countryName => {
+      const playerName = countryPlayerMap[countryName];
+      
+      // Calcular pontos do país (usando mesmo método do getMyCountryPoints)
+      let countryPoints = 0;
+      
+      if (tradeAgreements.length > 0) {
+        const countryTradeAgreements = tradeAgreements.filter(agreement => 
+          agreement.originCountry === countryName
+        );
+        
+        // Calcular pontos baseados no tipo de acordo
+        countryPoints = countryTradeAgreements.reduce((total, agreement) => {
+          if (agreement.type === 'export') {
+            return total + 2; // Export = 2 pontos
+          } else if (agreement.type === 'import') {
+            return total + 1; // Import = 1 ponto
+          }
+          return total;
+        }, 0);
+      }
+      
+      return {
+        name: countryName,
+        hasPlayer: !!playerName,
+        playerName: playerName || null,
+        points: countryPoints
+      };
+    });
+    
+    // Ordenar por pontos (decrescente), depois por nome (alfabética)
+    return countriesWithPoints.sort((a, b) => {
+      if (b.points !== a.points) {
+        return b.points - a.points; // Maior pontuação primeiro
+      }
+      return a.name.localeCompare(b.name); // Alfabética para empates
+    });
   };
   
   // Função para fechar o popup
@@ -443,9 +476,11 @@ const GamePage = () => {
                   {getAllCountries().map((country, index) => (
                     <div 
                       key={index} 
-                      className={`country-item ${country.hasPlayer ? 'with-player' : 'without-player'}`}
+                      className={`country-item ${country.hasPlayer ? 'with-player' : 'without-player'} ${index === 0 ? 'winner' : ''}`}
                     >
+                      <span className="ranking-position">#{index + 1}</span>
                       <span className="country-name">{country.name}</span>
+                      <span className="country-points">{country.points} pts</span>
                       {country.hasPlayer && (
                         <span className="player-indicator" title={country.playerName}>
                           {country.playerName}

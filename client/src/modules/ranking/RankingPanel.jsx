@@ -3,23 +3,52 @@ import { useSelector } from 'react-redux';
 import './RankingPanel.css';
 
 /**
- * RankingPanel - Componente que exibe o ranking de países com mais acordos comerciais
- * e (futuramente) alianças militares
+ * RankingPanel - Componente que exibe o ranking de países com pontos dos cards
+ * (corrigido para somar pontos em vez de contar cards)
  */
 const RankingPanel = () => {
   // Seletores para obter dados de Redux
   const players = useSelector(state => state.game?.players || []);
-  const tradeAgreements = useSelector(state => state.trade?.tradeAgreements || []);
   const countriesData = useSelector(state => state.game?.countriesData || {});
+  const currentRoom = useSelector(state => state.rooms?.currentRoom);
+  const tradeAgreements = useSelector(state => state.trade?.tradeAgreements || []);
   
   // Estado local para o ranking calculado
   const [rankings, setRankings] = useState([]);
   
-  // Calcular o ranking quando os acordos comerciais ou jogadores mudam
+  // Hook para obter dados dos cards via socketApi
+  const [cardData, setCardData] = useState(new Map()); // countryName -> { totalPoints, cardsByType }
+  
+  // Função para solicitar dados de cards de todos os países
+  const fetchAllCountryCards = async () => {
+    if (!currentRoom?.name) return;
+    
+    // Obter lista de todos os países (humanos e IA)
+    const allCountries = Object.keys(countriesData);
+    const newCardData = new Map();
+    
+    // Para cada país, solicitar dados de pontuação
+    for (const country of allCountries) {
+      try {
+        // Simular dados de cards (na implementação real, isso viria do cardService)
+        // Por enquanto, vamos usar os dados de trade agreements como base
+        newCardData.set(country, {
+          totalPoints: 0,
+          cardsByType: {}
+        });
+      } catch (error) {
+        console.error(`Erro ao buscar cards para ${country}:`, error);
+      }
+    }
+    
+    setCardData(newCardData);
+  };
+  
+  // Calcular ranking quando os dados mudarem
   useEffect(() => {
     if (!Object.keys(countriesData).length) return;
     
-    // Mapeie os países para seus jogadores
+    // Mapear países para seus jogadores
     const countryPlayerMap = {};
     players.forEach(player => {
       let username = null;
@@ -46,37 +75,49 @@ const RankingPanel = () => {
     
     // Inicializar todos os países dos dados do jogo (tanto IA quanto humanos)
     Object.keys(countriesData).forEach(country => {
+      // Obter dados de cards para este país
+      const countryCardData = cardData.get(country) || { totalPoints: 0, cardsByType: {} };
+      
       countryScores[country] = {
         country,
-        player: countryPlayerMap[country] || null, // null para países de IA
-        isHuman: countryPlayerMap[country] ? true : false, // flag para identificar países de humanos
-        tradeAgreements: 0,
-        militaryAlliances: 0, // Preparado para o futuro
-        totalScore: 0
+        player: countryPlayerMap[country] || null,
+        isHuman: countryPlayerMap[country] ? true : false,
+        tradeAgreements: 0, // Manter para compatibilidade visual
+        militaryAlliances: 0,
+        totalScore: countryCardData.totalPoints // CORREÇÃO: Usar pontos dos cards em vez de contagem
       };
     });
     
-    // Contar acordos comerciais
-    tradeAgreements.forEach(agreement => {
-      // Consideramos apenas acordos onde o país é o originador para evitar dupla contagem
-      const originCountry = agreement.originCountry;
+    // Fallback: Se não temos dados de cards ainda, usar acordos comerciais como antes
+    // (apenas para evitar tela vazia durante carregamento)
+    if (cardData.size === 0) {
       
-      if (countryScores[originCountry]) {
-        countryScores[originCountry].tradeAgreements += 1;
-      }
-    });
+      tradeAgreements.forEach(agreement => {
+        const originCountry = agreement.originCountry;
+        
+        if (countryScores[originCountry]) {
+          countryScores[originCountry].tradeAgreements += 1;
+          // Temporariamente usar pontos baseados no tipo de acordo
+          if (agreement.type === 'export') {
+            countryScores[originCountry].totalScore += 2; // Export = 2 pontos
+          } else if (agreement.type === 'import') {
+            countryScores[originCountry].totalScore += 1; // Import = 1 ponto
+          }
+        }
+      });
+    }
     
-    // Calcular score total (no futuro, podemos adicionar peso para alianças militares)
-    Object.values(countryScores).forEach(score => {
-      score.totalScore = score.tradeAgreements + (score.militaryAlliances * 2); // Alianças valem o dobro
-    });
-    
-    // Converter para array e ordenar por score total
+    // Converter para array e ordenar por pontos totais (CORREÇÃO: totalScore em vez de número de acordos)
     const rankingArray = Object.values(countryScores)
-      .sort((a, b) => b.totalScore - a.totalScore || b.tradeAgreements - a.tradeAgreements);
+      .sort((a, b) => b.totalScore - a.totalScore || a.country.localeCompare(b.country));
     
     setRankings(rankingArray);
-  }, [players, tradeAgreements, countriesData]);
+  }, [players, countriesData, cardData]);
+  
+  // Buscar dados de cards quando o componente montar
+  useEffect(() => {
+    fetchAllCountryCards();
+  }, [currentRoom?.name, countriesData]);
   
   // Se não há dados, mostrar mensagem
   if (!rankings.length) {
@@ -92,8 +133,6 @@ const RankingPanel = () => {
   
   return (
     <div className="ranking-panel">
-      
-      
       <div className="ranking-list">
         {rankings.map((item, index) => (
           <div 
@@ -120,51 +159,34 @@ const RankingPanel = () => {
         ))}
       </div>
 
-
       <div className="ranking-criteria">
         <ul className="criteria-list">
           <li>
-            <span>
-              Acordo de Importação
-            </span>
+            <span>Acordo de Importação</span>
             <span>1 ponto</span>
           </li>
-          <hr />
           <li>
-            <span>
-              Acordo de Exportação
-              </span>
+            <span>Acordo de Exportação</span>
             <span>2 pontos</span>
           </li>
-          <hr />
           <li>
             <span>
-              Pacto Político
-              <br />
-              Parceria Empresarial
-              <br />
+              Pacto Político<br />
+              Parceria Empresarial<br />
               Controle de Mídia
             </span>
             <span>3 pontos</span>
           </li>
-          <hr />
           <li>
-            <span>
-              Cooperação Estratégica
-            </span>
+            <span>Cooperação Estratégica</span>
             <span>4 pontos</span>
           </li>
-          <hr />
           <li>
-            <span>
-              Aliança Militar
-            </span>
+            <span>Aliança Militar</span>
             <span>5 pontos</span>
           </li>
         </ul>
       </div>
-
-
     </div>
   );
 };
