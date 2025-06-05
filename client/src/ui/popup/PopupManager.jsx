@@ -14,7 +14,7 @@ export const usePopupStack = () => {
 // Provider que gerencia o stack automático
 export const PopupProvider = ({ children }) => {
   const [popupStack, setPopupStack] = useState([]);
-  const [nextZIndex, setNextZIndex] = useState(1000);
+  const nextZIndexRef = useRef(1000); // ✅ CORREÇÃO: Usar useRef em vez de useState
 
   // Registra uma nova popup no stack
   const registerPopup = useCallback((popupId) => {
@@ -24,12 +24,12 @@ export const PopupProvider = ({ children }) => {
         return prev;
       }
       
-      const newZIndex = nextZIndex;
-      setNextZIndex(prev => prev + 10);
+      const newZIndex = nextZIndexRef.current; // ✅ CORREÇÃO: Usar ref em vez de state
+      nextZIndexRef.current += 10; // ✅ CORREÇÃO: Atualizar ref diretamente
       
       return [...prev, { id: popupId, zIndex: newZIndex }];
     });
-  }, [nextZIndex]);
+  }, []); // ✅ CORREÇÃO: Remover nextZIndex das dependências
 
   // Remove popup do stack
   const unregisterPopup = useCallback((popupId) => {

@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createSelector } from '@reduxjs/toolkit';
 
 // Tipos de cards e suas pontuações (sincronizado com backend)
 export const CARD_TYPES = {
@@ -191,33 +191,37 @@ export const cardState = createSlice({
 });
 
 // ========================================================================
-// SELETORES DERIVADOS SIMPLIFICADOS
+// SELETORES MEMOIZADOS (CORREÇÃO)
 // ========================================================================
 
-// Seletor para obter estatísticas básicas de cards
-export const selectPlayerCardStats = (state) => {
-  const { playerCards } = state.cards;
-  
-  const stats = {
-    total: playerCards.length,
-    active: 0,
-    cancelled: 0,
-    totalValue: 0,
-    totalPoints: 0
-  };
-  
-  playerCards.forEach(card => {
-    if (card.status === CARD_STATUS.ACTIVE) stats.active++;
-    else if (card.status === CARD_STATUS.CANCELLED) stats.cancelled++;
+// ✅ CORREÇÃO: Selector base para playerCards
+const selectPlayerCards = (state) => state.cards.playerCards;
+
+// ✅ CORREÇÃO: Selector memoizado para estatísticas
+export const selectPlayerCardStats = createSelector(
+  [selectPlayerCards],
+  (playerCards) => {
+    const stats = {
+      total: playerCards.length,
+      active: 0,
+      cancelled: 0,
+      totalValue: 0,
+      totalPoints: 0
+    };
     
-    if (card.status === CARD_STATUS.ACTIVE) {
-      stats.totalPoints += card.points;
-      stats.totalValue += card.value || 0;
-    }
-  });
-  
-  return stats;
-};
+    playerCards.forEach(card => {
+      if (card.status === CARD_STATUS.ACTIVE) stats.active++;
+      else if (card.status === CARD_STATUS.CANCELLED) stats.cancelled++;
+      
+      if (card.status === CARD_STATUS.ACTIVE) {
+        stats.totalPoints += card.points;
+        stats.totalValue += card.value || 0;
+      }
+    });
+    
+    return stats;
+  }
+);
 
 // Obter label de um tipo de card
 export const getCardTypeLabel = (cardType) => {
