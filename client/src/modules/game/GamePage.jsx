@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import Sideview from '../../ui/sideview/Sideview';
 import Sidetools from '../../ui/sidetools/Sidetools';
+import { PopupProvider } from '../../ui/popup/PopupManager';
 import MapView from '../map/MapView';
 import ActionMenu from '../actions/ActionMenu';
 import CardsPopup from '../cards/CardsPopup';
@@ -358,135 +359,129 @@ const GamePage = () => {
   }
 
   return (
-    <div id="game-screen">
-      {/* Timer no topo da tela */}
-      {currentRoom && (
-        <div className="room-timer">
-          <div className="timer-content" onClick={handleOpenCardsPopup} style={{ cursor: 'pointer' }}>
-            <span className={`timer-value ${timeRemaining <= roomData.duration * 0.2 ? 'timer-warning' : ''}`}>
-              {formatTimeRemaining(timeRemaining)}
-            </span>
-            &nbsp;
-            <span className="material-icons">style</span>
-            <span className="cards-pts">
-              {getMyCountryPoints()}<small>pts</small>
-            </span>
-          </div>
-        </div>
-      )}
-      
-      <div id="map-container">
-        <MapView />
-      </div>
-      
-      <button id="btn-open-sidetools" className="map-control" onClick={toggleSidetools}>
-        <span className="material-icons">ads_click</span>
-      </button>
-      
-      <button id="btn-open-sideview" className="map-control" onClick={toggleSideview}>
-        <span className="material-icons">public</span>
-      </button>
-      
-      {/* Add the ActionMenu component with needed props */}
-      <ActionMenu 
-        onOpenSideview={() => {
-          setSideviewActive(true);
-          // Directly set the activeTab in Sideview by finding and clicking the country tab
-          setTimeout(() => {
-            const countryTab = document.querySelector('#sideview .tabs .tab[data-tab="country"]');
-            if (countryTab) {
-              countryTab.click();
-            }
-          }, 100);
-        }} 
-        onSetActiveTab={(tab) => {
-          // Find and click the tab directly
-          const tabElement = document.querySelector(`#sideview .tabs .tab[data-tab="${tab}"]`);
-          if (tabElement) {
-            tabElement.click();
-          }
-        }}
-      />
-      
-      <Sidetools 
-        onClose={toggleSidetools} 
-        isActive={sidetoolsActive}
-        myCountry={myCountry}
-        onOpenDebtPopup={handleOpenDebtPopup}
-      />
-      
-      <Sideview 
-        onExitRoom={handleExitRoom} 
-        onClose={toggleSideview} 
-        isActive={sideviewActive}
-        activeTab={activeTab} // Pass activeTab to Sideview
-        onTabChange={setActiveTab} // Allow Sideview to update our activeTab state
-      />
-      
-      {/* Popup quando o tempo acaba */}
-      {showTimeupPopup && (
-        <div className="timeup-popup-overlay">
-          <div className="timeup-popup">
-            <div className="timeup-popup-header">
-              <h2>Tempo Esgotado!</h2>
-              {/* <button className="close-popup-btn" onClick={closeTimeupPopup}>×</button> */}
+    <PopupProvider>
+      <div id="game-screen">
+        {/* Timer no topo da tela */}
+        {currentRoom && (
+          <div className="room-timer">
+            <div className="timer-content" onClick={handleOpenCardsPopup} style={{ cursor: 'pointer' }}>
+              <span className={`timer-value ${timeRemaining <= roomData.duration * 0.2 ? 'timer-warning' : ''}`}>
+                {formatTimeRemaining(timeRemaining)}
+              </span>
+              &nbsp;
+              <span className="material-icons">style</span>
+              <span className="cards-pts">
+                {getMyCountryPoints()}<small>pts</small>
+              </span>
             </div>
-            <div className="timeup-popup-content">
-              <h3>Resultados da Partida</h3>
-              <div className="countries-list">
-                {getAllCountries().map((country, index) => (
-                  <div 
-                    key={index} 
-                    className={`country-item ${country.hasPlayer ? 'with-player' : 'without-player'}`}
-                  >
-                    <span className="country-name">{country.name}</span>
-                    {country.hasPlayer && (
-                      <span className="player-indicator" title={country.playerName}>
-                        {country.playerName}
-                      </span>
-                    )}
-                  </div>
-                ))}
+          </div>
+        )}
+        
+        <div id="map-container">
+          <MapView />
+        </div>
+        
+        <button id="btn-open-sidetools" className="map-control" onClick={toggleSidetools}>
+          <span className="material-icons">ads_click</span>
+        </button>
+        
+        <button id="btn-open-sideview" className="map-control" onClick={toggleSideview}>
+          <span className="material-icons">public</span>
+        </button>
+        
+        {/* Add the ActionMenu component with needed props */}
+        <ActionMenu 
+          onOpenSideview={() => {
+            setSideviewActive(true);
+            // Directly set the activeTab in Sideview by finding and clicking the country tab
+            setTimeout(() => {
+              const countryTab = document.querySelector('#sideview .tabs .tab[data-tab="country"]');
+              if (countryTab) {
+                countryTab.click();
+              }
+            }, 100);
+          }} 
+          onSetActiveTab={(tab) => {
+            // Find and click the tab directly
+            const tabElement = document.querySelector(`#sideview .tabs .tab[data-tab="${tab}"]`);
+            if (tabElement) {
+              tabElement.click();
+            }
+          }}
+        />
+        
+        <Sidetools 
+          onClose={toggleSidetools} 
+          isActive={sidetoolsActive}
+          myCountry={myCountry}
+          onOpenDebtPopup={handleOpenDebtPopup}
+        />
+        
+        <Sideview 
+          onExitRoom={handleExitRoom} 
+          onClose={toggleSideview} 
+          isActive={sideviewActive}
+          activeTab={activeTab} // Pass activeTab to Sideview
+          onTabChange={setActiveTab} // Allow Sideview to update our activeTab state
+        />
+        
+        {/* Popup quando o tempo acaba */}
+        {showTimeupPopup && (
+          <div className="timeup-popup-overlay">
+            <div className="timeup-popup">
+              <div className="timeup-popup-header">
+                <h2>Tempo Esgotado!</h2>
+                {/* <button className="close-popup-btn" onClick={closeTimeupPopup}>×</button> */}
+              </div>
+              <div className="timeup-popup-content">
+                <h3>Resultados da Partida</h3>
+                <div className="countries-list">
+                  {getAllCountries().map((country, index) => (
+                    <div 
+                      key={index} 
+                      className={`country-item ${country.hasPlayer ? 'with-player' : 'without-player'}`}
+                    >
+                      <span className="country-name">{country.name}</span>
+                      {country.hasPlayer && (
+                        <span className="player-indicator" title={country.playerName}>
+                          {country.playerName}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="timeup-popup-footer">
+                <button className="exit-room-btn" onClick={handleExitRoom}>
+                  Sair da Partida
+                </button>
               </div>
             </div>
-            <div className="timeup-popup-footer">
-              <button className="exit-room-btn" onClick={handleExitRoom}>
-                Sair da Partida
-              </button>
-            </div>
           </div>
-        </div>
-      )}
-      
-      {/* Popup de proposta de comércio - z-index 1000 */}
-      <TradeProposalPopup 
-        proposal={tradeProposal}
-        isOpen={tradeProposal !== null}
-        onClose={handleCloseTradeProposal}
-      />
-      
-      {/* Popup de resumo de dívidas - z-index 2000 (maior que outros popups) */}
-      <DebtSummaryPopup
-        isOpen={showDebtPopup}
-        onClose={handleCloseDebtPopup}
-        debtSummary={debtPopupData.debtSummary}
-        debtRecords={debtPopupData.debtRecords}
-      />
+        )}
+        
+        {/* Popup de proposta de comércio - agora gerenciado automaticamente */}
+        <TradeProposalPopup 
+          proposal={tradeProposal}
+          isOpen={tradeProposal !== null}
+          onClose={handleCloseTradeProposal}
+        />
+        
+        {/* Popup de resumo de dívidas - agora gerenciado automaticamente */}
+        <DebtSummaryPopup
+          isOpen={showDebtPopup}
+          onClose={handleCloseDebtPopup}
+          debtSummary={debtPopupData.debtSummary}
+          debtRecords={debtPopupData.debtRecords}
+        />
 
-      {/* Popup de resumo de dívidas - z-index 2000 (maior que outros popups) */}
-      <DebtSummaryPopup
-        isOpen={showDebtPopup}
-        onClose={handleCloseDebtPopup}
-        debtSummary={debtPopupData.debtSummary}
-        debtRecords={debtPopupData.debtRecords}
-      />
-
-      {/* Popup de cards - z-index 1500 */}
-      <CardsPopup
-        isOpen={showCardsPopup}
-        onClose={handleCloseCardsPopup}
-      />
-    </div>
+        {/* Popup de cards - agora gerenciado automaticamente */}
+        <CardsPopup
+          isOpen={showCardsPopup}
+          onClose={handleCloseCardsPopup}
+        />
+      </div>
+    </PopupProvider>
   );
 };
 
