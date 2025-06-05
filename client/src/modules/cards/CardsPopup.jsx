@@ -82,7 +82,7 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
     },
     'acordos-defesa': {
       label: 'Acordos de Defesa',
-      types: ['strategic_cooperation', 'military_alliance'] // ingerência ainda não implementado
+      types: ['strategic_cooperation', 'military_alliance']
     }
   };
   

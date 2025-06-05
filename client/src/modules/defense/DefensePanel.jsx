@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import './DefensePanel.css';
 
-const DefensePanel = () => {
+const DefensePanel = ({ onOpenCardsPopup }) => {
   // Selecionar dados do Redux
   const myCountry = useSelector(state => state.game.myCountry);
   const countriesData = useSelector(state => state.game.countriesData);
@@ -59,6 +59,22 @@ const DefensePanel = () => {
 
   return (
     <div className="defense-panel">
+      <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+        <button 
+          onClick={() => onOpenCardsPopup && onOpenCardsPopup('acordos-defesa')}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#e74c3c',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Acordos de Defesa
+        </button>
+      </div>
+
       <div className="forces-section">
         <h4>Forças Armadas</h4>
         
