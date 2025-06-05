@@ -70,6 +70,22 @@ const PoliticsPanel = () => {
   return (
     <div className="politics-panel">
 
+      <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+        <button 
+          onClick={() => onOpenCardsPopup && onOpenCardsPopup('acordos-internos')}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Acordos Internos
+        </button>
+      </div>
+
    
         <div className="approval-section">
           <h4>Apoio:</h4>

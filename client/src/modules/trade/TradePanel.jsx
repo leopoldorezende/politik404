@@ -100,7 +100,7 @@ const TradePanel = ({ onOpenCardsPopup }) => {
             cursor: 'pointer'
           }}
         >
-          Ver Acordos
+          Acordos Comerciais
         </button>
       </div>
 
