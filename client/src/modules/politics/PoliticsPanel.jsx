@@ -70,27 +70,9 @@ const PoliticsPanel = () => {
   return (
     <div className="politics-panel">
 
-        <div className="domestic-actions">
-          <div className="action-buttons">
-            <button className="action-btn">
-              Pacto Político
-            </button>
-            
-            <button className="action-btn">
-              Parceria Empresarial
-            </button>
-            
-            <button className="action-btn">
-              Controle de Mídia
-            </button>
-                  
-            (tentar / subornar) tempo de carência 30s
-
-          </div>
-        </div>
-
+   
         <div className="approval-section">
-          <h4>Aprovação</h4>
+          <h4>Apoio:</h4>
           
           <div className="approval-bars">
             <div className="approval-item">
@@ -116,7 +98,7 @@ const PoliticsPanel = () => {
             </div>
             
             <div className="approval-item">
-              <span>Popularidade:</span>
+              <span>Empresários:</span>
               <div className="progress-bar">
                 <div 
                   className={`progress-fill ${approvalStatus.popularity >= 60 ? 'high' : approvalStatus.popularity >= 40 ? 'medium' : 'low'}`}
@@ -129,33 +111,17 @@ const PoliticsPanel = () => {
         </div>
         
         <div className="instability-section">
-          <h4>Instabilidade Política</h4>
+          <h4>Estabilidade Política</h4>
           
-          <div className="instability-info">
-            <div className="instability-item">
-              <span>Protestos:</span>
-              <div className="progress-bar">
-                <div 
-                  className={`progress-fill ${instabilityStatus.protests <= 2 ? 'low' : instabilityStatus.protests <= 5 ? 'medium' : 'high'}`}
-                  style={{width: `${instabilityStatus.protests * 10}%`}}
-                ></div>
-              </div>
-              <span>{instabilityStatus.protests} por mês</span>
-            </div>
-            
-            <div className="instability-item">
-              <span>Força da Oposição:</span>
-              <div className="progress-bar">
-                <div 
-                  className={`progress-fill ${instabilityStatus.opposition <= 20 ? 'low' : instabilityStatus.opposition <= 50 ? 'medium' : 'high'}`}
-                  style={{width: `${instabilityStatus.opposition}%`}}
-                ></div>
-              </div>
-              <span>{instabilityStatus.opposition}%</span>
-            </div>
-          </div>
+          <p>Exibir 6 "cards"</p>
         </div>
       
+
+        <div className="instability-section">
+          <h4>Controle sobre território</h4>
+          <p>Exibir 6 "cards"</p>
+        </div>
+
     </div>
   );
 };

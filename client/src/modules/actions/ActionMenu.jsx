@@ -3,6 +3,14 @@ import { useSelector } from 'react-redux';
 import ActionPopup from './ActionPopup';
 import './ActionMenu.css';
 
+
+          //  Pacto Político
+            
+          //     Parceria Empresarial
+            
+          //     Controle de Mídia
+
+
 /**
  * Menu principal de ações no jogo
  */

@@ -324,7 +324,7 @@ const applyAllParameters = useCallback(async () => {
       
         {/* Data do Jogo */}
         <div className="indicator game-date">
-          <label>Data:</label>
+          <label></label>
           <span className="value">{calculateGameDate()}</span>
         </div>
 
