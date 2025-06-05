@@ -43,31 +43,19 @@ const CardsPopup = ({ isOpen, onClose }) => {
     }
   };
 
-  // Definir grupos de cards
+  // Definir grupos de cards - REORGANIZADO conforme solicitado
   const cardGroups = {
-    'acordo-importacao': {
-      label: 'Acordo de Importação',
-      types: ['import']
-    },
-    'acordo-exportacao': {
-      label: 'Acordo de Exportação', 
-      types: ['export']
+    'acordos-comerciais': {
+      label: 'Acordos Comerciais',
+      types: ['import', 'export']
     },
     'acordos-internos': {
       label: 'Acordos Internos',
       types: ['political_pact', 'business_partnership', 'media_control']
     },
-    'ingerencia': {
-      label: 'Ingerência',
-      types: [] // Tipo ainda não implementado
-    },
-    'cooperacao-estrategica': {
-      label: 'Cooperação Estratégica',
-      types: ['strategic_cooperation']
-    },
-    'alianca-militar': {
-      label: 'Aliança Militar',
-      types: ['military_alliance']
+    'acordos-defesa': {
+      label: 'Acordos de Defesa',
+      types: ['strategic_cooperation', 'military_alliance'] // ingerência ainda não implementado
     }
   };
   
@@ -199,7 +187,6 @@ const CardsPopup = ({ isOpen, onClose }) => {
                 <div key={groupKey} className="card-group">
                   <div className="group-header">
                     <h3>{groupConfig.label}</h3>
-                    <span className="group-count">({groupCards.length})</span>
                   </div>
                   
                   <div className="cards-grid">
@@ -209,33 +196,42 @@ const CardsPopup = ({ isOpen, onClose }) => {
                         className="card-item-simple"
                         style={{ '--card-color': getCardColor(card.type) }}
                       >
+                        <div 
+                          className="card-header"
+                        >
+                          {getCardTypeLabel(card.type)}
+                        </div>
 
-                        <div className="card-points">
-                          {card.points}pt{card.points !== 1 ? 's' : ''}
-                        </div>
-                        
-                        <div className="card-info">
-                          <div className="card-target">{card.target || 'N/A'}</div>
-                          {card.value > 0 && (
-                            <div className="card-value">{card.value} bi</div>
-                          )}
-                          {card.metadata?.product && (
-                            <div className="card-product">
-                              {card.metadata.product === 'commodity' ? 'Commodities' : 'Manufaturas'}
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="card-actions">
-                          {card.sourceAgreementId && (
-                            <button 
-                              className="card-remove-btn"
-                              onClick={() => handleRemoveCard(card)}
-                              title="Remover card e cancelar acordo"
-                            >
-                              ×
-                            </button>
-                          )}
+                        <div className="card-body">
+                          <div className="card-points">
+                            {card.points}pt{card.points !== 1 ? 's' : ''}
+                          </div>
+                          
+                          
+                          <div className="card-info">
+
+                            <div className="card-target">{card.target || 'N/A'}</div>
+                            {card.value > 0 && (
+                              <div className="card-value">{card.value} bi</div>
+                            )}
+                            {card.metadata?.product && (
+                              <div className="card-product">
+                                {card.metadata.product === 'commodity' ? 'Commodities' : 'Manufaturas'}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="card-actions">
+                            {card.sourceAgreementId && (
+                              <button 
+                                className="card-remove-btn"
+                                onClick={() => handleRemoveCard(card)}
+                                title="Remover card e cancelar acordo"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}

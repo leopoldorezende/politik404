@@ -369,7 +369,7 @@ const GamePage = () => {
             &nbsp;
             <span className="material-icons">style</span>
             <span className="cards-pts">
-              {getMyCountryPoints()} 
+              {getMyCountryPoints()}<small>pts</small>
             </span>
           </div>
         </div>

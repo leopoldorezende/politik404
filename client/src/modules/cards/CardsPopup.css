@@ -80,19 +80,15 @@
   color: rgba(255, 255, 255, 0.4)
 }
 
-.group-count {
-  font-size: 12px;
-  color: #00ff8c;
-  font-weight: 500;
-}
 
 /* ========================================================================
    GRID DE CARDS COMPACTO
    ======================================================================== */
 
 .cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   border: 1px solid rgba(255,255,255,.1);
   padding: 16px;
@@ -101,17 +97,33 @@
 }
 
 .card-item-simple {
-  display: flex;
+  width: 32.2%;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
   background: white;
   border-radius: 6px;
-  border-left: 3px solid var(--card-color);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   min-height: 50px;
 }
+
+.card-header {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  padding: 2px 8px;
+  font-size: 14px;
+  background-color: var(--card-color);
+}
+
+
+.card-body {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+
 
 .card-item-simple:hover {
   transform: translateY(-1px);
@@ -233,7 +245,7 @@
   }
   
   .card-item-simple {
-    padding: 12px;
+    width: 50%;
   }
   
   .group-header {
@@ -304,9 +316,6 @@
   min-width: 35px;
 }
 
-
-
-
-
-
-
+.card-type {
+  color: black;
+}

@@ -19,10 +19,10 @@ function setupRoomExpiration(io, gameState, roomName, duration) {
     clearTimeout(roomExpirationTimers.get(roomName));
   }
   
-  // Configurar novo timer
+// Timer: Remover a sala 1 minuto APÓS o tempo oficial acabar
   const timer = setTimeout(() => {
     expireRoom(io, gameState, roomName);
-  }, duration);
+  }, duration + 60000); // +1 minuto extra
   
   roomExpirationTimers.set(roomName, timer);
   
@@ -46,10 +46,10 @@ function expireRoom(io, gameState, roomName) {
   console.log(`[EXPIRATION] Expirando sala: ${roomName}`);
   
   // Notificar todos os jogadores na sala
-  io.to(roomName).emit('roomDeleted', {
-    message: `A sala '${roomName}' expirou e foi removida automaticamente.`,
-    reason: 'expired'
-  });
+  // io.to(roomName).emit('roomDeleted', {
+  //   message: `A sala '${roomName}' expirou e foi removida automaticamente.`,
+  //   reason: 'expired'
+  // });
   
   // ===== CORREÇÃO: Usar economyService em vez de countryStateManager =====
   if (global.economyService) {
@@ -87,7 +87,9 @@ function initializeExistingRoomsExpiration(io, gameState) {
   
   for (const [roomName, room] of gameState.rooms.entries()) {
     if (room.expiresAt) {
-      const timeRemaining = room.expiresAt - now;
+      const officialEndTime = room.expiresAt;
+      const finalRemovalTime = officialEndTime + 60000; // +1 minuto
+      const timeRemaining = finalRemovalTime - now;
       
       if (timeRemaining <= 0) {
         // Sala já deveria ter expirado
@@ -95,7 +97,7 @@ function initializeExistingRoomsExpiration(io, gameState) {
         expireRoom(io, gameState, roomName);
       } else {
         // Configurar timer para o tempo restante
-        setupRoomExpiration(io, gameState, roomName, timeRemaining);
+        setupRoomExpiration(io, gameState, roomName, timeRemaining - 60000);
         console.log(`[EXPIRATION] Timer restaurado para sala ${roomName}: ${timeRemaining / 60000} minutos restantes`);
       }
     }
