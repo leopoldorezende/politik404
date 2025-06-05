@@ -57,10 +57,12 @@ const ActionPopup = ({
         />
       );
     } else if (popupType === 'alliance') {
-      if (actionType === 'military') {
+     if (actionType === 'military') {
         return (
           <AlliancePopup 
             selectedCountry={selectedCountry}
+            myCountry={myCountry}
+            isControlledByPlayer={isCountryControlledByPlayer}
             onClose={onClose}
           />
         );

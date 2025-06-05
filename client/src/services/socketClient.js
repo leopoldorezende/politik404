@@ -228,7 +228,31 @@ export const socketApi = {
   getTradeAgreements: () => {
     const socket = getSocketInstance() || socketApi.connect();
     socket.emit('getTradeAgreements');
+  },
+
+  // ======================================================================
+  // MÉTODOS DE ALIANÇA MILITAR (NOVO - SEGUINDO PADRÃO DE COMÉRCIO)
+  // ======================================================================
+  
+  // Enviar proposta de aliança militar
+ sendAllianceProposal: (proposalData) => {
+    const socket = getSocketInstance() || socketApi.connect();
+    console.log('Enviando proposta de aliança militar:', proposalData);
+    socket.emit('sendAllianceProposal', proposalData);
+  },
+  
+  // Responder a uma proposta de aliança militar (aceitar ou recusar)
+  respondToAllianceProposal: (proposalId, accepted) => {
+    const socket = getSocketInstance() || socketApi.connect();
+    socket.emit('respondToAllianceProposal', { proposalId, accepted });
+  },
+  
+  // Cancelar uma aliança militar existente
+  cancelMilitaryAlliance: (cardId) => {
+    const socket = getSocketInstance() || socketApi.connect();
+    socket.emit('cancelMilitaryAlliance', cardId);
   }
+
 };
 
 export default socketApi;

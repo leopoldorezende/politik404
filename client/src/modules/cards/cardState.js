@@ -8,7 +8,7 @@ export const CARD_TYPES = {
   BUSINESS_PARTNERSHIP: { name: 'business_partnership', points: 3, label: 'Parceria Empresarial' },
   MEDIA_CONTROL: { name: 'media_control', points: 3, label: 'Controle de Mídia' },
   STRATEGIC_COOPERATION: { name: 'strategic_cooperation', points: 4, label: 'Cooperação Estratégica' },
-  MILITARY_ALLIANCE: { name: 'military_alliance', points: 5, label: 'Aliança Militar' }
+  MILITARY_ALLIANCE: { name: 'military_alliance', points: 5, label: 'Aliança Militar', color: '#00bcd4' }
 };
 
 // Status dos cards

@@ -526,6 +526,104 @@ export const setupSocketEvents = (socket, socketApi) => {
     }
   });
 
+
+  // ======================================================================
+  // EVENTOS DE ALIANÇA MILITAR (NOVO - SEGUINDO PADRÃO DE COMÉRCIO)
+  // ======================================================================
+  
+  socket.on('allianceProposalReceived', (proposal) => {
+    console.log('Proposta de aliança militar recebida:', proposal);
+    
+    // ✅ Debounce para evitar múltiplas notificações de propostas
+    clearTimeout(proposalTimeout);
+    proposalTimeout = setTimeout(() => {
+      if (window.Audio) {
+        try {
+          const notificationSound = new Audio('/notification.mp3');
+          notificationSound.play().catch(() => {});
+        } catch (error) {
+          console.debug('Som de notificação não disponível');
+        }
+      }
+      if (isInGamePage()) {
+        const { originCountry } = proposal;
+        
+        // ✅ Usar função com cooldown para evitar toasts duplicados
+        showNotificationWithCooldown(
+          'info',
+          `${originCountry} propõe uma aliança militar com você!`,
+          4000
+        );
+      } else {
+        console.log('[TOAST BLOCKED] Alliance proposal notification blocked - not in game page');
+      }
+    }, 100); // Pequeno delay para agrupar eventos
+  });
+  
+ socket.on('allianceProposalResponse', (response) => {
+    console.log('Resposta à proposta de aliança militar recebida:', response);
+    
+    // ✅ Debounce para evitar múltiplas notificações de resposta
+    clearTimeout(responseTimeout);
+    responseTimeout = setTimeout(() => {
+      
+      if (!isInGamePage()) {
+        console.log('[TOAST BLOCKED] Alliance response notification blocked - not in game page');
+        return;
+      }
+      
+      const { accepted, targetCountry } = response;
+      
+      if (accepted) {
+        showNotificationWithCooldown(
+          'success',
+          `${targetCountry} aceitou sua proposta de aliança militar!`,
+          4000
+        );
+      } else {
+        showNotificationWithCooldown(
+          'warning',
+          `${targetCountry} recusou sua proposta de aliança militar.`,
+          4000
+        );
+      }
+    }, 100);
+  });
+
+  socket.on('allianceProposalProcessed', (response) => {
+    console.log('Proposta de aliança militar processada:', response);
+    
+    const { accepted } = response;
+    
+    if (accepted) {
+      MessageService.showSuccess('Você aceitou a proposta de aliança militar.');
+    } else {
+      MessageService.showInfo('Você recusou a proposta de aliança militar.');
+    }
+  });
+
+  socket.on('militaryAllianceCancelled', (data) => {
+    console.log('Aliança militar cancelada:', data);
+    
+    // ✅ NOVO: Iniciar cooldown de 1 minuto após cancelamento
+    if (data.cooldownTimestamp) {
+      // Usar localStorage para persistir o cooldown de cancelamento
+      try {
+        const cancelCooldowns = JSON.parse(localStorage.getItem('allianceCancelCooldowns') || '{}');
+        cancelCooldowns.military_alliance = data.cooldownTimestamp;
+        localStorage.setItem('allianceCancelCooldowns', JSON.stringify(cancelCooldowns));
+        console.log('[ALLIANCE] Cooldown de 1 minuto iniciado após cancelamento');
+      } catch (e) {
+        console.error('Erro ao salvar cooldown de cancelamento:', e);
+      }
+    }
+    
+    MessageService.showWarning(
+      `Aliança militar com ${data.targetCountry} foi cancelada. Aguarde 1 minuto para propor uma nova aliança.`, 
+      6000
+    );
+  });
+  
   // ======================================================================
   // ✅ CORREÇÃO 6: Cleanup function para limpar timeouts
   // ======================================================================

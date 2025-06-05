@@ -41,14 +41,34 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
   }, [isOpen, initialFilter]);
 
   const handleRemoveCard = (card) => {
-    if (window.confirm(`Tem certeza que deseja remover este card e cancelar o acordo comercial?`)) {
-      const socket = socketApi.getSocketInstance();
-      if (socket && card.sourceAgreementId) {
-        // Cancelar o acordo comercial que gerou este card
-        socket.emit('cancelTradeAgreement', card.sourceAgreementId);
+      if (card.type === 'military_alliance') {
+        // Lógica especial para alianças militares
+        if (window.confirm(`Tem certeza que deseja cancelar a aliança militar com ${card.target}? Esta ação encerrará o acordo militar entre os países e você precisará aguardar 1 minuto antes de propor uma nova aliança.`)) {
+          const socket = socketApi.getSocketInstance();
+          if (socket) {
+            // Cancelar aliança militar via card ID
+            socket.emit('cancelMilitaryAlliance', card.id);
+          }
+        }
+      } else if (card.type === 'export' || card.type === 'import') {
+        // Lógica para acordos comerciais
+        if (window.confirm(`Tem certeza que deseja remover este card e cancelar o acordo comercial?`)) {
+          const socket = socketApi.getSocketInstance();
+          if (socket && card.sourceAgreementId) {
+            // Cancelar o acordo comercial que gerou este card
+            socket.emit('cancelTradeAgreement', card.sourceAgreementId);
+          }
+        }
+      } else {
+        // Outros tipos de cards
+        if (window.confirm(`Tem certeza que deseja remover este card?`)) {
+          const socket = socketApi.getSocketInstance();
+          if (socket) {
+            socket.emit('cancelCard', card.id);
+          }
+        }
       }
-    }
-  };
+    };
 
   // Definir grupos de cards - REORGANIZADO conforme solicitado
   const cardGroups = {
@@ -100,22 +120,7 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
     };
   };
   
-  // Função para obter ícone do card
-  const getCardIcon = (cardType) => {
-    const icons = {
-      export: 'trending_up',
-      import: 'trending_down',
-      political_pact: 'gavel',
-      business_partnership: 'corporate_fare',
-      media_control: 'connected_tv',
-      strategic_cooperation: 'handshake',
-      military_alliance: 'security'
-    };
-    
-    return icons[cardType] || 'star';
-  };
-  
-  // Função para obter cor do card
+  // Função para obter cor do card`
   const getCardColor = (cardType) => {
     const colors = {
       export: '#27ae60',
@@ -124,7 +129,7 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
       business_partnership: '#f39c12',
       media_control: '#e74c3c',
       strategic_cooperation: '#16a085',
-      military_alliance: '#e67e22'
+      military_alliance: '#00bcd4' // ✅ CIANO conforme solicitado
     };
     
     return colors[cardType] || '#95a5a6';
@@ -244,11 +249,15 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
                           </div>
                           
                           <div className="card-actions">
-                            {card.sourceAgreementId && (
+                            {(card.sourceAgreementId || card.type === 'military_alliance') && (
                               <button 
                                 className="card-remove-btn"
                                 onClick={() => handleRemoveCard(card)}
-                                title="Remover card e cancelar acordo"
+                                title={
+                                  card.type === 'military_alliance' 
+                                    ? "Cancelar aliança militar" 
+                                    : "Remover card e cancelar acordo"
+                                }
                               >
                                 ×
                               </button>
