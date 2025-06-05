@@ -59,7 +59,7 @@ const Sidetools = ({ onClose, isActive, myCountry, onOpenDebtPopup, onOpenCardsP
         
         {/* Painel de Política - Usando nosso novo componente */}
         <div className={`tab-content ${activeTab === 'politics' ? 'active' : ''}`}>
-          <PoliticsPanel />
+          <PoliticsPanel onOpenCardsPopup={onOpenCardsPopup} />
         </div>
         
         {/* Painel Trade - Usando nosso novo componente */}

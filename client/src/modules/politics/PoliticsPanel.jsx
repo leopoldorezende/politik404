@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import './PoliticsPanel.css';
 
-const PoliticsPanel = () => {
+const PoliticsPanel = ({ onOpenCardsPopup }) => {
   // Selecionar dados do Redux
   const myCountry = useSelector(state => state.game.myCountry);
   const countriesData = useSelector(state => state.game.countriesData);
@@ -75,7 +75,7 @@ const PoliticsPanel = () => {
           onClick={() => onOpenCardsPopup && onOpenCardsPopup('acordos-internos')}
           style={{
             padding: '8px 16px',
-            backgroundColor: '#007bff',
+            backgroundColor: '#9b59b6',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
@@ -85,7 +85,6 @@ const PoliticsPanel = () => {
           Acordos Internos
         </button>
       </div>
-
    
         <div className="approval-section">
           <h4>Apoio:</h4>
