@@ -122,26 +122,66 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
       <div id="info" className={`tab-content ${activeTab === 'info' ? 'active' : ''}`}>
 
         <div id="room-details">
-          <p><strong>Nome da partida:</strong> <span id="room-name-display">{currentRoom?.name}</span></p>
-          <p><strong>Criador:</strong> <span id="room-owner-display">{currentRoom?.owner}</span></p>
-          <p><strong>Jogadores:</strong> <span id="room-players-count">{currentRoom?.playerCount}</span></p>
-          <p><strong>Criada em:</strong> <span id="room-created-at">
+          <p><strong>Nome da partida:</strong> <span id="room-name-display">{currentRoom?.name}</span> 
+          <br />
+          <span id="room-players-count">{currentRoom?.playerCount} jogador{currentRoom?.playerCount > 1 ? 'es' : ''}</span></p>
+          <p><strong>Criado por</strong> <span id="room-owner-display">{currentRoom?.owner}</span></p>
+          {/* <p><strong>Criada em:</strong> <span id="room-created-at">
             {currentRoom?.createdAt && new Date(currentRoom.createdAt).toLocaleString('pt-BR')}
-          </span></p>
+          </span></p> */}
           <div className="room-info">
             <button id="exit-room-button" onClick={onExitRoom}>Sair da Partida</button>
           </div>
         </div>
 
-        <h4>Objetivo:</h4>
-        <p>
-          O jogo possui 12 nações ativas que participam do confronto por influência global.
-        </p>
-        <ul>
-          <li>1. Fazer o maior número de acordos econômicos e militares.</li>
-          <li>2. Forçar rompimento de acordos de países concorrentes.</li>
-          <li>3. Sobreviver enquanto líder da sua nação.</li>
-        </ul>
+        <h4>Influencie o mundo!</h4>
+          <p>Ganhe pontos fazendo acordos, roube pontos com ingerência e guerra. Quem acumular mais pontos, vence.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo de Influência</th>
+                <th>Total</th>
+                <th>Pontos</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Território</td>
+                <td>3</td>
+                <td>10 pontos</td>
+              </tr>
+              <tr>
+                <td>Estabilidade</td>
+                <td>3</td>
+                <td>6 pontos</td>
+              </tr>
+              <tr>
+                <td>Aliança Militar</td>
+                <td>1</td>
+                <td>5 pontos</td>
+              </tr>
+              <tr>
+                <td>Cooperação Estratégica</td>
+                <td>1</td>
+                <td>4 pontos</td>
+              </tr>
+              <tr>
+                <td>Acordos Internos</td>
+                <td>3</td>
+                <td>3 pontos</td>
+              </tr>
+              <tr>
+                <td>Acordo de Exportação</td>
+                <td>N</td>
+                <td>2 pontos</td>
+              </tr>
+              <tr>
+                <td>Acordo de Importação</td>
+                <td>N</td>
+                <td>1 ponto</td>
+              </tr>
+            </tbody>
+          </table>
       </div>
     </div>
   );

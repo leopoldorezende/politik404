@@ -481,11 +481,13 @@ const GamePage = () => {
                       <span className="ranking-position">#{index + 1}</span>
                       <span className="country-name">{country.name}</span>
                       <span className="country-points">{country.points} pts</span>
-                      {country.hasPlayer && (
+                      {country.hasPlayer ? (
                         <span className="player-indicator" title={country.playerName}>
                           {country.playerName}
                         </span>
-                      )}
+                      ) : (<span className="player-indicator" title="Controlado por IA">
+                         Controlado por IA
+                        </span>)}
                     </div>
                   ))}
                 </div>

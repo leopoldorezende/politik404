@@ -56,9 +56,6 @@ const CountryState = ({ roomName, countryName }) => {
   
   return (
     <div className="country-state-display">
-      <div className="last-updated">
-        Última atualização: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'N/A'}
-      </div>
       
       {/* Seção de Economia */}
       <div className="state-section">

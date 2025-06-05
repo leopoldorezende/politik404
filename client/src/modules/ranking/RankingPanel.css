@@ -48,7 +48,7 @@
 .ranking-panel .ranking-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
 }
 
 .ranking-panel .ranking-item {
@@ -88,13 +88,19 @@
 }
 
 .ranking-panel .ranking-info {
+  position: relative;
   flex: 1;
+}
+
+.ranking-panel .ranking-info small {
+  position: absolute;
+  top: 2px;
+  right: 8px;
 }
 
 .ranking-panel .country-name {
   font-size: 16px;
   font-weight: bold;
-  margin-bottom: 3px;
 }
 
 .ranking-panel .top-ranked .country-name {
@@ -104,7 +110,6 @@
 .ranking-panel .player-name {
   font-size: 13px;
   color: #aaa;
-  margin-bottom: 3px;
 }
 
 /* Estilo para países controlados pela IA */

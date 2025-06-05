@@ -49,11 +49,14 @@ const CountryDetails = () => {
   
   return (
     <div className="country-details">
-      <h3>{country.name}</h3>
+      <h3><small>Selecionado:</small> {country.name}</h3>
       
-      {countryOwner && (
+      {countryOwner ? (
         <p className="player-name">Controlado por: {countryOwner}</p>
-      )}
+      ) : (
+        <p className="player-ia">Controlado por IA</p>
+      )
+      }
       
       {/* Use o componente CountryState para mostrar os indicadores dinâmicos */}
       {currentRoom && (
@@ -63,13 +66,6 @@ const CountryDetails = () => {
         />
       )}
       
-      <div className="country-info">
-        <div className="country-stats">
-          <p><strong>População:</strong> {country.population?.toLocaleString()} habitantes</p>
-          {country.hdi && <p><strong>IDH:</strong> {country.hdi}</p>}
-        </div>
-
-      </div>
     </div>
   );
 };

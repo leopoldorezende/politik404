@@ -4,21 +4,29 @@
   .country-details h3 {
     display: block;
     margin: 0 0 5px 0;
-    font-size: 18px;
-    text-align: center;
+    font-size: 16px;
+    text-align: left;
     padding-bottom: 5px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   }
+  .country-details h3 small {
+    color: rgba(255, 255, 255, 0.6)
+  }
   
-  .country-details .player-name {
+  .country-details .player-name,
+  .country-details .player-ia {
     font-size: 14px;
     color: rgb(68, 170, 105);
     margin-top: 0;
     margin-bottom: 15px;
     font-style: italic;
-    text-align: center;
+    text-align: left;
   }
   
+  .country-details .player-ia {
+    color: rgba(255, 255, 255, 0.5)
+  }
+
   .country-details .country-not-selected {
     display: flex;
     height: calc(100vh - 150px);
