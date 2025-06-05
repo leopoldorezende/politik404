@@ -143,6 +143,7 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
   
   const filteredGroups = getFilteredGroups();
   const totalCards = allPlayerCards.length;
+  const filteredCardsCount = Object.values(filteredGroups).reduce((sum, cards) => sum + cards.length, 0);
   
   return (
     <Popup
@@ -183,6 +184,11 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
             <div className="cards-empty">
               <span className="material-icons">style</span>
               <p>Você ainda não possui cards. Faça acordos para começar a pontuar!</p>
+            </div>
+          ) : filteredCardsCount === 0 ? (
+            <div className="cards-empty">
+              <span className="material-icons">style</span>
+              <p>Você ainda não possui cards de {cardGroups[selectedGroup]?.label || 'categoria selecionada'}.</p>
             </div>
           ) : (
             Object.entries(filteredGroups).map(([groupKey, groupCards]) => {

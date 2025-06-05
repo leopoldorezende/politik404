@@ -227,40 +227,6 @@ const TradePanel = ({ onOpenCardsPopup }) => {
         </div>
       </div>
 
-      <div className="trade-agreements-section">
-        <h4>Acordos Comerciais</h4>
-
-        {myAgreements.length > 0 ? (
-          <div className="agreements-list">
-            {myAgreements.map((agreement, index) => (
-              <div 
-                key={`${agreement.id}-${index}`} 
-                className={`trade-card ${agreement.type}`}
-              >
-                <p>
-                  <b>{agreement.country}</b>
-                  <br />
-                  {agreement.type === 'export' ? 'Exportação' : 'Importação'} <span>de </span>
-                  {agreement.product === 'commodity' ? 'Commodities' : 'Manufatura'}
-                  <br />
-                  <b>{agreement.value}</b> bi USD
-                </p>
-                <button 
-                  className="action-btn cancel"
-                  onClick={() => handleCancelAgreement(agreement.id)}
-                  disabled={isSubmitting}
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="no-data">
-            <p>Nenhum acordo comercial ativo</p>
-          </div>
-        )}
-      </div>
     </div>
   );
 };
