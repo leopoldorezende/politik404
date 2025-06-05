@@ -120,18 +120,7 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
       )}
 
       <div id="info" className={`tab-content ${activeTab === 'info' ? 'active' : ''}`}>
-        <h4>Países:</h4>
-        <p>
-          O jogo possui 12 nações ativas que participam do confronto por influência global.
-        </p>
-        <h4>Objetivos:</h4>
-        <ul>
-          <li>1. Fazer o maior número de acordos econômicos e militares.</li>
-          <li>2. Forçar rompimento de acordos de países concorrentes.</li>
-          <li>3. Sobreviver enquanto líder da sua nação.</li>
-        </ul>
 
-        <h4>Informações da Partida</h4>
         <div id="room-details">
           <p><strong>Nome da partida:</strong> <span id="room-name-display">{currentRoom?.name}</span></p>
           <p><strong>Criador:</strong> <span id="room-owner-display">{currentRoom?.owner}</span></p>
@@ -143,7 +132,16 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
             <button id="exit-room-button" onClick={onExitRoom}>Sair da Partida</button>
           </div>
         </div>
-        <div id="room-admin-controls"></div>
+
+        <h4>Objetivo:</h4>
+        <p>
+          O jogo possui 12 nações ativas que participam do confronto por influência global.
+        </p>
+        <ul>
+          <li>1. Fazer o maior número de acordos econômicos e militares.</li>
+          <li>2. Forçar rompimento de acordos de países concorrentes.</li>
+          <li>3. Sobreviver enquanto líder da sua nação.</li>
+        </ul>
       </div>
     </div>
   );

@@ -143,7 +143,9 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
   
   const filteredGroups = getFilteredGroups();
   const totalCards = allPlayerCards.length;
-  const filteredCardsCount = Object.values(filteredGroups).reduce((sum, cards) => sum + cards.length, 0);
+  const filteredCardsCount = selectedGroup === 'todos' 
+    ? totalCards
+    : Object.values(filteredGroups).reduce((sum, cards) => sum + cards.length, 0);
   
   return (
     <Popup
