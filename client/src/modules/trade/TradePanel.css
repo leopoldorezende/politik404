@@ -17,6 +17,21 @@
   padding-bottom: 5px;
 }
 
+
+.trade-panel button {
+  margin-top: 16px;
+  width: 100%;
+  flex: 1;
+  padding: 10px 12px!important;
+  font-size: 11px;
+  border-radius: 4px;
+  background-color: #2980b9!important;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+}
+
 /* Economic Overview Section */
 .economic-overview-section {
   margin-bottom: 15px;

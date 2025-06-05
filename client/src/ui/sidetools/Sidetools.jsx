@@ -6,7 +6,7 @@ import TradePanel from '../../modules/trade/TradePanel';
 import DefensePanel from '../../modules/defense/DefensePanel';
 import './Sidetools.css';
 
-const Sidetools = ({ onClose, isActive, myCountry, onOpenDebtPopup }) => {
+const Sidetools = ({ onClose, isActive, myCountry, onOpenDebtPopup, onOpenCardsPopup }) => {
   const [activeTab, setActiveTab] = useState('economy');
 
   return (
@@ -64,7 +64,7 @@ const Sidetools = ({ onClose, isActive, myCountry, onOpenDebtPopup }) => {
         
         {/* Painel Trade - Usando nosso novo componente */}
         <div className={`tab-content ${activeTab === 'trade' ? 'active' : ''}`}>
-          <TradePanel />
+          <TradePanel onOpenCardsPopup={onOpenCardsPopup} />
         </div>
         
         {/* Painel Militar - Usando nosso novo componente */}

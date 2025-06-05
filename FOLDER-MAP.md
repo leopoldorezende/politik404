@@ -92,7 +92,8 @@
   │   │   └── ui
   │   │       ├── popup
   │   │       │   ├── Popup.css
-  │   │       │   └── Popup.jsx  # Layout da popup genérica que será usada em todo game
+  │   │       │   ├── Popup.jsx  # Layout da popup genérica que será usada em todo game
+  │   │       │   └── PopupManager.jsx
   │   │       ├── sidetools
   │   │       │   ├── Sidetools.css
   │   │       │   └── Sidetools.jsx  # Layout da sidebar esquerda Sidetools

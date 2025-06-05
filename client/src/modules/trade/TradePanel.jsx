@@ -8,7 +8,7 @@ import { useEconomy, useTradeAgreements } from '../../hooks/useEconomy';
 import { socketApi } from '../../services/socketClient';
 import './TradePanel.css';
 
-const TradePanel = () => {
+const TradePanel = ({ onOpenCardsPopup }) => {
   // Estados básicos do Redux
   const myCountry = useSelector(state => state.game?.myCountry);
   const currentRoom = useSelector(state => state.rooms.currentRoom);
@@ -88,6 +88,22 @@ const TradePanel = () => {
   return (
     <div className="trade-panel">
       
+      <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+        <button 
+          onClick={() => onOpenCardsPopup && onOpenCardsPopup('acordos-comerciais')}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Ver Acordos
+        </button>
+      </div>
+
       <div className="trade-balance-section">
 
         <div className="balance-item">

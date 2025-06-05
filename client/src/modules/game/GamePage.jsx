@@ -43,6 +43,7 @@ const GamePage = () => {
 
   // Estados para o popup de cards
   const [showCardsPopup, setShowCardsPopup] = useState(false);
+  const [cardsPopupInitialFilter, setCardsPopupInitialFilter] = useState('todos');
 
   // useRef para controlar carregamento único
   const hasLoadedData = useRef(false);
@@ -190,7 +191,8 @@ const GamePage = () => {
   };
   
   // Função para abrir o popup de cards (clique no timer)
-  const handleOpenCardsPopup = () => {
+  const handleOpenCardsPopup = (initialFilter = 'todos') => {
+    setCardsPopupInitialFilter(initialFilter);
     setShowCardsPopup(true);
   };
   
@@ -415,6 +417,7 @@ const GamePage = () => {
           isActive={sidetoolsActive}
           myCountry={myCountry}
           onOpenDebtPopup={handleOpenDebtPopup}
+          onOpenCardsPopup={handleOpenCardsPopup}
         />
         
         <Sideview 
@@ -479,6 +482,7 @@ const GamePage = () => {
         <CardsPopup
           isOpen={showCardsPopup}
           onClose={handleCloseCardsPopup}
+          initialFilter={cardsPopupInitialFilter}
         />
       </div>
     </PopupProvider>

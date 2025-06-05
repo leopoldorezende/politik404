@@ -211,11 +211,17 @@
   font-size: 16px;
   font-weight: 500;
 }
+.timer-content small {
+  font-size: 14px;
+  margin-left: 2px;
+}
+
 
 .cards-indicator {
   justify-content: center;
   height: 48px;
 }
+
 
 .cards-indicator .material-icons {
   color: #fff;

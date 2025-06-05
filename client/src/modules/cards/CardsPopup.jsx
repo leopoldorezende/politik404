@@ -8,7 +8,7 @@ import './CardsPopup.css';
 /**
  * Popup simplificado de cards - Lista simples com filtro por tipo
  */
-const CardsPopup = ({ isOpen, onClose }) => {
+const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
   // Estados do Redux
   const myCountry = useSelector(state => state.game?.myCountry);
   const currentRoom = useSelector(state => state.rooms?.currentRoom);
@@ -24,7 +24,7 @@ const CardsPopup = ({ isOpen, onClose }) => {
   } = useCards(currentRoom?.name, myCountry);
   
   // Estados locais
-  const [selectedGroup, setSelectedGroup] = useState('todos');
+  const [selectedGroup, setSelectedGroup] = useState(initialFilter);
   
   // Auto-refresh quando o popup é aberto
   useEffect(() => {
@@ -33,6 +33,13 @@ const CardsPopup = ({ isOpen, onClose }) => {
     }
   }, [isOpen, currentRoom?.name, myCountry, refreshAll]);
   
+  // Aplicar filtro inicial quando o popup abrir
+  useEffect(() => {
+    if (isOpen && initialFilter) {
+      setSelectedGroup(initialFilter);
+    }
+  }, [isOpen, initialFilter]);
+
   const handleRemoveCard = (card) => {
     if (window.confirm(`Tem certeza que deseja remover este card e cancelar o acordo comercial?`)) {
       const socket = socketApi.getSocketInstance();
