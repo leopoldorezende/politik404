@@ -148,37 +148,37 @@ const Sideview = ({ onExitRoom, onClose, isActive }) => {
               <tr>
                 <td>Território</td>
                 <td>3</td>
-                <td>10 pontos</td>
+                <td>10</td>
               </tr>
               <tr>
                 <td>Estabilidade</td>
                 <td>3</td>
-                <td>6 pontos</td>
+                <td>6</td>
               </tr>
               <tr>
                 <td>Aliança Militar</td>
                 <td>1</td>
-                <td>5 pontos</td>
+                <td>5</td>
               </tr>
               <tr>
                 <td>Cooperação Estratégica</td>
                 <td>1</td>
-                <td>4 pontos</td>
+                <td>4</td>
               </tr>
               <tr>
                 <td>Acordos Internos</td>
                 <td>6</td>
-                <td>3 pontos</td>
+                <td>3</td>
               </tr>
               <tr>
                 <td>Acordo de Exportação</td>
                 <td>N</td>
-                <td>2 pontos</td>
+                <td>2</td>
               </tr>
               <tr>
                 <td>Acordo de Importação</td>
                 <td>N</td>
-                <td>1 ponto</td>
+                <td>1</td>
               </tr>
             </tbody>
           </table>
