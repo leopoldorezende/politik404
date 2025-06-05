@@ -30,18 +30,11 @@ const ActionPopup = ({
       return actionType === 'military' 
         ? `Aliança Militar com ${selectedCountry}`
         : `Cooperação Estratégica com ${selectedCountry}`;
-    } else if (popupType === 'hybrid') {
+    } else if (popupType === 'attack') {
       if (actionType === 'interference') {
         return `Ingerência contra ${selectedCountry}`;
-      } else if (actionType === 'disinformation') {
-        return `Campanha de Desinformação contra ${selectedCountry}`;
-      }
-      return `Guerra Híbrida contra ${selectedCountry}`;
-    } else if (popupType === 'attack') {
-      if (actionType === 'sabotage') {
-        return `Sabotagem contra ${selectedCountry}`;
       } else if (actionType === 'military') {
-        return `Ataque Bélico contra ${selectedCountry}`;
+        return `Ataque Militar contra ${selectedCountry}`;
       }
       return `Operação Militar contra ${selectedCountry}`;
     }
@@ -79,11 +72,79 @@ const ActionPopup = ({
           />
         );
       }
+    } else if (popupType === 'attack') {
+      // NOVO: Componentes para operações militares
+      if (actionType === 'interference') {
+        return (
+          <div className="popup-info">
+            <h4>Operação de Ingerência</h4>
+            <p>
+              Realizar operação de ingerência política contra <strong>{selectedCountry}</strong>.
+            </p>
+            <ul className="popup-info-list">
+              <li>Pode desestabilizar o governo adversário</li>
+              <li>Reduz a aprovação popular do país alvo</li>
+              <li>Pode causar retaliações diplomáticas</li>
+              <li>Operação encoberta com chance de descoberta</li>
+            </ul>
+            <div className="popup-actions">
+              <button onClick={() => {
+                alert('Operação de ingerência ainda não implementada');
+                onClose();
+              }}>
+                Executar Ingerência
+              </button>
+            </div>
+          </div>
+        );
+      } else if (actionType === 'military') {
+        return (
+          <div className="popup-info">
+            <h4>Ataque Militar</h4>
+            <p>
+              Declarar guerra e atacar militarmente <strong>{selectedCountry}</strong>.
+            </p>
+            <ul className="popup-info-list">
+              <li>
+                <strong>Consequências graves:</strong> Pode resultar em destruição mútua
+              </li>
+              <li>Afeta drasticamente a economia de ambos os países</li>
+              <li>Pode quebrar acordos comerciais existentes</li>
+              <li>Outros países podem se envolver no conflito</li>
+            </ul>
+            <div className="popup-actions">
+              <button 
+                onClick={() => {
+                  if (window.confirm(`Tem certeza que deseja declarar guerra contra ${selectedCountry}? Esta ação não pode ser desfeita e terá consequências graves!`)) {
+                    alert('Sistema de guerra ainda não implementado');
+                  }
+                  onClose();
+                }}
+                style={{ backgroundColor: '#e74c3c' }}
+              >
+                Declarar Guerra
+              </button>
+            </div>
+          </div>
+        );
+      }
     }
     
-    // Componentes futuros (guerra híbrida, ataques, etc.) seriam incluídos aqui
-    
-    return <div>Componente para {popupType} (ação: {actionType}) ainda não implementado</div>;
+    // Fallback para componentes não implementados
+    return (
+      <div className="popup-info">
+        <h4>Funcionalidade em Desenvolvimento</h4>
+        <p>
+          A funcionalidade <strong>{popupType}</strong> (ação: <strong>{actionType}</strong>) 
+          está sendo desenvolvida e será disponibilizada em breve.
+        </p>
+        <div className="popup-actions">
+          <button onClick={onClose}>
+            Entendido
+          </button>
+        </div>
+      </div>
+    );
   };
   
   return (

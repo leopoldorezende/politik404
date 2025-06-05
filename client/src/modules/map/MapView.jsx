@@ -30,6 +30,53 @@ const MapView = ({ justClosedSidebar }) => {
   const players = useSelector(state => state.game.players);
   const selectedCountry = useSelector(state => state.game.selectedCountry);
 
+  const selectCountryOnMap = (countryName) => {
+    if (!countryName || !countriesData?.[countryName]) {
+      console.warn('País não encontrado:', countryName);
+      return;
+    }
+    
+    console.log(`Selecionando país via função global: ${countryName}`);
+    
+    // Centraliza no país
+    centerMapOnCountry(countryName);
+    
+    // Atualiza o país selecionado no Redux
+    dispatch(setSelectedCountry(countryName));
+    currentSelectedCountry.current = countryName;
+    
+    // Dispara evento de seleção de país
+    document.dispatchEvent(new CustomEvent('countrySelected', {
+      detail: { 
+        country: countryName,
+        source: 'globalFunction'
+      }
+    }));
+  };
+
+  // ===== Expor função globalmente quando o mapa carrega =====
+  useEffect(() => {
+    if (loaded && map.current) {
+      // Expor função global para seleção de país
+      window.selectCountryOnMap = selectCountryOnMap;
+      
+      // Expor instância do mapa para depuração (opcional)
+      window.mapInstance = map.current;
+      
+      console.log('✅ Função global selectCountryOnMap disponível');
+    }
+    
+    // Cleanup: remover referências globais ao desmontar
+    return () => {
+      if (window.selectCountryOnMap) {
+        delete window.selectCountryOnMap;
+      }
+      if (window.mapInstance) {
+        delete window.mapInstance;
+      }
+    };
+  }, [loaded, countriesData, dispatch]);
+
   // Observe o justClosedSidebar para saber se precisamos ignorar cliques no mapa
   useEffect(() => {
     // Nada a fazer aqui além de monitorar a propriedade

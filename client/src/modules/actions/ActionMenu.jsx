@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { setSelectedCountry } from '../game/gameState';
 import ActionPopup from './ActionPopup';
 import './ActionMenu.css';
-
-
-          //  Pacto Político
-            
-          //  Parceria Empresarial
-            
-          //  Controle de Mídia
-
 
 /**
  * Menu principal de ações no jogo
@@ -18,6 +11,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const menuRef = useRef(null);
+  const dispatch = useDispatch();
   
   // Estados para o popup
   const [popupType, setPopupType] = useState(null);
@@ -31,11 +25,11 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
   // Verificar se o país selecionado é o próprio país do jogador
   const isOwnCountrySelected = myCountry && selectedCountry && myCountry === selectedCountry;
 
-  // Definir opções de menu
+  // Definir opções de menu - CORRIGIDO
   const menuOptions = {
     trade: ['import', 'export'],
-    alliance: ['cooperation', 'allince'],
-    attack: ['interference', 'military']
+    alliance: ['cooperation', 'military'], // CORRIGIDO: 'allince' -> 'military'
+    attack: ['interference', 'military'] // CORRIGIDO: mantém as opções corretas
   };
   
   // Verificar se a tela é mobile ao montar e quando redimensionar
@@ -91,6 +85,26 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
     }
   };
 
+  // Função para selecionar meu país usando a função global do MapView - SIMPLIFICADA
+  const handleSelectMyCountry = () => {
+    if (!myCountry) {
+      console.warn('Nenhum país do jogador encontrado');
+      return;
+    }
+    
+    setActiveMenu(null); // Fechar qualquer menu aberto
+    
+    // Usar função global exposta pelo MapView
+    if (window.selectCountryOnMap) {
+      console.log(`Selecionando meu país via função global: ${myCountry}`);
+      window.selectCountryOnMap(myCountry);
+    } else {
+      console.warn('Função selectCountryOnMap não disponível - fallback para Redux');
+      // Fallback: apenas atualizar Redux sem animação
+      dispatch(setSelectedCountry(myCountry));
+    }
+  };
+
   // Função para abrir popup
   const handleOpenPopup = (type, option = '') => {
     // Verificar se existe um país selecionado
@@ -126,18 +140,26 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
     }, 300);
   };
 
-  // Manipulador de clique em opção
+  // Manipulador de clique em opção - CORRIGIDO
   const handleOptionClick = (option) => {
     console.log(`Selected option: ${option}`);
     
     // Abrir popup correspondente para opções de comércio
     if (option === 'export' || option === 'import') {
       handleOpenPopup('trade', option);
-    } else if (option === 'cooperation' || option === 'military') {
-      handleOpenPopup('alliance', option);
-    } else if (option === 'interference' || option === 'military') {
-      handleOpenPopup('attack', option);
     } 
+    // CORRIGIDO: Opções de aliança
+    else if (option === 'cooperation') {
+      handleOpenPopup('alliance', 'cooperation');
+    } else if (option === 'military' && activeMenu === 'alliance') {
+      handleOpenPopup('alliance', 'military');
+    } 
+    // CORRIGIDO: Opções de ataque
+    else if (option === 'interference') {
+      handleOpenPopup('attack', 'interference');
+    } else if (option === 'military' && activeMenu === 'attack') {
+      handleOpenPopup('attack', 'military');
+    }
   };
 
   // Fechar menu ao clicar fora
@@ -154,7 +176,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
     };
   }, []);
 
-  // Obter rótulo para cada opção
+  // Obter rótulo para cada opção - CORRIGIDO
   const getOptionLabel = (option) => {
     const labels = {
       // Trade options
@@ -163,11 +185,10 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       
       // Alliance options
       'cooperation': 'Cooperação Estratégica',
-      'allince': 'Aliança Militar',
+      'military': activeMenu === 'alliance' ? 'Aliança Militar' : 'Ataque Militar', // CORRIGIDO: distingue contexto
       
       // Attack options
       'interference': 'Ingerência',
-      'military': 'Guerra'
     };
     
     return labels[option] || option;
@@ -193,6 +214,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       'alliance': 'Alianças e Cooperação',
       'attack': 'Operações Militares',
       'map': 'Visualizar País',
+      'back': 'Selecionar Meu País', // CORRIGIDO: título mais claro
       'politicalPact': 'Pacto Político',
       'businessPartnership': 'Parceria Empresarial',
       'mediaControl': 'Controle de Mídia'
@@ -218,13 +240,9 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
             ))}
           </div>
         )}
-      
-      
 
         {/* Ícones de ação */}
-
         {isOwnCountrySelected ? (
-
           <div className="action-icons">
             <button 
               className={`action-icon ${activeMenu === 'politicalPact' ? 'active' : ''}`}
@@ -234,7 +252,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
               <span className="material-icons">gavel</span>
             </button>
             
-            {/* Botão de Alianças com menu suspenso */}
+            {/* Botão de Parcerias Empresariais */}
             <button 
               className={`action-icon ${activeMenu === 'businessPartnership' ? 'active' : ''}`}
               // onClick={() => handleIconClick('businessPartnership')}
@@ -251,20 +269,17 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
               <span className="material-icons">connected_tv</span>
             </button>
           </div>
-            
         ) : (
-
-
           <div className="action-icons">
+            {/* NOVO: Botão para selecionar meu país */}
             <button 
               className={'action-icon'}
-              onClick={() => console.log('FAZER ESSE CLIQUE SELECIONAR O MEU PAÍS')}
+              onClick={handleSelectMyCountry} // IMPLEMENTADO: seleciona meu país
               title={getActionTitle('back')}
               style={{position: 'absolute', marginLeft: -74}}
             >
               <span className="material-icons">{getActionIcon('back')}</span>
             </button>
-            
 
             <button 
               className={`action-icon ${activeMenu === 'trade' ? 'active' : ''}`}
@@ -290,22 +305,8 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
             >
               <span className="material-icons">{getActionIcon('attack')}</span>
             </button>
-            
-            {/* Ícone do mapa para abrir sideview com informações do país - apenas no mobile */}
-            {/* {isMobile && (
-              <button 
-                className="action-icon"
-                onClick={() => handleIconClick('map')}
-                title={getActionTitle('map')}
-              >
-                <span className="material-icons">{getActionIcon('map')}</span>
-              </button>
-            )} */}
           </div>
-
         )}
-
-       
       </div>
       
       {/* Popup unificado para todas as ações */}
