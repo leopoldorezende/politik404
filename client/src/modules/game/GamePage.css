@@ -187,7 +187,7 @@
 /* Atualização para o timer com cards */
 .room-timer {
   position: fixed;
-  top: 16px;
+  top: 18px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
