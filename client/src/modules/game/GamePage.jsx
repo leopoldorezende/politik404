@@ -192,6 +192,7 @@ const GamePage = () => {
   
   // Função para abrir o popup de cards (clique no timer)
   const handleOpenCardsPopup = (initialFilter = 'todos') => {
+
     setCardsPopupInitialFilter(initialFilter);
     setShowCardsPopup(true);
   };
@@ -366,7 +367,7 @@ const GamePage = () => {
         {/* Timer no topo da tela */}
         {currentRoom && (
           <div className="room-timer">
-            <div className="timer-content" onClick={handleOpenCardsPopup} style={{ cursor: 'pointer' }}>
+            <div className="timer-content" onClick={() => handleOpenCardsPopup('todos')} style={{ cursor: 'pointer' }}>
               <span className={`timer-value ${timeRemaining <= roomData.duration * 0.2 ? 'timer-warning' : ''}`}>
                 {formatTimeRemaining(timeRemaining)}
               </span>
@@ -384,7 +385,7 @@ const GamePage = () => {
         </div>
         
         <button id="btn-open-sidetools" className="map-control" onClick={toggleSidetools}>
-          <span className="material-icons">ads_click</span>
+          <span className="material-icons">home</span>
         </button>
         
         <button id="btn-open-sideview" className="map-control" onClick={toggleSideview}>

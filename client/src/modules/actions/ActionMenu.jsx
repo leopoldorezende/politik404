@@ -6,9 +6,9 @@ import './ActionMenu.css';
 
           //  Pacto Político
             
-          //     Parceria Empresarial
+          //  Parceria Empresarial
             
-          //     Controle de Mídia
+          //  Controle de Mídia
 
 
 /**
@@ -35,8 +35,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
   const menuOptions = {
     trade: ['import', 'export'],
     alliance: ['cooperation', 'allince'],
-    hybrid: ['interference', 'spy'],
-    attack: ['sabotage', 'military']
+    attack: ['interference', 'military']
   };
   
   // Verificar se a tela é mobile ao montar e quando redimensionar
@@ -136,14 +135,9 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       handleOpenPopup('trade', option);
     } else if (option === 'cooperation' || option === 'military') {
       handleOpenPopup('alliance', option);
-    } else if (option === 'interference' || option === 'spy') {
-      handleOpenPopup('hybrid', option);
-    } else if (option === 'sabotage' || option === 'military') {
+    } else if (option === 'interference' || option === 'military') {
       handleOpenPopup('attack', option);
-    } else {
-      // Para outras opções, apenas fechar o menu por enquanto
-      setActiveMenu(null);
-    }
+    } 
   };
 
   // Fechar menu ao clicar fora
@@ -168,16 +162,12 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
       'export': 'Exportação',
       
       // Alliance options
-      'cooperation': 'Cooperação Estratégica (Pode 1 - 4pts) Compartilha dados de espionagem ',
-      'allince': 'Aliança Militar (Pode 1 - 5pts)',
-      
-      // Hybrid war options
-      'interference': 'Ingerência (pega pra si os cards políticos do país)',
-      'spy': 'Espionagem (permite fazer ingerência)',
+      'cooperation': 'Cooperação Estratégica',
+      'allince': 'Aliança Militar',
       
       // Attack options
-      'sabotage': 'Sabotagem (rompe acordos comerciais)',
-      'military': 'Guerra (remove cards (de trade e interno) seu e do oponente nas medida do sucesso da guerra)'
+      'interference': 'Ingerência',
+      'military': 'Guerra'
     };
     
     return labels[option] || option;
@@ -188,9 +178,9 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
     const icons = {
       'trade': 'directions_boat',
       'alliance': 'handshake',
-      'hybrid': 'public_off',
       'attack': 'gps_fixed',
-      'map': 'map'
+      'map': 'map',
+      'back': 'arrow_back',
     };
     
     return icons[action] || 'help';
@@ -201,9 +191,8 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
     const titles = {
       'trade': 'Acordo Comercial',
       'alliance': 'Alianças e Cooperação',
-      'hybrid': 'Guerra Híbrida',
       'attack': 'Operações Militares',
-      'map': 'Ver País Selecionado',
+      'map': 'Visualizar País',
       'politicalPact': 'Pacto Político',
       'businessPartnership': 'Parceria Empresarial',
       'mediaControl': 'Controle de Mídia'
@@ -268,6 +257,16 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
 
           <div className="action-icons">
             <button 
+              className={'action-icon'}
+              onClick={() => console.log('FAZER ESSE CLIQUE SELECIONAR O MEU PAÍS')}
+              title={getActionTitle('back')}
+              style={{position: 'absolute', marginLeft: -74}}
+            >
+              <span className="material-icons">{getActionIcon('back')}</span>
+            </button>
+            
+
+            <button 
               className={`action-icon ${activeMenu === 'trade' ? 'active' : ''}`}
               onClick={() => handleIconClick('trade')}
               title={getActionTitle('trade')}
@@ -283,15 +282,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
             >
               <span className="material-icons">{getActionIcon('alliance')}</span>
             </button>
-            
-            <button 
-              className={`action-icon ${activeMenu === 'hybrid' ? 'active' : ''}`}
-              onClick={() => handleIconClick('hybrid')}
-              title={getActionTitle('hybrid')}
-            >
-              <span className="material-icons">{getActionIcon('hybrid')}</span>
-            </button>
-            
+
             <button 
               className={`action-icon ${activeMenu === 'attack' ? 'active' : ''}`}
               onClick={() => handleIconClick('attack')}
@@ -301,7 +292,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
             </button>
             
             {/* Ícone do mapa para abrir sideview com informações do país - apenas no mobile */}
-            {isMobile && (
+            {/* {isMobile && (
               <button 
                 className="action-icon"
                 onClick={() => handleIconClick('map')}
@@ -309,7 +300,7 @@ const ActionMenu = ({ onOpenSideview, onSetActiveTab }) => {
               >
                 <span className="material-icons">{getActionIcon('map')}</span>
               </button>
-            )}
+            )} */}
           </div>
 
         )}

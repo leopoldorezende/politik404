@@ -85,7 +85,14 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
     const groupedCards = getGroupedCards();
     
     if (selectedGroup === 'todos') {
-      return groupedCards;
+      // Para "todos", filtrar apenas grupos que têm cards
+      const filteredGroups = {};
+      Object.entries(groupedCards).forEach(([groupKey, cards]) => {
+        if (cards.length > 0) {
+          filteredGroups[groupKey] = cards;
+        }
+      });
+      return filteredGroups;
     }
     
     return {
@@ -182,12 +189,12 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
               <span className="material-icons spinning">refresh</span>
               <p>Carregando cards...</p>
             </div>
-          ) : totalCards === 0 ? (
+         ) : totalCards === 0 ? (
             <div className="cards-empty">
               <span className="material-icons">style</span>
               <p>Você ainda não possui cards. Faça acordos para começar a pontuar!</p>
             </div>
-          ) : filteredCardsCount === 0 ? (
+          ) : selectedGroup !== 'todos' && Object.values(filteredGroups).every(cards => cards.length === 0) ? (
             <div className="cards-empty">
               <span className="material-icons">style</span>
               <p>Você ainda não possui cards de {cardGroups[selectedGroup]?.label || 'categoria selecionada'}.</p>
