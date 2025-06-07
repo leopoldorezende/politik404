@@ -77,6 +77,20 @@ export const cardState = createSlice({
       }
     },
     
+    cardsUpdatedEvent: (state, action) => {
+      state.needsRefresh = true;
+      state.lastEventTimestamp = Date.now();
+    },
+
+    tradeAgreementUpdatedEvent: (state, action) => {
+      state.needsRefresh = true;
+      state.lastEventTimestamp = Date.now();
+    },
+
+    clearRefreshFlag: (state) => {
+      state.needsRefresh = false;
+    },
+    
     removePlayerCard: (state, action) => {
       const cardId = action.payload;
       state.playerCards = state.playerCards.filter(card => card.id !== cardId);

@@ -62,7 +62,7 @@ const showNotificationWithCooldown = (type, message, duration = 4000) => {
 export const setupSocketEvents = (socket, socketApi) => {
   if (!socket) return;
   
-  // ✅ CORREÇÃO 2: Lista completa de eventos para limpeza garantida
+  // Lista completa de eventos para limpeza garantida
   const eventsToClean = [
     'connect', 'disconnect', 'connect_error', 'authenticated', 'authenticationIgnored',
     'roomsList', 'roomJoined', 'roomLeft', 'roomCreated', 'roomDeleted',
@@ -75,7 +75,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     'error', 'pong'
   ];
   
-  // ✅ Garantir limpeza completa usando removeAllListeners
+  // Limpeza completa usando removeAllListeners
   eventsToClean.forEach(eventName => {
     socket.removeAllListeners(eventName);
   });
@@ -84,7 +84,7 @@ export const setupSocketEvents = (socket, socketApi) => {
   isAuthenticated = false;
   authenticationInProgress = false;
   
-  // ✅ CORREÇÃO 3: Timeouts para debounce de eventos duplicados
+  // Timeouts para debounce de eventos duplicados
   let proposalTimeout;
   let responseTimeout;
   let emergencyTimeout;
@@ -624,8 +624,32 @@ export const setupSocketEvents = (socket, socketApi) => {
     );
   });
   
+  // Escutar atualizações de cards
+  socket.on('cardsUpdated', (data) => {
+    console.log('[CARDS] Cards updated event received globally:', data);
+    
+    // Disparar atualização no store para forçar re-render dos componentes
+    // que dependem de pontuação
+    store.dispatch({ 
+      type: 'cards/cardsUpdatedEvent', 
+      payload: data 
+    });
+  });
+
+  // Escutar atualizações de trade agreements
+  socket.on('tradeAgreementUpdated', (data) => {
+    console.log('[TRADE] Trade agreement updated globally:', data);
+    
+    // Também disparar para forçar atualização de pontos
+    store.dispatch({ 
+      type: 'cards/tradeAgreementUpdatedEvent', 
+      payload: data 
+    });
+  });
+
+
   // ======================================================================
-  // ✅ CORREÇÃO 6: Cleanup function para limpar timeouts
+  // Cleanup function para limpar timeouts
   // ======================================================================
   const cleanup = () => {
     clearTimeout(proposalTimeout);

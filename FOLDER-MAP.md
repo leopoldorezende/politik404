@@ -111,59 +111,58 @@
   ├── deploy.sh
   ├── eslint.config.js  # Configuração do lint para os dois ambientes client e server
   ├── package.json  # Dependências e scripts principais (monorepo)
-  ├── server
-  │   ├── keys
-  │   │   └── firebase-admin.json
-  │   ├── middlewares
-  │   │   └── socketServerMiddleware.js
-  │   ├── modules
-  │   │   ├── ai
-  │   │   │   └── aiCountryController.js
-  │   │   ├── alliance
-  │   │   │   └── allianceHandlers.js
-  │   │   ├── auth
-  │   │   │   ├── authHandlers.js  # Handlers de autenticação
-  │   │   │   └── google.js
-  │   │   ├── cards
-  │   │   │   └── cardHandlers.js
-  │   │   ├── chat
-  │   │   │   └── chatHandlers.js  # Handlers do chat
-  │   │   ├── country
-  │   │   │   ├── countryAssignment.js  # Atribuições de países
-  │   │   │   └── countryUtils.js  # Utilitários para países
-  │   │   ├── economy
-  │   │   │   └── economyHandlers.js
-  │   │   ├── index.js
-  │   │   ├── player
-  │   │   │   ├── playerRoomHandlers.js  # Handlers para jogadores na sala
-  │   │   │   └── playerStateManager.js  # Gerencia estado dos jogadores
-  │   │   ├── room
-  │   │   │   ├── roomExpirationManager.js
-  │   │   │   ├── roomManagement.js  # Gerenciamento de sala
-  │   │   │   └── roomNotifications.js  # Notificações da Sala
-  │   │   └── trade
-  │   │       └── tradeHandlers.js
-  │   ├── package.json  # Dependências e scripts principais (monorepo)
-  │   ├── public
-  │   │   └── data
-  │   │       ├── countriesCoordinates.json
-  │   │       ├── countriesData-bkp.json
-  │   │       └── countriesData.json
-  │   ├── server.js  # Entry point do servidor
-  │   └── shared
-  │       ├── config
-  │       │   └── syncConfig.js
-  │       ├── firebaseAdmin.js
-  │       ├── redisClient.js  # Infraestrutura do Redis
-  │       ├── services
-  │       │   ├── cardService.js
-  │       │   ├── economy
-  │       │   │   ├── economyDebt.js
-  │       │   │   └── economyTrade.js
-  │       │   └── economyService.js
-  │       └── utils
-  │           ├── economicCalculations.js
-  │           ├── economicConstants.js
-  │           ├── economicUtils.js
-  │           └── gameStateUtils.js  # Utilitários de estado para o jogo
-  └── v22.md
+  └── server
+      ├── keys
+      │   └── firebase-admin.json
+      ├── middlewares
+      │   └── socketServerMiddleware.js
+      ├── modules
+      │   ├── ai
+      │   │   └── aiCountryController.js
+      │   ├── alliance
+      │   │   └── allianceHandlers.js
+      │   ├── auth
+      │   │   ├── authHandlers.js  # Handlers de autenticação
+      │   │   └── google.js
+      │   ├── cards
+      │   │   └── cardHandlers.js
+      │   ├── chat
+      │   │   └── chatHandlers.js  # Handlers do chat
+      │   ├── country
+      │   │   ├── countryAssignment.js  # Atribuições de países
+      │   │   └── countryUtils.js  # Utilitários para países
+      │   ├── economy
+      │   │   └── economyHandlers.js
+      │   ├── index.js
+      │   ├── player
+      │   │   ├── playerRoomHandlers.js  # Handlers para jogadores na sala
+      │   │   └── playerStateManager.js  # Gerencia estado dos jogadores
+      │   ├── room
+      │   │   ├── roomExpirationManager.js
+      │   │   ├── roomManagement.js  # Gerenciamento de sala
+      │   │   └── roomNotifications.js  # Notificações da Sala
+      │   └── trade
+      │       └── tradeHandlers.js
+      ├── package.json  # Dependências e scripts principais (monorepo)
+      ├── public
+      │   └── data
+      │       ├── countriesCoordinates.json
+      │       ├── countriesData-bkp.json
+      │       └── countriesData.json
+      ├── server.js  # Entry point do servidor
+      └── shared
+          ├── config
+          │   └── syncConfig.js
+          ├── firebaseAdmin.js
+          ├── redisClient.js  # Infraestrutura do Redis
+          ├── services
+          │   ├── cardService.js
+          │   ├── economy
+          │   │   ├── economyDebt.js
+          │   │   └── economyTrade.js
+          │   └── economyService.js
+          └── utils
+              ├── economicCalculations.js
+              ├── economicConstants.js
+              ├── economicUtils.js
+              └── gameStateUtils.js  # Utilitários de estado para o jogo

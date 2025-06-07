@@ -218,7 +218,7 @@ const MapView = ({ justClosedSidebar }) => {
         ['!=', ['get', 'name_en'], myCountry]
       ], 'rgba(105, 65, 217, 0.9)', // 0, 220, 160  CIANO
       // Países de outros jogadores em laranja
-      ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(240, 120, 0, 0.8)',
+      ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(240, 120, 0, 0.2)',
       // Países disponíveis em branco transparente
       ['in', ['get', 'name_en'], ['literal', availableCountries]], 'rgba(255, 255, 255, 0.5)',
       // Países que não estão no jogo em cinza escuro transparente
@@ -237,7 +237,7 @@ const MapView = ({ justClosedSidebar }) => {
         ['!=', ['get', 'name_en'], myCountry]
       ], 'rgba(0, 0, 0, 0.8)',
       // Borda dos países de outros jogadores em preto
-      ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(0, 0, 0, 0.8)',
+      ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(240, 120, 0, 1)',
       // Borda dos países disponíveis em cinza
       ['in', ['get', 'name_en'], ['literal', availableCountries]], 'rgba(90, 120, 120, 1)',
       // Outra condição para países disponíveis (parece redundante no código original)

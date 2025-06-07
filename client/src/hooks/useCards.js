@@ -35,7 +35,9 @@ export const useCards = (roomName, countryName) => {
   const loading = useSelector(state => state.cards.loading);
   const lastUpdated = useSelector(state => state.cards.lastUpdated);
   const cardStats = useSelector(selectPlayerCardStats);
-  
+  const needsRefresh = useSelector(state => state.cards.needsRefresh);
+  const lastEventTimestamp = useSelector(state => state.cards.lastEventTimestamp);
+
   // Estado local para controle
   const [autoRefresh, setAutoRefresh] = useState(true);
   
@@ -103,6 +105,17 @@ export const useCards = (roomName, countryName) => {
   // EVENTOS DO SERVIDOR
   // ========================================================================
   
+  useEffect(() => {
+    // Auto-refresh quando cards são atualizados
+    if (needsRefresh && roomName && countryName) {
+      console.log('[CARDS] Auto-refreshing points due to cards update');
+      refreshPlayerPoints();
+      
+      // Limpar o flag de refresh
+      dispatch({ type: 'cards/clearRefreshFlag' });
+    }
+  }, [needsRefresh, lastEventTimestamp, roomName, countryName, refreshPlayerPoints]);
+
   useEffect(() => {
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
@@ -281,6 +294,39 @@ export const useCards = (roomName, countryName) => {
 export const usePlayerPoints = (roomName, countryName) => {
   const { playerPoints, getTotalPoints, refreshPlayerPoints, loading } = useCards(roomName, countryName);
   
+  useEffect(() => {
+    const socket = socketApi.getSocketInstance();
+    if (!socket || !roomName || !countryName) return;
+
+    // Escutar eventos de cards atualizados
+    const handleCardsUpdated = (data) => {
+      console.log('[CARDS] Cards updated event received:', data);
+      
+      // Se os cards foram atualizados na nossa sala, recarregar pontos
+      if (data.roomName === roomName) {
+        console.log('[CARDS] Reloading points due to cards update');
+        refreshPlayerPoints();
+      }
+    };
+
+    // Escutar eventos de acordos comerciais
+    const handleTradeAgreementUpdated = (data) => {
+      console.log('[TRADE] Trade agreement updated:', data);
+      // Recarregar pontos pois trade agreements geram cards
+      refreshPlayerPoints();
+    };
+
+    // Registrar listeners
+    socket.on('cardsUpdated', handleCardsUpdated);
+    socket.on('tradeAgreementUpdated', handleTradeAgreementUpdated);
+
+    // Cleanup
+    return () => {
+      socket.off('cardsUpdated', handleCardsUpdated);
+      socket.off('tradeAgreementUpdated', handleTradeAgreementUpdated);
+    };
+  }, [roomName, countryName, refreshPlayerPoints]);
+
   return {
     totalPoints: getTotalPoints(),
     cardsByType: playerPoints.cardsByType,
