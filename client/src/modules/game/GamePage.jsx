@@ -10,6 +10,7 @@ import { usePlayerPoints } from '../../hooks/useCards';
 import { loadCountriesData, loadCountriesCoordinates } from '../country/countryService';
 import { setCountriesCoordinates } from './gameState';
 import { socketApi } from '../../services/socketClient';
+import AllianceProposalPopup from '../alliance/AllianceProposalPopup';
 import TradeProposalPopup from '../trade/TradeProposalPopup';
 import DebtSummaryPopup from '../economy/DebtSummaryPopup';
 import MessageService from '../../ui/toast/messageService';
@@ -33,7 +34,8 @@ const GamePage = () => {
   const [showTimeupPopup, setShowTimeupPopup] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [tradeProposal, setTradeProposal] = useState(null);
-  
+  const [allianceProposal, setAllianceProposal] = useState(null);
+
   // Estados para o popup de dívidas
   const [showDebtPopup, setShowDebtPopup] = useState(false);
   const [debtPopupData, setDebtPopupData] = useState({
@@ -153,10 +155,7 @@ const GamePage = () => {
           console.error('Failed to play notification sound:', error);
         }
       }
-      
-      // REMOVER: A notificação toast agora é feita apenas no socketEventHandlers.js
-      // para evitar duplicação
-      
+  
       setTradeProposal(proposal);
     };
     
@@ -167,9 +166,39 @@ const GamePage = () => {
     };
   }, []);
   
+  useEffect(() => {
+    const socket = socketApi.getSocketInstance();
+    if (!socket) return;
+    
+    const handleAllianceProposalReceived = (proposal) => {
+      console.log('Alliance proposal received:', proposal);
+      // Adicionar som de notificação, se disponível
+      if (window.Audio) {
+        try {
+          const notificationSound = new Audio('/notification.mp3');
+          notificationSound.play();
+        } catch (error) {
+          console.error('Failed to play notification sound:', error);
+        }
+      }
+      
+      setAllianceProposal(proposal);
+    };
+    
+    socket.on('allianceProposalReceived', handleAllianceProposalReceived);
+    
+    return () => {
+      socket.off('allianceProposalReceived', handleAllianceProposalReceived);
+    };
+  }, []);
+
+
   // Função para fechar o popup de proposta comercial
   const handleCloseTradeProposal = () => {
     setTradeProposal(null);
+  };
+  const handleCloseAllianceProposal = () => {
+    setAllianceProposal(null);
   };
   
   // Função para abrir o popup de dívidas (callback do AdvancedEconomyPanel)
@@ -501,6 +530,14 @@ const GamePage = () => {
           </div>
         )}
         
+        {allianceProposal && (
+          <AllianceProposalPopup
+            proposal={allianceProposal}
+            isOpen={!!allianceProposal}
+            onClose={handleCloseAllianceProposal}
+          />
+        )}
+
         {/* Popup de proposta de comércio - agora gerenciado automaticamente */}
         <TradeProposalPopup 
           proposal={tradeProposal}

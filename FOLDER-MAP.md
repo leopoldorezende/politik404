@@ -28,6 +28,9 @@
   │   │   │   │       ├── AlliancePopup.jsx
   │   │   │   │       ├── CooperationPopup.jsx
   │   │   │   │       └── TradePopup.jsx
+  │   │   │   ├── alliance
+  │   │   │   │   ├── AllianceProposalPopup.css
+  │   │   │   │   └── AllianceProposalPopup.jsx
   │   │   │   ├── auth
   │   │   │   │   ├── AuthPage.css
   │   │   │   │   ├── AuthPage.jsx  # Tela de autenticação/login

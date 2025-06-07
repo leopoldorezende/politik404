@@ -1,0 +1,159 @@
+.alliance-proposal-content {
+  padding: 10px 0;
+}
+
+.proposal-message {
+  margin-bottom: 20px;
+  font-size: 16px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.proposal-details {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-left: 3px solid #e74c3c;
+}
+
+.detail-item {
+  display: flex;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  width: 140px;
+  font-weight: bold;
+  color: #aaa;
+}
+
+.detail-value {
+  flex-grow: 1;
+  color: #fff;
+}
+
+.proposal-info {
+  margin-bottom: 20px;
+}
+
+.alliance-benefits {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 15px;
+}
+
+.alliance-benefits li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.alliance-benefits li:last-child {
+  border-bottom: none;
+}
+
+.alliance-benefits strong {
+  color: #e74c3c;
+}
+
+.strategic-context {
+  background-color: rgba(231, 76, 60, 0.1);
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 15px;
+  border-left: 3px solid #e74c3c;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #ddd;
+}
+
+.proposal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.proposal-actions button {
+  min-width: 120px;
+  padding: 12px 24px;
+  font-weight: bold;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.action-btn.accept {
+  background-color: #27ae60;
+  color: white;
+}
+
+.action-btn.accept:hover {
+  background-color: #219a52;
+  transform: translateY(-1px);
+}
+
+.action-btn.reject {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.action-btn.reject:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
+}
+
+/* Ícone de aliança militar */
+.alliance-icon {
+  margin-right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+}
+
+/* Animação de entrada */
+@keyframes alliance-proposal-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.alliance-proposal-content {
+  animation: alliance-proposal-slide-in 0.4s ease-out forwards;
+}
+
+/* Responsividade para mobile */
+@media (max-width: 768px) {
+  .proposal-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .proposal-actions button {
+    width: 100%;
+  }
+  
+  .detail-label {
+    width: 120px;
+    font-size: 13px;
+  }
+}
