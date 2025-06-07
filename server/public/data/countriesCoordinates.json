@@ -1,17 +1,19 @@
 {
     "customZoomLevels": {
-      "Russia": 3.2,
-      "United States": 3.2,
-      "Canada": 3.2,
-      "Brazil": 3.2,
-      "China": 3.2,
-      "Australia": 3.2,
-      "India": 3.5,
-      "Argentina": 3.5,
-      "Indonesia": 3.5,
-      "Mexico": 3.5,
-      "Chile": 3.5,
-      "Greenland": 3.5
+      "Russia": 2.2,
+      "United States": 2.3,
+      "Canada": 2.3,
+      "Brazil": 2.5,
+      "China": 2.5,
+      "Australia": 2.5,
+      "India": 2.8,
+      "Argentina": 2.8,
+      "Indonesia": 2.5,
+      "Mexico": 2.8,
+      "Chile": 2.8,
+      "Greenland": 2.8,
+      "Germany": 3.5,
+      "United Kingdom": 3.5
     },
     "countries": {
       "Afghanistan": [69.1776, 34.5289],

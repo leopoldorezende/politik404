@@ -113,7 +113,7 @@ const MapView = ({ justClosedSidebar }) => {
       style: 'mapbox://styles/leopoldorezende/cklv3mqga2ki517m1zqftm5vp',
       center: [0, 0],
       zoom: 1.5,
-      maxZoom: 5.5,
+      maxZoom: 3.5,
       minZoom: 1.2,
       projection: 'globe',
       attributionControl: false, 
@@ -367,7 +367,7 @@ const MapView = ({ justClosedSidebar }) => {
     const center = getCountryCenter(country, countriesData, countriesCoordinates);
     if (center[0] === 0 && center[1] === 0) return;
 
-    const zoomLevel = countriesCoordinates.customZoomLevels?.[country] || 4;
+    const zoomLevel = countriesCoordinates.customZoomLevels?.[country] || 3;
     map.current.flyTo({ center, zoom: zoomLevel, speed: 0.8, curve: 1, essential: true });
   };
 

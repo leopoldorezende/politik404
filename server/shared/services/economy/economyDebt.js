@@ -3,7 +3,6 @@
 // Extraídos do economyService para reduzir complexidade
 
 import { calculateRiskPremium } from '../../utils/economicUtils.js';
-import { issueEmergencyBonds } from '../../utils/economicCalculations.js';
 import { ECONOMIC_CONSTANTS } from '../../utils/economicConstants.js';
 
 /**
