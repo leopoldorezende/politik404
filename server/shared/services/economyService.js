@@ -5,9 +5,12 @@
  */
 
 import redis from '../redisClient.js';
-import { getNumericValue, calculateRiskPremium } from '../utils/economicUtils.js';
+import { getNumericValue } from '../utils/economicUtils.js';
 import { ECONOMIC_CONSTANTS } from '../utils/economicConstants.js';
 import { SYNC_CONFIG } from '../config/syncConfig.js';
+import { EconomyDebt } from './economy/economyDebt.js';
+import { EconomyTrade } from './economy/economyTrade.js';
+
 import { 
   calculateAdvancedGrowth,
   calculateDynamicInflation,
@@ -43,7 +46,11 @@ class EconomyService {
       console.log('[ECONOMY] EconomyService initialized with advanced calculations (delegated)');
     } catch (error) {
       console.error('[ECONOMY] Error initializing economyService:', error);
-    }
+    }  
+    
+    // Inicializar classes auxiliares
+    this.debt = new EconomyDebt(this);
+    this.trade = new EconomyTrade(this);
   }
 
   // ========================================================================
@@ -468,120 +475,36 @@ class EconomyService {
   }
 
 
-/**
- * NOVA FUNÇÃO: Notifica cliente sobre atualização de contratos de dívida
- * @param {string} roomName - Nome da sala
- * @param {string} countryName - Nome do país
- * @param {Object} updateInfo - Informações da atualização
- */
-notifyDebtContractsUpdated(roomName, countryName, updateInfo) {
-  if (!global.io) return;
-  
-  // Encontrar o jogador que controla este país
-  const gameState = global.gameState;
-  const room = gameState?.rooms?.get(roomName);
-  
-  if (!room || !room.players) return;
-  
-  const player = room.players.find(p => 
-    typeof p === 'object' && p.country === countryName && p.isOnline
-  );
-  
-  if (!player) return;
-  
-  // Encontrar o socket do jogador
-  const socketId = gameState.usernameToSocketId?.get(player.username);
-  const socket = socketId ? global.io.sockets.sockets.get(socketId) : null;
-  
-  if (socket && socket.connected) {
-    // Enviar notificação de atualização de contratos
-    socket.emit('debtContractsUpdated', {
-      roomName,
-      countryName,
-      contractsCompleted: updateInfo.contractsCompleted,
-      activeContracts: updateInfo.activeContracts,
-      totalRemainingDebt: updateInfo.totalRemainingDebt,
-      timestamp: Date.now()
-    });
+  /**
+   * NOVA FUNÇÃO: Notifica cliente sobre atualização de contratos de dívida
+   * @param {string} roomName - Nome da sala
+   * @param {string} countryName - Nome do país
+   * @param {Object} updateInfo - Informações da atualização
+   */
+  notifyDebtContractsUpdated(roomName, countryName, data) {
+    return this.debt.notifyDebtContractsUpdated(roomName, countryName, data);
   }
-}
-
-
-
-/**
- * NOVA FUNÇÃO: Cria contrato de dívida emergencial
- * @param {string} roomName - Nome da sala
- * @param {string} countryName - Nome do país
- * @param {number} bondAmount - Valor do título
- * @param {number} effectiveRate - Taxa efetiva
- * @returns {Object} - Contrato criado
- */
-createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
-    
-  // Criar contrato emergencial
-  const monthlyRate = effectiveRate / 100 / 12;
-  const totalDebtWithInterest = bondAmount * Math.pow(1 + monthlyRate, 120);
-
-  const contract = {
-    id: this.nextDebtId++,
-    originalValue: bondAmount,
-    remainingValue: totalDebtWithInterest, // ← CORREÇÃO: Valor total com juros compostos
-    interestRate: effectiveRate,
-    baseRate: 0, // Emergencial não tem taxa base
-    riskPremium: effectiveRate, // Todo o valor é prêmio de risco
-    monthlyPayment: this.calculateMonthlyPayment(bondAmount, effectiveRate, 120),
-    remainingInstallments: 120,
-    issueDate: new Date(),
-    emergencyBond: true // MARCADOR DE EMERGÊNCIA
-  };
-    
-  // Armazenar contrato
-  const countryKey = `${countryName}:${roomName}`;
-  const contracts = this.debtContracts.get(countryKey) || [];
-  contracts.push(contract);
-  this.debtContracts.set(countryKey, contracts);
-  
-  return contract;
-}
-
 
   /**
-   * NOVA FUNÇÃO: Notifica cliente sobre emissão de títulos de emergência
+   * Cria contrato de dívida emergencial
+   * @param {string} roomName - Nome da sala
+   * @param {string} countryName - Nome do país
+   * @param {number} bondAmount - Valor do título
+   * @param {number} effectiveRate - Taxa efetiva
+   * @returns {Object} - Contrato criado
+   */
+  createEmergencyDebtContract(roomName, countryName, amount, rate) {
+    return this.debt.createEmergencyDebtContract(roomName, countryName, amount, rate);
+  }
+
+  /**
+   * Notifica cliente sobre emissão de títulos de emergência
    * @param {string} roomName - Nome da sala
    * @param {string} countryName - Nome do país
    * @param {Object} bondInfo - Informações do título emitido
    */
   notifyEmergencyBondIssued(roomName, countryName, bondInfo) {
-    if (!global.io) return;
-    
-    // Encontrar o jogador que controla este país
-    const gameState = global.gameState;
-    const room = gameState?.rooms?.get(roomName);
-    
-    if (!room || !room.players) return;
-    
-    const player = room.players.find(p => 
-      typeof p === 'object' && p.country === countryName && p.isOnline
-    );
-    
-    if (!player) return;
-    
-    // Encontrar o socket do jogador
-    const socketId = gameState.usernameToSocketId?.get(player.username);
-    const socket = socketId ? global.io.sockets.sockets.get(socketId) : null;
-    
-    if (socket && socket.connected) {
-      // Enviar notificação específica de títulos de emergência
-      socket.emit('emergencyBondsIssued', {
-        amount: bondInfo.amount,
-        rate: bondInfo.rate,
-        rating: bondInfo.rating,
-        atLimit: bondInfo.atLimit,
-        message: bondInfo.atLimit 
-          ? `Títulos de emergência emitidos: ${bondInfo.amount.toFixed(1)} bi USD (LIMITE DE DÍVIDA ATINGIDO)`
-          : `Títulos de emergência emitidos: ${bondInfo.amount.toFixed(1)} bi USD a ${bondInfo.rate.toFixed(1)}%`
-      });
-    }
+    return this.debt.notifyEmergencyBondIssued(roomName, countryName, bondInfo);
   }
 
   /**
@@ -627,52 +550,11 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
    * Calcula balanços setoriais incluindo acordos comerciais
    */
   calculateSectoralBalances(roomName, countryName, economy) {
-    const gameState = global.gameState;
-    const room = gameState?.rooms?.get(roomName);
-    const tradeAgreements = room?.tradeAgreements || [];
-    
-    const tradeImpact = this.calculateTradeImpact(tradeAgreements, countryName);
-    
-    // Calcular balanços finais
-    economy.commoditiesBalance = economy.commoditiesOutput + tradeImpact.commodityImports 
-                                - tradeImpact.commodityExports - economy.commoditiesNeeds;
-    economy.manufacturesBalance = economy.manufacturesOutput + tradeImpact.manufactureImports 
-                                - tradeImpact.manufactureExports - economy.manufacturesNeeds;
-    
-    // Armazenar estatísticas de comércio
-    economy.tradeStats = {
-      commodityImports: tradeImpact.commodityImports,
-      commodityExports: tradeImpact.commodityExports,
-      manufactureImports: tradeImpact.manufactureImports,
-      manufactureExports: tradeImpact.manufactureExports
-    };
+    return this.trade.calculateSectoralBalances(roomName, countryName, economy);
   }
 
   calculateTradeImpact(tradeAgreements, countryName) {
-    let commodityImports = 0, commodityExports = 0;
-    let manufactureImports = 0, manufactureExports = 0;
-
-    const ownAgreements = tradeAgreements.filter(agreement => 
-      agreement.originCountry === countryName
-    );
-    
-    ownAgreements.forEach(agreement => {
-      if (agreement.type === 'export') {
-        if (agreement.product === 'commodity') {
-          commodityExports += agreement.value;
-        } else if (agreement.product === 'manufacture') {
-          manufactureExports += agreement.value;
-        }
-      } else if (agreement.type === 'import') {
-        if (agreement.product === 'commodity') {
-          commodityImports += agreement.value;
-        } else if (agreement.product === 'manufacture') {
-          manufactureImports += agreement.value;
-        }
-      }
-    });
-
-    return { commodityImports, commodityExports, manufactureImports, manufactureExports };
+    return this.trade.calculateTradeImpact(tradeAgreements, countryName);
   }
 
   /**
@@ -698,122 +580,15 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
   // ========================================================================
 
   issueDebtBonds(roomName, countryName, bondAmount) {
-    const countryState = this.getCountryState(roomName, countryName);
-
-    if (!countryState) {
-      return { success: false, message: 'País não encontrado' };
-    }
-
-    const economy = countryState.economy;
-    const debtToGdpRatio = economy.publicDebt / economy.gdp;
-    
-    if (bondAmount <= 0 || bondAmount > 1000) {
-      return { success: false, message: 'Valor deve estar entre 0 e 1000 bilhões' };
-    }
-    
-    const newDebtToGdp = (economy.publicDebt + bondAmount) / economy.gdp;
-    if (newDebtToGdp > ECONOMIC_CONSTANTS.MAX_DEBT_TO_GDP_RATIO) {
-      return { success: false, message: 'Emissão faria a dívida ultrapassar 120% do PIB' };
-    }
-
-    // DELEGADO: Calcular taxa de juros com função de economicUtils
-    const riskPremium = calculateRiskPremium(economy.creditRating, debtToGdpRatio);
-    const effectiveRate = economy.interestRate + riskPremium;
-    
-    // Criar contrato expandido
-    const monthlyRate = effectiveRate / 100 / 12;
-    const totalDebtWithInterest = bondAmount * Math.pow(1 + monthlyRate, 120);
-
-    const contract = {
-      id: this.nextDebtId++,
-      originalValue: bondAmount,
-      remainingValue: totalDebtWithInterest, // ← CORREÇÃO: Valor total com juros compostos
-      interestRate: effectiveRate,
-      baseRate: economy.interestRate,
-      riskPremium: riskPremium,
-      monthlyPayment: this.calculateMonthlyPayment(bondAmount, effectiveRate, 120),
-      remainingInstallments: 120,
-      issueDate: new Date(),
-      emergencyBond: false
-    };
-    
-    // Armazenar contrato
-    const countryKey = `${countryName}:${roomName}`;
-    const contracts = this.debtContracts.get(countryKey) || [];
-    contracts.push(contract);
-    this.debtContracts.set(countryKey, contracts);
-    
-    // Atualizar economia
-    economy.treasury += bondAmount;
-    economy.publicDebt += bondAmount;
-    
-    this.setCountryState(roomName, countryName, countryState);
-    
-    return {
-      success: true,
-      message: `Títulos emitidos com taxa: ${effectiveRate.toFixed(2)}%`,
-      bondAmount,
-      newTreasury: economy.treasury,
-      newPublicDebt: economy.publicDebt,
-      newContract: contract,
-      effectiveRate
-    };
+    return this.debt.issueDebtBonds(roomName, countryName, bondAmount);
   }
 
   createInitialDebtContracts(countryName, countryState, totalDebt) {
-    const roomName = 'initial';
-    const economy = countryState.economy;
-    const contracts = [];
-    
-    // Dividir dívida em 4 títulos
-    const debtDistribution = [0.4, 0.3, 0.2, 0.1];
-    const ageMonths = [24, 12, 6, 0]; // Idades dos títulos em meses
-    
-    debtDistribution.forEach((percentage, index) => {
-      const bondValue = totalDebt * percentage;
-      const age = ageMonths[index];
-      const rateAdjustment = index === 0 ? -1 : index === 3 ? 0.5 : 0;
-      const effectiveRate = Math.max(3, economy.interestRate + rateAdjustment);
-      
-      // Calcular valor total com juros e simular pagamentos já feitos
-      const monthlyRate = effectiveRate / 100 / 12;
-      const totalDebtWithInterest = bondValue * Math.pow(1 + monthlyRate, 120);
-      const monthlyPayment = this.calculateMonthlyPayment(bondValue, effectiveRate, 120);
-      const alreadyPaid = monthlyPayment * age; // Pagamentos já realizados
-      
-      const contract = {
-        id: this.nextDebtId++,
-        originalValue: bondValue,
-        remainingValue: totalDebtWithInterest - alreadyPaid, // ← CORREÇÃO: Valor com juros menos pagamentos
-        interestRate: effectiveRate,
-        baseRate: economy.interestRate,
-        riskPremium: rateAdjustment,
-        monthlyPayment: monthlyPayment,
-        remainingInstallments: 120 - age,
-        issueDate: new Date(Date.now() - (age * 30 * 24 * 60 * 60 * 1000)),
-        emergencyBond: false
-      };
-      
-      contracts.push(contract);
-    });
-    
-    // Calcular dívida real restante
-    const totalRemainingDebt = contracts.reduce((sum, contract) => sum + contract.remainingValue, 0);
-    economy.publicDebt = totalRemainingDebt;
-    
-    // Armazenar contratos
-    const countryKey = `${countryName}:initial`;
-    this.debtContracts.set(countryKey, contracts);
-    
-    return contracts;
+    return this.debt.createInitialDebtContracts(countryName, countryState, totalDebt);
   }
 
   calculateMonthlyPayment(principal, annualRate, months) {
-    const monthlyRate = annualRate / 100 / 12;
-    if (monthlyRate === 0) return principal / months;
-    
-    return principal * monthlyRate * Math.pow(1 + monthlyRate, months) / 
-           (Math.pow(1 + monthlyRate, months) - 1);
+    return this.debt.calculateMonthlyPayment(principal, annualRate, months);
   }
 
  getDebtSummary(roomName, countryName) {
@@ -931,131 +706,12 @@ createEmergencyDebtContract(roomName, countryName, bondAmount, effectiveRate) {
   // ACORDOS COMERCIAIS (PRESERVADO)
   // ========================================================================
 
- createTradeAgreement(roomName, agreementData) {
-    const gameState = global.gameState;
-    const room = gameState?.rooms?.get(roomName);
-    if (!room) return null;
-    
-    const { type, product, country, value, originCountry, originPlayer } = agreementData;
-    
-    const originAgreement = {
-      id: `trade-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      timestamp: Date.now(),
-      type, product, country, value, originCountry, originPlayer
-    };
-    
-    const targetAgreement = {
-      id: `trade-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      timestamp: Date.now(),
-      type: type === 'import' ? 'export' : 'import',
-      product,
-      country: originCountry,
-      value,
-      originCountry: country,
-      originPlayer: null
-    };
-    
-    if (!room.tradeAgreements) room.tradeAgreements = [];
-    
-    room.tradeAgreements = room.tradeAgreements.filter(existing => 
-      !(existing.type === type && existing.product === product && 
-        existing.country === country && existing.originCountry === originCountry) &&
-      !(existing.type === targetAgreement.type && existing.product === product && 
-        existing.country === originCountry && existing.originCountry === country)
-    );
-    
-    room.tradeAgreements.push(originAgreement, targetAgreement);
-    
-    // Integração com cardService
-    if (global.cardService && global.cardService.initialized) {
-      try {
-        // Criar cards para o acordo comercial
-        const cards = global.cardService.createTradeAgreementCards(roomName, {
-          type: type,
-          product: product,
-          country: country,
-          value: value,
-          originCountry: originCountry,
-          originPlayer: originPlayer,
-          agreementId: originAgreement.id // Vincular ao acordo original
-        });
-        
-        console.log(`[ECONOMY-CARDS] Created ${cards.length} cards for trade agreement ${originAgreement.id}`);
-        
-        // Notificar criação de cards se necessário
-        if (global.io) {
-          global.io.to(roomName).emit('cardsUpdated', {
-            roomName: roomName,
-            action: 'created',
-            cards: cards.map(card => ({
-              id: card.id,
-              type: card.type,
-              owner: card.owner,
-              points: card.points
-            }))
-          });
-        }
-      } catch (error) {
-        console.error('[ECONOMY-CARDS] Error creating cards for trade agreement:', error);
-      }
-    }
-    
-    // Recalcular economias com cálculos delegados
-    this.performAdvancedEconomicCalculations(roomName, originCountry);
-    this.performAdvancedEconomicCalculations(roomName, country);
-    
-    return originAgreement;
+  createTradeAgreement(roomName, agreementData) {
+    return this.trade.createTradeAgreement(roomName, agreementData);
   }
 
- cancelTradeAgreement(roomName, agreementId) {
-    const gameState = global.gameState;
-    const room = gameState?.rooms?.get(roomName);
-    if (!room || !room.tradeAgreements) return false;
-    
-    const agreementIndex = room.tradeAgreements.findIndex(a => a.id === agreementId);
-    if (agreementIndex === -1) return false;
-    
-    const agreement = room.tradeAgreements[agreementIndex];
-    room.tradeAgreements.splice(agreementIndex, 1);
-    
-    const mirroredType = agreement.type === 'import' ? 'export' : 'import';
-    const mirroredIndex = room.tradeAgreements.findIndex(a => 
-      a.type === mirroredType && a.product === agreement.product && 
-      a.country === agreement.originCountry && a.originCountry === agreement.country
-    );
-    
-    if (mirroredIndex !== -1) {
-      room.tradeAgreements.splice(mirroredIndex, 1);
-    }
-    
-    // ===== NOVA INTEGRAÇÃO COM CARDSERVICE =====
-    if (global.cardService && global.cardService.initialized) {
-      try {
-        // Cancelar cards relacionados ao acordo
-        const cancelledCount = global.cardService.cancelCardsByAgreement(roomName, agreementId);
-        
-        console.log(`[ECONOMY-CARDS] Cancelled ${cancelledCount} cards for agreement ${agreementId}`);
-        
-        // Notificar cancelamento de cards
-        if (global.io && cancelledCount > 0) {
-          global.io.to(roomName).emit('cardsUpdated', {
-            roomName: roomName,
-            action: 'cancelled',
-            agreementId: agreementId,
-            cancelledCount: cancelledCount
-          });
-        }
-      } catch (error) {
-        console.error('[ECONOMY-CARDS] Error cancelling cards for agreement:', error);
-      }
-    }
-    // ===== FIM DA INTEGRAÇÃO =====
-    
-    // Recalcular economias
-    this.performAdvancedEconomicCalculations(roomName, agreement.originCountry);
-    this.performAdvancedEconomicCalculations(roomName, agreement.country);
-    
-    return true;
+  cancelTradeAgreement(roomName, agreementId) {
+    return this.trade.cancelTradeAgreement(roomName, agreementId);
   }
 
   // ========================================================================

@@ -4,7 +4,7 @@
  */
 
 import { ECONOMIC_CONSTANTS } from './economicConstants.js';
-import { getNumericValue, limitarComCurva, calcularMediaMovel, calculateRiskPremium } from './economicUtils.js';
+import { getNumericValue, limitarComCurva } from './economicUtils.js';
 
 /**
  * Calcula o crescimento econômico - BASEADO NO economy-game.js que funciona

@@ -154,6 +154,9 @@
   │       ├── redisClient.js  # Infraestrutura do Redis
   │       ├── services
   │       │   ├── cardService.js
+  │       │   ├── economy
+  │       │   │   ├── economyDebt.js
+  │       │   │   └── economyTrade.js
   │       │   └── economyService.js
   │       └── utils
   │           ├── economicCalculations.js
