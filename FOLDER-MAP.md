@@ -116,9 +116,13 @@
   │   ├── modules
   │   │   ├── ai
   │   │   │   └── aiCountryController.js
+  │   │   ├── alliance
+  │   │   │   └── allianceHandlers.js
   │   │   ├── auth
   │   │   │   ├── authHandlers.js  # Handlers de autenticação
   │   │   │   └── google.js
+  │   │   ├── cards
+  │   │   │   └── cardHandlers.js
   │   │   ├── chat
   │   │   │   └── chatHandlers.js  # Handlers do chat
   │   │   ├── country
@@ -130,10 +134,12 @@
   │   │   ├── player
   │   │   │   ├── playerRoomHandlers.js  # Handlers para jogadores na sala
   │   │   │   └── playerStateManager.js  # Gerencia estado dos jogadores
-  │   │   └── room
-  │   │       ├── roomExpirationManager.js
-  │   │       ├── roomManagement.js  # Gerenciamento de sala
-  │   │       └── roomNotifications.js  # Notificações da Sala
+  │   │   ├── room
+  │   │   │   ├── roomExpirationManager.js
+  │   │   │   ├── roomManagement.js  # Gerenciamento de sala
+  │   │   │   └── roomNotifications.js  # Notificações da Sala
+  │   │   └── trade
+  │   │       └── tradeHandlers.js
   │   ├── package.json  # Dependências e scripts principais (monorepo)
   │   ├── public
   │   │   └── data
