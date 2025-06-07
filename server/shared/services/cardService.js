@@ -303,6 +303,43 @@ class CardService {
   }
 
   /**
+   * Remove cards de acordo comercial (correção para o bug)
+   * Esta função estava faltando e causava o erro na linha 122 do economyTrade.js
+   * @param {string} roomName - Nome da sala
+   * @param {string} agreementId - ID do acordo
+   * @returns {number} - Número de cards removidos
+   */
+  removeTradeAgreementCards(roomName, agreementId) {
+    try {
+      console.log(`[ECONOMY-CARDS] Removing cards for agreement: ${agreementId}`);
+      
+      const roomCards = this.roomCards.get(roomName);
+      if (!roomCards) {
+        console.log(`[ECONOMY-CARDS] Room not found: ${roomName}`);
+        return 0;
+      }
+
+      let removedCount = 0;
+      
+      // Remover cards do acordo (filtragem reversa para evitar problemas de índice)
+      for (let i = roomCards.length - 1; i >= 0; i--) {
+        const card = roomCards[i];
+        if (card.sourceAgreementId === agreementId) {
+          roomCards.splice(i, 1);
+          removedCount++;
+          console.log(`[ECONOMY-CARDS] Removed card: ${card.id} (${card.type}) from ${card.owner}`);
+        }
+      }
+
+      console.log(`[ECONOMY-CARDS] Removed ${removedCount} cards for agreement ${agreementId}`);
+      return removedCount;
+    } catch (error) {
+      console.error('[ECONOMY-CARDS] Error removing trade agreement cards:', error);
+      return 0;
+    }
+  }
+
+  /**
    * Remove sala e todos seus cards
    * @param {string} roomName - Nome da sala
    */

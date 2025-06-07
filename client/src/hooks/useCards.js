@@ -115,7 +115,7 @@ export const useCards = (roomName, countryName) => {
         }));
       }
     };
-    
+      
     const handlePlayerPointsResponse = (data) => {
       if (data.roomName === roomName && data.country === countryName) {
         dispatch(setPlayerPoints({
@@ -123,6 +123,17 @@ export const useCards = (roomName, countryName) => {
           cardsByType: data.cardsByType,
           timestamp: data.timestamp
         }));
+      }
+    };
+    
+    const handleTradeAgreementCancelled = (agreementId) => {
+      console.log('[CARDS] Trade agreement cancelled:', agreementId);
+      // Refresh imediato quando um acordo é cancelado
+      if (autoRefresh) {
+        setTimeout(() => {
+          refreshPlayerCards();
+          refreshPlayerPoints();
+        }, 100);
       }
     };
     
@@ -150,12 +161,14 @@ export const useCards = (roomName, countryName) => {
     socket.on('playerCardsResponse', handlePlayerCardsResponse);
     socket.on('playerPointsResponse', handlePlayerPointsResponse);
     socket.on('playerRankingResponse', handlePlayerRankingResponse);
-    socket.on('cardsUpdated', handleCardsUpdated);
-    
+    socket.on('tradeAgreementCancelled', handleTradeAgreementCancelled);
+
+
     return () => {
       socket.off('playerCardsResponse', handlePlayerCardsResponse);
       socket.off('playerPointsResponse', handlePlayerPointsResponse);
       socket.off('playerRankingResponse', handlePlayerRankingResponse);
+      socket.off('tradeAgreementCancelled', handleTradeAgreementCancelled);
       socket.off('cardsUpdated', handleCardsUpdated);
     };
   }, [roomName, countryName, dispatch, autoRefresh, refreshAll]);
@@ -183,7 +196,7 @@ export const useCards = (roomName, countryName) => {
   // ========================================================================
   // FUNÇÕES UTILITÁRIAS
   // ========================================================================
-  
+
   const getCardsByType = useCallback((cardType) => {
     return allPlayerCards.filter(card => card.type === cardType);
   }, [allPlayerCards]);

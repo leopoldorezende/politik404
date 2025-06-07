@@ -41,34 +41,49 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
   }, [isOpen, initialFilter]);
 
   const handleRemoveCard = (card) => {
-      if (card.type === 'military_alliance') {
-        // Lógica especial para alianças militares
-        if (window.confirm(`Tem certeza que deseja cancelar a aliança militar com ${card.target}? Esta ação encerrará o acordo militar entre os países e você precisará aguardar 1 minuto antes de propor uma nova aliança.`)) {
-          const socket = socketApi.getSocketInstance();
-          if (socket) {
-            // Cancelar aliança militar via card ID
-            socket.emit('cancelMilitaryAlliance', card.id);
-          }
-        }
-      } else if (card.type === 'export' || card.type === 'import') {
-        // Lógica para acordos comerciais
-        if (window.confirm(`Tem certeza que deseja remover este card e cancelar o acordo comercial?`)) {
-          const socket = socketApi.getSocketInstance();
-          if (socket && card.sourceAgreementId) {
-            // Cancelar o acordo comercial que gerou este card
-            socket.emit('cancelTradeAgreement', card.sourceAgreementId);
-          }
-        }
-      } else {
-        // Outros tipos de cards
-        if (window.confirm(`Tem certeza que deseja remover este card?`)) {
-          const socket = socketApi.getSocketInstance();
-          if (socket) {
-            socket.emit('cancelCard', card.id);
-          }
+    if (card.type === 'military_alliance') {
+      // Lógica especial para alianças militares
+      if (window.confirm(`Tem certeza que deseja cancelar a aliança militar com ${card.target}? Esta ação encerrará o acordo militar entre os países e você precisará aguardar 1 minuto antes de propor uma nova aliança.`)) {
+        const socket = socketApi.getSocketInstance();
+        if (socket) {
+          // Cancelar aliança militar via card ID
+          socket.emit('cancelMilitaryAlliance', card.id);
+          
+          // CORREÇÃO: Refresh imediato após cancelamento
+          setTimeout(() => {
+            refreshAll();
+          }, 200);
         }
       }
-    };
+    } else if (card.type === 'export' || card.type === 'import') {
+      // Lógica para acordos comerciais
+      if (window.confirm(`Tem certeza que deseja remover este card e cancelar o acordo comercial?`)) {
+        const socket = socketApi.getSocketInstance();
+        if (socket && card.sourceAgreementId) {
+          // Cancelar o acordo comercial que gerou este card
+          socket.emit('cancelTradeAgreement', card.sourceAgreementId);
+          
+          // CORREÇÃO: Refresh imediato após cancelamento
+          setTimeout(() => {
+            refreshAll();
+          }, 200);
+        }
+      }
+    } else {
+      // Outros tipos de cards
+      if (window.confirm(`Tem certeza que deseja remover este card?`)) {
+        const socket = socketApi.getSocketInstance();
+        if (socket) {
+          socket.emit('cancelCard', card.id);
+          
+          // CORREÇÃO: Refresh imediato após cancelamento
+          setTimeout(() => {
+            refreshAll();
+          }, 200);
+        }
+      }
+    }
+  };
 
   // Definir grupos de cards - REORGANIZADO conforme solicitado
   const cardGroups = {
