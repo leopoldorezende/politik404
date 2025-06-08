@@ -7,6 +7,7 @@ import './CardsPopup.css';
 
 /**
  * Popup simplificado de cards - Lista simples com filtro por tipo
+ * CORREÇÃO: Adicionado escuta de eventos socket para atualização em tempo real
  */
 const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
   // Estados do Redux
@@ -39,6 +40,90 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
       setSelectedGroup(initialFilter);
     }
   }, [isOpen, initialFilter]);
+
+  // ========================================================================
+  // CORREÇÃO: ESCUTA DE EVENTOS SOCKET EM TEMPO REAL
+  // ========================================================================
+  useEffect(() => {
+    // Só escutar eventos quando o popup estiver aberto
+    if (!isOpen || !currentRoom?.name || !myCountry) return;
+
+    const socket = socketApi.getSocketInstance();
+    if (!socket) return;
+
+    console.log('[CARDS POPUP] Configurando listeners de tempo real');
+
+    // Handler para atualizações de cards
+    const handleCardsUpdated = (data) => {
+      console.log('[CARDS POPUP] Cards updated event received:', data);
+      
+      if (data.roomName === currentRoom.name) {
+        console.log('[CARDS POPUP] Refreshing cards due to real-time update');
+        setTimeout(() => {
+          refreshAll();
+        }, 100);
+      }
+    };
+
+    // Handler para atualizações de acordos comerciais
+    const handleTradeAgreementUpdated = (data) => {
+      console.log('[CARDS POPUP] Trade agreement updated:', data);
+      
+      // Sempre atualizar quando trade agreements mudam
+      setTimeout(() => {
+        refreshAll();
+      }, 100);
+    };
+
+    // Handler para acordos comerciais cancelados
+    const handleTradeAgreementCancelled = (agreementId) => {
+      console.log('[CARDS POPUP] Trade agreement cancelled:', agreementId);
+      
+      setTimeout(() => {
+        refreshAll();
+      }, 100);
+    };
+
+    // Handler para alianças militares canceladas
+    const handleMilitaryAllianceCancelled = (data) => {
+      console.log('[CARDS POPUP] Military alliance cancelled:', data);
+      
+      setTimeout(() => {
+        refreshAll();
+      }, 100);
+    };
+
+    // Handler genérico para qualquer mudança de acordo/card
+    const handleAgreementChange = () => {
+      console.log('[CARDS POPUP] Generic agreement change detected');
+      
+      setTimeout(() => {
+        refreshAll();
+      }, 100);
+    };
+
+    // Registrar todos os listeners relevantes
+    socket.on('cardsUpdated', handleCardsUpdated);
+    socket.on('tradeAgreementUpdated', handleTradeAgreementUpdated);
+    socket.on('tradeAgreementCancelled', handleTradeAgreementCancelled);
+    socket.on('militaryAllianceCancelled', handleMilitaryAllianceCancelled);
+    
+    // Listeners adicionais para garantir que todas as mudanças sejam capturadas
+    socket.on('tradeProposalProcessed', handleAgreementChange);
+    socket.on('allianceProposalProcessed', handleAgreementChange);
+
+    // Cleanup: remover listeners quando popup fechar ou componente desmontar
+    return () => {
+      console.log('[CARDS POPUP] Removendo listeners de tempo real');
+      
+      socket.off('cardsUpdated', handleCardsUpdated);
+      socket.off('tradeAgreementUpdated', handleTradeAgreementUpdated);
+      socket.off('tradeAgreementCancelled', handleTradeAgreementCancelled);
+      socket.off('militaryAllianceCancelled', handleMilitaryAllianceCancelled);
+      socket.off('tradeProposalProcessed', handleAgreementChange);
+      socket.off('allianceProposalProcessed', handleAgreementChange);
+    };
+  }, [isOpen, currentRoom?.name, myCountry, refreshAll]);
 
   const handleRemoveCard = (card) => {
     if (card.type === 'military_alliance') {
