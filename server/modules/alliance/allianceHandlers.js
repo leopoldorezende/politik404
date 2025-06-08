@@ -216,11 +216,11 @@ function setupAllianceHandlers(io, socket, gameState) {
       
       const targetCountry = allianceCard.target;
       
-      // Cancelar ambos os cards da aliança (duplo)
+      // Cancelar ambos os cards da aliança
       const allAllianceCards = roomCards.filter(card => 
         card.type === 'military_alliance' &&
         ((card.owner === userCountry && card.target === targetCountry) ||
-         (card.owner === targetCountry && card.target === userCountry))
+        (card.owner === targetCountry && card.target === userCountry))
       );
       
       let cancelledCount = 0;
@@ -232,21 +232,38 @@ function setupAllianceHandlers(io, socket, gameState) {
       });
       
       if (cancelledCount > 0) {
-        // ✅ NOVO: Iniciar cooldown de 1 minuto para novas propostas
-        const cooldownTimestamp = Date.now();
-        socket.emit('militaryAllianceCancelled', {
-          cardId,
-          targetCountry,
-          cooldownTimestamp, // Enviar timestamp para sincronizar cooldown
-          message: `Military alliance with ${targetCountry} has been cancelled. You must wait 1 minute before proposing a new alliance.`
+        // ✅ CORREÇÃO: Encontrar o jogador do país alvo para notificar
+        const room = gameState.rooms.get(roomName);
+        const targetPlayer = room?.players?.find(player => 
+          typeof player === 'object' && player.country === targetCountry
+        );
+        
+        // ✅ CORREÇÃO: Notificar APENAS o outro jogador da aliança
+        if (targetPlayer && targetPlayer.isOnline) {
+          const targetSocketId = gameState.usernameToSocketId?.get(targetPlayer.username);
+          const targetSocket = targetSocketId ? io.sockets.sockets.get(targetSocketId) : null;
+          
+          if (targetSocket && targetSocket.connected) {
+            targetSocket.emit('militaryAllianceCancelled', {
+              cancelledBy: userCountry,
+              message: `${userCountry} cancelou a aliança militar com você.`
+            });
+          }
+        }
+        
+        // Para quem cancelou, apenas confirmação simples
+        socket.on('allianceCancelConfirmed', (data) => {
+          console.log('Alliance cancel confirmed:', data);
+          
         });
         
-        // Broadcast atualização de cards
+        // Atualizar cards para toda a sala (interface apenas)
         io.to(roomName).emit('cardsUpdated', {
           roomName: roomName,
           action: 'cancelled',
           cardType: 'military_alliance',
-          countries: [userCountry, targetCountry]
+          countries: [userCountry, targetCountry],
+          silent: true // Não mostrar toast, apenas atualizar interface
         });
         
         console.log(`[ALLIANCE] Military alliance cancelled between ${userCountry} and ${targetCountry}. Cooldown initiated.`);

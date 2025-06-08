@@ -62,6 +62,11 @@ const showNotificationWithCooldown = (type, message, duration = 4000) => {
 export const setupSocketEvents = (socket, socketApi) => {
   if (!socket) return;
   
+  // Remover TODOS os listeners antes de registrar novos
+  socket.removeAllListeners('militaryAllianceCancelled');
+  socket.removeAllListeners('cardsUpdated');
+  socket.removeAllListeners('allianceCancelConfirmed');
+  
   // Lista completa de eventos para limpeza garantida
   const eventsToClean = [
     'connect', 'disconnect', 'connect_error', 'authenticated', 'authenticationIgnored',
@@ -72,6 +77,7 @@ export const setupSocketEvents = (socket, socketApi) => {
     'tradeAgreementCancelled', 'tradeAgreementsList', 'tradeAgreementUpdated',
     'debtBondsIssued', 'economicParameterUpdated', 'debtSummaryResponse',
     'emergencyBondsIssued', 'countryStatesUpdated', 'countryStatesInitialized',
+    'militaryAllianceCancelled', 'allianceCancelConfirmed', 'cardsUpdated', 
     'error', 'pong'
   ];
   
@@ -605,22 +611,10 @@ export const setupSocketEvents = (socket, socketApi) => {
   socket.on('militaryAllianceCancelled', (data) => {
     console.log('Aliança militar cancelada:', data);
     
-    // ✅ NOVO: Iniciar cooldown de 1 minuto após cancelamento
-    if (data.cooldownTimestamp) {
-      // Usar localStorage para persistir o cooldown de cancelamento
-      try {
-        const cancelCooldowns = JSON.parse(localStorage.getItem('allianceCancelCooldowns') || '{}');
-        cancelCooldowns.military_alliance = data.cooldownTimestamp;
-        localStorage.setItem('allianceCancelCooldowns', JSON.stringify(cancelCooldowns));
-        console.log('[ALLIANCE] Cooldown de 1 minuto iniciado após cancelamento');
-      } catch (e) {
-        console.error('Erro ao salvar cooldown de cancelamento:', e);
-      }
-    }
-    
+    // Mostrar toast para quem foi "prejudicado" pelo cancelamento
     MessageService.showWarning(
-      `Aliança militar com ${data.targetCountry} foi cancelada. Aguarde 1 minuto para propor uma nova aliança.`, 
-      6000
+      `${data.cancelledBy} cancelou a aliança militar com você.`, 
+      5000
     );
   });
   
@@ -628,8 +622,16 @@ export const setupSocketEvents = (socket, socketApi) => {
   socket.on('cardsUpdated', (data) => {
     console.log('[CARDS] Cards updated event received globally:', data);
     
-    // Disparar atualização no store para forçar re-render dos componentes
-    // que dependem de pontuação
+    // Se tem flag silent, apenas atualizar dados sem toast
+    if (data.silent) {
+      store.dispatch({ 
+        type: 'cards/cardsUpdatedEvent', 
+        payload: data 
+      });
+      return;
+    }
+    
+    // Para outros casos, continuar normal
     store.dispatch({ 
       type: 'cards/cardsUpdatedEvent', 
       payload: data 

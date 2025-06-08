@@ -18,7 +18,7 @@ const AllianceProposalPopup = ({ proposal, isOpen, onClose }) => {
   const { id, type, originCountry } = proposal;
   
   // Título e informações da proposta
-  const title = `Proposta de Aliança Militar de ${originCountry}`;
+  const title = `Proposta de ${originCountry}`;
   
   // Funções para aceitar ou recusar proposta
   const handleAccept = () => {
@@ -38,11 +38,7 @@ const AllianceProposalPopup = ({ proposal, isOpen, onClose }) => {
       title={title}
     >
       <div className="alliance-proposal-content">
-        <div className="proposal-message">
-          <p>
-            <strong>{originCountry}</strong> está propondo uma aliança militar com o seu país.
-          </p>
-        </div>
+
         
         <div className="proposal-details">
           <div className="detail-item">
@@ -50,7 +46,7 @@ const AllianceProposalPopup = ({ proposal, isOpen, onClose }) => {
             <span className="detail-value">Aliança Militar</span>
           </div>
           <div className="detail-item">
-            <span className="detail-label">País Solicitante:</span>
+            <span className="detail-label">Solicitante:</span>
             <span className="detail-value">{originCountry}</span>
           </div>
           <div className="detail-item">
@@ -64,9 +60,6 @@ const AllianceProposalPopup = ({ proposal, isOpen, onClose }) => {
             <li>
               <strong>Assistência militar obrigatória:</strong> Em caso de guerra, ambos os países são 
               obrigados a prestar assistência militar mútua.
-            </li>
-            <li>
-              <strong>Pontuação:</strong> Cada país aliado recebe 5 pontos por manter a aliança ativa.
             </li>
             <li>
               <strong>Exclusividade:</strong> Você só pode ter uma aliança militar ativa por vez. 
