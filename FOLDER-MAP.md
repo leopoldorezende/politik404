@@ -3,6 +3,7 @@
   /Politik404
   ├── FOLDER-MAP.md
   ├── README.md  # Documentação do front-end
+  ├── SISTEMA_UNIFICADO_COMPLETO.md
   ├── client
   │   ├── index.html  # HTML principal
   │   ├── package.json  # Dependências e scripts principais (monorepo)
@@ -117,6 +118,11 @@
       ├── middlewares
       │   └── socketServerMiddleware.js
       ├── modules
+      │   ├── agreements
+      │   │   ├── agreementEngine.js
+      │   │   ├── agreementHandlers.js
+      │   │   ├── agreementValidator.js
+      │   │   └── internalAgreementService.js
       │   ├── ai
       │   │   └── aiCountryController.js
       │   ├── alliance
@@ -152,10 +158,12 @@
       ├── server.js  # Entry point do servidor
       └── shared
           ├── config
+          │   ├── agreementTypeRegistry.js
           │   └── syncConfig.js
           ├── firebaseAdmin.js
           ├── redisClient.js  # Infraestrutura do Redis
           ├── services
+          │   ├── agreementMessagesService.js
           │   ├── cardService.js
           │   ├── economy
           │   │   ├── economyDebt.js

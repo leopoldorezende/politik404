@@ -1,664 +1,705 @@
-// client/src/services/socketEventHandlers.js - Simplificado
+// =====================================================================
+// HANDLERS DE EVENTOS UNIFICADOS - FASE 3 CLIENTE - CORRIGIDO
+// =====================================================================
+// Local: client/src/services/socketEventHandlers.js
 
 import { store } from '../store';
-import { setRooms, setCurrentRoom, leaveRoom } from '../modules/room/roomState';
-import { setMyCountry, setPlayers, setPlayerOnlineStatus, setOnlinePlayers } from '../modules/game/gameState';
-import { addMessage, setChatHistory } from '../modules/chat/chatState';
-import authMutex from './authMutex.js';
-import StorageService from './storageService.js';
-
-import {
-  addTradeAgreement,
-  removeTradeAgreement,
-  resetTradeState,
-  updateStats
-} from '../modules/trade/tradeState';
 import { 
-  setReconnectAttempts, 
-  incrementReconnectAttempts,
-  setIsJoiningRoom,
-  getIsJoiningRoom,
-  getMaxReconnectAttempts
-} from './socketConnection';
-
-// Import do serviço de mensagens para mostrar toasts
+  login, 
+  logout
+} from '../modules/auth/authState';
+import { 
+  setRooms, 
+  setCurrentRoom,
+  leaveRoom 
+} from '../modules/room/roomState';
+import { 
+  setMyCountry, 
+  setCountriesData, 
+  updateCountryData 
+} from '../modules/game/gameState';
+import { 
+  addMessage, 
+  setChatHistory 
+} from '../modules/chat/chatState';
+import { 
+  addTradeAgreement, 
+  removeTradeAgreement, 
+  resetTradeState,
+  updateStats 
+} from '../modules/trade/tradeState';
+import { setIsJoiningRoom, setReconnectAttempts } from './socketConnection';
+import StorageService from './storageService.js';
 import MessageService from '../ui/toast/messageService';
 
-// Controle de autenticação centralizado no authMutex
+// =====================================================================
+// SISTEMA DE DEBOUNCE E CONTROLE
+// =====================================================================
+
 let isAuthenticated = false;
-let authenticationInProgress = false;
+const debounceTimeouts = {};
 
-// ✅ CORREÇÃO 1: Rate limiting para notificações duplicadas
-let lastNotificationTime = 0;
-const NOTIFICATION_COOLDOWN = 1000; // 1 segundo entre notificações similares
-
-// Adicionar função para verificar se está na GamePage
-const isInGamePage = () => {
-  return window.location.pathname === '/game' || 
-         document.getElementById('game-screen') !== null;
+// Sistema de mutex para autenticação
+const authMutex = {
+  isExecuting: false,
+  queue: [],
+  
+  async executeAuth(authFunction) {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ authFunction, resolve, reject });
+      this.processQueue();
+    });
+  },
+  
+  async processQueue() {
+    if (this.isExecuting || this.queue.length === 0) return;
+    
+    this.isExecuting = true;
+    const { authFunction, resolve, reject } = this.queue.shift();
+    
+    try {
+      const result = await authFunction();
+      resolve(result);
+    } catch (error) {
+      reject(error);
+    } finally {
+      this.isExecuting = false;
+      setTimeout(() => this.processQueue(), 100);
+    }
+  }
 };
 
-const showNotificationWithCooldown = (type, message, duration = 4000) => {
-  const now = Date.now();
-  if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) {
-    console.log(`[NOTIFICATION] Blocked duplicate: ${message}`);
-    return;
-  }
-  
-  lastNotificationTime = now;
-  
-  if (type === 'success') {
-    MessageService.showSuccess(message, duration);
-  } else if (type === 'warning') {
-    MessageService.showWarning(message, duration);
-  } else if (type === 'error') {
-    MessageService.showError(message, duration);
-  } else {
-    MessageService.showInfo(message, duration);
+// =====================================================================
+// CONSTANTES PARA CONFIGURAÇÃO DE EVENTOS
+// =====================================================================
+
+const CONSTANTS = {
+  DEBOUNCE_DELAY: 300,
+  MAX_RECONNECT_ATTEMPTS: 5,
+  RECONNECT_DELAY: 1000
+};
+
+// Configurações de mensagens por tipo de acordo
+const AGREEMENT_MESSAGE_CONFIGS = {
+  trade: { name: 'comércio', category: 'comercial' },
+  alliance: { name: 'aliança militar', category: 'militar' },
+  cooperation: { name: 'cooperação militar', category: 'militar' },
+  internal: { name: 'acordo interno', category: 'interno' }
+};
+
+// =====================================================================
+// UTILITÁRIOS PARA NOTIFICAÇÕES
+// =====================================================================
+
+/**
+ * Mostrar notificação com controle de cooldown
+ */
+function showNotificationWithCooldown(type, message, key = 'default') {
+  clearTimeout(debounceTimeouts[key]);
+  debounceTimeouts[key] = setTimeout(() => {
+    if (MessageService[type]) {
+      MessageService[type](message);
+    } else {
+      MessageService.showInfo(message);
+    }
+  }, CONSTANTS.DEBOUNCE_DELAY);
+}
+
+// =====================================================================
+// FACTORIES PARA HANDLERS UNIFICADOS
+// =====================================================================
+
+/**
+ * Factory para criar handlers de propostas recebidas unificados
+ */
+function createProposalReceivedHandler(agreementType) {
+  return (data) => {
+    console.log(`📨 Proposta ${agreementType} recebida:`, data);
+    
+    const { proposalId, proposal, message, originCountry } = data;
+    
+    // Usar mensagem do servidor se disponível, senão formatar localmente
+    const displayMessage = message || getProposalMessage(agreementType, proposal);
+    
+    // Mostrar notificação
+    MessageService.showInfo(displayMessage, {
+      persistent: true,
+      actions: [
+        {
+          label: 'Aceitar',
+          action: () => {
+            console.log(`✅ Aceitando proposta ${agreementType}:`, proposalId);
+            // Usar método unificado
+            store.getState().socketApi?.respondToAgreementProposal({
+              proposalId,
+              accepted: true,
+              agreementType
+            });
+          }
+        },
+        {
+          label: 'Recusar',
+          action: () => {
+            console.log(`❌ Recusando proposta ${agreementType}:`, proposalId);
+            // Usar método unificado
+            store.getState().socketApi?.respondToAgreementProposal({
+              proposalId,
+              accepted: false,
+              agreementType
+            });
+          }
+        }
+      ]
+    });
+  };
+}
+
+/**
+ * Factory para criar handlers de resposta de propostas unificados
+ */
+function createProposalResponseHandler(agreementType) {
+  return (response) => {
+    clearTimeout(debounceTimeouts[`${agreementType}Response`]);
+    debounceTimeouts[`${agreementType}Response`] = setTimeout(() => {
+      console.log(`📬 Resposta ${agreementType} recebida:`, response);
+      
+      const { accepted, targetCountry, message } = response;
+      const config = AGREEMENT_MESSAGE_CONFIGS[agreementType];
+      
+      // Priorizar mensagem do servidor
+      let displayMessage;
+      if (message) {
+        displayMessage = message;
+      } else {
+        // Fallback para mensagem local
+        displayMessage = accepted ? 
+          `${targetCountry} aceitou sua proposta de ${config.name}!` : 
+          `${targetCountry} recusou sua proposta de ${config.name}.`;
+      }
+      
+      const type = accepted ? 'success' : 'warning';
+      showNotificationWithCooldown(type, displayMessage);
+    }, CONSTANTS.DEBOUNCE_DELAY);
+  };
+}
+
+/**
+ * Factory para criar handlers de processamento de propostas unificados
+ */
+function createProposalProcessedHandler(agreementType) {
+  return (response) => {
+    const { accepted, message } = response;
+    const config = AGREEMENT_MESSAGE_CONFIGS[agreementType];
+    
+    // Priorizar mensagem do servidor
+    let displayMessage;
+    if (message) {
+      displayMessage = message;
+    } else {
+      // Fallback para mensagem local
+      displayMessage = accepted ? 
+        `Você aceitou a proposta de ${config.name}.` : 
+        `Você recusou a proposta de ${config.name}.`;
+    }
+    
+    const type = accepted ? 'success' : 'warning';
+    
+    if (MessageService[type]) {
+      MessageService[type](displayMessage);
+    } else {
+      MessageService.showInfo(displayMessage);
+    }
+  };
+}
+
+/**
+ * Factory para criar handlers de cancelamento de acordos unificados
+ */
+function createAgreementCancelledHandler(agreementType, storeAction = null) {
+  return (data) => {
+    console.log(`🗑️ Acordo ${agreementType} cancelado:`, data);
+    
+    // Atualizar store se necessário
+    if (storeAction && data.agreementId) {
+      store.dispatch(storeAction(data.agreementId));
+    }
+    
+    // Priorizar mensagem do servidor
+    const message = data.message || `Acordo de ${agreementType} cancelado.`;
+    MessageService.showInfo(message);
+  };
+}
+
+// =====================================================================
+// HANDLERS UNIFICADOS PRINCIPAIS
+// =====================================================================
+
+/**
+ * Handlers para eventos unificados de acordo
+ */
+const unifiedAgreementHandlers = {
+  // Evento principal de proposta recebida
+  'agreementProposalReceived': (data) => {
+    console.log('📨 Proposta unificada recebida:', data);
+    const { agreementType } = data;
+    
+    // Rotear para handler específico baseado no tipo
+    if (agreementType?.startsWith('trade-') || agreementType === 'trade') {
+      createProposalReceivedHandler('trade')(data);
+    } else if (agreementType === 'military-alliance' || agreementType === 'alliance') {
+      createProposalReceivedHandler('alliance')(data);
+    } else if (agreementType === 'strategic-cooperation' || agreementType === 'cooperation') {
+      createProposalReceivedHandler('cooperation')(data);
+    } else {
+      createProposalReceivedHandler('internal')(data);
+    }
+  },
+
+  // Evento principal de resposta de proposta
+  'agreementProposalResponse': (response) => {
+    console.log('📬 Resposta unificada recebida:', response);
+    const { agreementType } = response;
+    
+    // Rotear para handler específico baseado no tipo
+    if (agreementType?.startsWith('trade-') || agreementType === 'trade') {
+      createProposalResponseHandler('trade')(response);
+    } else if (agreementType === 'military-alliance' || agreementType === 'alliance') {
+      createProposalResponseHandler('alliance')(response);
+    } else if (agreementType === 'strategic-cooperation' || agreementType === 'cooperation') {
+      createProposalResponseHandler('cooperation')(response);
+    } else {
+      createProposalResponseHandler('internal')(response);
+    }
+  },
+
+  // Evento principal de processamento de proposta
+  'agreementProposalProcessed': (response) => {
+    console.log('⚙️ Processamento unificado:', response);
+    const { agreementType } = response;
+    
+    // Rotear para handler específico baseado no tipo
+    if (agreementType?.startsWith('trade-') || agreementType === 'trade') {
+      createProposalProcessedHandler('trade')(response);
+    } else if (agreementType === 'military-alliance' || agreementType === 'alliance') {
+      createProposalProcessedHandler('alliance')(response);
+    } else if (agreementType === 'strategic-cooperation' || agreementType === 'cooperation') {
+      createProposalProcessedHandler('cooperation')(response);
+    } else {
+      createProposalProcessedHandler('internal')(response);
+    }
+  },
+
+  // Evento principal de cancelamento
+  'agreementCancelled': (data) => {
+    console.log('🗑️ Cancelamento unificado:', data);
+    const { agreementType } = data;
+    
+    // Rotear para handler específico baseado no tipo
+    if (agreementType?.startsWith('trade-') || agreementType === 'trade') {
+      createAgreementCancelledHandler('trade', removeTradeAgreement)(data);
+    } else if (agreementType === 'military-alliance' || agreementType === 'alliance') {
+      createAgreementCancelledHandler('alliance')(data);
+    } else if (agreementType === 'strategic-cooperation' || agreementType === 'cooperation') {
+      createAgreementCancelledHandler('cooperation')(data);
+    } else {
+      createAgreementCancelledHandler('internal')(data);
+    }
+  },
+
+  // Eventos específicos para acordos internos
+  'agreementCreated': (data) => {
+    console.log('✅ Acordo interno criado:', data);
+    const { type, message, points } = data;
+    
+    MessageService.showSuccess(message || `Acordo ${type} criado com sucesso!`);
+    
+    // Atualizar pontuação se disponível
+    if (points && store.getState().game?.myCountry) {
+      // Trigger para atualização de pontuação
+      store.dispatch(updateStats());
+    }
+  },
+
+  'agreementFailed': (data) => {
+    console.log('❌ Acordo interno falhado:', data);
+    const { type, message, probability } = data;
+    
+    let displayMessage = message;
+    if (!displayMessage && probability) {
+      displayMessage = `Falha ao criar acordo ${type}. Probabilidade era ${probability}%. Tente novamente.`;
+    }
+    
+    MessageService.showWarning(displayMessage || `Falha ao criar acordo ${type}`);
+  },
+
+  // Eventos de consulta
+  'activeAgreements': (data) => {
+    console.log('📋 Acordos ativos recebidos:', data);
+    const { agreements, country } = data;
+    
+    // Atualizar store com acordos ativos
+    store.dispatch(resetTradeState());
+    if (Array.isArray(agreements)) {
+      agreements.forEach(agreement => {
+        if (agreement.type?.startsWith('trade') || agreement.category === 'comercial') {
+          store.dispatch(addTradeAgreement(agreement));
+        }
+      });
+    }
+    store.dispatch(updateStats());
+  },
+
+  'cooldownStatus': (data) => {
+    console.log('⏱️ Status cooldown:', data);
+    // Implementar lógica de cooldown no UI se necessário
+  },
+
+  'agreementTypes': (data) => {
+    console.log('📋 Tipos de acordo disponíveis:', data);
+    // Implementar cache de tipos se necessário
   }
 };
 
-// Configurar todos os eventos do socket - SIMPLIFICADO
+// =====================================================================
+// HANDLERS LEGADOS PARA COMPATIBILIDADE
+// =====================================================================
+
+/**
+ * Handlers específicos para acordos comerciais (compatibilidade)
+ */
+const updateTradeAgreementsHandler = (data) => {
+  store.dispatch(resetTradeState());
+  if (Array.isArray(data.agreements)) {
+    data.agreements.forEach(agreement => {
+      store.dispatch(addTradeAgreement(agreement));
+    });
+  }
+  store.dispatch(updateStats());
+};
+
+// =====================================================================
+// HELPERS PARA FORMATAÇÃO DE MENSAGENS (FALLBACK)
+// =====================================================================
+
+/**
+ * Obter mensagem formatada para proposta (fallback se servidor não enviar)
+ */
+function getProposalMessage(agreementType, proposal) {
+  switch (agreementType) {
+    case 'trade':
+      const productName = proposal.product === 'commodity' ? 'commodities' : 'manufaturas';
+      const actionType = proposal.type === 'export' ? 'exportar para você' : 'importar de você';
+      return `${proposal.originCountry} quer ${actionType} ${productName} (${proposal.value} bi USD)`;
+    
+    case 'alliance':
+      return `${proposal.originCountry} propõe uma aliança militar com você!`;
+    
+    case 'cooperation':
+      return `${proposal.originCountry} propõe cooperação militar com você!`;
+    
+    default:
+      return `${proposal.originCountry} enviou uma proposta para você.`;
+  }
+}
+
+// =====================================================================
+// FUNÇÃO PRINCIPAL DE CONFIGURAÇÃO DOS EVENTOS
+// =====================================================================
+
 export const setupSocketEvents = (socket, socketApi) => {
   if (!socket) return;
+
+  // 1. Limpeza de todos os listeners para evitar duplicatas
+  socket.removeAllListeners();
   
-  // Remover TODOS os listeners antes de registrar novos
-  socket.removeAllListeners('militaryAllianceCancelled');
-  socket.removeAllListeners('cardsUpdated');
-  socket.removeAllListeners('allianceCancelConfirmed');
-  
-  // Lista completa de eventos para limpeza garantida
-  const eventsToClean = [
-    'connect', 'disconnect', 'connect_error', 'authenticated', 'authenticationIgnored',
-    'roomsList', 'roomJoined', 'roomLeft', 'roomCreated', 'roomDeleted',
-    'chatMessage', 'chatHistory', 'playersList', 'playerOnlineStatus',
-    'countryAssigned', 'stateRestored',
-    'tradeProposalReceived', 'tradeProposalResponse', 'tradeProposalProcessed',
-    'tradeAgreementCancelled', 'tradeAgreementsList', 'tradeAgreementUpdated',
-    'debtBondsIssued', 'economicParameterUpdated', 'debtSummaryResponse',
-    'emergencyBondsIssued', 'countryStatesUpdated', 'countryStatesInitialized',
-    'militaryAllianceCancelled', 'allianceCancelConfirmed', 'cardsUpdated', 
-    'error', 'pong'
-  ];
-  
-  // Limpeza completa usando removeAllListeners
-  eventsToClean.forEach(eventName => {
-    socket.removeAllListeners(eventName);
-  });
-  
-  // Reset de variáveis de controle
+  // 2. Reset de variáveis de controle
   isAuthenticated = false;
-  authenticationInProgress = false;
-  
-  // Timeouts para debounce de eventos duplicados
-  let proposalTimeout;
-  let responseTimeout;
-  let emergencyTimeout;
-  
-  // ======================================================================
-  // EVENTOS BASE DO SOCKET
-  // ======================================================================
+  Object.keys(debounceTimeouts).forEach(key => clearTimeout(debounceTimeouts[key]));
+
+  // ===================================================================
+  // EVENTOS DE CONEXÃO E RECONEXÃO (MANTIDOS)
+  // ===================================================================
   
   socket.on('connect', () => {
-    console.log('Conectado ao servidor socket com ID:', socket.id);
+    console.log('🔌 Conectado ao servidor socket com ID:', socket.id);
     setReconnectAttempts(0);
     setIsJoiningRoom(false);
     
     const username = StorageService.get(StorageService.KEYS.USERNAME);
-
     if (username && !isAuthenticated) {
-      console.log('Reautenticando usuário após conexão:', username);
-      
+      console.log('🔐 Reautenticando usuário após conexão:', username);
       authMutex.executeAuth(async () => {
         if (!isAuthenticated) {
           await new Promise(resolve => setTimeout(resolve, 500));
-          
           socket.emit('authenticate', username, { 
             clientSessionId: StorageService.get(StorageService.KEYS.CLIENT_SESSION_ID),
             reconnect: true
           });
-          
           return true;
         }
         return false;
-      }).catch(error => {
-        console.error('Authentication error:', error.message);
-      });
-    }
-  });
-  
-  socket.io.on("reconnect_attempt", (attempt) => {
-    console.log(`Tentativa de reconexão #${attempt}`);
-    setReconnectAttempts(attempt);
-    isAuthenticated = false;
-    authenticationInProgress = false;
-  });
-  
-  socket.io.on("reconnect", (attempt) => {
-    console.log(`Reconectado com sucesso após ${attempt} tentativas`);
-    setIsJoiningRoom(false);
-    isAuthenticated = false;
-    authenticationInProgress = false;
-    
-    const username = sessionStorage.getItem('username');
-    if (username) {
-      console.log('Reautenticando após reconexão:', username);
-      
-      setTimeout(() => {
-        if (!isAuthenticated && authenticationInProgress) {
-          socket.emit('authenticate', username, { 
-            clientSessionId: sessionStorage.getItem('clientSessionId'),
-            reconnect: true
-          });
-        }
-        
-        setTimeout(() => {
-          if (isAuthenticated) {
-            socket.emit('getRooms');
-          }
-        }, 1000);
-      }, 1500);
-    }
-  });
-  
-  socket.on('connect_error', (error) => {
-    console.error('Erro de conexão ao socket:', error.message);
-    incrementReconnectAttempts();
-    setIsJoiningRoom(false);
-    isAuthenticated = false;
-    authenticationInProgress = false;
-    
-    if (incrementReconnectAttempts() >= getMaxReconnectAttempts()) {
-      console.error(`Falha após ${getMaxReconnectAttempts()} tentativas. Desistindo.`);
-      store.dispatch({
-        type: 'error/connectionFailed',
-        payload: 'Não foi possível conectar ao servidor. Tente novamente mais tarde.'
-      });
+      }).catch(error => console.error('Authentication error:', error.message));
     }
   });
   
   socket.on('disconnect', (reason) => {
-    console.log('Desconectado do servidor. Motivo:', reason);
-    setIsJoiningRoom(false);
+    console.log('🔌 Desconectado do servidor. Motivo:', reason);
     isAuthenticated = false;
     
-    if (reason === 'io server disconnect' || reason === 'transport close') {
+    if (reason !== 'io client disconnect') {
+      // Usar incremento simples já que setReconnectAttempts está no socketConnection
+      console.log('🔄 Tentando reconectar...');
       setTimeout(() => {
-        console.log('Tentando reconectar após desconexão do servidor...');
         socket.connect();
-      }, 2000);
+      }, CONSTANTS.RECONNECT_DELAY);
     }
   });
-  
-  // ======================================================================
-  // EVENTOS DE AUTENTICAÇÃO E SALAS
-  // ======================================================================
+
+  // ===================================================================
+  // 🎯 EVENTOS UNIFICADOS DE ACORDO
+  // ===================================================================
+
+  // Registrar todos os handlers unificados
+  Object.entries(unifiedAgreementHandlers).forEach(([event, handler]) => {
+    socket.on(event, handler);
+  });
+
+  // ===================================================================
+  // 🔄 EVENTOS LEGADOS PARA COMPATIBILIDADE
+  // ===================================================================
+
+  // COMÉRCIO - Mantidos para compatibilidade retroativa
+  socket.on('tradeProposalReceived', createProposalReceivedHandler('trade'));
+  socket.on('tradeProposalResponse', createProposalResponseHandler('trade'));
+  socket.on('tradeProposalProcessed', createProposalProcessedHandler('trade'));
+  socket.on('tradeAgreementCancelled', createAgreementCancelledHandler('trade', removeTradeAgreement));
+  socket.on('updateTradeAgreements', updateTradeAgreementsHandler);
+
+  // ALIANÇA - Mantidos para compatibilidade retroativa
+  socket.on('allianceProposalReceived', createProposalReceivedHandler('alliance'));
+  socket.on('allianceProposalResponse', createProposalResponseHandler('alliance'));
+  socket.on('allianceProposalProcessed', createProposalProcessedHandler('alliance'));
+  socket.on('allianceAgreementCancelled', createAgreementCancelledHandler('alliance'));
+
+  // COOPERAÇÃO - Mantidos para compatibilidade retroativa
+  socket.on('cooperationProposalReceived', createProposalReceivedHandler('cooperation'));
+  socket.on('cooperationProposalResponse', createProposalResponseHandler('cooperation'));
+  socket.on('cooperationProposalProcessed', createProposalProcessedHandler('cooperation'));
+  socket.on('cooperationAgreementCancelled', createAgreementCancelledHandler('cooperation'));
+
+  // ===================================================================
+  // EVENTOS DE AUTENTICAÇÃO (MANTIDOS)
+  // ===================================================================
   
   socket.on('authenticated', (data) => {
-    console.log('Autenticação bem-sucedida:', data);
+    console.log('✅ Autenticado com sucesso:', data);
     isAuthenticated = true;
+    store.dispatch(login(data.username));
     
     const pendingRoom = StorageService.get(StorageService.KEYS.PENDING_ROOM);
-    if (pendingRoom && !getIsJoiningRoom()) {
-      setTimeout(() => {
-        console.log('Retomando entrada na sala após autenticação:', pendingRoom);
-        socketApi.joinRoom(pendingRoom);
-      }, 1000);
-    } else {
-      setTimeout(() => {
-        console.log('Solicitando lista de salas após autenticação');
-        socket.emit('getRooms');
-      }, 500);
+    if (pendingRoom && !socketApi.getSocketInstance) {
+      console.log('🏠 Entrando na sala pendente:', pendingRoom);
+      setTimeout(() => socketApi.joinRoom(pendingRoom), 500);
     }
   });
   
-  socket.on('authenticationIgnored', (data) => {
-    console.log('Autenticação ignorada pelo servidor:', data);
-    isAuthenticated = true;
+  socket.on('authenticationFailed', (error) => {
+    console.error('❌ Falha na autenticação:', error);
+    isAuthenticated = false;
+    MessageService.showError(`Falha na autenticação: ${error.message || 'Erro desconhecido'}`);
     
     setTimeout(() => {
-      socket.emit('getRooms');
-    }, 500);
+      store.dispatch(logout());
+      StorageService.clear();
+      window.location.reload();
+    }, 2000);
   });
+
+  // ===================================================================
+  // EVENTOS DE SALA (MANTIDOS)
+  // ===================================================================
   
-  socket.on('roomsList', (rooms) => {
-    console.log('Recebida lista de salas:', rooms);
+  socket.on('roomsUpdated', (rooms) => {
+    console.log('🏠 Salas atualizadas:', rooms.length);
     store.dispatch(setRooms(rooms));
   });
   
-  socket.on('roomJoined', (room) => {
-    console.log('Entrou na sala:', room);
+  socket.on('roomJoined', (data) => {
+    console.log('🎯 Entrou na sala:', data.roomName);
     setIsJoiningRoom(false);
     StorageService.remove(StorageService.KEYS.PENDING_ROOM);
-    store.dispatch(setCurrentRoom(room));
+    
+    store.dispatch(setCurrentRoom(data.roomName));
+    store.dispatch(setCountriesData(data.countries || []));
+    
+    if (data.myCountry) {
+      store.dispatch(setMyCountry(data.myCountry));
+      StorageService.set(StorageService.KEYS.MY_COUNTRY, data.myCountry);
+    }
+    
+    MessageService.showSuccess(`Entrou na sala: ${data.roomName}`);
   });
   
-  socket.on('roomLeft', () => {
-    console.log('Saiu da sala');
+  socket.on('roomJoinFailed', (error) => {
+    console.error('❌ Falha ao entrar na sala:', error);
     setIsJoiningRoom(false);
-    store.dispatch(leaveRoom());
+    StorageService.remove(StorageService.KEYS.PENDING_ROOM);
+    MessageService.showError(`Não foi possível entrar na sala: ${error.message || 'Erro desconhecido'}`);
+  });
+  
+  socket.on('roomLeft', (data) => {
+    console.log('👋 Saiu da sala:', data);
+    store.dispatch(setCurrentRoom(null));
+    store.dispatch(setMyCountry(null));
     store.dispatch(resetTradeState());
+    StorageService.remove(StorageService.KEYS.MY_COUNTRY);
+    MessageService.showInfo('Você saiu da sala');
   });
   
   socket.on('roomCreated', (data) => {
-    console.log('Sala criada:', data);
-    if (data.success) {
-      socket.emit('getRooms');
-    }
+    console.log('🏗️ Sala criada:', data);
+    MessageService.showSuccess(`Sala "${data.name}" criada com sucesso!`);
+  });
+  
+  socket.on('roomDeleted', (data) => {
+    console.log('🗑️ Sala deletada:', data);
+    MessageService.showInfo(`Sala "${data.roomName}" foi deletada`);
   });
 
-  socket.on('roomDeleted', (data) => {
-    console.log('Sala deletada:', data);
-    store.dispatch(leaveRoom());
-    store.dispatch(resetTradeState());
-    
-    if (data.message) {
-      MessageService.showWarning(data.message, 4000);
-    }
+  // ===================================================================
+  // EVENTOS DE PAÍS (MANTIDOS)
+  // ===================================================================
+  
+  socket.on('countryAssigned', (data) => {
+    console.log('🌍 País atribuído:', data);
+    store.dispatch(setMyCountry(data.country));
+    StorageService.set(StorageService.KEYS.MY_COUNTRY, data.country);
+    MessageService.showSuccess(`Você agora controla: ${data.country}`);
   });
   
-  // ======================================================================
-  // EVENTOS DE CHAT
-  // ======================================================================
-  
-  socket.on('chatMessage', (message) => {
-    console.log('Mensagem de chat recebida:', message);
-    store.dispatch(addMessage(message));
+  socket.on('countryAssignmentFailed', (error) => {
+    console.error('❌ Falha na atribuição do país:', error);
+    MessageService.showError(`Não foi possível atribuir o país: ${error.message || 'País indisponível'}`);
   });
   
-  socket.on('chatHistory', (data) => {
-    console.log('Histórico de chat recebido:', data);
+  socket.on('countriesUpdated', (countries) => {
+    console.log('🌍 Países atualizados:', countries.length);
+    store.dispatch(setCountriesData(countries));
+  });
+  
+  socket.on('countryDataUpdated', (data) => {
+    console.log('📊 Dados do país atualizados:', data);
+    store.dispatch(updateCountryData(data));
+  });
+
+  // ===================================================================
+  // EVENTOS DE CHAT (MANTIDOS)
+  // ===================================================================
+  
+  socket.on('chatMessage', (data) => {
+    console.log('💬 Mensagem de chat:', data);
+    store.dispatch(addMessage(data));
+  });
+  
+  socket.on('privateHistory', (data) => {
+    console.log('📜 Histórico privado:', data);
     store.dispatch(setChatHistory(data));
   });
+
+  // ===================================================================
+  // EVENTOS DE ECONOMIA (MANTIDOS)
+  // ===================================================================
   
-  // ======================================================================
-  // EVENTOS DE JOGADORES
-  // ======================================================================
-  
-  socket.on('playersList', (players) => {
-    console.log('Lista de jogadores recebida:', players);
-    store.dispatch(setPlayers(players));
-    
-    const onlinePlayers = players
-      .map(player => {
-        if (typeof player === 'object' && player.username) {
-          return player.username;
-        }
-        
-        if (typeof player === 'string') {
-          const match = player.match(/^(.*?)\s*\(/);
-          return match ? match[1] : player;
-        }
-        
-        return '';
-      })
-      .filter(Boolean);
-    
-    store.dispatch(setOnlinePlayers(onlinePlayers));
-  });
-  
-  socket.on('playerOnlineStatus', ({ username, isOnline }) => {
-    console.log(`Jogador ${username} agora está ${isOnline ? 'online' : 'offline'}`);
-    store.dispatch(setPlayerOnlineStatus({ username, isOnline }));
-  });
-  
-  socket.on('countryAssigned', (country) => {
-    console.log('País atribuído:', country);
-    store.dispatch(setMyCountry(country));
-    sessionStorage.setItem('myCountry', country);
-  });
-  
-  socket.on('stateRestored', (state) => {
-    console.log('Estado restaurado:', state);
-    if (state && state.country) {
-      store.dispatch(setMyCountry(state.country));
-      StorageService.set(StorageService.KEYS.MY_COUNTRY, state.country);
+  socket.on('economicDataUpdated', (data) => {
+    console.log('💰 Dados econômicos atualizados:', data);
+    if (data.country) {
+      store.dispatch(updateCountryData({
+        country: data.country,
+        economicData: data
+      }));
     }
   });
   
-  // ======================================================================
-  // ✅ CORREÇÃO 4: EVENTOS DE TÍTULOS DE EMERGÊNCIA com debounce
-  // ======================================================================
-  
-  socket.on('emergencyBondsIssued', (data) => {
-    // console.log('Títulos de emergência emitidos:', data);
-    if (!isInGamePage()) {
-      console.log('[TOAST BLOCKED] Emergency bonds notification blocked - not in game page');
-      return;
-    }
-
-    // ✅ Debounce para evitar múltiplas notificações
-    clearTimeout(emergencyTimeout);
-    emergencyTimeout = setTimeout(() => {
-      const { amount, rate, rating, atLimit, message } = data;
-      
-      // Som de alerta (mais urgente que notificação normal)
-      if (window.Audio) {
-        try {
-          const alertSound = new Audio('/notification.mp3');
-          alertSound.volume = 0.8; // Volume alto para chamar atenção
-          alertSound.play().catch(() => {});
-        } catch (error) {
-          console.debug('Som de alerta não disponível');
-        }
-      }
-      
-      // Toast de alerta com estilo diferenciado - usando função com cooldown
-      if (atLimit) {
-        showNotificationWithCooldown(
-          'error',
-          `LIMITE DE DÍVIDA ATINGIDO! Títulos emitidos: ${amount.toFixed(1)} bi USD`,
-          8000 // 8 segundos para dar tempo de ler
-        );
-      } else {
-        showNotificationWithCooldown(
-          'warning',
-          `Títulos de Emergência: ${amount.toFixed(1)} bi USD (${rate.toFixed(1)}% - ${rating})`,
-          6000 // 6 segundos
-        );
-      }
-      
-      // Log detalhado para debug
-      console.log(`[EMERGENCY BONDS] Received notification:`, {
-        amount: `${amount} bi USD`,
-        interestRate: `${rate}%`,
-        creditRating: rating,
-        atDebtLimit: atLimit,
-        timestamp: new Date().toLocaleTimeString()
-      });
-    }, 100); // Pequeno delay para agrupar eventos
+  socket.on('debtSummary', (data) => {
+    console.log('📊 Resumo da dívida:', data);
+    // Implementar handler de dívida se necessário
   });
 
-  // ======================================================================
-  // EVENTOS ECONÔMICOS SIMPLIFICADOS
-  // ======================================================================
+  // ===================================================================
+  // EVENTOS DE ERRO GERAIS (MANTIDOS)
+  // ===================================================================
   
-  socket.on('economicParameterUpdated', (data) => {
-    console.log('Parâmetro econômico atualizado:', data);
-    // Hook useEconomy vai capturar atualizações via countryStatesUpdated
-  });
-  
-  socket.on('debtBondsIssued', (data) => {
-    console.log('Títulos de dívida emitidos:', data);
-    // Hook usePublicDebt vai capturar via evento específico
-  });
-  
-  socket.on('debtSummaryResponse', (data) => {
-    console.log('Resumo de dívidas recebido:', data);
-    // Hook usePublicDebt vai capturar via evento específico
-  });
-
-  // ======================================================================
-  // ✅ CORREÇÃO 5: EVENTOS DE COMÉRCIO com debounce
-  // ======================================================================
-  
-  socket.on('tradeProposalReceived', (proposal) => {
-    console.log('Proposta de comércio recebida:', proposal);
+  socket.on('error', (error) => {
+    console.error('❌ Erro do servidor:', error);
     
-    // ✅ Debounce para evitar múltiplas notificações de propostas
-    clearTimeout(proposalTimeout);
-    proposalTimeout = setTimeout(() => {
-      if (window.Audio) {
-        try {
-          const notificationSound = new Audio('/notification.mp3');
-          notificationSound.play().catch(() => {});
-        } catch (error) {
-          console.debug('Som de notificação não disponível');
-        }
-      }
-      if (isInGamePage()) {
-        const { originCountry, type, product, value } = proposal;
-        const productName = product === 'commodity' ? 'commodities' : 'manufaturas';
-        const actionType = type === 'export' ? 'exportar para você' : 'importar de você';
-        
-        // ✅ Usar função com cooldown para evitar toasts duplicados
-        showNotificationWithCooldown(
-          'info',
-          `${originCountry} quer ${actionType} ${productName} (${value} bi USD)`,
-          4000
-        );
-      } else {
-        console.log('[TOAST BLOCKED] Trade proposal notification blocked - not in game page');
-      }
-    }, 100); // Pequeno delay para agrupar eventos
+    const errorMessage = typeof error === 'string' ? error : 
+                        error.message || 'Erro desconhecido do servidor';
+    
+    MessageService.showError(errorMessage);
   });
   
-  socket.on('tradeProposalResponse', (response) => {
-    console.log('Resposta à proposta de comércio recebida:', response);
+  socket.on('notification', (data) => {
+    console.log('🔔 Notificação:', data);
     
-    // ✅ Debounce para evitar múltiplas notificações de resposta
-    clearTimeout(responseTimeout);
-    responseTimeout = setTimeout(() => {
-      
-      if (!isInGamePage()) {
-        console.log('[TOAST BLOCKED] Trade response notification blocked - not in game page');
-        return;
-      }
-      
-      const { accepted, targetCountry } = response;
-      
-      if (accepted) {
-        showNotificationWithCooldown(
-          'success',
-          `${targetCountry} aceitou sua proposta comercial!`,
-          4000
-        );
-      } else {
-        showNotificationWithCooldown(
-          'warning',
-          `${targetCountry} recusou sua proposta comercial.`,
-          4000
-        );
-      }
-    }, 100);
-  });
-
-  socket.on('tradeProposalProcessed', (response) => {
-    console.log('Proposta de comércio processada:', response);
+    const { type = 'info', message, persistent = false } = data;
     
-    const { accepted } = response;
-    
-    if (accepted) {
-      MessageService.showSuccess('Você aceitou a proposta comercial.');
+    if (MessageService[type]) {
+      MessageService[type](message, { persistent });
     } else {
-      MessageService.showInfo('Você recusou a proposta comercial.');
+      MessageService.showInfo(message, { persistent });
     }
   });
 
-  socket.on('tradeAgreementCancelled', (agreementId) => {
-    console.log('Acordo comercial cancelado:', agreementId);
-    store.dispatch(removeTradeAgreement(agreementId));
-    MessageService.showInfo('Acordo comercial cancelado.', 4000);
+  console.log('✅ Todos os event handlers configurados - Sistema Unificado Ativo');
+  console.log('🎯 Suporte a eventos unificados + compatibilidade legada');
+  
+  // Armazenar referência do socketApi no store para uso nos handlers
+  store.socketApi = socketApi;
+};
+
+// =====================================================================
+// UTILITÁRIOS PARA LIMPEZA
+// =====================================================================
+
+/**
+ * Limpar todos os timeouts e dados temporários
+ */
+export const cleanupSocketEvents = () => {
+  Object.keys(debounceTimeouts).forEach(key => {
+    clearTimeout(debounceTimeouts[key]);
+    delete debounceTimeouts[key];
   });
   
-  socket.on('tradeAgreementsList', (data) => {
-    //console.log('Lista de acordos comerciais recebida:', data);
-    
-    store.dispatch(resetTradeState());
-    
-    if (data.agreements && Array.isArray(data.agreements)) {
-      data.agreements.forEach(agreement => {
-        store.dispatch(addTradeAgreement(agreement));
-      });
-    }
-    
-    store.dispatch(updateStats());
-  });
+  isAuthenticated = false;
+  authMutex.queue = [];
+  authMutex.isExecuting = false;
   
-  socket.on('tradeAgreementUpdated', (data) => {
-    // console.log('Atualização de acordos comerciais recebida:', data);
-    
-    store.dispatch(resetTradeState());
-    
-    if (data.agreements && Array.isArray(data.agreements)) {
-      data.agreements.forEach(agreement => {
-        store.dispatch(addTradeAgreement(agreement));
-      });
-    }
-    
-    store.dispatch(updateStats());
-  });
-  
-  // ======================================================================
-  // ERROS E OUTROS EVENTOS
-  // ======================================================================
-  
-  socket.on('error', (message) => {
-    console.error('Erro do socket:', message);
-    
-    if (message.includes('autenticação') || message.includes('authentication')) {
-      isAuthenticated = false;
-      authenticationInProgress = false;
-    }
-    
-    if (message.includes('sala') || message.includes('room')) {
-      setIsJoiningRoom(false);
-      sessionStorage.removeItem('pendingRoom');
-    }
-    
-    const isSilentError = message.includes('já está em uso') || 
-                         message.includes('autenticação') || 
-                         message.includes('desconectado') ||
-                         message.includes('já está autenticado');
-    
-    if (!isSilentError) {
-      // Mostrar erro via toast
-      MessageService.showError(message, 4000);
-      
-      store.dispatch({
-        type: 'error/socketError',
-        payload: message
-      });
-    }
-  });
+  console.log('🧹 Limpeza de eventos socket concluída');
+};
 
+/**
+ * Verificar se o sistema unificado está ativo
+ */
+export const isUnifiedSystemActive = () => {
+  return true; // Sistema sempre unificado após migração
+};
 
-  // ======================================================================
-  // EVENTOS DE ALIANÇA MILITAR (NOVO - SEGUINDO PADRÃO DE COMÉRCIO)
-  // ======================================================================
-  
-  socket.on('allianceProposalReceived', (proposal) => {
-    console.log('Proposta de aliança militar recebida:', proposal);
-    
-    // ✅ Debounce para evitar múltiplas notificações de propostas
-    clearTimeout(proposalTimeout);
-    proposalTimeout = setTimeout(() => {
-      if (window.Audio) {
-        try {
-          const notificationSound = new Audio('/notification.mp3');
-          notificationSound.play().catch(() => {});
-        } catch (error) {
-          console.debug('Som de notificação não disponível');
-        }
-      }
-      if (isInGamePage()) {
-        const { originCountry } = proposal;
-        
-        // ✅ Usar função com cooldown para evitar toasts duplicados
-        showNotificationWithCooldown(
-          'info',
-          `${originCountry} propõe uma aliança militar com você!`,
-          4000
-        );
-      } else {
-        console.log('[TOAST BLOCKED] Alliance proposal notification blocked - not in game page');
-      }
-    }, 100); // Pequeno delay para agrupar eventos
-  });
-  
- socket.on('allianceProposalResponse', (response) => {
-    console.log('Resposta à proposta de aliança militar recebida:', response);
-    
-    // ✅ Debounce para evitar múltiplas notificações de resposta
-    clearTimeout(responseTimeout);
-    responseTimeout = setTimeout(() => {
-      
-      if (!isInGamePage()) {
-        console.log('[TOAST BLOCKED] Alliance response notification blocked - not in game page');
-        return;
-      }
-      
-      const { accepted, targetCountry } = response;
-      
-      if (accepted) {
-        showNotificationWithCooldown(
-          'success',
-          `${targetCountry} aceitou sua proposta de aliança militar!`,
-          4000
-        );
-      } else {
-        showNotificationWithCooldown(
-          'warning',
-          `${targetCountry} recusou sua proposta de aliança militar.`,
-          4000
-        );
-      }
-    }, 100);
-  });
-
-  socket.on('allianceProposalProcessed', (response) => {
-    console.log('Proposta de aliança militar processada:', response);
-    
-    const { accepted } = response;
-    
-    if (accepted) {
-      MessageService.showSuccess('Você aceitou a proposta de aliança militar.');
-    } else {
-      MessageService.showInfo('Você recusou a proposta de aliança militar.');
-    }
-  });
-
-  socket.on('militaryAllianceCancelled', (data) => {
-    console.log('Aliança militar cancelada:', data);
-    
-    // Mostrar toast para quem foi "prejudicado" pelo cancelamento
-    MessageService.showWarning(
-      `${data.cancelledBy} cancelou a aliança militar com você.`, 
-      5000
-    );
-  });
-  
-  // Escutar atualizações de cards
-  socket.on('cardsUpdated', (data) => {
-    console.log('[CARDS] Cards updated event received globally:', data);
-    
-    // Se tem flag silent, apenas atualizar dados sem toast
-    if (data.silent) {
-      store.dispatch({ 
-        type: 'cards/cardsUpdatedEvent', 
-        payload: data 
-      });
-      return;
-    }
-    
-    // Para outros casos, continuar normal
-    store.dispatch({ 
-      type: 'cards/cardsUpdatedEvent', 
-      payload: data 
-    });
-  });
-
-  // Escutar atualizações de trade agreements
-  socket.on('tradeAgreementUpdated', (data) => {
-    console.log('[TRADE] Trade agreement updated globally:', data);
-    
-    // Também disparar para forçar atualização de pontos
-    store.dispatch({ 
-      type: 'cards/tradeAgreementUpdatedEvent', 
-      payload: data 
-    });
-  });
-
-
-  // ======================================================================
-  // Cleanup function para limpar timeouts
-  // ======================================================================
-  const cleanup = () => {
-    clearTimeout(proposalTimeout);
-    clearTimeout(responseTimeout);
-    clearTimeout(emergencyTimeout);
+/**
+ * Obter status dos handlers
+ */
+export const getHandlersStatus = () => {
+  return {
+    unifiedHandlers: Object.keys(unifiedAgreementHandlers).length,
+    legacyCompatibility: true,
+    debounceTimeouts: Object.keys(debounceTimeouts).length,
+    isAuthenticated,
+    authMutexQueue: authMutex.queue.length
   };
+};
 
-  // ✅ Retornar função de cleanup (mesmo que não seja usada atualmente)
-  return cleanup;
+export default {
+  setupSocketEvents,
+  cleanupSocketEvents,
+  isUnifiedSystemActive,
+  getHandlersStatus
 };
