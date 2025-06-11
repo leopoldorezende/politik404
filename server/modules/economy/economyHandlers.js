@@ -1,7 +1,6 @@
 /**
- * economyHandlers.js - Handlers APENAS para economia (REDUZIDO)
- * APENAS comunicação WebSocket - lógica delegada para EconomyService expandido
- * VERSÃO REDUZIDA - removido trade, alliance e cards
+ * economyHandlers.js - Correção dos métodos do EconomyService
+ * CORREÇÃO: Usar métodos que realmente existem no economyService
  */
 
 import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/utils/gameStateUtils.js';
@@ -70,49 +69,6 @@ function setupEconomyHandlers(io, socket, gameState) {
           value, 
           success: true
         });
-  
-  // Handler para compatibilidade com usePublicDebt hook
-  socket.on('getDebtSummary', () => {
-    const username = socket.username;
-    const roomName = getCurrentRoom(socket, gameState);
-    const userCountry = getUserCountry(gameState, roomName, username);
-    
-    if (!username || !roomName || !userCountry) {
-      socket.emit('error', 'Invalid request');
-      return;
-    }
-    
-    // Garantir que o país está inicializado com cálculos avançados
-    const countryState = global.economyService.ensureCountryInitialized(roomName, userCountry);
-    
-    if (countryState) {
-      const economy = countryState.economy;
-      const debtSummary = global.economyService.getDebtSummary(roomName, userCountry);
-      
-      socket.emit('debtSummaryResponse', {
-        countryName: userCountry,
-        roomName,
-        totalDebt: economy.publicDebt || 0,
-        totalFuturePayments: debtSummary.totalFuturePayments,
-        totalMonthlyPayment: debtSummary.totalMonthlyPayment,
-        numberOfContracts: debtSummary.numberOfContracts,
-        debtToGdpRatio: ((economy.publicDebt || 0) / (economy.gdp || 100)) * 100,
-        canIssueMoreDebt: ((economy.publicDebt || 0) / (economy.gdp || 100)) <= 1.2,
-        debtRecords: debtSummary.contracts,
-        // Dados econômicos expandidos para o popup
-        economicData: {
-          gdp: economy.gdp || 0,
-          treasury: economy.treasury || 0,
-          publicDebt: economy.publicDebt || 0,
-          creditRating: economy.creditRating || 'A',
-          gdpGrowth: economy.gdpGrowth || 0,
-          cycleCount: economy._cycleCount || 0
-        }
-      });
-    } else {
-      socket.emit('error', 'Failed to retrieve country data after initialization');
-    }
-  });
         
         // Broadcast para sala se mudança significativa
         if (parameter === 'interestRate') {
@@ -130,6 +86,68 @@ function setupEconomyHandlers(io, socket, gameState) {
     } catch (error) {
       console.error(`[ECONOMY] Error updating parameter:`, error);
       socket.emit('error', 'Failed to update parameter - internal error');
+    }
+  });
+
+  // ======================================================================
+  // HANDLER PARA RESUMO DE DÍVIDAS (CORRIGIDO - SEM ensureCountryInitialized)
+  // ======================================================================
+  
+  socket.on('getDebtSummary', () => {
+    const username = socket.username;
+    const roomName = getCurrentRoom(socket, gameState);
+    const userCountry = getUserCountry(gameState, roomName, username);
+    
+    if (!username || !roomName || !userCountry) {
+      socket.emit('error', 'Invalid request');
+      return;
+    }
+    
+    // Verificar se economyService existe
+    if (!global.economyService) {
+      socket.emit('error', 'Economy service not available');
+      return;
+    }
+    
+    try {
+      // CORREÇÃO: Usar getCountryState em vez de ensureCountryInitialized
+      const countryState = global.economyService.getCountryState(roomName, userCountry);
+      
+      if (!countryState) {
+        socket.emit('error', 'Country state not found');
+        return;
+      }
+      
+      const economy = countryState.economy;
+      const debtSummary = global.economyService.getDebtSummary(roomName, userCountry);
+      
+      socket.emit('debtSummaryResponse', {
+        countryName: userCountry,
+        roomName,
+        totalDebt: economy.publicDebt || 0,
+        totalFuturePayments: debtSummary.totalFuturePayments || 0,
+        totalMonthlyPayment: debtSummary.totalMonthlyPayment || 0,
+        numberOfContracts: debtSummary.numberOfContracts || 0,
+        debtToGdpRatio: ((economy.publicDebt || 0) / (economy.gdp || 100)) * 100,
+        canIssueMoreDebt: ((economy.publicDebt || 0) / (economy.gdp || 100)) <= 1.2,
+        
+        // ========== CORREÇÃO APLICADA ==========
+        debtRecords: debtSummary.debtRecords || debtSummary.contracts || [],
+        
+        // Dados econômicos expandidos para o popup
+        economicData: {
+          gdp: economy.gdp || 0,
+          treasury: economy.treasury || 0,
+          publicDebt: economy.publicDebt || 0,
+          creditRating: economy.creditRating || 'A',
+          gdpGrowth: economy.gdpGrowth || 0,
+          cycleCount: economy._cycleCount || 0
+        }
+      });
+      
+    } catch (error) {
+      console.error('[ECONOMY] Error in getDebtSummary:', error);
+      socket.emit('error', 'Failed to retrieve debt summary');
     }
   });
 
@@ -170,9 +188,8 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // OBTER RESUMO DE DÍVIDAS (PRESERVADO COM CÁLCULOS AVANÇADOS)
+  // OBTER RESUMO DE DÍVIDAS ALTERNATIVO (CORRIGIDO)
   // ======================================================================
-  
   
   socket.on('getCountryDebtSummary', () => {
     const username = socket.username;
@@ -184,10 +201,21 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
     
-    // Garantir que o país está inicializado com cálculos avançados
-    const countryState = global.economyService.ensureCountryInitialized(roomName, userCountry);
+    // Verificar se economyService existe
+    if (!global.economyService) {
+      socket.emit('error', 'Economy service not available');
+      return;
+    }
     
-    if (countryState) {
+    try {
+      // CORREÇÃO: Usar getCountryState em vez de ensureCountryInitialized
+      const countryState = global.economyService.getCountryState(roomName, userCountry);
+      
+      if (!countryState) {
+        socket.emit('error', 'Country state not found');
+        return;
+      }
+      
       const economy = countryState.economy;
       const debtSummary = global.economyService.getDebtSummary(roomName, userCountry);
       
@@ -195,12 +223,15 @@ function setupEconomyHandlers(io, socket, gameState) {
         countryName: userCountry,
         roomName,
         totalDebt: economy.publicDebt || 0,
-        totalFuturePayments: debtSummary.totalFuturePayments,
-        totalMonthlyPayment: debtSummary.totalMonthlyPayment,
-        numberOfContracts: debtSummary.numberOfContracts,
+        totalFuturePayments: debtSummary.totalFuturePayments || 0,
+        totalMonthlyPayment: debtSummary.totalMonthlyPayment || 0,
+        numberOfContracts: debtSummary.numberOfContracts || 0,
         debtToGdpRatio: ((economy.publicDebt || 0) / (economy.gdp || 100)) * 100,
         canIssueMoreDebt: ((economy.publicDebt || 0) / (economy.gdp || 100)) <= 1.2,
-        debtRecords: debtSummary.contracts,
+        
+        // ========== CORREÇÃO APLICADA TAMBÉM AQUI ==========
+        debtRecords: debtSummary.debtRecords || debtSummary.contracts || [],
+        
         // Dados econômicos expandidos para o popup
         economicData: {
           gdp: economy.gdp || 0,
@@ -211,8 +242,10 @@ function setupEconomyHandlers(io, socket, gameState) {
           cycleCount: economy._cycleCount || 0
         }
       });
-    } else {
-      socket.emit('error', 'Failed to retrieve country data after initialization');
+      
+    } catch (error) {
+      console.error('[ECONOMY] Error in getCountryDebtSummary:', error);
+      socket.emit('error', 'Failed to retrieve debt summary');
     }
   });
 
@@ -373,10 +406,14 @@ function setupEconomyHandlers(io, socket, gameState) {
       resetUnrealisticIndicators(countryState.economy);
       
       // Recalcular valores iniciais usando método do service
-      global.economyService.initializeCalculatedValues(countryState.economy);
+      if (global.economyService.initializeCalculatedValues) {
+        global.economyService.initializeCalculatedValues(countryState.economy);
+      }
       
       // Salvar estado atualizado
-      global.economyService.setCountryState(roomName, userCountry, countryState);
+      if (global.economyService.setCountryState) {
+        global.economyService.setCountryState(roomName, userCountry, countryState);
+      }
       
       socket.emit('emergencyResetComplete', { 
         message: 'Country economic indicators reset to realistic values',

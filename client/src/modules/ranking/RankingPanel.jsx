@@ -159,7 +159,22 @@ const RankingPanel = () => {
       </div>
     );
   }
-  
+
+  // Função para lidar com clique no país do ranking
+  const handleCountryClick = (countryName) => {
+    console.log(`Clique no país do ranking: ${countryName}`);
+    
+    // Usar função global exposta pelo MapView, passando 'ranking' como source
+    if (window.selectCountryOnMap) {
+      console.log(`Selecionando país via função global: ${countryName}`);
+      window.selectCountryOnMap(countryName, 'ranking'); // Passar source como 'ranking'
+    } else {
+      console.warn('Função selectCountryOnMap não disponível - fallback para Redux');
+      // Fallback: apenas atualizar Redux sem animação
+      // Importar useDispatch e setSelectedCountry se necessário para fallback
+    }
+  };
+
   return (
     <div className="ranking-panel">
       <div className="ranking-list">
@@ -167,6 +182,7 @@ const RankingPanel = () => {
           <div 
             key={item.country} 
             className={`ranking-item ${item.isHuman ? 'top-ranked' : ''}`}
+            onClick={() => handleCountryClick(item.country)}
           >
             <div className="ranking-position">{index + 1}
 
