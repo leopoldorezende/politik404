@@ -125,13 +125,10 @@
       │   │   └── internalAgreementService.js
       │   ├── ai
       │   │   └── aiCountryController.js
-      │   ├── alliance
-      │   │   └── allianceHandlers.js
       │   ├── auth
+      │   │   ├── _authHandlers.js
       │   │   ├── authHandlers.js  # Handlers de autenticação
       │   │   └── google.js
-      │   ├── cards
-      │   │   └── cardHandlers.js
       │   ├── chat
       │   │   └── chatHandlers.js  # Handlers do chat
       │   ├── country
@@ -143,12 +140,10 @@
       │   ├── player
       │   │   ├── playerRoomHandlers.js  # Handlers para jogadores na sala
       │   │   └── playerStateManager.js  # Gerencia estado dos jogadores
-      │   ├── room
-      │   │   ├── roomExpirationManager.js
-      │   │   ├── roomManagement.js  # Gerenciamento de sala
-      │   │   └── roomNotifications.js  # Notificações da Sala
-      │   └── trade
-      │       └── tradeHandlers.js
+      │   └── room
+      │       ├── roomExpirationManager.js
+      │       ├── roomManagement.js  # Gerenciamento de sala
+      │       └── roomNotifications.js  # Notificações da Sala
       ├── package.json  # Dependências e scripts principais (monorepo)
       ├── public
       │   └── data

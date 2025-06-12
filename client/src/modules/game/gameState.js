@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   myCountry: null,
   players: [],
-  onlinePlayers: [], // Lista de jogadores online
+  onlinePlayers: [],
   countriesData: null,
   countriesCoordinates: null,
   selectedCountry: null,
@@ -18,6 +18,8 @@ export const gameState = createSlice({
     },
     setPlayers: (state, action) => {
       state.players = action.payload;
+      
+      // Extract online player names
       const onlinePlayerNames = action.payload
         .filter(player => {
           if (typeof player === 'object') {
@@ -82,6 +84,15 @@ export const gameState = createSlice({
     setCountriesData: (state, action) => {
       state.countriesData = action.payload;
     },
+    updateCountryData: (state, action) => {
+      const { countryCode, data } = action.payload;
+      if (state.countriesData && state.countriesData[countryCode]) {
+        state.countriesData[countryCode] = {
+          ...state.countriesData[countryCode],
+          ...data
+        };
+      }
+    },
     setCountriesCoordinates: (state, action) => {
       state.countriesCoordinates = action.payload;
     },
@@ -97,6 +108,7 @@ export const {
   setOnlinePlayers,
   setPlayerOnlineStatus,
   setCountriesData,
+  updateCountryData,
   setCountriesCoordinates,
   setSelectedCountry,
 } = gameState.actions;

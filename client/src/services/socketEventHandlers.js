@@ -525,19 +525,23 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
   
   socket.on('roomJoined', (data) => {
-    console.log('🎯 Entrou na sala:', data.roomName);
+    console.log('🎯 Entrou na sala:', data.roomName || data);
     setIsJoiningRoom(false);
     StorageService.remove(StorageService.KEYS.PENDING_ROOM);
     
-    store.dispatch(setCurrentRoom(data.roomName));
-    store.dispatch(setCountriesData(data.countries || []));
+    // O servidor pode enviar tanto { roomName: "abc" } quanto só "abc"
+    const roomName = data.roomName || data;
+    store.dispatch(setCurrentRoom(roomName));
     
-    if (data.myCountry) {
-      store.dispatch(setMyCountry(data.myCountry));
-      StorageService.set(StorageService.KEYS.MY_COUNTRY, data.myCountry);
+    // Adicionar outras propriedades se existirem
+    if (data.countries) {
+      store.dispatch(setPlayers(data.countries));
     }
     
-    MessageService.showSuccess(`Entrou na sala: ${data.roomName}`);
+    // Mostrar notificação de sucesso
+    // if (isInGamePage()) {
+    //   showNotificationWithCooldown('success', `Você entrou na sala: ${roomName}`, 4000);
+    // }
   });
   
   socket.on('roomJoinFailed', (error) => {
@@ -558,7 +562,44 @@ export const setupSocketEvents = (socket, socketApi) => {
   
   socket.on('roomCreated', (data) => {
     console.log('🏗️ Sala criada:', data);
-    MessageService.showSuccess(`Sala "${data.name}" criada com sucesso!`);
+    
+    // Correção 1: Usar data.roomName em vez de data.name
+    const roomName = data.roomName || data.name;
+    
+    if (roomName) {
+      MessageService.showSuccess(`Sala "${roomName}" criada com sucesso!`);
+    } else {
+      MessageService.showSuccess('Sala criada com sucesso!');
+    }
+    
+    // Correção 2: Solicitar atualização da lista de salas automaticamente
+    setTimeout(() => {
+      socket.emit('getRooms');
+    }, 500);
+  });
+
+  socket.on('roomsList', (rooms) => {
+    console.log('📋 Lista de salas recebida:', rooms.length, 'salas');
+    store.dispatch(setRooms(rooms));
+  });
+
+  // Correção 4: Garantir que o evento getRooms seja enviado após autenticação
+  socket.on('authenticated', (data) => {
+    console.log('✅ Autenticado com sucesso:', data);
+    isAuthenticated = true;
+    store.dispatch(login(data.username));
+    
+    // Solicitar lista de salas imediatamente após autenticação
+    setTimeout(() => {
+      console.log('📡 Solicitando lista de salas após autenticação');
+      socket.emit('getRooms');
+    }, 100);
+    
+    const pendingRoom = StorageService.get(StorageService.KEYS.PENDING_ROOM);
+    if (pendingRoom && !getIsJoiningRoom()) {
+      console.log('🏠 Entrando na sala pendente:', pendingRoom);
+      setTimeout(() => socketApi.joinRoom(pendingRoom), 1000);
+    }
   });
   
   socket.on('roomDeleted', (data) => {
@@ -572,9 +613,17 @@ export const setupSocketEvents = (socket, socketApi) => {
   
   socket.on('countryAssigned', (data) => {
     console.log('🌍 País atribuído:', data);
-    store.dispatch(setMyCountry(data.country));
-    StorageService.set(StorageService.KEYS.MY_COUNTRY, data.country);
-    MessageService.showSuccess(`Você agora controla: ${data.country}`);
+    
+    // O servidor pode enviar tanto { country: "India" } quanto só "India"
+    const country = data.country || data;
+    
+    store.dispatch(setMyCountry(country));
+    StorageService.set(StorageService.KEYS.MY_COUNTRY, country);
+    
+    // Mostrar notificação de sucesso
+    // if (isInGamePage()) {
+    //   showNotificationWithCooldown('success', `Você agora controla: ${country}`, 4000);
+    // }
   });
   
   socket.on('countryAssignmentFailed', (error) => {
