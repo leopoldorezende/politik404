@@ -170,21 +170,25 @@ export const useCards = (roomName, countryName) => {
       }
     };
     
+    // ============================================================
+    // CORREÇÃO: ADICIONAR O LISTENER QUE ESTAVA FALTANDO
+    // ============================================================
+    
     // Registrar listeners
     socket.on('playerCardsResponse', handlePlayerCardsResponse);
     socket.on('playerPointsResponse', handlePlayerPointsResponse);
     socket.on('playerRankingResponse', handlePlayerRankingResponse);
     socket.on('tradeAgreementCancelled', handleTradeAgreementCancelled);
-
+    socket.on('cardsUpdated', handleCardsUpdated); // <-- ESTA LINHA ESTAVA FALTANDO!
 
     return () => {
       socket.off('playerCardsResponse', handlePlayerCardsResponse);
       socket.off('playerPointsResponse', handlePlayerPointsResponse);
       socket.off('playerRankingResponse', handlePlayerRankingResponse);
       socket.off('tradeAgreementCancelled', handleTradeAgreementCancelled);
-      socket.off('cardsUpdated', handleCardsUpdated);
+      socket.on('cardsUpdated', handleCardsUpdated); // <-- ADICIONAR ESTA LINHA
     };
-  }, [roomName, countryName, dispatch, autoRefresh, refreshAll]);
+  }, [roomName, countryName, autoRefresh, refreshAll, refreshPlayerCards, refreshPlayerPoints, dispatch]);
   
   // ========================================================================
   // BUSCA INICIAL E PERIÓDICA

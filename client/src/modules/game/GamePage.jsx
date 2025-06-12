@@ -13,7 +13,6 @@ import { socketApi } from '../../services/socketClient';
 import AllianceProposalPopup from '../alliance/AllianceProposalPopup';
 import TradeProposalPopup from '../trade/TradeProposalPopup';
 import DebtSummaryPopup from '../economy/DebtSummaryPopup';
-import MessageService from '../../ui/toast/messageService';
 import './GamePage.css';
 
 
