@@ -18,15 +18,6 @@ const AlliancePopup = ({
   // Hook para gerenciar cooldowns (15 segundos - mesmo intervalo do comércio)
   const { isInCooldown, getRemainingTime, startCooldown } = useActionCooldown(15000);
   
-  // Verificar cooldown no montar do componente
-  useEffect(() => {
-    console.log(`AlliancePopup montado. Em cooldown: ${isInCooldown('military_alliance')}`);
-    
-    if (isInCooldown('military_alliance')) {
-      console.log(`Em cooldown para aliança militar: ${getRemainingTime('military_alliance')} segundos restantes`);
-    }
-  }, [isInCooldown, getRemainingTime]);
-  
   // Configurar listeners de socket
   useEffect(() => {
     const socket = socketApi.getSocketInstance();

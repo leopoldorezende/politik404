@@ -21,15 +21,6 @@ const TradePopup = ({
   // Hook para gerenciar cooldowns (15 segundos)
   const { isInCooldown, getRemainingTime, startCooldown } = useActionCooldown(15000);
   
-  // Verificar cooldown no montar do componente
-  useEffect(() => {
-    console.log(`TradePopup montado para ${tradeType}. Em cooldown: ${isInCooldown(tradeType)}`);
-    
-    if (isInCooldown(tradeType)) {
-      console.log(`Em cooldown para ${tradeType}: ${getRemainingTime(tradeType)} segundos restantes`);
-    }
-  }, [tradeType, isInCooldown, getRemainingTime]);
-  
   // Configurar listeners de socket
   useEffect(() => {
     const socket = socketApi.getSocketInstance();
