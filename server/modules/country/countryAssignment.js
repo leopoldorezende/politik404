@@ -143,7 +143,7 @@ function setupCountryAssignment(io, socket, gameState) {
         isOnline: true
       };
     }
-    
+
     console.log(`${username} entrou na sala ${roomName} como ${playerCountry}`);
     
     // Envia informações da sala para o jogador
@@ -168,8 +168,11 @@ function setupCountryAssignment(io, socket, gameState) {
       type: 'public', 
       messages: room.chatHistory.public 
     });
-  });
-  
+    
+    sendUpdatedPlayersList(io, roomName, gameState);
+
+ });
+
   // Solicitar troca de país
   socket.on('requestCountryChange', () => {
     const username = socket.username;

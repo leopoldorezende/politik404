@@ -16,7 +16,9 @@ import {
 import { 
   setMyCountry, 
   setCountriesData, 
-  updateCountryData 
+  updateCountryData,
+  setPlayers,
+  setOnlinePlayers
 } from '../modules/game/gameState';
 import { 
   addMessage, 
@@ -28,7 +30,7 @@ import {
   resetTradeState,
   updateStats 
 } from '../modules/trade/tradeState';
-import { setIsJoiningRoom, setReconnectAttempts } from './socketConnection';
+import { setIsJoiningRoom, setReconnectAttempts, getIsJoiningRoom } from './socketConnection';
 import StorageService from './storageService.js';
 import MessageService from '../ui/toast/messageService';
 
@@ -605,6 +607,27 @@ export const setupSocketEvents = (socket, socketApi) => {
   socket.on('roomDeleted', (data) => {
     console.log('🗑️ Sala deletada:', data);
     MessageService.showInfo(`Sala "${data.roomName}" foi deletada`);
+  });
+
+
+  socket.on('playersList', (players) => {
+    console.log('📋 Lista de jogadores recebida:', players.length, 'jogadores');
+    store.dispatch(setPlayers(players));
+    
+    const onlinePlayerNames = players
+      .map(player => {
+        if (typeof player === 'object' && player.username) {
+          return player.username;
+        } else if (typeof player === 'string') {
+          const match = player.match(/^(.*?)\s*\(/);
+          return match ? match[1] : player;
+        }
+        return '';
+      })
+      .filter(Boolean);
+    
+    store.dispatch(setOnlinePlayers(onlinePlayerNames));
+
   });
 
   // ===================================================================

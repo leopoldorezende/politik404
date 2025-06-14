@@ -383,6 +383,7 @@ function setupAgreementHandlers(io, socket, gameState) {
   /**
    * Handler para buscar ranking de jogadores (integrado ao sistema unificado)
    */
+  /*
   socket.on('getPlayerRanking', async () => {
     const roomName = getCurrentRoom(socket, gameState);
     
@@ -421,7 +422,45 @@ function setupAgreementHandlers(io, socket, gameState) {
       });
     }
   });
+*/
 
+  socket.on('getPlayerRanking', async () => {
+    const roomName = getCurrentRoom(socket, gameState);
+    
+    if (!roomName) {
+      console.error('[UNIFIED-CARDS] getPlayerRanking: Missing room name');
+      return;
+    }
+    try {
+      if (!global.cardService || !global.cardService.initialized) {
+        console.error('[UNIFIED-CARDS] CardService not initialized');
+        socket.emit('playerRankingResponse', {
+          roomName,
+          ranking: [],
+          timestamp: Date.now()
+        });
+        return;
+      }
+
+      const ranking = global.cardService.getPlayerRanking(roomName);
+      
+      console.log(`[UNIFIED-CARDS] Sending ranking with ${ranking.length} players for ${roomName}`);
+      
+      socket.emit('playerRankingResponse', {
+        roomName,
+        ranking: ranking,
+        timestamp: Date.now()
+      });
+
+    } catch (error) {
+      console.error('[UNIFIED-CARDS] Error getting player ranking:', error);
+      socket.emit('playerRankingResponse', {
+        roomName,
+        ranking: [],
+        timestamp: Date.now()
+      });
+    }
+  });
   
   // =====================================================================
   // MIDDLEWARE E INTERCEPTADORES

@@ -80,6 +80,7 @@ function validateInternalAgreement(proposal) {
 function createTradeAgreement(roomName, userCountry, targetCountry, username, proposalData) {
   if (!global.economyService) return false;
   
+  // NÃO adicionar cardsUpdated aqui - já existe no EconomyService
   return global.economyService.createTradeAgreement(roomName, {
     type: proposalData.type,
     product: proposalData.product,
@@ -116,6 +117,17 @@ function createMilitaryAgreement(roomName, userCountry, targetCountry, username,
       duration: 'permanent',
       createdBy: username
     });
+
+    // Notificar atualização de cards
+    if (global.io) {
+      setTimeout(() => {
+        global.io.to(roomName).emit('cardsUpdated', {
+          roomName: roomName,
+          action: 'created',
+          timestamp: Date.now()
+        });
+      }, 100); // 100ms de delay
+    }
     
     return userCard && targetCard;
   } catch (error) {
@@ -150,6 +162,17 @@ function createCooperationAgreement(roomName, userCountry, targetCountry, userna
       duration: 'permanent',
       createdBy: username
     });
+
+    // Notificar atualização de cards
+    if (global.io) {
+      setTimeout(() => {
+        global.io.to(roomName).emit('cardsUpdated', {
+          roomName: roomName,
+          action: 'created',
+          timestamp: Date.now()
+        });
+      }, 100); // 100ms de delay
+    }
     
     return userCard && targetCard;
   } catch (error) {
@@ -167,7 +190,6 @@ function createInternalAgreement(roomName, userCountry, targetCountry, username,
   try {
     const { type } = proposalData;
     
-    // Mapear tipos para valores de pontos
     const pointsMap = {
       'political_pact': 4,
       'business_partnership': 3,
@@ -177,11 +199,22 @@ function createInternalAgreement(roomName, userCountry, targetCountry, username,
     const card = global.cardService.createCard(roomName, {
       type: type,
       owner: userCountry,
-      target: null, // Acordos internos não têm alvo
+      target: null,
       value: pointsMap[type] || 3,
       duration: 'permanent',
       createdBy: username
     });
+    
+    // Adicionar aqui:
+    if (card && global.io) {
+      setTimeout(() => {
+        global.io.to(roomName).emit('cardsUpdated', {
+          roomName: roomName,
+          action: 'created',
+          timestamp: Date.now()
+        });
+      }, 100); // 100ms de delay
+    }
     
     return !!card;
   } catch (error) {

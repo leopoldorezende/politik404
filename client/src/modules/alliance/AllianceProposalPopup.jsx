@@ -15,22 +15,22 @@ import './AllianceProposalPopup.css';
 const AllianceProposalPopup = ({ proposal, isOpen, onClose }) => {
   if (!proposal || !isOpen) return null;
 
-  const { id, type, originCountry } = proposal;
+  const { proposalId, type, originCountry } = proposal;
   
   // Título e informações da proposta
   const title = `Proposta de ${originCountry}`;
   
   // Funções para aceitar ou recusar proposta
   const handleAccept = () => {
-    socketApi.respondToAllianceProposal(id, true);
-    onClose();
-  };
-  
-  const handleReject = () => {
-    socketApi.respondToAllianceProposal(id, false);
+    socketApi.respondToAllianceProposal(proposalId, true);
     onClose();
   };
 
+  const handleReject = () => {
+    socketApi.respondToAllianceProposal(proposalId, false);
+    onClose();
+  };
+  
   return (
     <Popup
       isOpen={isOpen}
