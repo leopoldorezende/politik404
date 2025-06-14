@@ -167,6 +167,21 @@ class CardService {
     return true;
   }
 
+  // Adicione após o método cancelCard:
+  removeCard(roomName, cardId) {
+    const roomCards = this.roomCards.get(roomName);
+    if (!roomCards) return false;
+
+    const cardIndex = roomCards.findIndex(card => card.id === cardId);
+    if (cardIndex === -1) return false;
+
+    const card = roomCards[cardIndex];
+    roomCards.splice(cardIndex, 1);
+    
+    console.log(`[CARDS] Removed card ${cardId} (${card.type}) from ${card.owner} in room ${roomName}`);
+    return true;
+  }
+
   /**
    * Cancela cards por acordo comercial
    * @param {string} roomName - Nome da sala
@@ -228,6 +243,22 @@ class CardService {
       card.owner === owner && 
       (card.status === CARD_STATUS.ACTIVE || card.status === CARD_STATUS.TRANSFERRED)
     );
+  }
+  
+  /**
+   * Obtém um card específico por ID
+   * @param {string} roomName - Nome da sala
+   * @param {string} cardId - ID do card
+   * @returns {Object|null} - Card encontrado ou null
+   */
+  getCardById(roomName, cardId) {
+    const roomCards = this.roomCards.get(roomName);
+    if (!roomCards) return null;
+
+    const card = roomCards.find(c => c.id === cardId);
+    if (!card || card.status === CARD_STATUS.CANCELLED) return null;
+
+    return card;
   }
 
   /**
@@ -303,19 +334,21 @@ class CardService {
   }
 
   /**
-   * Remove cards de acordo comercial (correção para o bug)
-   * Esta função estava faltando e causava o erro na linha 122 do economyTrade.js
+   * Remove os dois cards relacionados a um acordo bilateral
+   * (funciona para qualquer tipo de acordo: militar, cooperação, etc.)
    * @param {string} roomName - Nome da sala
-   * @param {string} agreementId - ID do acordo
+   * @param {string} agreementType - Tipo do acordo (military_alliance, strategic_cooperation, etc.)
+   * @param {string} country1 - Primeiro país envolvido
+   * @param {string} country2 - Segundo país envolvido
    * @returns {number} - Número de cards removidos
    */
-  removeTradeAgreementCards(roomName, agreementId) {
+  removeAgreementCards(roomName, agreementType, country1, country2) {
     try {
-      console.log(`[ECONOMY-CARDS] Removing cards for agreement: ${agreementId}`);
+      console.log(`[CARDS] Removing ${agreementType} cards between ${country1} and ${country2}`);
       
       const roomCards = this.roomCards.get(roomName);
       if (!roomCards) {
-        console.log(`[ECONOMY-CARDS] Room not found: ${roomName}`);
+        console.log(`[CARDS] Room not found: ${roomName}`);
         return 0;
       }
 
@@ -324,17 +357,22 @@ class CardService {
       // Remover cards do acordo (filtragem reversa para evitar problemas de índice)
       for (let i = roomCards.length - 1; i >= 0; i--) {
         const card = roomCards[i];
-        if (card.sourceAgreementId === agreementId) {
+        
+        // Verificar se é um card do tipo de acordo e envolve os dois países
+        if (card.type === agreementType && 
+            ((card.owner === country1 && card.target === country2) ||
+            (card.owner === country2 && card.target === country1))) {
+          
           roomCards.splice(i, 1);
           removedCount++;
-          console.log(`[ECONOMY-CARDS] Removed card: ${card.id} (${card.type}) from ${card.owner}`);
+          console.log(`[CARDS] Removed card: ${card.id} (${card.type}) from ${card.owner} targeting ${card.target}`);
         }
       }
 
-      console.log(`[ECONOMY-CARDS] Removed ${removedCount} cards for agreement ${agreementId}`);
+      console.log(`[CARDS] Removed ${removedCount} ${agreementType} cards between ${country1} and ${country2}`);
       return removedCount;
     } catch (error) {
-      console.error('[ECONOMY-CARDS] Error removing trade agreement cards:', error);
+      console.error('[CARDS] Error removing agreement cards:', error);
       return 0;
     }
   }

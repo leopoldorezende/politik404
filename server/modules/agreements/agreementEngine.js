@@ -328,12 +328,20 @@ export class AgreementEngine {
         return false;
       }
 
-      // Remover card
-      const removed = global.cardService.removeCard(roomName, cardId);
-      if (!removed) {
+      // Remover TODOS os cards relacionados ao acordo bilateral
+      const removedCount = global.cardService.removeAgreementCards(
+        roomName, 
+        cardInfo.type, 
+        cardInfo.owner, 
+        cardInfo.target
+      );
+      
+      if (removedCount === 0) {
         socket.emit('error', 'Falha ao remover acordo');
         return false;
       }
+      
+      console.log(`[AGREEMENT] Removed ${removedCount} cards for ${cardInfo.type} agreement between ${cardInfo.owner} and ${cardInfo.target}`);
 
       // Notificar parceiro se acordo bilateral
       const config = getAgreementTypeConfig(agreementType);

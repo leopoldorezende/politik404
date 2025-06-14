@@ -156,14 +156,36 @@ function getCurrentRoom(socket, gameState) {
     return gameState.userToRoom.get(username);
   }
   
-  // Se não encontrar, verifica nas salas do socket
-  for (const room of socket.rooms) {
-    if (room !== socket.id && gameState.rooms.has(room)) {
-      // Atualiza o mapeamento para futuras verificações
-      if (username) {
-        gameState.userToRoom.set(username, room);
+  // Verificação segura das salas do socket
+  if (socket.rooms && typeof socket.rooms[Symbol.iterator] === 'function') {
+    try {
+      for (const room of socket.rooms) {
+        if (room !== socket.id && gameState.rooms.has(room)) {
+          // Atualiza o mapeamento para futuras verificações
+          if (username) {
+            gameState.userToRoom.set(username, room);
+          }
+          return room;
+        }
       }
-      return room;
+    } catch (error) {
+      console.error('Error iterating socket.rooms:', error);
+    }
+  }
+  
+  // Fallback: busca nas salas do gameState
+  if (username) {
+    for (const [roomName, room] of gameState.rooms.entries()) {
+      if (room.players && room.players.some(player => {
+        if (typeof player === 'object') {
+          return player.username === username;
+        }
+        return false;
+      })) {
+        // Atualiza o mapeamento
+        gameState.userToRoom.set(username, roomName);
+        return roomName;
+      }
     }
   }
   
