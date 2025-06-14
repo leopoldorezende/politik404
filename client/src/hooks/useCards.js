@@ -128,7 +128,7 @@ export const useCards = (roomName, countryName) => {
         }));
       }
     };
-      
+    
     const handlePlayerPointsResponse = (data) => {
       if (data.roomName === roomName && data.country === countryName) {
         dispatch(setPlayerPoints({
@@ -139,9 +139,8 @@ export const useCards = (roomName, countryName) => {
       }
     };
     
-    const handleTradeAgreementCancelled = (agreementId) => {
-      console.log('[CARDS] Trade agreement cancelled:', agreementId);
-      // Refresh imediato quando um acordo é cancelado
+    const handleTradeAgreementCancelled = (data) => {
+      console.log('[CARDS] Trade agreement cancelled:', data);
       if (autoRefresh) {
         setTimeout(() => {
           refreshPlayerCards();
@@ -158,35 +157,30 @@ export const useCards = (roomName, countryName) => {
         }));
       }
     };
-    
+
     const handleCardsUpdated = (data) => {
-      if (data.roomName === roomName) {
-        // Auto-refresh quando cards são atualizados
-        if (autoRefresh) {
-          setTimeout(() => {
-            refreshAll();
-          }, 500);
-        }
+      if (data.roomName === roomName && autoRefresh) {
+        // Aguardar um pouco antes de atualizar para permitir que o servidor processe
+        setTimeout(() => {
+          refreshAll();
+        }, 500);
       }
     };
-    
-    // ============================================================
-    // CORREÇÃO: ADICIONAR O LISTENER QUE ESTAVA FALTANDO
-    // ============================================================
     
     // Registrar listeners
     socket.on('playerCardsResponse', handlePlayerCardsResponse);
     socket.on('playerPointsResponse', handlePlayerPointsResponse);
     socket.on('playerRankingResponse', handlePlayerRankingResponse);
     socket.on('tradeAgreementCancelled', handleTradeAgreementCancelled);
-    socket.on('cardsUpdated', handleCardsUpdated); // <-- ESTA LINHA ESTAVA FALTANDO!
-
+    socket.on('cardsUpdated', handleCardsUpdated); // ✅ ADICIONAR ESTA LINHA
+    
+    // Cleanup - CORREÇÃO AQUI: 
     return () => {
       socket.off('playerCardsResponse', handlePlayerCardsResponse);
       socket.off('playerPointsResponse', handlePlayerPointsResponse);
       socket.off('playerRankingResponse', handlePlayerRankingResponse);
       socket.off('tradeAgreementCancelled', handleTradeAgreementCancelled);
-      socket.on('cardsUpdated', handleCardsUpdated); // <-- ADICIONAR ESTA LINHA
+      socket.off('cardsUpdated', handleCardsUpdated); // ✅ CORRIGIR: era socket.on, agora é socket.off
     };
   }, [roomName, countryName, autoRefresh, refreshAll, refreshPlayerCards, refreshPlayerPoints, dispatch]);
   

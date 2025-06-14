@@ -67,11 +67,12 @@ const GamePage = () => {
   
   // Memoizar função de pontos para evitar re-criação
   const getMyCountryPoints = useCallback(() => {
-    // Usar sistema de cards
+    // Priorizar sistema de cards
     if (totalPoints !== undefined && !pointsLoading) {
       return totalPoints;
     }
 
+    // Fallback para sistema antigo se cards ainda não carregaram
     if (!myCountry || !tradeAgreements.length) return 0;
     
     // Contar acordos comerciais onde meu país é o originador
@@ -84,7 +85,27 @@ const GamePage = () => {
     const totalScore = myTradeAgreements;
     
     return totalScore;
-  }, [myCountry, tradeAgreements]);
+  }, [myCountry, tradeAgreements, totalPoints, pointsLoading]);
+
+  useEffect(() => {
+    console.log('[GAMEPAGE] Points updated:', {
+      totalPoints,
+      pointsLoading,
+      myCountry,
+      roomName: currentRoom?.name
+    });
+  }, [totalPoints, pointsLoading, myCountry, currentRoom?.name]);
+
+  useEffect(() => {
+    if (currentRoom?.name && myCountry && tradeAgreements.length > 0) {
+      console.log('[GAMEPAGE] Trade agreements updated, refreshing points');
+      // Forçar refresh dos pontos do hook
+      const { refresh } = usePlayerPoints(currentRoom.name, myCountry);
+      if (refresh) {
+        refresh();
+      }
+    }
+  }, [tradeAgreements.length, currentRoom?.name, myCountry]);
 
   // Memoizar função de formatação de tempo
   const formatTimeRemaining = useCallback((ms) => {
