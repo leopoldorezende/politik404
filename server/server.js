@@ -5,23 +5,19 @@ import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import fs from 'fs';
-import path from 'path';
 import economyService from './shared/services/economyService.js';
 import cardService from './shared/services/cardService.js';
 import { fileURLToPath } from 'url';
+import path from 'path';
 import { dirname } from 'path';
 import { initializeSocketHandlers } from './modules/index.js';
-import { createSocketMiddleware, setupPeriodicCleanup } from './middlewares/socketServerMiddleware.js';
+import { createSocketMiddleware } from './middlewares/socketServerMiddleware.js';
+import { cleanup as cleanupExpirationTimers } from './modules/room/roomExpirationManager.js';
+import googleAuthRoutes from './modules/auth/google.js';
 import { 
-  createDefaultGameState,
-  cleanupInactiveUsers, 
+  createDefaultGameState, 
   registerSocketUserMapping 
 } from './shared/utils/gameStateUtils.js';
-import { 
-  initializeExistingRoomsExpiration,
-  cleanup as cleanupExpirationTimers
-} from './modules/room/roomExpirationManager.js';
-import googleAuthRoutes from './modules/auth/google.js';
 
 // Adicionar isso para lidar com __dirname e __filename no ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -148,35 +144,6 @@ global.gameState = gameState;
 global.economyService = economyService;
 global.cardService = cardService;
 
-async function restoreRoomsFromRedis() {
-  try {
-    const stored = await redis.get('rooms');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      for (const [name, room] of Object.entries(parsed)) {
-        gameState.rooms.set(name, room);
-        
-        // Inicializar economia para salas restauradas
-        if (Object.keys(countriesData).length > 0) {
-          economyService.initializeRoom(name, countriesData);
-        }
-        
-        // Inicializar cardService para salas restauradas
-        // if (global.cardService && global.cardService.initialized) {
-        //   // O cardService ciente de que a sala existe
-        //   console.log(`[CARDS] Room ${name} restored and available for cardService`);
-        // }
-      }
-      console.log(`[REDIS] Salas restauradas: ${gameState.rooms.size}`);
-      
-      // Inicializar os timers de expiração para salas existentes
-      initializeExistingRoomsExpiration(io, gameState);
-    }
-  } catch (err) {
-    console.error('[REDIS] Erro ao restaurar salas:', err.message);
-  }
-}
-
 const PORT = process.env.PORT || 3000;
 
 app.get('/check-connection', (req, res) => {
@@ -214,19 +181,19 @@ process.on('SIGINT', shutdownHandler);
 process.on('SIGTERM', shutdownHandler);
 
 // Iniciar servidor só depois que Redis restaurar
-restoreRoomsFromRedis().then(() => {
-  // CRÍTICO: Inicializar EconomyService com cálculos avançados
+await redis.get('rooms').then(() => {
+  // Inicializar EconomyService com cálculos avançados
   Promise.all([
     economyService.initialize(),
     cardService.initialize()
   ]).then(() => {
-    console.log('✅ Advanced EconomyService and CardService initialized successfully');
+    console.log('Advanced EconomyService and CardService initialized successfully');
     
     // Validar se os cálculos avançados estão funcionando
     const performanceStats = economyService.getPerformanceStats();
     const cardStats = cardService.getStats();
-    console.log('📊 Economy Performance Stats:', performanceStats);
-    console.log('🎯 Card Service Stats:', cardStats);
+    console.log('Economy Performance Stats:', performanceStats);
+    console.log('Card Service Stats:', cardStats);
     
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

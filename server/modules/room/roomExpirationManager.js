@@ -78,33 +78,6 @@ function expireRoom(io, gameState, roomName) {
 }
 
 /**
- * Inicializa os timers de expiração para salas existentes (ao reiniciar o servidor)
- * @param {Object} io - Instância do Socket.io
- * @param {Object} gameState - Estado global do jogo
- */
-function initializeExistingRoomsExpiration(io, gameState) {
-  const now = Date.now();
-  
-  for (const [roomName, room] of gameState.rooms.entries()) {
-    if (room.expiresAt) {
-      const officialEndTime = room.expiresAt;
-      const finalRemovalTime = officialEndTime + 60000; // +1 minuto
-      const timeRemaining = finalRemovalTime - now;
-      
-      if (timeRemaining <= 0) {
-        // Sala já deveria ter expirado
-        console.log(`[EXPIRATION] Sala ${roomName} já expirou, removendo`);
-        expireRoom(io, gameState, roomName);
-      } else {
-        // Configurar timer para o tempo restante
-        setupRoomExpiration(io, gameState, roomName, timeRemaining - 60000);
-        console.log(`[EXPIRATION] Timer restaurado para sala ${roomName}: ${timeRemaining / 60000} minutos restantes`);
-      }
-    }
-  }
-}
-
-/**
  * Cancela a expiração de uma sala (quando ela é deletada manualmente)
  * @param {string} roomName - Nome da sala
  */
@@ -131,7 +104,6 @@ function cleanup() {
 export {
   setupRoomExpiration,
   expireRoom,
-  initializeExistingRoomsExpiration,
   cancelRoomExpiration,
   cleanup
 };

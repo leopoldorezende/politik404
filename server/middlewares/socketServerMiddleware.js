@@ -72,31 +72,7 @@ function setupPeriodicCleanup(io, gameState) {
   console.log('[MIDDLEWARE] Periodic cleanup initialized');
 }
 
-/**
- * Middleware para rate limiting (futuro)
- * @param {Object} socket - Socket do cliente
- * @param {Function} next - Próximo middleware
- */
-function rateLimitingMiddleware(socket, next) {
-  // Implementação futura de rate limiting
-  // Por enquanto, apenas passa adiante
-  next();
-}
-
-/**
- * Middleware para autenticação (futuro)
- * @param {Object} socket - Socket do cliente
- * @param {Function} next - Próximo middleware
- */
-function authenticationMiddleware(socket, next) {
-  // Implementação futura de autenticação avançada
-  // Por enquanto, apenas passa adiante
-  next();
-}
-
 export { 
   createSocketMiddleware,
-  setupPeriodicCleanup,
-  rateLimitingMiddleware,
-  authenticationMiddleware
+  setupPeriodicCleanup
 };

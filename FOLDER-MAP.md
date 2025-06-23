@@ -14,6 +14,7 @@
   │   ├── src
   │   │   ├── App.css
   │   │   ├── App.jsx  # Componente raiz
+  │   │   ├── constants
   │   │   ├── hooks
   │   │   │   ├── useCards.js
   │   │   │   └── useEconomy.js
