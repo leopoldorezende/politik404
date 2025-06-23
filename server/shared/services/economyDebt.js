@@ -2,8 +2,8 @@
 // Métodos auxiliares para gerenciamento de dívida pública
 // Extraídos do economyService para reduzir complexidade
 
-import { calculateRiskPremium } from '../../utils/economicUtils.js';
-import { ECONOMIC_CONSTANTS } from '../../utils/economicConstants.js';
+import { calculateRiskPremium } from '../utils/economicUtils.js';
+import { ECONOMIC_CONSTANTS } from '../utils/economicConstants.js';
 
 /**
  * Classe auxiliar para gerenciamento de dívida pública

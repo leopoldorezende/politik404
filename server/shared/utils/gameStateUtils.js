@@ -121,29 +121,6 @@ function getSocketIdFromUsername(gameState, username) {
 }
 
 /**
- * Registra o mapeamento bidirecional entre socketId e username
- * @param {Object} gameState - Estado global do jogo
- * @param {string} socketId - ID do socket
- * @param {string} username - Nome do usuário
- */
-function registerSocketUserMapping(gameState, socketId, username) {
-  if (!socketId || !username) return;
-  
-  // Registra o mapeamento de socketId para username
-  gameState.socketIdToUsername.set(socketId, username);
-  
-  // Registra o mapeamento inverso
-  if (gameState.usernameToSocketId) {
-    gameState.usernameToSocketId.set(username, socketId);
-  }
-  
-  // Atualiza o timestamp de última atividade
-  if (gameState.lastActivityTimestamp) {
-    gameState.lastActivityTimestamp.set(username, Date.now());
-  }
-}
-
-/**
  * Obtém a sala atual de um socket
  * @param {Object} socket - Socket do cliente
  * @param {Object} gameState - Estado global do jogo
@@ -371,7 +348,6 @@ export {
   initializeGameState,
   getUsernameFromSocketId,
   getSocketIdFromUsername,
-  registerSocketUserMapping,
   getCurrentRoom,
   cleanupDisconnectedUser,
   cleanupDisconnectedSockets,

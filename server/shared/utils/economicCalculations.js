@@ -400,9 +400,6 @@ export function applyAdvancedEconomicCalculations(economy, debtContracts = [], o
     }
     
     economy.treasury += arrecadacao - gastoInvestimento;
-    
-    // CORREÇÃO: Não chamar issueEmergencyBonds aqui - deixar para economyService
-    // A verificação de tesouro negativo será feita no economyService
   }
   
   // ===== PROCESSAMENTO DE DÍVIDAS (mantido) =====
@@ -513,88 +510,6 @@ export function resetUnrealisticIndicators(economy) {
   if (!economy._historicUnemployment || economy._historicUnemployment.length === 0) {
     economy._historicUnemployment = [economy.unemployment];
   }
-  
-  return economy;
-}
-
-/**
- * Função para aplicar variação setorial dinâmica - BASEADO NO economy-game.js
- * @param {Object} economy - Estado econômico
- * @returns {Object} - Estado econômico com setores atualizados
- */
-export function applySectoralVariation(economy) {
-  // Se não existem setores base, salvar os atuais como base
-  if (!economy._servicesBase) {
-    economy._servicesBase = economy.services;
-    economy._commoditiesBase = economy.commodities;
-    economy._manufacturesBase = economy.manufactures;
-  }
-  
-  // CÓPIA EXATA do economy-game.js - Variação mensal aleatória na distribuição setorial
-  const variacaoCommodities = Math.floor(Math.random() * 3) - 1; // -1, 0, ou 1
-  const variacaoManufaturas = Math.floor(Math.random() * 3) - 1; // -1, 0, ou 1
-  
-  // Aplicar variações aos setores
-  let newCommodities = economy.commodities + variacaoCommodities;
-  let newManufactures = economy.manufactures + variacaoManufaturas;
-  let newServices = 100 - newCommodities - newManufactures;
-  
-  // CÓPIA EXATA do economy-game.js - Ajustar limites setoriais
-  // Limites para commodities (20-50%)
-  if (newCommodities < 20) { 
-    const ajuste = 20 - newCommodities;
-    newCommodities = 20;
-    newServices -= ajuste / 2;
-    newManufactures -= ajuste / 2;
-  } else if (newCommodities > 50) {
-    const ajuste = newCommodities - 50;
-    newCommodities = 50;
-    newServices += ajuste / 2;
-    newManufactures += ajuste / 2;
-  }
-  
-  // Limites para manufaturas (20-50%)
-  if (newManufactures < 20) {
-    const ajuste = 20 - newManufactures;
-    newManufactures = 20;
-    newServices -= ajuste / 2;
-    newCommodities -= ajuste / 2;
-  } else if (newManufactures > 50) {
-    const ajuste = newManufactures - 50;
-    newManufactures = 50;
-    newServices += ajuste / 2;
-    newCommodities += ajuste / 2;
-  }
-  
-  // Limites para serviços (20-50%)
-  if (newServices < 20) {
-    const ajuste = 20 - newServices;
-    newServices = 20;
-    newCommodities -= ajuste / 2;
-    newManufactures -= ajuste / 2;
-  } else if (newServices > 50) {
-    const ajuste = newServices - 50;
-    newServices = 50;
-    newCommodities += ajuste / 2;
-    newManufactures += ajuste / 2;
-  }
-  
-  // CÓPIA EXATA do economy-game.js - Arredonda para inteiros e garante total de 100%
-  economy.commodities = Math.round(newCommodities);
-  economy.manufactures = Math.round(newManufactures);
-  economy.services = 100 - economy.commodities - economy.manufactures;
-  
-  // Aplicar força de retorno aos valores base (evita deriva excessiva)
-  const returnForce = 0.02; // 2% de força de retorno por ciclo
-  economy.commodities = economy.commodities * (1 - returnForce) + economy._commoditiesBase * returnForce;
-  economy.manufactures = economy.manufactures * (1 - returnForce) + economy._manufacturesBase * returnForce;
-  economy.services = economy.services * (1 - returnForce) + economy._servicesBase * returnForce;
-  
-  // Rebalancear novamente após força de retorno
-  const finalTotal = economy.commodities + economy.manufactures + economy.services;
-  economy.commodities = Math.round((economy.commodities / finalTotal) * 100);
-  economy.manufactures = Math.round((economy.manufactures / finalTotal) * 100);
-  economy.services = 100 - economy.commodities - economy.manufactures;
   
   return economy;
 }

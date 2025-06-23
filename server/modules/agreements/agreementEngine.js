@@ -4,9 +4,7 @@
 // Local: server/modules/agreements/agreementEngine.js
 
 import { 
-  AGREEMENT_TYPES, 
   getAgreementTypeConfig, 
-  isValidAgreementType,
   mapLegacyType 
 } from '../../shared/config/agreementTypeRegistry.js';
 import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';

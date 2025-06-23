@@ -8,8 +8,8 @@ import redis from '../redisClient.js';
 import { getNumericValue } from '../utils/economicUtils.js';
 import { ECONOMIC_CONSTANTS } from '../utils/economicConstants.js';
 import { SYNC_CONFIG } from '../config/syncConfig.js';
-import { EconomyDebt } from './economy/economyDebt.js';
-import { EconomyTrade } from './economy/economyTrade.js';
+import { EconomyDebt } from './economyDebt.js';
+import { EconomyTrade } from './economyTrade.js';
 
 import { 
   calculateAdvancedGrowth,
@@ -18,7 +18,6 @@ import {
   calculateDynamicPopularity,
   calculateCreditRating,
   processDeptPayments,
-  applySectoralVariation,
   resetUnrealisticIndicators,
   debugAdvancedEconomicCalculations,
   validateEconomicCalculations,
@@ -459,9 +458,6 @@ class EconomyService {
       
     // 9. Processamento mensal para variações setoriais - COMO NO economy-game.js
     if (economy._cycleCount % SYNC_CONFIG.MONTHLY_CYCLE === 0) {
-      // USAR A FUNÇÃO IMPORTADA do economicCalculations.js
-      applySectoralVariation(economy);
-      
       // Atualizar históricos
       this.updateHistoricalData(economy);
     }

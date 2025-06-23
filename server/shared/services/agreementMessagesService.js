@@ -229,37 +229,9 @@ class AgreementMessagesService {
   }
 
   // =====================================================================
-  // MÉTODOS PARA ACORDOS INTERNOS (NOVO - FASE 2)
+  // MÉTODOS DIVERSOS
   // =====================================================================
 
-  /**
-   * Obter mensagens para acordos internos
-   */
-  getInternalMessage(messageType, subType = null, data = null) {
-    if (subType) {
-      // Mensagem específica do subtipo (ex: political_pact.successCreated)
-      const template = this.messageTemplates.internal[subType]?.[messageType];
-      return typeof template === 'function' ? template(data) : template;
-    } else {
-      // Mensagem geral interna
-      const template = this.messageTemplates.internal[messageType];
-      return typeof template === 'function' ? template(data) : template;
-    }
-  }
-
-  /**
-   * Validação para propostas internas
-   */
-  validateInternalProposal(proposal) {
-    const { type } = proposal;
-    
-    const validTypes = ['political_pact', 'business_partnership', 'media_control'];
-    if (!type || !validTypes.includes(type)) {
-      return { valid: false, error: this.getInternalMessage('invalidType') };
-    }
-    
-    return { valid: true };
-  }
 
   /**
    * Obter nome amigável para tipos internos
@@ -273,36 +245,6 @@ class AgreementMessagesService {
     return names[type] || 'Acordo Interno';
   }
 
-  // =====================================================================
-  // MÉTODOS UNIFICADOS (EXPANDIDOS)
-  // =====================================================================
-
-  /**
-   * Obter mensagem baseada na categoria do acordo
-   */
-  getMessage(category, messageType, subType = null, data = null) {
-    switch (category) {
-      case 'comercial':
-        return this.getTradeMessage(messageType, data);
-      case 'militar':
-        return messageType.includes('alliance') ? 
-          this.getAllianceMessage(messageType, data) : 
-          this.getCooperationMessage(messageType, data);
-      case 'interno':
-        return this.getInternalMessage(messageType, subType, data);
-      default:
-        return 'Mensagem não encontrada';
-    }
-  }
-
-  /**
-   * Obter mensagens de confirmação
-   */
-  getConfirmationMessage(agreementType, messageType, data = null) {
-    const template = this.messageTemplates.confirmations[agreementType]?.[messageType];
-    return typeof template === 'function' ? template(data) : template;
-  }
-
   /**
    * Obter mensagens de cooldown
    */
@@ -311,62 +253,9 @@ class AgreementMessagesService {
     return template(seconds);
   }
 
-  /**
-   * Obter mensagens de erro
-   */
-  getErrorMessage(errorType, data = null) {
-    const template = this.messageTemplates.errors[errorType];
-    return typeof template === 'function' ? template(data) : template;
-  }
-
-  /**
-   * Obter mensagens de notificação
-   */
-  getNotificationMessage(notificationType, data = null) {
-    const template = this.messageTemplates.notifications[notificationType];
-    return typeof template === 'function' ? template(data) : template;
-  }
 
   // =====================================================================
-  // FORMATADORES PARA CLIENTE (NOVO)
-  // =====================================================================
-
-  /**
-   * Formatar mensagem de notificação para o cliente
-   */
-  formatNotificationMessage(agreementType, result, data = {}) {
-    const { success, targetCountry, points, probability } = data;
-    
-    if (agreementType.startsWith('trade-')) {
-      return success ? 
-        this.getTradeMessage('proposalAccepted', targetCountry) :
-        this.getTradeMessage('proposalRejected', targetCountry);
-    }
-    
-    if (agreementType === 'military-alliance') {
-      return success ?
-        this.getAllianceMessage('proposalAccepted', targetCountry) :
-        this.getAllianceMessage('proposalRejected', targetCountry);
-    }
-    
-    if (agreementType === 'strategic-cooperation') {
-      return success ?
-        this.getCooperationMessage('proposalAccepted', targetCountry) :
-        this.getCooperationMessage('proposalRejected', targetCountry);
-    }
-    
-    // Acordos internos
-    if (['political_pact', 'business_partnership', 'media_control'].includes(agreementType)) {
-      return success ?
-        this.getInternalMessage('successCreated', agreementType) :
-        this.getInternalMessage('failedCreated', agreementType, probability);
-    }
-    
-    return 'Resultado do acordo processado';
-  }
-
-  // =====================================================================
-  // MÉTODOS UTILITÁRIOS (EXPANDIDOS)
+  // MÉTODOS UTILITÁRIOS
   // =====================================================================
 
   /**
@@ -415,66 +304,6 @@ class AgreementMessagesService {
     return { accepted, message };
   }
 
-  // =====================================================================
-  // VALIDADORES UNIFICADOS (EXPANDIDOS)
-  // =====================================================================
-
-  /**
-   * Validar dados básicos de proposta
-   */
-  validateBasicProposal(username, roomName, userCountry) {
-    if (!username || !roomName || !userCountry) {
-      return { valid: false, error: this.getErrorMessage('invalidRequest') };
-    }
-    return { valid: true };
-  }
-
-  /**
-   * Validar proposta comercial
-   */
-  validateTradeProposal(proposal) {
-    const { type, product, targetCountry, value } = proposal;
-    
-    if (!type || !product || !targetCountry) {
-      return { valid: false, error: this.getTradeMessage('invalidProposal') };
-    }
-    
-    if (!['import', 'export'].includes(type) || !['commodity', 'manufacture'].includes(product)) {
-      return { valid: false, error: this.getTradeMessage('invalidTradeType') };
-    }
-    
-    if (!value || value <= 0 || value > 1000) {
-      return { valid: false, error: this.getTradeMessage('valueOutOfRange') };
-    }
-    
-    return { valid: true };
-  }
-
-  /**
-   * Validar proposta de aliança
-   */
-  validateAllianceProposal(proposal) {
-    const { type, targetCountry } = proposal;
-    
-    if (!type || !targetCountry || type !== 'military_alliance') {
-      return { valid: false, error: this.getAllianceMessage('invalidProposal') };
-    }
-    
-    return { valid: true };
-  }
-
-  /**
-   * Validar proposta de cooperação
-   */
-  validateCooperationProposal(proposal) {
-    const { type, targetCountry } = proposal;
-    
-    if (!type || !targetCountry || type !== 'strategic_cooperation') {
-      return { valid: false, error: this.getCooperationMessage('invalidProposal') };
-    }
-    
-    return { valid: true };
-  }
 }
 
 // =====================================================================

@@ -3,7 +3,6 @@
   /Politik404
   ├── FOLDER-MAP.md
   ├── README.md  # Documentação do front-end
-  ├── SISTEMA_UNIFICADO_COMPLETO.md
   ├── client
   │   ├── index.html  # HTML principal
   │   ├── package.json  # Dependências e scripts principais (monorepo)
@@ -121,13 +120,10 @@
       ├── modules
       │   ├── agreements
       │   │   ├── agreementEngine.js
-      │   │   ├── agreementHandlers.js
-      │   │   ├── agreementValidator.js
-      │   │   └── internalAgreementService.js
+      │   │   └── agreementHandlers.js
       │   ├── ai
       │   │   └── aiCountryController.js
       │   ├── auth
-      │   │   ├── _authHandlers.js
       │   │   ├── authHandlers.js  # Handlers de autenticação
       │   │   └── google.js
       │   ├── chat
@@ -161,10 +157,9 @@
           ├── services
           │   ├── agreementMessagesService.js
           │   ├── cardService.js
-          │   ├── economy
-          │   │   ├── economyDebt.js
-          │   │   └── economyTrade.js
-          │   └── economyService.js
+          │   ├── economyDebt.js
+          │   ├── economyService.js
+          │   └── economyTrade.js
           └── utils
               ├── economicCalculations.js
               ├── economicConstants.js

@@ -23,7 +23,6 @@ export function initializeSocketHandlers(io, socket, gameState) {
   setupPlayerStateManager(io, socket, gameState);
   setupCountryAssignment(io, socket, gameState);
   setupChatHandlers(io, socket, gameState);
-  
   setupEconomyHandlers(io, socket, gameState);
   setupAgreementHandlers(io, socket, gameState);
 }

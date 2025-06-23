@@ -1,12 +1,10 @@
 /**
- * socketServerMiddleware.js - ATUALIZADO
+ * socketServerMiddleware.js
  * Middleware para validação e processamento de conexões Socket.io
  */
 
 import { 
-  cleanupDisconnectedSockets, 
-  cleanupInactiveUsers,
-  getUsernameFromSocketId 
+  cleanupDisconnectedSockets
 } from '../shared/utils/gameStateUtils.js';
 
 /**
@@ -14,7 +12,7 @@ import {
  * @param {Object} io - Instância do Socket.io
  * @returns {Function} - Função middleware
  */
-function createSocketMiddleware(io) {
+export function createSocketMiddleware(io) {
   return (socket, next) => {
     // Validação básica da conexão
     if (!socket.id) {
@@ -46,33 +44,3 @@ function createSocketMiddleware(io) {
     next();
   };
 }
-
-/**
- * Configurar limpeza periódica (chamado do server.js)
- * @param {Object} io - Instância do Socket.io
- * @param {Object} gameState - Estado global do jogo
- */
-function setupPeriodicCleanup(io, gameState) {
-  // Limpeza de usuários inativos a cada 5 minutos
-  setInterval(() => {
-    const removedUsers = cleanupInactiveUsers(io, gameState);
-    if (removedUsers > 0) {
-      console.log(`[CLEANUP] Removidos ${removedUsers} usuários inativos`);
-    }
-  }, 5 * 60 * 1000); // 5 minutos
-  
-  // Limpeza de sockets desconectados a cada 2 minutos
-  setInterval(() => {
-    const removedSockets = cleanupDisconnectedSockets(io, gameState);
-    if (removedSockets > 0) {
-      console.log(`[CLEANUP] Removidos ${removedSockets} sockets desconectados`);
-    }
-  }, 2 * 60 * 1000); // 2 minutos
-  
-  console.log('[MIDDLEWARE] Periodic cleanup initialized');
-}
-
-export { 
-  createSocketMiddleware,
-  setupPeriodicCleanup
-};

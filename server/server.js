@@ -16,7 +16,6 @@ import { cleanup as cleanupExpirationTimers } from './modules/room/roomExpiratio
 import googleAuthRoutes from './modules/auth/google.js';
 import { 
   createDefaultGameState, 
-  registerSocketUserMapping 
 } from './shared/utils/gameStateUtils.js';
 
 // Adicionar isso para lidar com __dirname e __filename no ES modules
@@ -228,9 +227,6 @@ io.on('connection', (socket) => {
   // Registrar o evento de autenticação para mapeamento bidirecional
   socket.on('authenticate', (username) => {
     if (username) {
-      // Registrar mapeamento bidirecional
-      registerSocketUserMapping(gameState, socket.id, username);
-      
       // Atualizar o timestamp de última atividade
       if (gameState.lastActivityTimestamp) {
         gameState.lastActivityTimestamp.set(username, Date.now());
