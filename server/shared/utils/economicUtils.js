@@ -75,16 +75,6 @@ export function limitarComCurva(value, min, max, target) {
 }
 
 /**
- * Calcula média móvel para históricos
- * @param {Array<number>} history - Array de valores históricos
- * @returns {number} - Média móvel
- */
-export function calcularMediaMovel(history) {
-  if (history.length === 0) return 0;
-  return history.reduce((a, b) => a + b, 0) / history.length;
-}
-
-/**
  * Função para calcular prêmio de risco baseado no rating
  * @param {string} creditRating - Rating de crédito
  * @param {number} debtToGdpRatio - Relação dívida/PIB

@@ -1,7 +1,5 @@
 /**
  * useEconomy.js - Hook direto para dados econômicos com cálculos avançados
- * Substitui toda complexidade do Redux com comunicação direta via socket
- * VERSÃO ATUALIZADA para trabalhar com os cálculos econômicos sofisticados
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -29,14 +27,7 @@ export const useEconomy = (roomName, countryName) => {
 
   // Handler para atualizações periódicas
   const handleCountryStatesUpdated = useCallback((data) => {
-    if (data.roomName === roomName && data.states && data.states[countryName]) {
-      // console.log(`[CLIENT] Recebendo atualização para ${countryName}:`, {
-      //   gdp: data.states[countryName].economy.gdp,
-      //   inflation: (data.states[countryName].economy.inflation * 100).toFixed(3) + '%',
-      //   cycles: data.states[countryName].economy._cycleCount,
-      //   timestamp: new Date(data.timestamp).toLocaleTimeString()
-      // });
-      
+    if (data.roomName === roomName && data.states && data.states[countryName]) {      
       setCountryData(data.states[countryName]);
       setLastUpdated(data.timestamp);
       setLoading(false);
@@ -84,40 +75,40 @@ export const useEconomy = (roomName, countryName) => {
 
   // Indicadores econômicos calculados com campos expandidos
   const economicIndicators = countryData?.economy ? {
-    // ===== CAMPOS BÁSICOS PRESERVADOS =====
+    // CAMPOS BÁSICOS PRESERVADOS
     gdp: getNumericValue(countryData.economy.gdp),
     treasury: getNumericValue(countryData.economy.treasury),
     publicDebt: getNumericValue(countryData.economy.publicDebt),
     
-    // ===== INDICADORES AVANÇADOS =====
+    // INDICADORES AVANÇADOS
     inflation: getNumericValue(countryData.economy.inflation),
     unemployment: getNumericValue(countryData.economy.unemployment),
     popularity: getNumericValue(countryData.economy.popularity),
     creditRating: countryData.economy.creditRating || 'A',
     gdpGrowth: getNumericValue(countryData.economy.gdpGrowth),
     
-    // ===== PARÂMETROS DE POLÍTICA =====
+    // PARÂMETROS DE POLÍTICA
     interestRate: getNumericValue(countryData.economy.interestRate),
     taxBurden: getNumericValue(countryData.economy.taxBurden),
     publicServices: getNumericValue(countryData.economy.publicServices),
     
-    // ===== ESTRUTURA SETORIAL =====
+    // ESTRUTURA SETORIAL
     services: getNumericValue(countryData.economy.services),
     commodities: getNumericValue(countryData.economy.commodities),
     manufactures: getNumericValue(countryData.economy.manufactures),
     
-    // ===== OUTPUTS SETORIAIS =====
+    // OUTPUTS SETORIAIS
     servicesOutput: getNumericValue(countryData.economy.servicesOutput),
     commoditiesOutput: getNumericValue(countryData.economy.commoditiesOutput),
     manufacturesOutput: getNumericValue(countryData.economy.manufacturesOutput),
     
-    // ===== NECESSIDADES E BALANÇOS =====
+    // NECESSIDADES E BALANÇOS
     commoditiesNeeds: getNumericValue(countryData.economy.commoditiesNeeds),
     manufacturesNeeds: getNumericValue(countryData.economy.manufacturesNeeds),
     commoditiesBalance: getNumericValue(countryData.economy.commoditiesBalance),
     manufacturesBalance: getNumericValue(countryData.economy.manufacturesBalance),
     
-    // ===== ESTATÍSTICAS DE COMÉRCIO =====
+    // ESTATÍSTICAS DE COMÉRCIO
     tradeStats: countryData.economy.tradeStats || {
       commodityImports: 0,
       commodityExports: 0,
@@ -125,21 +116,15 @@ export const useEconomy = (roomName, countryName) => {
       manufactureExports: 0
     },
     
-    // ===== CAMPOS AVANÇADOS DE CONTROLE =====
+    // CAMPOS AVANÇADOS DE CONTROLE
     _cycleCount: getNumericValue(countryData.economy._cycleCount),
     _lastQuarterGdp: getNumericValue(countryData.economy._lastQuarterGdp),
     
-    // ===== HISTÓRICOS EXPANDIDOS =====
+    // HISTÓRICOS EXPANDIDOS
     _historicGdp: countryData.economy._historicGdp || [getNumericValue(countryData.economy.gdp)],
     _historicInflation: countryData.economy._historicInflation || [getNumericValue(countryData.economy.inflation)],
     _historicPopularity: countryData.economy._historicPopularity || [getNumericValue(countryData.economy.popularity)],
-    _historicUnemployment: countryData.economy._historicUnemployment || [getNumericValue(countryData.economy.unemployment)],
-    
-    // ===== COMPATIBILIDADE COM HISTÓRICOS ORIGINAIS =====
-    historicoPIB: countryData.economy.historicoPIB || [getNumericValue(countryData.economy.gdp)],
-    historicoInflacao: countryData.economy.historicoInflacao || [getNumericValue(countryData.economy.inflation)],
-    historicoPopularidade: countryData.economy.historicoPopularidade || [getNumericValue(countryData.economy.popularity)],
-    historicoDesemprego: countryData.economy.historicoDesemprego || [getNumericValue(countryData.economy.unemployment)]
+    _historicUnemployment: countryData.economy._historicUnemployment || [getNumericValue(countryData.economy.unemployment)]
   } : null;
 
   return {
@@ -199,7 +184,7 @@ export const usePublicDebt = (roomName, countryName) => {
       }, 500);
     };
 
-    // ===== NOVA FUNCIONALIDADE: LISTENER PARA ATUALIZAÇÕES DE CONTRATOS =====
+    // NOVA FUNCIONALIDADE: LISTENER PARA ATUALIZAÇÕES DE CONTRATOS =====
     const handleDebtContractsUpdated = (data) => {
       if (data.roomName === roomName && data.countryName === countryName) {
         console.log(`[DEBT] Contratos atualizados para ${countryName}: ${data.contractsCompleted} quitados, ${data.activeContracts} ativos`);

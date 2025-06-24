@@ -1,5 +1,5 @@
 /**
- * economyService.js - VERSÃO SIMPLIFICADA SEM DUPLICAÇÕES
+ * economyService.js
  * Remove todas as funções duplicadas e delega para economicCalculations.js
  * Mantém apenas gerenciamento de estado e persistência
  */
@@ -17,7 +17,7 @@ import {
   calculateDynamicUnemployment,
   calculateDynamicPopularity,
   calculateCreditRating,
-  processDeptPayments,
+  processDebtPayments,
   resetUnrealisticIndicators,
   debugAdvancedEconomicCalculations,
   validateEconomicCalculations,
@@ -53,7 +53,7 @@ class EconomyService {
   }
 
   // ========================================================================
-  // CORE STATE MANAGEMENT - Fonte única de verdade (PRESERVADO)
+  // CORE STATE MANAGEMENT - Fonte única de verdade
   // ========================================================================
 
   getCountryState(roomName, countryName) {
@@ -73,7 +73,7 @@ class EconomyService {
   }
 
   // ========================================================================
-  // INICIALIZAÇÃO DE PAÍSES (PRESERVADO)
+  // INICIALIZAÇÃO DE PAÍSES
   // ========================================================================
 
   initializeRoom(roomName, countriesData) {
@@ -103,10 +103,6 @@ class EconomyService {
         this.migrateExistingState(roomStates[countryName]);
       }
     }
-    
-    // if (countriesInitialized > 0) {
-    //   console.log(`[ECONOMY] Room ${roomName}: initialized ${countriesInitialized} countries with delegated calculations`);
-    // }
   }
 
   createExpandedCountryState(countryName, countryData) {
@@ -136,7 +132,7 @@ class EconomyService {
     
     const countryState = {
       economy: {
-        // ===== CAMPOS ORIGINAIS PRESERVADOS =====
+        // CAMPOS ORIGINAIS PRESERVADOS 
         gdp: initialGdp,
         treasury: getNumericValue(economy.treasury) || 10,
         publicDebt: getNumericValue(economy.publicDebt) || 0,
@@ -161,7 +157,7 @@ class EconomyService {
           manufactureExports: 0
         },
         
-        // ===== NOVOS CAMPOS EXPANDIDOS =====
+        // NOVOS CAMPOS EXPANDIDOS
         _cycleCount: 0,
         _lastQuarterGdp: initialGdp * 0.975, // 2.5% menor para simular crescimento inicial
         gdpGrowth: 2.5, // Crescimento trimestral em percentual
@@ -281,7 +277,7 @@ class EconomyService {
   }
 
   // ========================================================================
-  // CÁLCULOS ECONÔMICOS DELEGADOS (SEM DUPLICAÇÃO)
+  // CÁLCULOS ECONÔMICOS DELEGADOS
   // ========================================================================
 
   performAdvancedEconomicCalculations(roomName, countryName) {
@@ -292,8 +288,6 @@ class EconomyService {
     
     // Incrementar contador de ciclos
     economy._cycleCount++;
-    
-    // ===== APLICAÇÃO DOS CÁLCULOS COMO NO economy-game.js =====
     
     // 1. Calcular outputs setoriais
     economy.servicesOutput = (economy.gdp * economy.services / 100);
@@ -306,7 +300,7 @@ class EconomyService {
     // 3. Calcular balanços setoriais incluindo comércio
     this.calculateSectoralBalances(roomName, countryName, economy);
     
-    // 4. CRESCIMENTO APLICADO
+    // 4. Crescimento aplicado
     const crescimento = calculateAdvancedGrowth(economy);
     
     economy.gdp *= (1 + crescimento);
@@ -315,21 +309,19 @@ class EconomyService {
       const oldGdpGrowth = economy.gdpGrowth;
       economy.gdpGrowth = ((economy.gdp - economy._lastQuarterGdp) / economy._lastQuarterGdp) * 100;
       economy._lastQuarterGdp = economy.gdp;
-      
-      // console.log(`[GROWTH] ${countryName}: GDP Growth updated from ${oldGdpGrowth.toFixed(2)}% to ${economy.gdpGrowth.toFixed(2)}% (cycle ${economy._cycleCount})`);
     }
     
-    // 5. Aplicar cálculos básicos DELEGADOS (aplicação direta)
+    // 5. Aplicar cálculos básicos DELEGADOS
     economy.inflation = calculateDynamicInflation(economy);
     economy.unemployment = calculateDynamicUnemployment(economy);
     economy.popularity = calculateDynamicPopularity(economy);
     economy.creditRating = calculateCreditRating(economy);
     
-    // 6. ===== CAIXA ATUALIZADO COMO NO economy-game.js =====
-    // Arrecadação via impostos - CÓPIA EXATA do economy-game.js
+    // 6. Caixa Atualizado
+    // Arrecadação via impostos 
     const arrecadacao = economy.gdp * (economy.taxBurden / 100) * 0.017;
     
-    // Gastos com investimento público - CÓPIA EXATA do economy-game.js
+    // Gastos com investimento público
     let gastoInvestimento = 0;
     
     if (economy.publicServices > 0) {
@@ -345,15 +337,15 @@ class EconomyService {
       }
     }
     
-    // Atualizar caixa - CÓPIA EXATA do economy-game.js
+    // Atualizar caixa
     economy.treasury += arrecadacao - gastoInvestimento;
     
-    // ===== NOVA CORREÇÃO: VERIFICAR TESOURO A CADA CICLO =====
+    // VERIFICAR TESOURO A CADA CICLO
     if (economy.treasury <= 0) {
         const shortfall = Math.abs(economy.treasury);
         economy.treasury = 0;
         
-        // CORREÇÃO: Verificar se já foi emitido neste ciclo
+        // Verificar se já foi emitido neste ciclo
         const cycleKey = `emergency_${countryName}_${roomName}_${economy._cycleCount}`;
         if (!this.emergencyBondsIssued) {
           this.emergencyBondsIssued = new Set();
@@ -369,11 +361,11 @@ class EconomyService {
             oldEntries.forEach(entry => this.emergencyBondsIssued.delete(entry));
           }
           
-          // CORREÇÃO: Usar função que retorna dados em vez de flag
+          // Usar função que retorna dados em vez de flag
           const emergencyBondInfo = issueEmergencyBonds(economy, shortfall);
           
           if (emergencyBondInfo) {
-            // CORREÇÃO: Criar contrato de dívida emergencial
+            // Criar contrato de dívida emergencial
             const emergencyContract = this.createEmergencyDebtContract(
               roomName, 
               countryName, 
@@ -381,26 +373,24 @@ class EconomyService {
               emergencyBondInfo.rate
             );
             
-            // CORREÇÃO: Atualizar tesouro e dívida através do contrato
+            // Atualizar tesouro e dívida através do contrato
             economy.treasury += emergencyBondInfo.amount;
             economy.publicDebt += emergencyBondInfo.amount;
             
-            // CORREÇÃO: Notificar cliente apenas uma vez
+            // Notificar cliente apenas uma vez
             this.notifyEmergencyBondIssued(roomName, countryName, emergencyBondInfo);
-            
-            // console.log(`[EMERGENCY] Contract ${emergencyContract.id} created for ${countryName}: ${emergencyBondInfo.amount} bi USD at ${emergencyBondInfo.rate.toFixed(2)}%`);
           }
         }
       }
     
-    // 7. ===== EFEITO DA INFLAÇÃO NO PIB - COMO NO economy-game.js =====
+    // 7. EFEITO DA INFLAÇÃO NO PIB
     if (economy.inflation > 0.1) {
       const excesso = economy.inflation - 0.1;
       const fatorPenalidade = 0.9998 - (excesso * 0.001);
       economy.gdp *= Math.max(0.9995, fatorPenalidade);
     }
     
-    // 8. Processamento mensal das dívidas - COMO NO economy-game.js
+    // 8. Processamento mensal das dívidas 
     if (economy._cycleCount % SYNC_CONFIG.MONTHLY_CYCLE === 0) {
       const countryKey = `${countryName}:${roomName}`;
       const debtContracts = this.debtContracts.get(countryKey) || [];
@@ -410,33 +400,18 @@ class EconomyService {
         const contractsBeforePayment = [...debtContracts]; // Cópia para comparação
         const contractsCountBefore = debtContracts.length;
         
-        // console.log(`[DEBT] ${countryName}: Processando ${contractsCountBefore} contratos no ciclo ${economy._cycleCount}`);
-        
-        // Log detalhado antes do pagamento
-        debtContracts.forEach((contract, index) => {
-          // console.log(`[DEBT] Contrato ${contract.id} antes: Valor=${contract.remainingValue.toFixed(2)}, Parcelas=${contract.remainingInstallments}`);
-        });
-        
-        // ===== USAR PROCESSAMENTO MENSAL COMPLETO (cycleFactor = 1) =====
-        const totalPayment = processDeptPayments(economy, debtContracts, 1.0); // GARANTIR cycleFactor = 1
-        
-        // Log detalhado após o pagamento
-        // debtContracts.forEach((contract, index) => {
-        //   console.log(`[DEBT] Contrato ${contract.id} depois: Valor=${contract.remainingValue.toFixed(2)}, Parcelas=${contract.remainingInstallments}`);
-        // });
+        // USAR PROCESSAMENTO MENSAL COMPLETO (cycleFactor = 1)
+        const totalPayment = processDebtPayments(economy, debtContracts, 1.0); // GARANTIR cycleFactor = 1
         
         // Filtrar contratos ativos (remainingInstallments > 0)
         const activeContracts = debtContracts.filter(contract => contract.remainingInstallments > 0);
         const contractsCountAfter = activeContracts.length;
         const contractsCompleted = contractsCountBefore - contractsCountAfter;
         
-        // ===== ATUALIZAR ARRAY DE CONTRATOS =====
+        // ATUALIZAR ARRAY DE CONTRATOS 
         this.debtContracts.set(countryKey, activeContracts);
         
-        // Log do resultado
-        // console.log(`[DEBT] ${countryName}: Pagamento total=${totalPayment.toFixed(2)}, Contratos quitados=${contractsCompleted}, Ativos restantes=${contractsCountAfter}`);
-        
-        // ===== NOTIFICAÇÃO DETALHADA =====
+        // NOTIFICAÇÃO DETALHADA 
         if (totalPayment > 0 || contractsCompleted > 0) {
           this.notifyDebtContractsUpdated(roomName, countryName, {
             contractsCompleted,
@@ -444,7 +419,7 @@ class EconomyService {
             totalRemainingDebt: activeContracts.reduce((sum, contract) => sum + contract.remainingValue, 0),
             totalPayment,
             cycle: economy._cycleCount,
-            // ===== NOVO: Incluir detalhes dos contratos atualizados =====
+            // Detalhes dos contratos atualizados
             contractDetails: activeContracts.map(contract => ({
               id: contract.id,
               remainingValue: contract.remainingValue,
@@ -456,13 +431,13 @@ class EconomyService {
       }
     }
       
-    // 9. Processamento mensal para variações setoriais - COMO NO economy-game.js
+    // 9. Processamento mensal para variações setoriais - 
     if (economy._cycleCount % SYNC_CONFIG.MONTHLY_CYCLE === 0) {
       // Atualizar históricos
       this.updateHistoricalData(economy);
     }
     
-    // Atualizar valores absolutos das necessidades - COMO NO economy-game.js
+    // Atualizar valores absolutos das necessidades - 
     economy.commoditiesNeeds = economy.gdp * (economy._commoditiesNeedsBasePercent / 100);
     economy.manufacturesNeeds = economy.gdp * (economy._manufacturesNeedsBasePercent / 100);
     
@@ -472,7 +447,7 @@ class EconomyService {
 
 
   /**
-   * NOVA FUNÇÃO: Notifica cliente sobre atualização de contratos de dívida
+   * Notifica cliente sobre atualização de contratos de dívida
    * @param {string} roomName - Nome da sala
    * @param {string} countryName - Nome do país
    * @param {Object} updateInfo - Informações da atualização
@@ -572,7 +547,7 @@ class EconomyService {
   }
 
   // ========================================================================
-  // SISTEMA DE DÍVIDA (PRESERVADO)
+  // SISTEMA DE DÍVIDA
   // ========================================================================
 
   issueDebtBonds(roomName, countryName, bondAmount) {
@@ -583,23 +558,16 @@ class EconomyService {
     return this.debt.createInitialDebtContracts(countryName, countryState, totalDebt);
   }
 
-  calculateMonthlyPayment(principal, annualRate, months) {
-    return this.debt.calculateMonthlyPayment(principal, annualRate, months);
-  }
-
- getDebtSummary(roomName, countryName) {
+  getDebtSummary(roomName, countryName) {
     const countryKey = `${countryName}:${roomName}`;
     const contracts = this.debtContracts.get(countryKey) || [];
     const countryState = this.getCountryState(roomName, countryName);
     const economy = countryState?.economy || {};
     
-    // ===== FILTRAR APENAS CONTRATOS ATIVOS =====
+    // FILTRAR APENAS CONTRATOS ATIVOS 
     const activeContracts = contracts.filter(contract => 
       contract.remainingInstallments > 0 && contract.remainingValue > 0.01
     );
-    
-    // ===== LOG PARA DEBUG =====
-    // console.log(`[DEBT SUMMARY] ${countryName}: ${activeContracts.length} contratos ativos de ${contracts.length} totais`);
     
     if (activeContracts.length === 0) {
       return {
@@ -608,7 +576,7 @@ class EconomyService {
         totalFuturePayments: 0,
         numberOfContracts: 0,
         contracts: [],
-        debtRecords: [], // ===== GARANTIR AMBOS OS CAMPOS =====
+        debtRecords: [],
         economicData: {
           gdp: economy.gdp || 0,
           treasury: economy.treasury || 0,
@@ -651,7 +619,7 @@ class EconomyService {
   }
 
   // ========================================================================
-  // ATUALIZAÇÃO DE PARÂMETROS ECONÔMICOS (PRESERVADO)
+  // ATUALIZAÇÃO DE PARÂMETROS ECONÔMICOS
   // ========================================================================
 
   updateEconomicParameter(roomName, countryName, parameter, value) {
@@ -699,7 +667,7 @@ class EconomyService {
   }
 
   // ========================================================================
-  // ACORDOS COMERCIAIS (PRESERVADO)
+  // ACORDOS COMERCIAIS
   // ========================================================================
 
   createTradeAgreement(roomName, agreementData) {
@@ -711,7 +679,7 @@ class EconomyService {
   }
 
   // ========================================================================
-  // ATUALIZAÇÕES PERIÓDICAS (PRESERVADO)
+  // ATUALIZAÇÕES PERIÓDICAS
   // ========================================================================
 
   startPeriodicUpdates() {
@@ -770,11 +738,6 @@ class EconomyService {
         });
       }
     }
-    
-    // Log ocasional do status dos cálculos delegados
-    // if (Math.random() < 0.01) { // 1% de chance
-    //   console.log(`[ECONOMY] Delegated calculations updated ${updatedCountries} countries`);
-    // }
   }
 
   // ========================================================================
@@ -787,14 +750,6 @@ class EconomyService {
     
     // DELEGADO: Usar função de economicCalculations.js
     debugAdvancedEconomicCalculations(countryName, countryState.economy);
-  }
-
-  validateAdvancedCalculations(roomName, countryName) {
-    const countryState = this.getCountryState(roomName, countryName);
-    if (!countryState) return { valid: false, errors: ['Country state not found'] };
-    
-    // DELEGADO: Usar função de economicCalculations.js
-    return validateEconomicCalculations(countryState.economy);
   }
 
   emergencyResetCountry(roomName, countryName) {
@@ -812,7 +767,7 @@ class EconomyService {
   }
 
   // ========================================================================
-  // PERSISTÊNCIA (PRESERVADO)
+  // PERSISTÊNCIA
   // ========================================================================
 
   async saveToRedis() {
@@ -825,7 +780,6 @@ class EconomyService {
       };
       
       await redis.set('economy_service_data', JSON.stringify(data));
-      // console.log(`[ECONOMY] Delegated data saved to Redis - ${this.debtContracts.size} debt contracts, ${this.countryStates.size} rooms`);
     } catch (error) {
       console.error('[ECONOMY] Error saving to Redis:', error);
     }
@@ -850,8 +804,6 @@ class EconomyService {
             }
           }
         }
-        
-        // console.log(`[ECONOMY] Delegated calculations loaded from Redis: ${this.countryStates.size} rooms, ${this.debtContracts.size} debt contracts`);
       }
     } catch (error) {
       console.error('[ECONOMY] Error loading from Redis:', error);
@@ -859,7 +811,7 @@ class EconomyService {
   }
 
   // ========================================================================
-  // CLEANUP (PRESERVADO)
+  // CLEANUP
   // ========================================================================
 
 removeRoom(roomName) {
@@ -890,16 +842,14 @@ removeRoom(roomName) {
     this.stopPeriodicUpdates();
     this.saveToRedis();
     
-    // CORREÇÃO: Limpar controle de títulos emergenciais
+    // Limpar controle de títulos emergenciais
     if (this.emergencyBondsIssued) {
       this.emergencyBondsIssued.clear();
     }
-    
-    // console.log('[ECONOMY] EconomyService cleanup completed - all delegated calculations stopped');
   }
 
   // ========================================================================
-  // MÉTODOS DE COMPATIBILIDADE (PRESERVADOS)
+  // MÉTODOS DE COMPATIBILIDADE
   // ========================================================================
 
   /**

@@ -1,5 +1,5 @@
 /**
- * economicCalculations.js - CORRIGIDO para ficar igual aos arquivos economy-*.js
+ * economicCalculations.js
  * Implementação baseada nos arquivos anexados que funcionam corretamente
  */
 
@@ -7,7 +7,7 @@ import { ECONOMIC_CONSTANTS } from './economicConstants.js';
 import { getNumericValue, limitarComCurva } from './economicUtils.js';
 
 /**
- * Calcula o crescimento econômico - BASEADO NO economy-game.js que funciona
+ * Calcula o crescimento econômico
  * @param {Object} economy - Estado econômico
  * @returns {number} - Taxa de crescimento para aplicação direta (como decimal)
  */
@@ -15,7 +15,7 @@ export function calculateAdvancedGrowth(economy) {
   const taxaEquilibrioJuros = 8.0;
   const diferencaJuros = economy.interestRate - taxaEquilibrioJuros;
   
-  // Efeito dos juros no crescimento - EXATO do economy-game.js
+  // Efeito dos juros no crescimento
   let efeitoJuros;
   if (economy.interestRate <= 10) {
     efeitoJuros = -diferencaJuros * 0.0002;
@@ -24,11 +24,11 @@ export function calculateAdvancedGrowth(economy) {
     efeitoJuros = -(diferencaJuros * 0.0002) - (Math.pow(jurosExcesso, 1.5) * 0.0001);
   }
   
-  // Efeito dos impostos no crescimento - EXATO do economy-game.js
+  // Efeito dos impostos no crescimento
   const diferencaImposto = economy.taxBurden - 40;
   const efeitoImposto = -diferencaImposto * 0.00015;
   
-  // Efeito do investimento público no crescimento - EXATO do economy-game.js
+  // Efeito do investimento público no crescimento
   let efeitoInvestimento = 0;
   if (economy.publicServices >= 30) {
     efeitoInvestimento = economy.publicServices * 0.0001;
@@ -38,7 +38,7 @@ export function calculateAdvancedGrowth(economy) {
     efeitoInvestimento = economy.publicServices * 0.0001 * fatorPenalidade;
   }
   
-  // Efeito da dívida pública na confiança dos investidores - EXATO do economy-game.js
+  // Efeito da dívida pública na confiança dos investidores
   let efeitoDivida = 0;
   const dividaPIB = economy.publicDebt / economy.gdp;
   if (dividaPIB > 0.9) {
@@ -51,12 +51,11 @@ export function calculateAdvancedGrowth(economy) {
   
   const crescimentoBase = efeitoJuros + efeitoImposto + efeitoInvestimento + efeitoDivida + tradeEffect;
   
-  // APLICAÇÃO EXATA do economy-game.js - sem modificação adicional
   return crescimentoBase * 0.061;
 }
 
 /**
- * Calcula a inflação dinâmica - BASEADO NO economy-game.js
+ * Calcula a inflação dinâmica
  * @param {Object} economy - Estado econômico
  * @returns {number} - Nova taxa de inflação
  */
@@ -65,7 +64,7 @@ export function calculateDynamicInflation(economy) {
   const taxaEquilibrioImposto = 40.0;
   let novaInflacao = economy.inflation || ECONOMIC_CONSTANTS.EQUILIBRIUM_INFLATION;
   
-  // CÓPIA EXATA do economy-game.js - Efeito dos juros na inflação
+  // Efeito dos juros na inflação
   if (economy.interestRate < taxaEquilibrioJuros) {
     const fatorAumento = 1 + ((taxaEquilibrioJuros - economy.interestRate) * 0.03);
     novaInflacao *= fatorAumento;
@@ -84,7 +83,7 @@ export function calculateDynamicInflation(economy) {
     }
   }
   
-  // CÓPIA EXATA do economy-game.js - Efeito dos impostos na inflação
+  // Efeito dos impostos na inflação
   if (economy.taxBurden > taxaEquilibrioImposto) {
     const fatorReducao = 1 - ((economy.taxBurden - taxaEquilibrioImposto) * 0.003);
     novaInflacao *= Math.max(0.96, fatorReducao);
@@ -93,7 +92,7 @@ export function calculateDynamicInflation(economy) {
     novaInflacao *= fatorAumento;
   }
   
-  // CÓPIA EXATA do economy-game.js - Efeito do crescimento econômico na inflação
+  // Efeito do crescimento econômico na inflação
   const crescimentoEquilibrio = 0.02;
   const gdpGrowth = (economy.gdpGrowth || 0) / 100; // Converter percentual para decimal
   
@@ -107,14 +106,14 @@ export function calculateDynamicInflation(economy) {
     novaInflacao -= Math.abs(gdpGrowth) * 0.025;
   }
   
-  // CÓPIA EXATA do economy-game.js - Efeito da dívida pública na inflação estrutural
+  // Efeito da dívida pública na inflação estrutural
   const dividaPIB = economy.publicDebt / economy.gdp;
   if (dividaPIB > 0.7) {
     const excessoDivida = dividaPIB - 0.7;
     novaInflacao += excessoDivida * 0.02;
   }
   
-  // CÓPIA EXATA do economy-game.js - Variação aleatória e inércia inflacionária
+  // Variação aleatória e inércia inflacionária
   const variacaoAleatoria = (Math.random() - 0.5) * 0.0005;
   novaInflacao += variacaoAleatoria;
   novaInflacao = economy.inflation * 0.8 + novaInflacao * 0.2;
@@ -126,14 +125,14 @@ export function calculateDynamicInflation(economy) {
 }
 
 /**
- * Calcula o desemprego dinâmico - BASEADO NO economy-game.js
+ * Calcula o desemprego dinâmico
  * @param {Object} economy - Estado econômico
  * @returns {number} - Nova taxa de desemprego
  */
 export function calculateDynamicUnemployment(economy) {
   let novoDesemprego = economy.unemployment || 12.5;
   
-  // CÓPIA EXATA do economy-game.js - Efeito do crescimento no desemprego
+  // Efeito do crescimento no desemprego
   const gdpGrowth = (economy.gdpGrowth || 0) / 100; // Converter percentual para decimal
   
   if (gdpGrowth > 0) {
@@ -144,7 +143,7 @@ export function calculateDynamicUnemployment(economy) {
     novoDesemprego += Math.abs(gdpGrowth) * 8;
   }
   
-  // CÓPIA EXATA do economy-game.js - Efeito da inflação no desemprego (curva de Phillips)
+  // Efeito da inflação no desemprego (curva de Phillips)
   if (economy.inflation < 0.05) {
     // Inflação baixa tende a manter desemprego alto
     novoDesemprego += (0.05 - economy.inflation) * 2;
@@ -156,29 +155,29 @@ export function calculateDynamicUnemployment(economy) {
     novoDesemprego -= (economy.inflation - 0.05) * 1;
   }
   
-  // CÓPIA EXATA do economy-game.js - Efeito dos impostos no desemprego
+  // Efeito dos impostos no desemprego
   const impostoReferencia = 40;
   if (economy.taxBurden > impostoReferencia) {
     // Impostos altos podem aumentar desemprego
     novoDesemprego += (economy.taxBurden - impostoReferencia) * 0.05;
   }
   
-  // CÓPIA EXATA do economy-game.js - Limites para a taxa de desemprego (entre 3% e 40%)
+  // Limites para a taxa de desemprego (entre 3% e 40%)
   novoDesemprego = Math.max(3, Math.min(40, novoDesemprego));
   
-  // CÓPIA EXATA do economy-game.js - Inércia do desemprego (não muda muito rapidamente)
+  // Inércia do desemprego (não muda muito rapidamente)
   return economy.unemployment * 0.9 + novoDesemprego * 0.1;
 }
 
 /**
- * Calcula a popularidade dinâmica - BASEADO NO economy-game.js
+ * Calcula a popularidade dinâmica
  * @param {Object} economy - Estado econômico
  * @returns {number} - Nova taxa de popularidade
  */
 export function calculateDynamicPopularity(economy) {
   let novaPopularidade = economy.popularity || 50;
   
-  // CÓPIA EXATA do economy-game.js - Efeito do crescimento na popularidade
+  // Efeito do crescimento na popularidade
   const gdpGrowth = (economy.gdpGrowth || 0) / 100; // Converter percentual para decimal
   
   if (gdpGrowth > 0) {
@@ -187,7 +186,7 @@ export function calculateDynamicPopularity(economy) {
     novaPopularidade += gdpGrowth * 100 * 0.3;
   }
   
-  // CÓPIA EXATA do economy-game.js - Efeito da inflação na popularidade
+  // Efeito da inflação na popularidade
   const inflacaoIdeal = 0.04;
   const diferencaInflacao = economy.inflation - inflacaoIdeal;
   if (diferencaInflacao > 0) {
@@ -196,7 +195,7 @@ export function calculateDynamicPopularity(economy) {
     novaPopularidade += Math.abs(diferencaInflacao) * 100 * 0.1;
   }
   
-  // CÓPIA EXATA do economy-game.js - Efeito dos impostos na popularidade
+  // Efeito dos impostos na popularidade
   const impostoIdeal = 40;
   const diferencaImposto = economy.taxBurden - impostoIdeal;
   if (diferencaImposto > 0) {
@@ -205,13 +204,13 @@ export function calculateDynamicPopularity(economy) {
     novaPopularidade += Math.abs(diferencaImposto) * 0.1;
   }
   
-  // CÓPIA EXATA do economy-game.js - Efeito do investimento público na popularidade
+  // Efeito do investimento público na popularidade
   const investimentoReferencia = 30;
   const difInvestimento = economy.publicServices - investimentoReferencia;
   const taxaResposta = Math.tanh(difInvestimento / 10) * 0.8;
   novaPopularidade += taxaResposta * Math.abs(difInvestimento) * 0.15;
   
-  // CÓPIA EXATA do economy-game.js - Efeito do desemprego na popularidade
+  // Efeito do desemprego na popularidade
   if (economy.unemployment !== undefined) {
     const desempregoIdeal = 15;
     const diferencaDesemprego = economy.unemployment - desempregoIdeal;
@@ -226,14 +225,14 @@ export function calculateDynamicPopularity(economy) {
       novaPopularidade += Math.abs(diferencaDesemprego) * 0.3;
     }
     
-    // CÓPIA EXATA do economy-game.js - Efeito combinado de desemprego alto + inflação alta (miséria econômica)
+    // Efeito combinado de desemprego alto + inflação alta (miséria econômica)
     if (economy.unemployment > 30 && economy.inflation > 0.08) {
       const indiceMiseria = (economy.unemployment - 30) * (economy.inflation - 0.08) * 100;
       novaPopularidade -= indiceMiseria * 0.2;
     }
   }
   
-  // CÓPIA EXATA do economy-game.js - Variação aleatória
+  // Variação aleatória
   const variacaoAleatoria = (Math.random() - 0.5) * 0.5;
   novaPopularidade += variacaoAleatoria;
   
@@ -267,7 +266,7 @@ export function calculateDynamicPopularity(economy) {
     novaPopularidade = popularidadeAtual + ganhoReduzido;
   }
   
-  // CÓPIA EXATA do economy-game.js - Força de retorno para o equilíbrio (50%)
+  // Força de retorno para o equilíbrio (50%)
   const distanciaDe50 = Math.abs(novaPopularidade - 50);
   const forcaDeRetorno = distanciaDe50 * distanciaDe50 * 0.002;
   
@@ -277,14 +276,14 @@ export function calculateDynamicPopularity(economy) {
     novaPopularidade += forcaDeRetorno;
   }
   
-  // CÓPIA EXATA do economy-game.js - Limite entre 1% e 99%
+  // Limite entre 1% e 99%
   novaPopularidade = Math.max(1, Math.min(99, novaPopularidade));
   
   return novaPopularidade;
 }
 
 /**
- * Calcula o rating de crédito - BASEADO NO economy-game.js
+ * Calcula o rating de crédito
  * @param {Object} economy - Estado econômico
  * @returns {string} - Rating de crédito
  */
@@ -293,7 +292,7 @@ export function calculateCreditRating(economy) {
   const inflacao = (economy.inflation || ECONOMIC_CONSTANTS.EQUILIBRIUM_INFLATION) * 100;
   const crescimentoTrimestral = (economy.gdpGrowth || 0); // Já em percentual
   
-  // CÓPIA EXATA do economy-game.js - Determinação da nota base com base APENAS na inflação
+  // Determinação da nota base com base APENAS na inflação
   let notaBase;
   
   if (inflacao <= 2) {
@@ -316,7 +315,7 @@ export function calculateCreditRating(economy) {
     notaBase = "C";
   }
   
-  // CÓPIA EXATA do economy-game.js - Ajuste pela dívida e crescimento
+  // Ajuste pela dívida e crescimento
   const niveis = ["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "CC", "C", "D"];
   let indiceNota = niveis.indexOf(notaBase);
   
@@ -348,7 +347,7 @@ export function calculateCreditRating(economy) {
     }
   }
   
-  // Casos especiais - CÓPIA EXATA do economy-game.js
+  // Casos especiais
   if (inflacao > 15 && economy._historicInflation && economy._historicInflation.length >= 3) {
     const ultimas3 = economy._historicInflation.slice(-3).map(i => i * 100);
     if (ultimas3[2] > ultimas3[0] || Math.abs(ultimas3[2] - ultimas3[1]) > 2) {
@@ -365,64 +364,16 @@ export function calculateCreditRating(economy) {
 }
 
 /**
- * Função principal CORRIGIDA - aplicação direta como no economy-game.js
- * @param {Object} economy - Estado econômico
- * @param {Array} debtContracts - Contratos de dívida (opcional)
- * @param {Object} options - Opções de processamento
- * @returns {Object} - Estado econômico atualizado
- */
-export function applyAdvancedEconomicCalculations(economy, debtContracts = [], options = {}) {
-  const {
-    cycleType = 'regular',
-    cycleFactor = 1,
-    skipGrowthCalculation = false
-  } = options;
-  
-  // [... todo o código de cálculos permanece igual ...]
-  
-  // ===== RECEITAS E GASTOS DO TESOURO - COMO NO economy-game.js =====
-  if (cycleFactor > 0) {
-    // CÓPIA EXATA do economy-game.js - calcularCaixa
-    const arrecadacao = economy.gdp * (economy.taxBurden / 100) * 0.017 * cycleFactor;
-    
-    let gastoInvestimento = 0;
-    if (economy.publicServices > 0) {
-      if (economy.publicServices <= 15) {
-        gastoInvestimento = economy.gdp * (economy.publicServices / 100) * 0.015 * cycleFactor;
-      } else {
-        const baseGasto = economy.gdp * (15 / 100) * 0.015 * cycleFactor;
-        const fatorExtra = 2.0;
-        const excedenteInvestimento = economy.publicServices - 15;
-        const gastoExcedente = economy.gdp * (excedenteInvestimento / 100) * 0.015 * fatorExtra * cycleFactor;
-        
-        gastoInvestimento = baseGasto + gastoExcedente;
-      }
-    }
-    
-    economy.treasury += arrecadacao - gastoInvestimento;
-  }
-  
-  // ===== PROCESSAMENTO DE DÍVIDAS (mantido) =====
-  if (debtContracts.length > 0 && cycleFactor > 0) {
-    processDeptPayments(economy, debtContracts, cycleFactor);
-  }
-  
-  return economy;
-}
-
-/**
  * Processa pagamentos de dívida de forma proporcional
  * @param {Object} economy - Estado econômico
  * @param {Array} debtContracts - Contratos de dívida
  * @param {number} cycleFactor - Fator do ciclo (ex: 1/60 para mensal)
  * @returns {number} - Total pago no ciclo
  */
-export function processDeptPayments(economy, debtContracts, cycleFactor = 1) {
+export function processDebtPayments(economy, debtContracts, cycleFactor = 1) {
   if (!debtContracts || debtContracts.length === 0) return 0;
   
   let totalPayment = 0;
-  let totalInterest = 0;
-  let totalPrincipal = 0;
   
   // Calcular pagamentos proporcionais
   debtContracts.forEach(contract => {
@@ -431,20 +382,18 @@ export function processDeptPayments(economy, debtContracts, cycleFactor = 1) {
       
       totalPayment += fractionalPayment;
       
-      // ===== CORREÇÃO: Desconta pagamento total do saldo devedor =====
+      // Desconta pagamento total do saldo devedor
       contract.remainingValue -= fractionalPayment;
       
-      // ===== Decrementar parcelas apenas em ciclos mensais completos =====
-      if (cycleFactor >= 1.0) { // Ciclo mensal completo
+      // Decrementar parcelas apenas em ciclos mensais completos
+      if (cycleFactor >= 1.0) { 
         contract.remainingInstallments -= 1;
-        // console.log(`[DEBT] Contrato ${contract.id}: Parcela paga. Restantes: ${contract.remainingInstallments}`);
       }
       
-      // ===== Finalizar contrato quando quitado =====
+      // Finalizar contrato quando quitado 
       if (contract.remainingValue <= 0.01 || contract.remainingInstallments <= 0) {
         contract.remainingValue = 0;
         contract.remainingInstallments = 0;
-        // console.log(`[DEBT] Contrato ${contract.id}: QUITADO!`);
       }
     }
   });
@@ -644,9 +593,7 @@ export function issueEmergencyBonds(economy, shortfall) {
       const riskPremium = calculateEmergencyRiskPremium(economy.creditRating, currentDebtToGdp);
       const effectiveRate = baseRate + riskPremium;
       
-      // console.log(`[EMERGENCY BONDS] Calculating ${limitedAmount.toFixed(2)} bi USD at ${effectiveRate.toFixed(2)}% rate (rating: ${economy.creditRating}) - AT DEBT LIMIT`);
-      
-      // CORREÇÃO: Apenas retorna informações, não aplica valores
+      // Apenas retorna informações, não aplica valores
       return {
         amount: limitedAmount,
         rate: effectiveRate,
@@ -655,14 +602,12 @@ export function issueEmergencyBonds(economy, shortfall) {
         timestamp: Date.now()
       };
     } else {
-      // console.warn(`[EMERGENCY BONDS] Cannot issue emergency bonds: already at 120% debt/GDP ratio (${(currentDebtToGdp * 100).toFixed(1)}%)`);
       return false;
     }
   }
   
   // Verificar se o rating permite emissão (rating D bloqueia emissão apenas se dívida já muito alta)
   if (economy.creditRating === 'D' && currentDebtToGdp > 1.0) {
-    // console.warn(`[EMERGENCY BONDS] Cannot issue emergency bonds: credit rating is D and debt/GDP > 100%`);
     return false;
   }
   
@@ -670,9 +615,6 @@ export function issueEmergencyBonds(economy, shortfall) {
   const baseRate = economy.interestRate || ECONOMIC_CONSTANTS.EQUILIBRIUM_INTEREST_RATE;
   const riskPremium = calculateEmergencyRiskPremium(economy.creditRating, currentDebtToGdp);
   const effectiveRate = baseRate + riskPremium;
-  
-  const finalDebtToGdp = ((economy.publicDebt + emergencyAmount) / economy.gdp) * 100;
-  // console.log(`[EMERGENCY BONDS] Calculating ${emergencyAmount.toFixed(2)} bi USD at ${effectiveRate.toFixed(2)}% rate (rating: ${economy.creditRating}) - Future Debt/GDP: ${finalDebtToGdp.toFixed(1)}%`);
   
   // CORREÇÃO: Apenas retorna informações, não aplica valores
   return {
@@ -693,7 +635,7 @@ export function issueEmergencyBonds(economy, shortfall) {
 export function calculateEmergencyRiskPremium(creditRating, debtToGdpRatio) {
   // Prêmios base para títulos de emergência (maiores que títulos normais)
   const emergencyRiskPremiums = {
-    "AAA": 1.0,   // Premium de emergência mínimo
+    "AAA": 1.0,
     "AA": 2.0,
     "A": 3.0,
     "BBB": 5.0,
@@ -702,7 +644,7 @@ export function calculateEmergencyRiskPremium(creditRating, debtToGdpRatio) {
     "CCC": 18.0,
     "CC": 25.0,
     "C": 35.0,
-    "D": 50.0     // Praticamente impossível
+    "D": 50.0
   };
   
   let premium = emergencyRiskPremiums[creditRating] || 10.0;

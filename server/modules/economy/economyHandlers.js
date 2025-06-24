@@ -352,36 +352,6 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   /**
-   * Forçar recálculo completo (apenas para desenvolvimento/debug)
-   */
-  socket.on('forceRecalculation', () => {
-    if (process.env.NODE_ENV !== 'development') {
-      socket.emit('error', 'Force recalculation only available in development');
-      return;
-    }
-
-    const username = socket.username;
-    const roomName = getCurrentRoom(socket, gameState);
-    const userCountry = getUserCountry(gameState, roomName, username);
-    
-    if (!username || !roomName || !userCountry) {
-      socket.emit('error', 'Invalid request');
-      return;
-    }
-
-    if (global.economyService && global.economyService.performAdvancedEconomicCalculations) {
-      global.economyService.performAdvancedEconomicCalculations(roomName, userCountry);
-      socket.emit('recalculationComplete', { 
-        message: 'Advanced calculations forced for country',
-        roomName,
-        countryName: userCountry
-      });
-    } else {
-      socket.emit('error', 'Force recalculation not available');
-    }
-  });
-
-  /**
    * Resetar indicadores irreais de emergência (desenvolvimento)
    */
   socket.on('emergencyResetCountry', () => {
