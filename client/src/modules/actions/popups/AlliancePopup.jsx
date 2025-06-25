@@ -16,7 +16,7 @@ const AlliancePopup = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Hook para gerenciar cooldowns (15 segundos - mesmo intervalo do comércio)
-  const { isInCooldown, getRemainingTime, startCooldown } = useActionCooldown(15000);
+  const { isInCooldown, getRemainingTime, startCooldown } = useActionCooldown(60000);
   
   // Configurar listeners de socket
   useEffect(() => {

@@ -118,41 +118,6 @@ function createProposalReceivedHandler(agreementType) {
   return (data) => {
     console.log(`📨 Proposta ${agreementType} recebida:`, data);
     
-    const { proposalId, proposal, message, originCountry } = data;
-    
-    // Usar mensagem do servidor se disponível, senão formatar localmente
-    const displayMessage = message || getProposalMessage(agreementType, proposal);
-    
-    // Mostrar notificação
-    MessageService.showInfo(displayMessage, {
-      persistent: true,
-      actions: [
-        {
-          label: 'Aceitar',
-          action: () => {
-            console.log(`✅ Aceitando proposta ${agreementType}:`, proposalId);
-            // Usar método unificado
-            store.getState().socketApi?.respondToAgreementProposal({
-              proposalId,
-              accepted: true,
-              agreementType
-            });
-          }
-        },
-        {
-          label: 'Recusar',
-          action: () => {
-            console.log(`❌ Recusando proposta ${agreementType}:`, proposalId);
-            // Usar método unificado
-            store.getState().socketApi?.respondToAgreementProposal({
-              proposalId,
-              accepted: false,
-              agreementType
-            });
-          }
-        }
-      ]
-    });
   };
 }
 
@@ -182,35 +147,6 @@ function createProposalResponseHandler(agreementType) {
       const type = accepted ? 'success' : 'warning';
       showNotificationWithCooldown(type, displayMessage);
     }, CONSTANTS.DEBOUNCE_DELAY);
-  };
-}
-
-/**
- * Factory para criar handlers de processamento de propostas unificados
- */
-function createProposalProcessedHandler(agreementType) {
-  return (response) => {
-    const { accepted, message } = response;
-    const config = AGREEMENT_MESSAGE_CONFIGS[agreementType];
-    
-    // Priorizar mensagem do servidor
-    let displayMessage;
-    if (message) {
-      displayMessage = message;
-    } else {
-      // Fallback para mensagem local
-      displayMessage = accepted ? 
-        `Você aceitou a proposta de ${config.name}.` : 
-        `Você recusou a proposta de ${config.name}.`;
-    }
-    
-    const type = accepted ? 'success' : 'warning';
-    
-    if (MessageService[type]) {
-      MessageService[type](displayMessage);
-    } else {
-      MessageService.showInfo(displayMessage);
-    }
   };
 }
 
@@ -277,18 +213,6 @@ const unifiedAgreementHandlers = {
   // Evento principal de processamento de proposta
   'agreementProposalProcessed': (response) => {
     console.log('⚙️ Processamento unificado:', response);
-    const { agreementType } = response;
-    
-    // Rotear para handler específico baseado no tipo
-    if (agreementType?.startsWith('trade-') || agreementType === 'trade') {
-      createProposalProcessedHandler('trade')(response);
-    } else if (agreementType === 'military-alliance' || agreementType === 'alliance') {
-      createProposalProcessedHandler('alliance')(response);
-    } else if (agreementType === 'strategic-cooperation' || agreementType === 'cooperation') {
-      createProposalProcessedHandler('cooperation')(response);
-    } else {
-      createProposalProcessedHandler('internal')(response);
-    }
   },
 
   // Evento principal de cancelamento
@@ -472,21 +396,18 @@ export const setupSocketEvents = (socket, socketApi) => {
 
   // COMÉRCIO - Mantidos para compatibilidade retroativa
   socket.on('tradeProposalReceived', createProposalReceivedHandler('trade'));
-  socket.on('tradeProposalResponse', createProposalResponseHandler('trade'));
-  socket.on('tradeProposalProcessed', createProposalProcessedHandler('trade'));
+  socket.on('tradeProposalResponse', createProposalResponseHandler('trade'))
   socket.on('tradeAgreementCancelled', createAgreementCancelledHandler('trade', removeTradeAgreement));
   socket.on('updateTradeAgreements', updateTradeAgreementsHandler);
 
   // ALIANÇA - Mantidos para compatibilidade retroativa
   socket.on('allianceProposalReceived', createProposalReceivedHandler('alliance'));
   socket.on('allianceProposalResponse', createProposalResponseHandler('alliance'));
-  socket.on('allianceProposalProcessed', createProposalProcessedHandler('alliance'));
   socket.on('allianceAgreementCancelled', createAgreementCancelledHandler('alliance'));
 
   // COOPERAÇÃO - Mantidos para compatibilidade retroativa
   socket.on('cooperationProposalReceived', createProposalReceivedHandler('cooperation'));
   socket.on('cooperationProposalResponse', createProposalResponseHandler('cooperation'));
-  socket.on('cooperationProposalProcessed', createProposalProcessedHandler('cooperation'));
   socket.on('cooperationAgreementCancelled', createAgreementCancelledHandler('cooperation'));
 
   // ===================================================================
@@ -539,11 +460,6 @@ export const setupSocketEvents = (socket, socketApi) => {
     if (data.countries) {
       store.dispatch(setPlayers(data.countries));
     }
-    
-    // Mostrar notificação de sucesso
-    // if (isInGamePage()) {
-    //   showNotificationWithCooldown('success', `Você entrou na sala: ${roomName}`, 4000);
-    // }
   });
   
   socket.on('roomJoinFailed', (error) => {
@@ -642,11 +558,6 @@ export const setupSocketEvents = (socket, socketApi) => {
     
     store.dispatch(setMyCountry(country));
     StorageService.set(StorageService.KEYS.MY_COUNTRY, country);
-    
-    // Mostrar notificação de sucesso
-    // if (isInGamePage()) {
-    //   showNotificationWithCooldown('success', `Você agora controla: ${country}`, 4000);
-    // }
   });
   
   socket.on('countryAssignmentFailed', (error) => {

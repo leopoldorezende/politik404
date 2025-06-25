@@ -101,42 +101,6 @@ function setupAgreementHandlers(io, socket, gameState) {
     }
   });
 
-  /**
-   * Verificar status de cooldown
-   */
-  socket.on('checkCooldownStatus', (data) => {
-    const { agreementType } = data || {};
-    
-    if (!agreementType) {
-      socket.emit('cooldownStatus', { inCooldown: false });
-      return;
-    }
-
-    try {
-      const normalizedType = mapLegacyType(agreementType);
-      const config = getAgreementTypeConfig(normalizedType);
-      
-      if (!config) {
-        socket.emit('cooldownStatus', { inCooldown: false });
-        return;
-      }
-
-      const inCooldown = agreementEngine.isInCooldown(socket.id, normalizedType, config.cooldownTime);
-      const remaining = inCooldown ? 
-        agreementEngine.getRemainingCooldown(socket.id, normalizedType, config.cooldownTime) : 0;
-
-      socket.emit('cooldownStatus', {
-        inCooldown,
-        remaining: Math.ceil(remaining / 1000),
-        type: agreementType
-      });
-
-    } catch (error) {
-      console.error('Erro ao verificar cooldown:', error);
-      socket.emit('cooldownStatus', { inCooldown: false });
-    }
-  });
-
   // =====================================================================
   // EVENTOS DE SISTEMA
   // =====================================================================
@@ -165,7 +129,6 @@ function setupAgreementHandlers(io, socket, gameState) {
    */
   socket.on('disconnect', () => {
     console.log('🧹 Cleaning up agreement data for disconnected socket:', socket.id);
-    agreementEngine.cleanupSocket(socket.id);
   });
 
   /**

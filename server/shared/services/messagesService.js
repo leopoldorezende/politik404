@@ -1,5 +1,5 @@
 // =====================================================================
-// SERVIÇO DE MENSAGENS UNIFICADO - FASE 2 EXPANDIDA
+// SERVIÇO DE MENSAGENS UNIFICADO
 // =====================================================================
 // Local: server/shared/services/messagesService.js
 
@@ -12,19 +12,14 @@ class MessagesService {
     this.initializeMessageTemplates();
   }
 
-  // =====================================================================
-  // TEMPLATES DE MENSAGEM EXPANDIDOS
-  // =====================================================================
-
   initializeMessageTemplates() {
     this.messageTemplates = {
       // =================================================================
-      // ACORDOS COMERCIAIS (MANTIDOS)
+      // ACORDOS COMERCIAIS 
       // =================================================================
       trade: {
         // Propostas
         proposalSent: (targetCountry) => `Proposta comercial enviada para ${targetCountry}`,
-        proposalReceived: (originCountry) => `${originCountry} enviou uma proposta comercial`,
         proposalAccepted: (targetCountry) => `${targetCountry} aceitou sua proposta comercial`,
         proposalRejected: (targetCountry) => `${targetCountry} recusou sua proposta comercial`,
         
@@ -44,12 +39,11 @@ class MessagesService {
       },
 
       // =================================================================
-      // ACORDOS MILITARES (MANTIDOS E EXPANDIDOS)
+      // ACORDOS MILITARES 
       // =================================================================
       alliance: {
         // Propostas
         proposalSent: (targetCountry) => `Proposta de aliança militar enviada para ${targetCountry}`,
-        proposalReceived: (originCountry) => `${originCountry} propõe uma aliança militar`,
         proposalAccepted: (targetCountry) => `${targetCountry} aceitou sua proposta de aliança`,
         proposalRejected: (targetCountry) => `${targetCountry} recusou sua proposta de aliança`,
         
@@ -68,12 +62,11 @@ class MessagesService {
       },
 
       // =================================================================
-      // COOPERAÇÃO MILITAR (MANTIDOS E EXPANDIDOS)
+      // COOPERAÇÃO MILITAR
       // =================================================================
       cooperation: {
         // Propostas
         proposalSent: (targetCountry) => `Proposta de cooperação militar enviada para ${targetCountry}`,
-        proposalReceived: (originCountry) => `${originCountry} propõe cooperação militar`,
         proposalAccepted: (targetCountry) => `${targetCountry} aceitou sua proposta de cooperação`,
         proposalRejected: (targetCountry) => `${targetCountry} recusou sua proposta de cooperação`,
         
@@ -90,88 +83,7 @@ class MessagesService {
       },
 
       // =================================================================
-      // ACORDOS INTERNOS (NOVO - FASE 2)
-      // =================================================================
-      internal: {
-        // Pactos Políticos
-        politicalPact: {
-          attemptStarted: 'Iniciando negociações para pacto político...',
-          successCreated: 'Pacto político firmado com sucesso! (+4 pontos)',
-          failedCreated: (probability) => `Falha ao formar pacto político. Chance era de ${probability}%. Tente novamente mais tarde.`,
-          alreadyActive: 'Você já possui um pacto político ativo',
-          cooldownActive: (seconds) => `Aguarde ${seconds} segundos antes de tentar novo pacto político`,
-          cancelled: 'Pacto político cancelado'
-        },
-
-        // Parcerias Empresariais
-        businessPartnership: {
-          attemptStarted: 'Iniciando negociações empresariais...',
-          successCreated: 'Parceria empresarial estabelecida! (+3 pontos)',
-          failedCreated: (probability) => `Falha ao estabelecer parceria empresarial. Chance era de ${probability}%. Tente novamente.`,
-          cooldownActive: (seconds) => `Aguarde ${seconds} segundos antes de nova tentativa empresarial`,
-          cancelled: 'Parceria empresarial encerrada'
-        },
-
-        // Controle de Mídia
-        mediaControl: {
-          attemptStarted: 'Iniciando negociações de controle midiático...',
-          successCreated: 'Controle de mídia estabelecido! (+5 pontos)',
-          failedCreated: (probability) => `Falha ao estabelecer controle de mídia. Chance era de ${probability}%. Tente mais tarde.`,
-          alreadyActive: 'Você já possui controle de mídia ativo',
-          cooldownActive: (seconds) => `Aguarde ${seconds} segundos antes de nova tentativa midiática`,
-          cancelled: 'Controle de mídia cancelado'
-        },
-
-        // Mensagens gerais para acordos internos
-        invalidType: 'Tipo de acordo interno inválido',
-        serviceUnavailable: 'Serviço de acordos internos temporariamente indisponível',
-        insufficientResources: 'Recursos insuficientes para este tipo de acordo',
-        stabilityTooLow: 'Estabilidade política insuficiente para este acordo'
-      },
-
-      // =================================================================
-      // CONFIRMAÇÕES UNIFICADAS (EXPANDIDO)
-      // =================================================================
-      confirmations: {
-        trade: {
-          created: 'Acordo comercial criado com sucesso',
-          cancelled: 'Acordo comercial cancelado',
-          updated: 'Acordo comercial atualizado'
-        },
-        alliance: {
-          created: 'Aliança militar estabelecida',
-          cancelled: 'Aliança militar dissolvida',
-          updated: 'Aliança militar atualizada'
-        },
-        cooperation: {
-          created: 'Cooperação militar estabelecida',
-          cancelled: 'Cooperação militar encerrada',
-          updated: 'Cooperação militar atualizada'
-        },
-        internal: {
-          created: (type) => `${this.getInternalTypeName(type)} criado com sucesso`,
-          cancelled: (type) => `${this.getInternalTypeName(type)} cancelado`,
-          failed: (type) => `Falha ao criar ${this.getInternalTypeName(type)}`
-        }
-      },
-
-      // =================================================================
-      // COOLDOWNS EXPANDIDOS
-      // =================================================================
-      cooldowns: {
-        comercial: (seconds) => `Aguarde ${seconds} segundos antes de uma nova proposta comercial`,
-        militar: (seconds) => `Aguarde ${seconds} segundos antes de uma nova proposta militar`,
-        interno: (seconds) => `Aguarde ${seconds} segundos antes de uma nova tentativa interna`,
-        alliance: (seconds) => `Aguarde ${seconds} segundos antes de uma nova proposta de aliança`,
-        cooperation: (seconds) => `Aguarde ${seconds} segundos antes de uma nova proposta de cooperação`,
-        political: (seconds) => `Aguarde ${seconds} segundos antes de novo pacto político`,
-        business: (seconds) => `Aguarde ${seconds} segundos antes de nova parceria empresarial`,
-        media: (seconds) => `Aguarde ${seconds} segundos antes de novo controle de mídia`,
-        generic: (seconds) => `Aguarde ${seconds} segundos antes de uma nova ação`
-      },
-
-      // =================================================================
-      // MENSAGENS DE ERRO GERAIS (EXPANDIDO)
+      // MENSAGENS DE ERRO GERAIS 
       // =================================================================
       errors: {
         invalidRequest: 'Solicitação inválida - dados insuficientes',
@@ -206,7 +118,7 @@ class MessagesService {
   }
 
   // =====================================================================
-  // MÉTODOS PARA ACORDOS COMERCIAIS (MANTIDOS)
+  // MÉTODOS PARA ACORDOS COMERCIAIS 
   // =====================================================================
 
   getTradeMessage(messageType, data = null) {
@@ -215,7 +127,7 @@ class MessagesService {
   }
 
   // =====================================================================
-  // MÉTODOS PARA ACORDOS MILITARES (MANTIDOS)
+  // MÉTODOS PARA ACORDOS MILITARES 
   // =====================================================================
 
   getAllianceMessage(messageType, data = null) {
@@ -227,12 +139,7 @@ class MessagesService {
     const template = this.messageTemplates.cooperation[messageType];
     return typeof template === 'function' ? template(data) : template;
   }
-
-  // =====================================================================
-  // MÉTODOS DIVERSOS
-  // =====================================================================
-
-
+  
   /**
    * Obter nome amigável para tipos internos
    */
@@ -245,15 +152,6 @@ class MessagesService {
     return names[type] || 'Acordo Interno';
   }
 
-  /**
-   * Obter mensagens de cooldown
-   */
-  getCooldownMessage(type, seconds) {
-    const template = this.messageTemplates.cooldowns[type] || this.messageTemplates.cooldowns.generic;
-    return template(seconds);
-  }
-
-
   // =====================================================================
   // MÉTODOS UTILITÁRIOS
   // =====================================================================
@@ -263,52 +161,45 @@ class MessagesService {
    */
   createProposalResponse(agreementType, accepted, targetCountry, proposalId) {
     const messageType = accepted ? 'proposalAccepted' : 'proposalRejected';
-    let message;
-
-    // Mapear tipos unificados para métodos de mensagem
-    if (agreementType.startsWith('trade') || agreementType === 'trade') {
-      message = this.getTradeMessage(messageType, targetCountry);
-    } else if (agreementType === 'alliance' || agreementType === 'military-alliance') {
-      message = this.getAllianceMessage(messageType, targetCountry);
-    } else if (agreementType === 'cooperation' || agreementType === 'strategic-cooperation') {
-      message = this.getCooperationMessage(messageType, targetCountry);
-    } else {
-      message = accepted ? 'Proposta aceita!' : 'Proposta rejeitada.';
-    }
-
+    
     return {
-      proposalId,
       accepted,
       targetCountry,
-      message
+      proposalId,
+      message: this.getMessageByType(agreementType, messageType, targetCountry)
     };
   }
 
   /**
-   * Criar resposta padronizada para processamento de proposta
+   * Criar resposta para proposta processada
    */
   createProcessedResponse(agreementType, accepted) {
     const messageType = accepted ? 'responseAccepted' : 'responseRejected';
-    let message;
-
-    if (agreementType.startsWith('trade') || agreementType === 'trade') {
-      message = this.getTradeMessage(messageType);
-    } else if (agreementType === 'alliance' || agreementType === 'military-alliance') {
-      message = this.getAllianceMessage(messageType);
-    } else if (agreementType === 'cooperation' || agreementType === 'strategic-cooperation') {
-      message = this.getCooperationMessage(messageType);
-    } else {
-      message = accepted ? 'Você aceitou a proposta.' : 'Você recusou a proposta.';
-    }
-
-    return { accepted, message };
+    
+    return {
+      accepted,
+      message: this.getMessageByType(agreementType, messageType)
+    };
   }
 
+  /**
+   * Obter mensagem por tipo de acordo
+   */
+  getMessageByType(agreementType, messageType, data = null) {
+    const typeMap = {
+      'trade': 'getTradeMessage',
+      'alliance': 'getAllianceMessage', 
+      'cooperation': 'getCooperationMessage'
+    };
+    
+    const methodName = typeMap[agreementType];
+    if (methodName && this[methodName]) {
+      return this[methodName](messageType, data);
+    }
+    
+    return 'Mensagem não encontrada';
+  }
 }
-
-// =====================================================================
-// EXPORTAR INSTÂNCIA SINGLETON
-// =====================================================================
 
 const messagesService = new MessagesService();
 export default messagesService;

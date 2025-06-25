@@ -241,7 +241,6 @@ export const AGREEMENT_TYPES = {
     points: 1,
     validation: validateTradeAgreement,
     creation: createTradeAgreement,
-    cooldownTime: 60000, // 1 minuto
     maxActive: null, // Sem limite
     aiAcceptanceRate: 0.6,
     description: 'Acordo de importação comercial'
@@ -254,7 +253,6 @@ export const AGREEMENT_TYPES = {
     points: 1,
     validation: validateTradeAgreement,
     creation: createTradeAgreement,
-    cooldownTime: 60000, // 1 minuto
     maxActive: null, // Sem limite
     aiAcceptanceRate: 0.6,
     description: 'Acordo de exportação comercial'
@@ -270,7 +268,6 @@ export const AGREEMENT_TYPES = {
     points: 5,
     validation: validateMilitaryAgreement,
     creation: createMilitaryAgreement,
-    cooldownTime: 120000, // 2 minutos
     maxActive: 1, // Apenas uma aliança por vez
     aiAcceptanceRate: 0.4,
     description: 'Aliança militar estratégica'
@@ -283,7 +280,6 @@ export const AGREEMENT_TYPES = {
     points: 3,
     validation: validateCooperationAgreement,
     creation: createCooperationAgreement,
-    cooldownTime: 60000, // 1 minuto
     maxActive: null, // Sem limite
     aiAcceptanceRate: 0.6,
     description: 'Cooperação militar estratégica'
@@ -299,7 +295,6 @@ export const AGREEMENT_TYPES = {
     points: 4,
     validation: validateInternalAgreement,
     creation: createInternalAgreement,
-    cooldownTime: 300000, // 5 minutos
     maxActive: 1, // Apenas um pacto político por vez
     aiAcceptanceRate: 1.0, // Sempre aceito (interno)
     description: 'Pacto político interno',
@@ -313,7 +308,6 @@ export const AGREEMENT_TYPES = {
     points: 3,
     validation: validateInternalAgreement,
     creation: createInternalAgreement,
-    cooldownTime: 240000, // 4 minutos
     maxActive: null, // Sem limite
     aiAcceptanceRate: 1.0,
     description: 'Parceria empresarial',
@@ -327,7 +321,6 @@ export const AGREEMENT_TYPES = {
     points: 5,
     validation: validateInternalAgreement,
     creation: createInternalAgreement,
-    cooldownTime: 360000, // 6 minutos
     maxActive: 1, // Apenas um controle de mídia por vez
     aiAcceptanceRate: 1.0,
     description: 'Controle de mídia',

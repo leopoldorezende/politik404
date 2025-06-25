@@ -38,7 +38,6 @@ export const SOCKET_EVENTS = {
   RESPOND_AGREEMENT_PROPOSAL: 'socket/respondToAgreementProposal',
   CANCEL_AGREEMENT: 'socket/cancelAgreement',
   GET_ACTIVE_AGREEMENTS: 'socket/getActiveAgreements',
-  CHECK_COOLDOWN_STATUS: 'socket/checkCooldownStatus',
   ATTEMPT_INTERNAL_AGREEMENT: 'socket/attemptInternalAgreement'
 };
 
@@ -278,14 +277,6 @@ export const socketApi = {
   },
 
   /**
-   * Verificar status de cooldown para um tipo de acordo
-   */
-  checkCooldownStatus: (agreementType) => {
-    const socket = getSocketInstance() || socketApi.connect();
-    socket.emit('checkCooldownStatus', { agreementType });
-  },
-
-  /**
    * Tentar criar acordo interno (sem proposta)
    */
   attemptInternalAgreement: (type) => {
@@ -451,7 +442,6 @@ export const socketApi = {
       ],
       newMethods: [
         'sendAgreementProposal', 'respondToAgreementProposal', 'cancelAgreement',
-        'getActiveAgreements', 'checkCooldownStatus', 'attemptInternalAgreement'
       ]
     };
   },

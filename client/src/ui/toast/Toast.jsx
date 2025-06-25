@@ -13,7 +13,7 @@ const Toast = forwardRef((props, ref) => {
 
   // Expor métodos para componentes que usam a ref
   useImperativeHandle(ref, () => ({
-    show: (message, type = 'info', duration = 8000) => {
+    show: (message, type = 'info', duration = 3000) => {
       // Garantir um ID único com timestamp + valor aleatório
       const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       const newMessage = { id, text: message, type, duration };

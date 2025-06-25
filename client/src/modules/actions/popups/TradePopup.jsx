@@ -19,7 +19,7 @@ const TradePopup = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Hook para gerenciar cooldowns (15 segundos)
-  const { isInCooldown, getRemainingTime, startCooldown } = useActionCooldown(15000);
+  const { isInCooldown, getRemainingTime, startCooldown } = useActionCooldown(30000);
   
   // Configurar listeners de socket
   useEffect(() => {
@@ -73,7 +73,7 @@ const TradePopup = ({
     // Desabilitar o botão enquanto processa
     setIsSubmitting(true);
     
-    // Enviar proposta via socket - IMPORTANTE: Enviar ANTES de iniciar o cooldown
+    // Enviar proposta via socket
     socketApi.sendTradeProposal({
       type: tradeType,
       product: product,

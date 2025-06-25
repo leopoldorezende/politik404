@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addMessage, setChatMode, markAsRead } from './chatState';
+import { setChatMode, markAsRead } from './chatState';
 import { socketApi } from '../../services/socketClient';
 import './ChatPanel.css';
 

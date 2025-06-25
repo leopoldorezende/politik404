@@ -5,9 +5,7 @@ import { useState, useEffect, useRef } from 'react';
  * @param {number} duration - Duração do cooldown em milissegundos (padrão: 15s)
  * @returns {Object} - Funções para gerenciar cooldowns
  */
-const useActionCooldown = (duration = 15000) => {
-  // ✅ NOVO: Cooldown específico para cancelamento de aliança (1 minuto)
-  const ALLIANCE_CANCEL_COOLDOWN = 60000; // 1 minuto
+const useActionCooldown = (duration = 30000) => {
 
   // Migração de dados antigos (se existir)
   const migrateOldData = () => {
@@ -15,7 +13,7 @@ const useActionCooldown = (duration = 15000) => {
       const oldData = localStorage.getItem('tradeCooldowns');
       if (oldData && !localStorage.getItem('actionCooldowns')) {
         const parsed = JSON.parse(oldData);
-        // Adicionar suporte para military_alliance nos dados antigos
+       
         parsed.military_alliance = 0;
         localStorage.setItem('actionCooldowns', JSON.stringify(parsed));
         localStorage.removeItem('tradeCooldowns'); // Remover dados antigos
@@ -42,7 +40,7 @@ const useActionCooldown = (duration = 15000) => {
     return { export: 0, import: 0, military_alliance: 0 };
   };
 
-  // ✅ NOVO: Obter cooldowns de cancelamento
+  // Obter cooldowns de cancelamento
   const getCancelCooldowns = () => {
     try {
       const stored = localStorage.getItem('allianceCancelCooldowns');
@@ -78,7 +76,7 @@ const useActionCooldown = (duration = 15000) => {
     }
   };
 
-  // ✅ NOVO: Verificar se está em cooldown (incluindo cancelamento)
+  // Verificar se está em cooldown (incluindo cancelamento)
   const isInCooldown = (actionType) => {
     const now = Date.now();
     
@@ -88,18 +86,10 @@ const useActionCooldown = (duration = 15000) => {
       return true;
     }
     
-    // ✅ NOVO: Verificar cooldown de cancelamento para alianças militares
-    if (actionType === 'military_alliance') {
-      const cancelTimestamp = cancelCooldownsRef.current.military_alliance;
-      if (cancelTimestamp && (now - cancelTimestamp) < ALLIANCE_CANCEL_COOLDOWN) {
-        return true;
-      }
-    }
-    
     return false;
   };
 
-  // ✅ NOVO: Retorna o tempo restante (considerando ambos os tipos de cooldown)
+  // Retorna o tempo restante (considerando ambos os tipos de cooldown)
   const getRemainingTime = (actionType) => {
     const now = Date.now();
     let maxRemaining = 0;
@@ -109,15 +99,6 @@ const useActionCooldown = (duration = 15000) => {
     if (timestamp) {
       const normalRemaining = Math.max(0, Math.ceil((duration - (now - timestamp)) / 1000));
       maxRemaining = Math.max(maxRemaining, normalRemaining);
-    }
-    
-    // ✅ NOVO: Verificar cooldown de cancelamento para alianças militares
-    if (actionType === 'military_alliance') {
-      const cancelTimestamp = cancelCooldownsRef.current.military_alliance;
-      if (cancelTimestamp) {
-        const cancelRemaining = Math.max(0, Math.ceil((ALLIANCE_CANCEL_COOLDOWN - (now - cancelTimestamp)) / 1000));
-        maxRemaining = Math.max(maxRemaining, cancelRemaining);
-      }
     }
     
     return maxRemaining;
@@ -145,20 +126,6 @@ const useActionCooldown = (duration = 15000) => {
           } else {
             timestamps[type] = 0;
             initialTimes[type] = 0;
-          }
-        }
-        
-        // ✅ NOVO: Verificar cooldown de cancelamento
-        if (type === 'military_alliance' && cancelCooldowns.military_alliance) {
-          const cancelElapsed = now - cancelCooldowns.military_alliance;
-          if (cancelElapsed < ALLIANCE_CANCEL_COOLDOWN) {
-            const cancelRemaining = Math.ceil((ALLIANCE_CANCEL_COOLDOWN - cancelElapsed) / 1000);
-            initialTimes[type] = Math.max(initialTimes[type], cancelRemaining);
-            anyActive = true;
-          } else {
-            // Limpar cooldown de cancelamento expirado
-            delete cancelCooldowns.military_alliance;
-            localStorage.setItem('allianceCancelCooldowns', JSON.stringify(cancelCooldowns));
           }
         }
       });
@@ -197,21 +164,6 @@ const useActionCooldown = (duration = 15000) => {
                 anyActive = true;
               } else if (newTimes[type] > 0) {
                 timestampsRef.current[type] = 0;
-                updated = true;
-              }
-            }
-            
-            // ✅ NOVO: Cooldown de cancelamento
-            if (type === 'military_alliance' && cancelCooldowns.military_alliance) {
-              const cancelElapsed = now - cancelCooldowns.military_alliance;
-              if (cancelElapsed < ALLIANCE_CANCEL_COOLDOWN) {
-                maxRemaining = Math.max(maxRemaining, Math.ceil((ALLIANCE_CANCEL_COOLDOWN - cancelElapsed) / 1000));
-                anyActive = true;
-              } else {
-                // Limpar cooldown de cancelamento expirado
-                delete cancelCooldowns.military_alliance;
-                localStorage.setItem('allianceCancelCooldowns', JSON.stringify(cancelCooldowns));
-                cancelCooldownsRef.current = cancelCooldowns;
                 updated = true;
               }
             }

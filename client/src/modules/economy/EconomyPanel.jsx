@@ -258,7 +258,7 @@ const applyAllParameters = useCallback(async () => {
       const { success, bondAmount: issuedAmount, message } = data;
       
       if (success) {
-        MessageService.showSuccess(`Títulos emitidos: ${issuedAmount} bi USD`, 4000);
+        MessageService.showSuccess(`Títulos emitidos: ${issuedAmount} bi USD`, 3000);
         setTimeout(refreshDebt, 500);
       } else {
         MessageService.showError(message || 'Falha na emissão de títulos');

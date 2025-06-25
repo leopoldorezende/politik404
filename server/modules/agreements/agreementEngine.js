@@ -16,7 +16,6 @@ import messagesService from '../../shared/services/messagesService.js';
  */
 export class AgreementEngine {
   constructor() {
-    this.cooldowns = new Map(); // Cache de cooldowns por socket
     this.activeProposals = new Map(); // Cache de propostas ativas
   }
 
@@ -54,14 +53,6 @@ export class AgreementEngine {
       const typeValidation = await this.validateAgreement(normalizedType, proposalData, socket, gameState);
       if (!typeValidation.valid) {
         socket.emit('error', typeValidation.error);
-        return false;
-      }
-
-      // Verificar cooldown
-      if (this.isInCooldown(socket.id, normalizedType, config.cooldownTime)) {
-        const remaining = this.getRemainingCooldown(socket.id, normalizedType, config.cooldownTime);
-        const message = messagesService.getCooldownMessage(config.category, Math.ceil(remaining / 1000));
-        socket.emit('error', message);
         return false;
       }
 
@@ -129,22 +120,16 @@ export class AgreementEngine {
     targetInfo.socket[`${this.getSocketEventPrefix(agreementType)}Proposal`] = proposal;
 
     // Enviar proposta para o alvo
-    const message = this.formatProposalMessage(agreementType, proposal);
     targetInfo.socket.emit(`${this.getSocketEventPrefix(agreementType)}ProposalReceived`, {
       proposalId,
       proposal: proposalData,
-      message,
       originCountry: userCountry
     });
 
     // Confirmar envio para o remetente
     socket.emit(`${this.getSocketEventPrefix(agreementType)}ProposalSent`, {
       targetCountry: proposalData.targetCountry,
-      message: `Proposta enviada para ${proposalData.targetCountry}`
     });
-
-    // Iniciar cooldown
-    this.setCooldown(socket.id, agreementType, config.cooldownTime);
 
     return true;
   }
@@ -183,10 +168,7 @@ export class AgreementEngine {
         socket.emit(`${this.getSocketEventPrefix(agreementType)}ProposalResponse`, response);
       }
     }, 1500);
-
-    // Iniciar cooldown imediatamente
-    this.setCooldown(socket.id, agreementType, config.cooldownTime);
-
+    
     return true;
   }
 
@@ -214,10 +196,6 @@ export class AgreementEngine {
           message: `${config.description} criado com sucesso!`,
           points: config.points
         });
-        
-        // Iniciar cooldown
-        this.setCooldown(socket.id, agreementType, config.cooldownTime);
-        return true;
       }
     }
 
@@ -227,10 +205,6 @@ export class AgreementEngine {
       message: `Falha ao criar ${config.description}. Tente novamente mais tarde.`,
       probability: Math.round(probability * 100)
     });
-
-    // Cooldown menor em caso de falha
-    this.setCooldown(socket.id, agreementType, config.cooldownTime / 2);
-    return false;
   }
 
   // =====================================================================
@@ -475,44 +449,6 @@ export class AgreementEngine {
   }
 
   /**
-   * Verificar se está em cooldown
-   */
-  isInCooldown(socketId, agreementType, cooldownTime) {
-    const key = `${socketId}-${agreementType}`;
-    const lastUsed = this.cooldowns.get(key);
-    
-    if (!lastUsed) return false;
-    
-    return (Date.now() - lastUsed) < cooldownTime;
-  }
-
-  /**
-   * Obter tempo restante de cooldown
-   */
-  getRemainingCooldown(socketId, agreementType, cooldownTime) {
-    const key = `${socketId}-${agreementType}`;
-    const lastUsed = this.cooldowns.get(key);
-    
-    if (!lastUsed) return 0;
-    
-    const elapsed = Date.now() - lastUsed;
-    return Math.max(0, cooldownTime - elapsed);
-  }
-
-  /**
-   * Definir cooldown
-   */
-  setCooldown(socketId, agreementType, cooldownTime) {
-    const key = `${socketId}-${agreementType}`;
-    this.cooldowns.set(key, Date.now());
-    
-    // Limpar automaticamente após o cooldown
-    setTimeout(() => {
-      this.cooldowns.delete(key);
-    }, cooldownTime + 1000);
-  }
-
-  /**
    * Verificar limite de acordos ativos
    */
   checkActiveLimit(roomName, userCountry, agreementType, maxActive) {
@@ -553,29 +489,6 @@ export class AgreementEngine {
     };
     
     return prefixMap[agreementType] || 'agreement';
-  }
-
-  /**
-   * Formatar mensagem de proposta
-   */
-  formatProposalMessage(agreementType, proposal) {
-    const eventPrefix = this.getSocketEventPrefix(agreementType);
-    
-    switch (eventPrefix) {
-      case 'trade':
-        const productName = proposal.data.product === 'commodity' ? 'commodities' : 'manufaturas';
-        const actionType = proposal.data.type === 'export' ? 'exportar para você' : 'importar de você';
-        return `${proposal.originCountry} quer ${actionType} ${productName} (${proposal.data.value} bi USD)`;
-      
-      case 'alliance':
-        return `${proposal.originCountry} propõe uma aliança militar com você!`;
-      
-      case 'cooperation':
-        return `${proposal.originCountry} propõe cooperação militar com você!`;
-      
-      default:
-        return `${proposal.originCountry} enviou uma proposta para você.`;
-    }
   }
 
   /**
@@ -694,16 +607,6 @@ export class AgreementEngine {
    * Limpar dados do socket quando desconectar
    */
   cleanupSocket(socketId) {
-    // Limpar cooldowns do socket
-    const keysToDelete = [];
-    this.cooldowns.forEach((value, key) => {
-      if (key.startsWith(socketId)) {
-        keysToDelete.push(key);
-      }
-    });
-    
-    keysToDelete.forEach(key => this.cooldowns.delete(key));
-    
     // Limpar propostas ativas
     this.activeProposals.delete(socketId);
   }
