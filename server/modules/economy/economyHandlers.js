@@ -1,10 +1,7 @@
 /**
  * economyHandlers.js - Correção dos métodos do EconomyService
- * CORREÇÃO: Usar métodos que realmente existem no economyService
  */
-
-import { getCurrentRoom, getUsernameFromSocketId } from '../../shared/utils/gameStateUtils.js';
-import { ECONOMIC_CONSTANTS } from '../../shared/utils/economicConstants.js';
+import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
 import { 
   debugAdvancedEconomicCalculations, 
   validateEconomicCalculations,
@@ -18,7 +15,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   console.log('Economy handlers initialized - delegated to Advanced EconomyService');
 
   // ======================================================================
-  // PARÂMETROS ECONÔMICOS (PRESERVADO COM CÁLCULOS AVANÇADOS)
+  // PARÂMETROS ECONÔMICOS
   // ======================================================================
   
   socket.on('updateEconomicParameter', (data) => {
@@ -90,7 +87,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // HANDLER PARA RESUMO DE DÍVIDAS (CORRIGIDO - SEM ensureCountryInitialized)
+  // HANDLER PARA RESUMO DE DÍVIDAS
   // ======================================================================
   
   socket.on('getDebtSummary', () => {
@@ -130,8 +127,6 @@ function setupEconomyHandlers(io, socket, gameState) {
         numberOfContracts: debtSummary.numberOfContracts || 0,
         debtToGdpRatio: ((economy.publicDebt || 0) / (economy.gdp || 100)) * 100,
         canIssueMoreDebt: ((economy.publicDebt || 0) / (economy.gdp || 100)) <= 1.2,
-        
-        // ========== CORREÇÃO APLICADA ==========
         debtRecords: debtSummary.debtRecords || debtSummary.contracts || [],
         
         // Dados econômicos expandidos para o popup
@@ -152,7 +147,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // EMISSÃO DE TÍTULOS (PRESERVADO COM SISTEMA EXPANDIDO)
+  // EMISSÃO DE TÍTULOS
   // ======================================================================
   
   socket.on('issueDebtBonds', (data) => {
@@ -188,7 +183,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // OBTER RESUMO DE DÍVIDAS ALTERNATIVO (CORRIGIDO)
+  // OBTER RESUMO DE DÍVIDAS ALTERNATIVO
   // ======================================================================
   
   socket.on('getCountryDebtSummary', () => {
@@ -228,8 +223,6 @@ function setupEconomyHandlers(io, socket, gameState) {
         numberOfContracts: debtSummary.numberOfContracts || 0,
         debtToGdpRatio: ((economy.publicDebt || 0) / (economy.gdp || 100)) * 100,
         canIssueMoreDebt: ((economy.publicDebt || 0) / (economy.gdp || 100)) <= 1.2,
-        
-        // ========== CORREÇÃO APLICADA TAMBÉM AQUI ==========
         debtRecords: debtSummary.debtRecords || debtSummary.contracts || [],
         
         // Dados econômicos expandidos para o popup
@@ -250,7 +243,7 @@ function setupEconomyHandlers(io, socket, gameState) {
   });
 
   // ======================================================================
-  // SUBSCRIÇÃO A ESTADOS DE PAÍS (ESSENCIAL - PRESERVADO)
+  // SUBSCRIÇÃO A ESTADOS DE PAÍS
   // ======================================================================
   
   socket.on('subscribeToCountryStates', (roomName) => {
@@ -263,7 +256,7 @@ function setupEconomyHandlers(io, socket, gameState) {
     
     socket.join(`countryStates:${roomName}`);
     
-    // Enviar estados iniciais IMEDIATAMENTE (agora com dados avançados)
+    // Enviar estados iniciais imediatamente
     const roomStates = global.economyService.getRoomStates(roomName);
     socket.emit('countryStatesInitialized', {
       roomName,
@@ -337,7 +330,7 @@ function setupEconomyHandlers(io, socket, gameState) {
       return;
     }
 
-    // MUDANÇA: Usar função importada em vez de método do service
+    // Usar função importada em vez de método do service
     const countryState = global.economyService.getCountryState(roomName, userCountry);
     if (countryState) {
       const validation = validateEconomicCalculations(countryState.economy);
@@ -397,7 +390,7 @@ function setupEconomyHandlers(io, socket, gameState) {
 }
 
 /**
- * Função auxiliar para obter país do usuário (PRESERVADA)
+ * Função auxiliar para obter país do usuário
  */
 function getUserCountry(gameState, roomName, username) {
   if (!roomName || !username) return null;

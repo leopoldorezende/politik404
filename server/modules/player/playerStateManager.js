@@ -1,7 +1,6 @@
 /**
  * Gerenciamento básico do estado dos jogadores
  */
-
 import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
 
 /**

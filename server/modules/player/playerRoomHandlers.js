@@ -1,11 +1,7 @@
 /**
  * Gerencia entrada e saída de jogadores das salas
  */
-
-import { 
-  sendUpdatedPlayersList, 
-  sendUpdatedRoomsList 
-} from '../room/roomNotifications.js';
+import { sendUpdatedPlayersList, sendUpdatedRoomsList } from '../room/roomNotifications.js';
 import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
 
 /**

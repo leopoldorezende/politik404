@@ -1,7 +1,6 @@
 /**
-* AI Country Controller - ATUALIZADO para usar EconomyService
+* AI Country Controller
 * Controla decisões de IA para países não controlados por jogadores
-* VERSÃO CORRIGIDA - Lógica de import/export invertida
 */
 
 /**
@@ -14,7 +13,6 @@
 function evaluateTradeProposal(gameState, roomName, proposal) {
  const { type, product, targetCountry, value, originCountry } = proposal;
  
- // ===== NOVA INTEGRAÇÃO COM ECONOMYSERVICE =====
  // Obter dados econômicos do país alvo usando EconomyService
  const economyService = global.economyService;
  let targetCountryData = null;
@@ -29,7 +27,6 @@ function evaluateTradeProposal(gameState, roomName, proposal) {
      economy: gameState.countriesData[targetCountry]?.economy || {} 
    };
  }
- // ===== FIM DA NOVA INTEGRAÇÃO =====
  
  // Fatores de decisão da IA
  let acceptanceScore = 50; // Base: 50% de chance
@@ -47,10 +44,8 @@ function evaluateTradeProposal(gameState, roomName, proposal) {
  if (targetCountryData?.economy) {
    const economy = targetCountryData.economy;
    
-   // CORREÇÃO: Interpretar corretamente import/export do ponto de vista do país alvo
    // type 'import' = país originador quer importar = país alvo deve EXPORTAR
    // type 'export' = país originador quer exportar = país alvo deve IMPORTAR
-   
    if (type === 'import') {
      // País originador quer importar = país alvo (IA) deve EXPORTAR
      // IA prefere exportar produtos que tem excesso
@@ -79,7 +74,6 @@ function evaluateTradeProposal(gameState, roomName, proposal) {
      if (product === 'manufacture' && economy.manufacturesBalance < 0) {
        acceptanceScore += 25; // Precisa de manufaturas, quer importar
      }
-     
      // IA não quer importar produtos que já tem em excesso
      if (product === 'commodity' && economy.commoditiesBalance > 15) {
        acceptanceScore -= 20; // Já tem excesso de commodities
@@ -157,7 +151,6 @@ function evaluateTradeProposal(gameState, roomName, proposal) {
 * @returns {Object|null} - Proposta gerada ou null
 */
 function generateAITradeProposal(gameState, roomName, aiCountry) {
- // ===== NOVA INTEGRAÇÃO COM ECONOMYSERVICE =====
  const economyService = global.economyService;
  
  if (!economyService) {
@@ -231,7 +224,6 @@ function generateAITradeProposal(gameState, roomName, aiCountry) {
    originPlayer: null, // IA
    timestamp: Date.now()
  };
- // ===== FIM DA NOVA INTEGRAÇÃO =====
 }
 
 /**

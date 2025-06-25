@@ -1,7 +1,6 @@
 /**
  * Handlers relacionados ao chat
  */
-
 import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
 
 /**

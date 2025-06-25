@@ -12,7 +12,6 @@ import messagesService from '../../shared/services/messagesService.js';
 
 /**
  * Motor principal para processamento de todos os tipos de acordo
- * Substitui todos os handlers específicos por um sistema unificado
  * Stateless - recebe dependências por injeção
  */
 export class AgreementEngine {

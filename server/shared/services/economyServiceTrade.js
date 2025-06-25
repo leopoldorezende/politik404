@@ -1,6 +1,5 @@
 // server/shared/services/economy/EconomyTrade.js
 // Métodos auxiliares para gerenciamento de comércio internacional
-// Extraídos do economyService para reduzir complexidade
 
 /**
  * Classe auxiliar para gerenciamento de acordos comerciais

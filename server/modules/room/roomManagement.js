@@ -1,10 +1,7 @@
 /**
  * Gerenciamento de salas - ATUALIZADO para usar EconomyService
  */
-
-import { 
-  sendUpdatedRoomsList 
-} from './roomNotifications.js';
+import { sendUpdatedRoomsList } from './roomNotifications.js';
 import { setupRoomExpiration } from './roomExpirationManager.js';
 
 /**
@@ -56,15 +53,12 @@ function setupRoomManagement(io, socket, gameState) {
     
     gameState.rooms.set(roomName, room);
     
-    // ===== NOVA INTEGRAÇÃO COM ECONOMYSERVICE =====
     // Inicializar economia da sala
     const economyService = global.economyService;
     if (economyService && gameState.countriesData) {
       economyService.initializeRoom(roomName, gameState.countriesData);
       console.log(`[ECONOMY] Sala ${roomName} inicializada no EconomyService`);
     }
-    // ===== FIM DA NOVA INTEGRAÇÃO =====
-    
     console.log(`Sala criada: ${roomName} por ${username} (${duration / 60000} min)`);
     
     // Configurar expiração da sala
@@ -120,18 +114,15 @@ function setupRoomManagement(io, socket, gameState) {
       message: `A sala '${roomName}' foi deletada pelo criador.`
     });
     
-    // ===== NOVA INTEGRAÇÃO COM ECONOMYSERVICE =====
     // Limpar dados econômicos da sala
     const economyService = global.economyService;
     if (economyService) {
       economyService.removeRoom(roomName);
       console.log(`[ECONOMY] Dados da sala ${roomName} removidos do EconomyService`);
     }
-    // ===== FIM DA NOVA INTEGRAÇÃO =====
     
     // Remover a sala
     gameState.rooms.delete(roomName);
-    
     console.log(`Sala deletada: ${roomName} por ${username}`);
     
     // Atualizar lista de salas

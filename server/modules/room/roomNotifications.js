@@ -10,8 +10,6 @@
  */
 function setupRoomNotifications(io, socket, gameState) {
   console.log('Room notifications inicializados');
-  
-  // Não há eventos para escutar aqui, apenas funções utilitárias
 }
 
 /**

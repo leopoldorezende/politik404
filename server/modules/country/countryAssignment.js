@@ -1,19 +1,9 @@
 /**
  * Gerenciamento da atribuição de países para jogadores
  */
-
-import { 
-  sendUpdatedPlayersList 
-} from '../room/roomNotifications.js';
-import { 
-  getCurrentRoom, 
-  getUsernameFromSocketId 
-} from '../../shared/utils/gameStateUtils.js';
-import {
-  isValidCountry,
-  getBorderingCountries,
-  getAvailableCountries
-} from './countryUtils.js';
+import { sendUpdatedPlayersList } from '../room/roomNotifications.js';
+import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
+import { isValidCountry, getBorderingCountries } from './countryUtils.js';
 
 /**
  * Configura os handlers relacionados à atribuição de países
@@ -220,7 +210,6 @@ function setupCountryAssignment(io, socket, gameState) {
     if (playerIndex !== -1 && typeof room.players[playerIndex] === 'object') {
       room.players[playerIndex].country = newCountry;
     }
-    
     console.log(`${username} trocou de país: ${oldCountry} -> ${newCountry}`);
     
     // Envia o novo país atribuído ao jogador
@@ -288,7 +277,6 @@ function setupCountryAssignment(io, socket, gameState) {
     if (playerIndex !== -1 && typeof room.players[playerIndex] === 'object') {
       room.players[playerIndex].country = countryName;
     }
-    
     console.log(`${username} solicitou e recebeu o país específico: ${countryName}`);
     
     // Envia o novo país atribuído ao jogador
@@ -384,7 +372,6 @@ function getBorderingAvailableCountries(countriesInUse, availableCountries, game
       }
     }
   }
-  
   return Array.from(borderingCountries);
 }
 

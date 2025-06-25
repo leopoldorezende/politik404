@@ -1,7 +1,6 @@
 /**
  * Handlers relacionados à autenticação de usuários
  */
-
 import { getUsernameFromSocketId } from '../../shared/utils/gameStateUtils.js';
 
 /**
@@ -235,7 +234,6 @@ function setupAuthHandlers(io, socket, gameState) {
             if (typeof room.players[playerIndex] === 'object') {
               room.players[playerIndex].isOnline = false;
             }
-            
             console.log(`${username} marcado como offline na sala ${roomName}, país ${room.players[playerIndex].country} mantido`);
             
             // Notifica todos na sala sobre o status offline

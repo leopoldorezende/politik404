@@ -1,7 +1,6 @@
 /**
  * Registro centralizado de todos os tipos de acordo
  * Esta é a fonte única de verdade para configurações de acordo
- * Elimina duplicação e permite extensibilidade simples
  */
 
 // =====================================================================

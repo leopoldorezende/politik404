@@ -1,6 +1,5 @@
 // server/shared/services/economy/EconomyDebt.js
 // Métodos auxiliares para gerenciamento de dívida pública
-// Extraídos do economyService para reduzir complexidade
 
 import { calculateRiskPremium } from '../utils/economicUtils.js';
 import { ECONOMIC_CONSTANTS } from '../utils/economicConstants.js';
