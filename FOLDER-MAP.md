@@ -13,7 +13,6 @@
   │   ├── src
   │   │   ├── App.css
   │   │   ├── App.jsx  # Componente raiz
-  │   │   ├── constants
   │   │   ├── hooks
   │   │   │   ├── useCards.js
   │   │   │   └── useEconomy.js
@@ -156,9 +155,9 @@
           ├── redisClient.js  # Infraestrutura do Redis
           ├── services
           │   ├── cardService.js
-          │   ├── economyDebt.js
           │   ├── economyService.js
-          │   ├── economyTrade.js
+          │   ├── economyServiceDebt.js
+          │   ├── economyServiceTrade.js
           │   └── messagesService.js
           └── utils
               ├── economicCalculations.js

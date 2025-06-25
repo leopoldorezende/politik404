@@ -334,6 +334,225 @@ function setupAgreementHandlers(io, socket, gameState) {
     }
   });
 
+  /**
+   * Handler específico para cancelar aliança militar
+   */
+  socket.on('cancelMilitaryAlliance', (cardId) => {
+    console.log('🗑️ cancelMilitaryAlliance received:', cardId);
+    
+    try {
+      const username = socket.username;
+      const roomName = getCurrentRoom(socket, gameState);
+      
+      if (!username || !roomName) {
+        console.log('❌ Missing auth data');
+        socket.emit('error', 'Dados de sessão inválidos');
+        return;
+      }
+
+      // Obter país do usuário
+      const room = gameState.rooms.get(roomName);
+      const player = room?.players?.find(p => 
+        typeof p === 'object' && p.username === username
+      );
+      
+      if (!player?.country) {
+        console.log('❌ Player/country not found');
+        socket.emit('error', 'Jogador não encontrado');
+        return;
+      }
+
+      if (!global.cardService) {
+        console.log('❌ CardService not available');
+        socket.emit('error', 'Serviço de cards não disponível');
+        return;
+      }
+
+      // Obter o card
+      const card = global.cardService.getCardById(roomName, cardId);
+      if (!card) {
+        console.log('❌ Card not found:', cardId);
+        socket.emit('error', 'Aliança militar não encontrada');
+        return;
+      }
+
+      // Verificar se é realmente uma aliança militar
+      if (card.type !== 'military_alliance') {
+        console.log('❌ Not a military alliance:', card.type);
+        socket.emit('error', 'Este não é um card de aliança militar');
+        return;
+      }
+
+      // Verificar permissão
+      if (card.owner !== player.country) {
+        console.log('❌ Permission denied:', card.owner, 'vs', player.country);
+        socket.emit('error', 'Sem permissão para cancelar esta aliança');
+        return;
+      }
+
+      console.log('✅ Cancelling military alliance:', cardId, card.owner, '↔', card.target);
+
+      // Remover AMBOS os cards da aliança (bilateral)
+      const removedCount = global.cardService.removeAgreementCards(
+        roomName, 
+        'military_alliance', 
+        card.owner, 
+        card.target
+      );
+
+      if (removedCount > 0) {
+        console.log('✅ Military alliance cancelled successfully:', removedCount, 'cards removed');
+        
+        // Notificar toda a sala
+        io.to(roomName).emit('cardsUpdated', {
+          roomName,
+          action: 'military_alliance_cancelled',
+          cardId,
+          owner: card.owner,
+          target: card.target,
+          timestamp: Date.now()
+        });
+        
+        // Notificar específico para alianças militares
+        io.to(roomName).emit('militaryAllianceCancelled', {
+          cardId,
+          owner: card.owner,
+          target: card.target,
+          timestamp: Date.now()
+        });
+        
+        console.log('✅ Military alliance cancellation events emitted');
+      } else {
+        console.log('❌ Failed to remove military alliance cards');
+        socket.emit('error', 'Falha ao cancelar aliança militar');
+      }
+
+    } catch (error) {
+      console.error('❌ Error in cancelMilitaryAlliance:', error);
+      socket.emit('error', 'Erro interno ao cancelar aliança');
+    }
+  });
+
+  /**
+   * Handler específico para cancelar cooperação estratégica
+   */
+  socket.on('cancelStrategicCooperation', (cardId) => {
+    console.log('🗑️ cancelStrategicCooperation received:', cardId);
+    
+    try {
+      const username = socket.username;
+      const roomName = getCurrentRoom(socket, gameState);
+      
+      if (!username || !roomName) {
+        socket.emit('error', 'Dados de sessão inválidos');
+        return;
+      }
+
+      const room = gameState.rooms.get(roomName);
+      const player = room?.players?.find(p => 
+        typeof p === 'object' && p.username === username
+      );
+      
+      if (!player?.country || !global.cardService) {
+        socket.emit('error', 'Erro de validação');
+        return;
+      }
+
+      const card = global.cardService.getCardById(roomName, cardId);
+      if (!card || card.type !== 'strategic_cooperation' || card.owner !== player.country) {
+        socket.emit('error', 'Cooperação estratégica não encontrada ou sem permissão');
+        return;
+      }
+
+      console.log('✅ Cancelling strategic cooperation:', cardId, card.owner, '↔', card.target);
+
+      const removedCount = global.cardService.removeAgreementCards(
+        roomName, 
+        'strategic_cooperation', 
+        card.owner, 
+        card.target
+      );
+
+      if (removedCount > 0) {
+        console.log('✅ Strategic cooperation cancelled:', removedCount, 'cards removed');
+        
+        io.to(roomName).emit('cardsUpdated', {
+          roomName,
+          action: 'strategic_cooperation_cancelled',
+          cardId,
+          owner: card.owner,
+          target: card.target,
+          timestamp: Date.now()
+        });
+        
+        io.to(roomName).emit('cooperationCancelled', {
+          cardId,
+          owner: card.owner,
+          target: card.target,
+          timestamp: Date.now()
+        });
+      } else {
+        socket.emit('error', 'Falha ao cancelar cooperação estratégica');
+      }
+
+    } catch (error) {
+      console.error('❌ Error in cancelStrategicCooperation:', error);
+      socket.emit('error', 'Erro interno');
+    }
+  });
+
+  /**
+   * Handler específico para cancelar acordo comercial
+   */
+  socket.on('cancelTradeAgreement', (agreementId) => {
+    console.log('🗑️ cancelTradeAgreement received:', agreementId);
+    
+    try {
+      const username = socket.username;
+      const roomName = getCurrentRoom(socket, gameState);
+      
+      if (!username || !roomName || !global.cardService) {
+        socket.emit('error', 'Dados de sessão inválidos');
+        return;
+      }
+
+      const room = gameState.rooms.get(roomName);
+      const player = room?.players?.find(p => 
+        typeof p === 'object' && p.username === username
+      );
+      
+      if (!player?.country) {
+        socket.emit('error', 'Jogador não encontrado');
+        return;
+      }
+
+      console.log('✅ Cancelling trade agreement:', agreementId);
+
+      // Cancelar todos os cards relacionados ao acordo comercial
+      const cancelledCount = global.cardService.cancelCardsByAgreement(roomName, agreementId);
+
+      if (cancelledCount > 0) {
+        console.log('✅ Trade agreement cancelled:', cancelledCount, 'cards cancelled');
+        
+        io.to(roomName).emit('cardsUpdated', {
+          roomName,
+          action: 'trade_agreement_cancelled',
+          agreementId,
+          timestamp: Date.now()
+        });
+        
+        io.to(roomName).emit('tradeAgreementCancelled', agreementId);
+      } else {
+        socket.emit('error', 'Acordo comercial não encontrado ou já cancelado');
+      }
+
+    } catch (error) {
+      console.error('❌ Error in cancelTradeAgreement:', error);
+      socket.emit('error', 'Erro interno');
+    }
+  });
+
+
   console.log('✅ Agreement Engine setup complete - All handlers registered');
 }
 
