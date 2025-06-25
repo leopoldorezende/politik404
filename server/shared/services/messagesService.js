@@ -1,13 +1,13 @@
 // =====================================================================
 // SERVIÇO DE MENSAGENS UNIFICADO - FASE 2 EXPANDIDA
 // =====================================================================
-// Local: server/shared/services/agreementMessagesService.js
+// Local: server/shared/services/messagesService.js
 
 /**
  * Serviço centralizado de mensagens para todos os tipos de acordo
  * EXPANDIDO: Inclui suporte para acordos internos e sistema unificado
  */
-class AgreementMessagesService {
+class MessagesService {
   constructor() {
     this.initializeMessageTemplates();
   }
@@ -310,5 +310,5 @@ class AgreementMessagesService {
 // EXPORTAR INSTÂNCIA SINGLETON
 // =====================================================================
 
-const agreementMessagesService = new AgreementMessagesService();
-export default agreementMessagesService;
+const messagesService = new MessagesService();
+export default messagesService;

@@ -8,7 +8,7 @@ import {
   mapLegacyType 
 } from '../../shared/config/agreementTypeRegistry.js';
 import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
-import agreementMessagesService from '../../shared/services/agreementMessagesService.js';
+import messagesService from '../../shared/services/messagesService.js';
 
 /**
  * Motor principal para processamento de todos os tipos de acordo
@@ -61,7 +61,7 @@ export class AgreementEngine {
       // Verificar cooldown
       if (this.isInCooldown(socket.id, normalizedType, config.cooldownTime)) {
         const remaining = this.getRemainingCooldown(socket.id, normalizedType, config.cooldownTime);
-        const message = agreementMessagesService.getCooldownMessage(config.category, Math.ceil(remaining / 1000));
+        const message = messagesService.getCooldownMessage(config.category, Math.ceil(remaining / 1000));
         socket.emit('error', message);
         return false;
       }
@@ -165,12 +165,12 @@ export class AgreementEngine {
         const success = await this.createAgreement(roomName, userCountry, proposalData.targetCountry, username, agreementType, proposalData);
         
         if (success) {
-          const response = agreementMessagesService.createProposalResponse(
+          const response = messagesService.createProposalResponse(
             this.getSocketEventPrefix(agreementType), true, proposalData.targetCountry, 'ai-decision'
           );
           socket.emit(`${this.getSocketEventPrefix(agreementType)}ProposalResponse`, response);
         } else {
-          const response = agreementMessagesService.createProposalResponse(
+          const response = messagesService.createProposalResponse(
             this.getSocketEventPrefix(agreementType), false, proposalData.targetCountry, 'ai-decision'
           );
           response.message = 'Falha ao criar acordo';
@@ -178,7 +178,7 @@ export class AgreementEngine {
         }
       } else {
         // IA rejeitou
-        const response = agreementMessagesService.createProposalResponse(
+        const response = messagesService.createProposalResponse(
           this.getSocketEventPrefix(agreementType), false, proposalData.targetCountry, 'ai-decision'
         );
         socket.emit(`${this.getSocketEventPrefix(agreementType)}ProposalResponse`, response);
@@ -277,7 +277,7 @@ export class AgreementEngine {
         this.notifyProposalSender(gameState, io, proposal, normalizedType, true);
         
         // Confirmar para quem aceitou
-        const processedResponse = agreementMessagesService.createProcessedResponse(eventPrefix, true);
+        const processedResponse = messagesService.createProcessedResponse(eventPrefix, true);
         socket.emit(`${eventPrefix}ProposalProcessed`, processedResponse);
       } else {
         socket.emit('error', 'Falha ao criar acordo');
@@ -287,7 +287,7 @@ export class AgreementEngine {
       this.notifyProposalSender(gameState, io, proposal, normalizedType, false);
       
       // Confirmar rejeição
-      const processedResponse = agreementMessagesService.createProcessedResponse(eventPrefix, false);
+      const processedResponse = messagesService.createProcessedResponse(eventPrefix, false);
       socket.emit(`${eventPrefix}ProposalProcessed`, processedResponse);
     }
 
@@ -588,7 +588,7 @@ export class AgreementEngine {
     
     if (originSocket && originSocket.connected) {
       const eventPrefix = this.getSocketEventPrefix(agreementType);
-      const response = agreementMessagesService.createProposalResponse(
+      const response = messagesService.createProposalResponse(
         eventPrefix, accepted, proposal.targetCountry, proposal.id
       );
       originSocket.emit(`${eventPrefix}ProposalResponse`, response);

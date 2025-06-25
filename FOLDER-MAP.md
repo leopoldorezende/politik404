@@ -155,11 +155,11 @@
           ├── firebaseAdmin.js
           ├── redisClient.js  # Infraestrutura do Redis
           ├── services
-          │   ├── agreementMessagesService.js
           │   ├── cardService.js
           │   ├── economyDebt.js
           │   ├── economyService.js
-          │   └── economyTrade.js
+          │   ├── economyTrade.js
+          │   └── messagesService.js
           └── utils
               ├── economicCalculations.js
               ├── economicConstants.js

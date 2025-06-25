@@ -8,7 +8,7 @@
 // FUNÇÕES DE VALIDAÇÃO ESPECÍFICAS
 // =====================================================================
 
-import agreementMessagesService from '../services/agreementMessagesService.js';
+import messagesService from '../services/messagesService.js';
 
 /**
  * Validação para acordos comerciais
@@ -17,15 +17,15 @@ function validateTradeAgreement(proposal) {
   const { type, product, targetCountry, value } = proposal;
   
   if (!type || !product || !targetCountry) {
-    return { valid: false, error: agreementMessagesService.getTradeMessage('invalidProposal') };
+    return { valid: false, error: messagesService.getTradeMessage('invalidProposal') };
   }
   
   if (!['import', 'export'].includes(type) || !['commodity', 'manufacture'].includes(product)) {
-    return { valid: false, error: agreementMessagesService.getTradeMessage('invalidTradeType') };
+    return { valid: false, error: messagesService.getTradeMessage('invalidTradeType') };
   }
   
   if (!value || value <= 0 || value > 1000) {
-    return { valid: false, error: agreementMessagesService.getTradeMessage('valueOutOfRange') };
+    return { valid: false, error: messagesService.getTradeMessage('valueOutOfRange') };
   }
   
   return { valid: true };
@@ -38,7 +38,7 @@ function validateMilitaryAgreement(proposal) {
   const { type, targetCountry } = proposal;
   
   if (!type || !targetCountry || type !== 'military_alliance') {
-    return { valid: false, error: agreementMessagesService.getAllianceMessage('invalidProposal') };
+    return { valid: false, error: messagesService.getAllianceMessage('invalidProposal') };
   }
   
   return { valid: true };
@@ -51,7 +51,7 @@ function validateCooperationAgreement(proposal) {
   const { type, targetCountry } = proposal;
   
   if (!type || !targetCountry || type !== 'strategic_cooperation') {
-    return { valid: false, error: agreementMessagesService.getCooperationMessage('invalidProposal') };
+    return { valid: false, error: messagesService.getCooperationMessage('invalidProposal') };
   }
   
   return { valid: true };

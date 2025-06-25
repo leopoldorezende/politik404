@@ -1,6 +1,3 @@
-// =====================================================================
-// HANDLER UNIFICADO DE ACORDOS - FASE 1
-// =====================================================================
 // Local: server/modules/agreements/agreementHandlers.js
 
 import agreementEngine from './agreementEngine.js';
@@ -8,16 +5,10 @@ import { mapLegacyType } from '../../shared/config/agreementTypeRegistry.js';
 import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
 
 /**
- * Handler único que substitui todos os handlers específicos de acordo
- * Centraliza todo o processamento através do AgreementEngine
- * Mantém compatibilidade com eventos existentes através de mapeamento
+ * Handler único que centraliza todo o processamento através do AgreementEngine
  */
 function setupAgreementHandlers(io, socket, gameState) {
   console.log('🎯 Agreement Engine handlers initialized - UNIFIED SYSTEM');
-
-  // =====================================================================
-  // EVENTOS UNIFICADOS PRINCIPAIS
-  // =====================================================================
 
   /**
    * Evento principal para envio de propostas de acordo
@@ -45,10 +36,6 @@ function setupAgreementHandlers(io, socket, gameState) {
     console.log('🗑️ Unified cancellation received:', cancellationData);
     await agreementEngine.cancelAgreement(socket, gameState, io, cancellationData);
   });
-
-  // =====================================================================
-  // EVENTOS INTERNOS (NOVOS)
-  // =====================================================================
 
   /**
    * Tentativa de criação de acordo interno
@@ -181,16 +168,13 @@ function setupAgreementHandlers(io, socket, gameState) {
     agreementEngine.cleanupSocket(socket.id);
   });
 
-
-
-    /**
+  /**
    * Handler para buscar cards do jogador (integrado ao sistema unificado)
    */
   socket.on('getPlayerCards', async () => {
     const username = socket.username;
     const roomName = getCurrentRoom(socket, gameState);
     const userCountry = agreementEngine.getUserCountry(gameState, roomName, username);
-
   
     if (!username || !roomName || !userCountry) {
       console.error('[UNIFIED-CARDS] getPlayerCards: Missing data');
@@ -210,7 +194,6 @@ function setupAgreementHandlers(io, socket, gameState) {
       }
 
       const cards = global.cardService.getCardsByOwner(roomName, userCountry);
-      
       console.log(`[UNIFIED-CARDS] Sending ${cards.length} cards for ${userCountry} in ${roomName}`);
       
       socket.emit('playerCardsResponse', {
@@ -309,7 +292,6 @@ function setupAgreementHandlers(io, socket, gameState) {
       }
 
       const ranking = global.cardService.getPlayerRanking(roomName);
-      
       console.log(`[UNIFIED-CARDS] Sending ranking with ${ranking.length} players for ${roomName}`);
       
       socket.emit('playerRankingResponse', {

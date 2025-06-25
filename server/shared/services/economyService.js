@@ -8,8 +8,8 @@ import redis from '../redisClient.js';
 import { getNumericValue } from '../utils/economicUtils.js';
 import { ECONOMIC_CONSTANTS } from '../utils/economicConstants.js';
 import { SYNC_CONFIG } from '../config/syncConfig.js';
-import { EconomyDebt } from './economyDebt.js';
-import { EconomyTrade } from './economyTrade.js';
+import { EconomyDebt } from './economyServiceDebt.js';
+import { EconomyTrade } from './economyServiceTrade.js';
 
 import { 
   calculateAdvancedGrowth,
