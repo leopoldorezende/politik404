@@ -42,29 +42,6 @@ export const SOCKET_EVENTS = {
 };
 
 // =====================================================================
-// EVENTOS LEGADOS PARA COMPATIBILIDADE
-// =====================================================================
-
-export const LEGACY_TRADE_EVENTS = {
-  CANCEL_AGREEMENT: 'socket/cancelTradeAgreement',
-  GET_AGREEMENTS: 'socket/getTradeAgreements',
-  SEND_PROPOSAL: 'socket/sendTradeProposal',
-  RESPOND_PROPOSAL: 'socket/respondTradeProposal',
-};
-
-export const LEGACY_ALLIANCE_EVENTS = {
-  SEND_PROPOSAL: 'socket/sendAllianceProposal',
-  RESPOND_PROPOSAL: 'socket/respondToAllianceProposal',
-  CANCEL_AGREEMENT: 'socket/cancelMilitaryAlliance'
-};
-
-export const LEGACY_COOPERATION_EVENTS = {
-  SEND_PROPOSAL: 'socket/sendCooperationProposal',
-  RESPOND_PROPOSAL: 'socket/respondToCooperationProposal',
-  CANCEL_AGREEMENT: 'socket/cancelStrategicCooperation'
-};
-
-// =====================================================================
 // API PÚBLICA UNIFICADA
 // =====================================================================
 
@@ -294,99 +271,6 @@ export const socketApi = {
   },
 
   // ===================================================================
-  // 🔄 MÉTODOS DE COMPATIBILIDADE LEGADA
-  // ===================================================================
-
-  /**
-   * COMÉRCIO - Mantidos para compatibilidade com mapeamento interno
-   */
-  sendTradeProposal: (proposalData) => {
-    console.log('🔄 Legacy sendTradeProposal - mapeando para sistema unificado');
-    return socketApi.sendAgreementProposal({
-      ...proposalData,
-      agreementType: `trade-${proposalData.type}` // import/export -> trade-import/trade-export
-    });
-  },
-  
-  respondToTradeProposal: (proposalId, accepted) => {
-    console.log('🔄 Legacy respondToTradeProposal - mapeando para sistema unificado');
-    return socketApi.respondToAgreementProposal({
-      proposalId,
-      accepted,
-      agreementType: 'trade'
-    });
-  },
-  
-  cancelTradeAgreement: (agreementId) => {
-    console.log('🔄 Legacy cancelTradeAgreement - mapeando para sistema unificado');
-    return socketApi.cancelAgreement({
-      cardId: agreementId,
-      agreementType: 'trade'
-    });
-  },
-  
-  getTradeAgreements: () => {
-    console.log('🔄 Legacy getTradeAgreements - mapeando para sistema unificado');
-    return socketApi.getActiveAgreements('trade');
-  },
-
-  /**
-   * ALIANÇA MILITAR - Mantidos para compatibilidade
-   */
-  sendAllianceProposal: (proposalData) => {
-    console.log('🔄 Legacy sendAllianceProposal - mapeando para sistema unificado');
-    return socketApi.sendAgreementProposal({
-      ...proposalData,
-      agreementType: 'military-alliance'
-    });
-  },
-  
-  respondToAllianceProposal: (proposalId, accepted) => {
-    console.log('🔄 Legacy respondToAllianceProposal - mapeando para sistema unificado');
-    return socketApi.respondToAgreementProposal({
-      proposalId,
-      accepted,
-      agreementType: 'military-alliance'
-    });
-  },
-  
-  cancelMilitaryAlliance: (cardId) => {
-    console.log('🔄 Legacy cancelMilitaryAlliance - mapeando para sistema unificado');
-    return socketApi.cancelAgreement({
-      cardId,
-      agreementType: 'military-alliance'
-    });
-  },
-
-  /**
-   * COOPERAÇÃO MILITAR - Mantidos para compatibilidade
-   */
-  sendCooperationProposal: (proposalData) => {
-    console.log('🔄 Legacy sendCooperationProposal - mapeando para sistema unificado');
-    return socketApi.sendAgreementProposal({
-      ...proposalData,
-      agreementType: 'strategic-cooperation'
-    });
-  },
-  
-  respondToCooperationProposal: (proposalId, accepted) => {
-    console.log('🔄 Legacy respondToCooperationProposal - mapeando para sistema unificado');
-    return socketApi.respondToAgreementProposal({
-      proposalId,
-      accepted,
-      agreementType: 'strategic-cooperation'
-    });
-  },
-  
-  cancelStrategicCooperation: (cardId) => {
-    console.log('🔄 Legacy cancelStrategicCooperation - mapeando para sistema unificado');
-    return socketApi.cancelAgreement({
-      cardId,
-      agreementType: 'strategic-cooperation'
-    });
-  },
-
-  // ===================================================================
   // 🏛️ MÉTODOS ESPECÍFICOS PARA ACORDOS INTERNOS
   // ===================================================================
 
@@ -461,31 +345,6 @@ export const socketApi = {
 // =====================================================================
 
 /**
- * Mapear tipos legados para novos tipos unificados
- */
-export const mapLegacyAgreementType = (legacyType, proposalData = {}) => {
-  const typeMapping = {
-    // Comerciais
-    'import': 'trade-import',
-    'export': 'trade-export',
-    'trade': proposalData.type ? `trade-${proposalData.type}` : 'trade-import',
-    
-    // Militares
-    'military_alliance': 'military-alliance',
-    'alliance': 'military-alliance',
-    'strategic_cooperation': 'strategic-cooperation',
-    'cooperation': 'strategic-cooperation',
-    
-    // Internos
-    'political_pact': 'political-pact',
-    'business_partnership': 'business-partnership',
-    'media_control': 'media-control'
-  };
-
-  return typeMapping[legacyType] || legacyType;
-};
-
-/**
  * Validar dados de proposta antes do envio
  */
 export const validateProposalData = (proposalData) => {
@@ -497,7 +356,7 @@ export const validateProposalData = (proposalData) => {
   }
 
   // Validações específicas por tipo
-  const normalizedType = agreementType || mapLegacyAgreementType(type, proposalData);
+  const normalizedType = agreementType || type;
   
   if (normalizedType.startsWith('trade-')) {
     if (!targetCountry || !proposalData.product || !proposalData.value) {
@@ -523,7 +382,6 @@ if (process.env.NODE_ENV === 'development') {
     checkConnection: () => socketApi.isConnected(),
     clearData: () => socketApi.clearAgreementData(),
     validateProposal: validateProposalData,
-    mapType: mapLegacyAgreementType
   };
   
   console.log('🔧 Socket API Debug tools disponíveis em window.socketApiDebug');

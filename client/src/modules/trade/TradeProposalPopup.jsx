@@ -6,6 +6,8 @@ import './TradeProposalPopup.css';
 /**
  * Popup para exibir uma proposta comercial recebida e permitir ao usuário aceitar ou recusar
  * @param {Object} props - Props do componente
+ * @param {string} props.proposalId - ID da proposta recebida
+ * @param {string} props.agreementType - Tipo da proposta recebida
  * @param {Object} props.proposal - Dados da proposta recebida
  * @param {boolean} props.isOpen - Se o popup está aberto
  * @param {Function} props.onClose - Função para fechar o popup
@@ -14,7 +16,10 @@ import './TradeProposalPopup.css';
 const TradeProposalPopup = ({ proposal, isOpen, onClose }) => {
   if (!proposal || !isOpen) return null;
 
-  const { id, type, product, originCountry, value, reason } = proposal;
+  // Corrigir: garantir que proposalId e agreementType venham do objeto proposal
+  const proposalId = proposal.proposalId || proposal.id;
+  const agreementType = proposal.agreementType || proposal.type;
+  const { type, product, originCountry, value, reason } = proposal;
   
   // Determinar título e mensagem baseados no tipo da proposta
   const title = `Proposta de ${type === 'export' ? 'Exportação' : 'Importação'} de ${originCountry}`;
@@ -27,12 +32,12 @@ const TradeProposalPopup = ({ proposal, isOpen, onClose }) => {
   
   // Funções para aceitar ou recusar proposta
   const handleAccept = () => {
-    socketApi.respondToTradeProposal(id, true);
+    socketApi.respondToAgreementProposal({ proposalId, accepted: true, agreementType });
     onClose();
   };
   
   const handleReject = () => {
-    socketApi.respondToTradeProposal(id, false);
+    socketApi.respondToAgreementProposal({ proposalId, accepted: false, agreementType });
     onClose();
   };
 

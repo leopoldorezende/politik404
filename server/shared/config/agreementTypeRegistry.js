@@ -425,46 +425,11 @@ export function getInternalAgreementTypes() {
     }, {});
 }
 
-// =====================================================================
-// MAPEAMENTO DE COMPATIBILIDADE
-// =====================================================================
-
-/**
- * Mapear tipos antigos para novos identificadores
- * Usado durante migração e para compatibilidade
- */
-export const LEGACY_TYPE_MAPPING = {
-  // Tipos comerciais
-  'import': 'trade-import',
-  'export': 'trade-export',
-  'trade': 'trade-import', // fallback
-  
-  // Tipos militares
-  'military_alliance': 'military-alliance',
-  'alliance': 'military-alliance', // fallback
-  'strategic_cooperation': 'strategic-cooperation',
-  'cooperation': 'strategic-cooperation', // fallback
-  
-  // Tipos internos
-  'political_pact': 'political-pact',
-  'business_partnership': 'business-partnership',
-  'media_control': 'media-control'
-};
-
-/**
- * Converter tipo legado para novo formato
- */
-export function mapLegacyType(legacyType) {
-  return LEGACY_TYPE_MAPPING[legacyType] || legacyType;
-}
-
 export default {
   AGREEMENT_TYPES,
   getAgreementTypeConfig,
   isValidAgreementType,
   getAgreementTypesByCategory,
   getProposalAgreementTypes,
-  getInternalAgreementTypes,
-  mapLegacyType,
-  LEGACY_TYPE_MAPPING
+  getInternalAgreementTypes
 };

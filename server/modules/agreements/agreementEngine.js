@@ -3,10 +3,7 @@
 // =====================================================================
 // Local: server/modules/agreements/agreementEngine.js
 
-import { 
-  getAgreementTypeConfig, 
-  mapLegacyType 
-} from '../../shared/config/agreementTypeRegistry.js';
+import { getAgreementTypeConfig } from '../../shared/config/agreementTypeRegistry.js';
 import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
 import messagesService from '../../shared/services/messagesService.js';
 
@@ -228,7 +225,7 @@ export class AgreementEngine {
     console.log('🔧 handleResponse called with:', { proposalId, accepted, agreementType });
     
     // Normalizar tipo
-    const normalizedType = mapLegacyType(agreementType || 'trade');
+    const normalizedType = this.normalizeAgreementType(response);
     const eventPrefix = this.getSocketEventPrefix(normalizedType);
     
     console.log('✅ Normalized type:', normalizedType, 'Event prefix:', eventPrefix);
@@ -461,13 +458,14 @@ export class AgreementEngine {
    * Normaliza tipo de acordo para compatibilidade
    */
   normalizeAgreementType(proposalData) {
-    if (proposalData.agreementType) return mapLegacyType(proposalData.agreementType);
+    if (proposalData.agreementType) return proposalData.agreementType;
     if (proposalData.type) {
       // Para acordos comerciais, combinar tipo e produto
-      if (['import', 'export'].includes(proposalData.type)) {
+      if (["import", "export"].includes(proposalData.type)) {
         return `trade-${proposalData.type}`;
       }
-      return mapLegacyType(proposalData.type);
+      // Para outros tipos, assumir que já está no formato unificado
+      return proposalData.type;
     }
     return null;
   }

@@ -65,9 +65,10 @@ const AlliancePopup = ({
     setIsSubmitting(true);
     
     // Enviar proposta via socket - ANTES de iniciar o cooldown
-    // ✅ CORREÇÃO: Corrigir o valor do "type" para o nome unificado
-    socketApi.sendAllianceProposal({
+    // ✅ CORREÇÃO: Usar o método unificado
+    socketApi.sendAgreementProposal({
       type: 'military-alliance',
+      agreementType: 'military-alliance',
       targetCountry: selectedCountry,
       originCountry: myCountry
     });

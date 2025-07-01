@@ -1,7 +1,6 @@
 // Local: server/modules/agreements/agreementHandlers.js
 
 import agreementEngine from './agreementEngine.js';
-import { mapLegacyType } from '../../shared/config/agreementTypeRegistry.js';
 import { getCurrentRoom } from '../../shared/utils/gameStateUtils.js';
 
 /**
@@ -83,10 +82,9 @@ function setupAgreementHandlers(io, socket, gameState) {
       
       // Filtrar por tipo se especificado
       if (type) {
-        const normalizedType = mapLegacyType(type);
         cards = cards.filter(card => 
-          card.type === normalizedType || 
-          card.type === normalizedType.replace('-', '_')
+          card.type === type || 
+          card.type === type.replace('-', '_')
         );
       }
 

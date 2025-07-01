@@ -21,13 +21,14 @@ const AllianceProposalPopup = ({ proposal, isOpen, onClose }) => {
   const title = `Proposta de ${originCountry}`;
   
   // Funções para aceitar ou recusar proposta
+  const agreementType = proposal.agreementType || proposal.type;
   const handleAccept = () => {
-    socketApi.respondToAllianceProposal(proposalId, true);
+    socketApi.respondToAgreementProposal({ proposalId, accepted: true, agreementType });
     onClose();
   };
 
   const handleReject = () => {
-    socketApi.respondToAllianceProposal(proposalId, false);
+    socketApi.respondToAgreementProposal({ proposalId, accepted: false, agreementType });
     onClose();
   };
   

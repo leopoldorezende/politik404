@@ -73,14 +73,18 @@ const TradePopup = ({
     // Desabilitar o botão enquanto processa
     setIsSubmitting(true);
     
-    // Enviar proposta via socket
-    socketApi.sendTradeProposal({
+    // Montar proposalData com agreementType correto
+    const proposalData = {
       type: tradeType,
       product: product,
       targetCountry: selectedCountry,
       value: parsedAmount,
-      originCountry: myCountry
-    });
+      originCountry: myCountry,
+      agreementType: `trade-${tradeType}`
+    };
+    
+    // Enviar proposta via socket
+    socketApi.sendAgreementProposal(proposalData);
     
     // Mostrar mensagem de confirmação
     MessageService.showInfo(
