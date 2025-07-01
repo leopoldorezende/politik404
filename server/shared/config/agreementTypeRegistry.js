@@ -51,8 +51,7 @@ function validateTradeAgreement(proposal) {
 function validateMilitaryAgreement(proposal) {
   const { type, targetCountry } = proposal;
   
-  // Aceitar tanto o tipo legado quanto o unificado
-  if (!type || !targetCountry || (type !== 'military_alliance' && type !== 'military-alliance')) {
+  if (!type || !targetCountry || type !== 'military-alliance') {
     return { valid: false, error: messagesService.getAllianceMessage('invalidProposal') };
   }
   
@@ -65,8 +64,7 @@ function validateMilitaryAgreement(proposal) {
 function validateCooperationAgreement(proposal) {
   const { type, targetCountry } = proposal;
   
-  // Aceitar tanto o tipo legado quanto o unificado
-  if (!type || !targetCountry || (type !== 'strategic_cooperation' && type !== 'strategic-cooperation')) {
+  if (!type || !targetCountry || type !== 'strategic-cooperation') {
     return { valid: false, error: messagesService.getCooperationMessage('invalidProposal') };
   }
   

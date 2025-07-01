@@ -44,10 +44,11 @@ const TradePanel = ({ onOpenCardsPopup }) => {
     if (window.confirm('Tem certeza que deseja cancelar este acordo comercial?')) {
       setIsSubmitting(true);
       
-      const socket = socketApi.getSocketInstance();
-      if (socket) {
-        socket.emit('cancelTradeAgreement', agreementId);
-      }
+      // Usar o sistema unificado de cancelamento
+      socketApi.cancelAgreement({
+        cardId: agreementId,
+        agreementType: 'trade-import' // O tipo será determinado pelo servidor
+      });
       
       setTimeout(() => {
         setIsSubmitting(false);

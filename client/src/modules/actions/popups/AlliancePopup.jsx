@@ -24,7 +24,7 @@ const AlliancePopup = ({
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
     
-    const handleAllianceProposalResponse = (response) => {
+    const handleAgreementProposalResponse = (response) => {
       setIsSubmitting(false);
       
       if (response.accepted) {
@@ -39,10 +39,10 @@ const AlliancePopup = ({
       }
     };
     
-    socket.on('allianceProposalResponse', handleAllianceProposalResponse);
+    socket.on('agreementProposalResponse', handleAgreementProposalResponse);
     
     return () => {
-      socket.off('allianceProposalResponse', handleAllianceProposalResponse);
+      socket.off('agreementProposalResponse', handleAgreementProposalResponse);
     };
   }, [selectedCountry, onClose]);
   

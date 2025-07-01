@@ -26,7 +26,7 @@ const TradePopup = ({
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
     
-    const handleTradeProposalResponse = (response) => {
+    const handleAgreementProposalResponse = (response) => {
       setIsSubmitting(false);
       
       if (response.accepted) {
@@ -42,10 +42,10 @@ const TradePopup = ({
       }
     };
     
-    socket.on('tradeProposalResponse', handleTradeProposalResponse);
+    socket.on('agreementProposalResponse', handleAgreementProposalResponse);
     
     return () => {
-      socket.off('tradeProposalResponse', handleTradeProposalResponse);
+      socket.off('agreementProposalResponse', handleAgreementProposalResponse);
     };
   }, [tradeType, selectedCountry, onClose, redirectToTradePanel]);
   

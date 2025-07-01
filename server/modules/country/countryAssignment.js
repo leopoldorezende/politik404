@@ -145,7 +145,7 @@ function setupCountryAssignment(io, socket, gameState) {
     });
     
     // Envia o país atribuído ao jogador
-    socket.emit('countryAssigned', playerCountry);
+    socket.emit('countryAssigned', { country: playerCountry });
     
     // Atualiza a lista de jogadores para todos na sala
     sendUpdatedPlayersList(io, roomName, gameState);
@@ -161,7 +161,33 @@ function setupCountryAssignment(io, socket, gameState) {
     
     sendUpdatedPlayersList(io, roomName, gameState);
 
- });
+  });
+
+  // Evento para restaurar o país quando o jogador reconecta
+  socket.on('getMyCountry', () => {
+    const username = socket.username;
+    if (!username) {
+      socket.emit('error', 'Usuário não autenticado');
+      return;
+    }
+    
+    const roomName = getCurrentRoom(socket, gameState);
+    if (!roomName) {
+      socket.emit('error', 'Não está em uma sala');
+      return;
+    }
+    
+    const userRoomKey = `${username}:${roomName}`;
+    const playerCountry = gameState.userRoomCountries.get(userRoomKey);
+    
+    if (playerCountry) {
+      console.log(`Restaurando país para ${username}: ${playerCountry}`);
+      socket.emit('countryAssigned', { country: playerCountry });
+    } else {
+      console.warn(`País não encontrado para ${username} na sala ${roomName}`);
+      socket.emit('error', 'País não encontrado');
+    }
+  });
 
   // Solicitar troca de país
   socket.on('requestCountryChange', () => {
@@ -213,7 +239,7 @@ function setupCountryAssignment(io, socket, gameState) {
     console.log(`${username} trocou de país: ${oldCountry} -> ${newCountry}`);
     
     // Envia o novo país atribuído ao jogador
-    socket.emit('countryAssigned', newCountry);
+    socket.emit('countryAssigned', { country: newCountry });
     
     // Atualiza a lista de jogadores para todos na sala
     sendUpdatedPlayersList(io, roomName, gameState);
@@ -280,7 +306,7 @@ function setupCountryAssignment(io, socket, gameState) {
     console.log(`${username} solicitou e recebeu o país específico: ${countryName}`);
     
     // Envia o novo país atribuído ao jogador
-    socket.emit('countryAssigned', countryName);
+    socket.emit('countryAssigned', { country: countryName });
     
     // Atualiza a lista de jogadores para todos na sala
     sendUpdatedPlayersList(io, roomName, gameState);

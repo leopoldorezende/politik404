@@ -265,3 +265,8 @@ export const validateProposalData = (proposalData) => {
 };
 
 export default socketApi;
+
+// Exportação global para compatibilidade
+if (typeof window !== 'undefined') {
+  window.socketApi = socketApi;
+}

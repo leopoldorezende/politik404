@@ -82,7 +82,7 @@ export const cardState = createSlice({
       state.lastEventTimestamp = Date.now();
     },
 
-    tradeAgreementUpdatedEvent: (state, action) => {
+    agreementUpdatedEvent: (state, action) => {
       state.needsRefresh = true;
       state.lastEventTimestamp = Date.now();
     },

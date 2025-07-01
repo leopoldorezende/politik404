@@ -23,7 +23,7 @@ const CooperationPopup = ({
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
     
-    const handleCooperationProposalResponse = (response) => {
+    const handleAgreementProposalResponse = (response) => {
       setIsSubmitting(false);
       
       if (response.accepted) {
@@ -38,10 +38,10 @@ const CooperationPopup = ({
       }
     };
     
-    socket.on('cooperationProposalResponse', handleCooperationProposalResponse);
+    socket.on('agreementProposalResponse', handleAgreementProposalResponse);
     
     return () => {
-      socket.off('cooperationProposalResponse', handleCooperationProposalResponse);
+      socket.off('agreementProposalResponse', handleAgreementProposalResponse);
     };
   }, [selectedCountry, onClose]);
   
@@ -63,8 +63,9 @@ const CooperationPopup = ({
     setIsSubmitting(true);
     
     // Enviar proposta via socket com o tipo unificado
-    socketApi.sendCooperationProposal({
+    socketApi.sendAgreementProposal({
       type: 'strategic-cooperation',
+      agreementType: 'strategic-cooperation',
       targetCountry: selectedCountry,
       originCountry: myCountry
     });

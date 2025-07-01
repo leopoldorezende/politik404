@@ -275,57 +275,6 @@ function setupAgreementHandlers(io, socket, gameState) {
   // MIDDLEWARE E INTERCEPTADORES
   // =====================================================================
 
-  /**
-   * Handler específico para cancelar acordo comercial
-   */
-  socket.on('cancelTradeAgreement', (agreementId) => {
-    console.log('🗑️ cancelTradeAgreement received:', agreementId);
-    
-    try {
-      const username = socket.username;
-      const roomName = getCurrentRoom(socket, gameState);
-      
-      if (!username || !roomName || !global.cardService) {
-        socket.emit('error', 'Dados de sessão inválidos');
-        return;
-      }
-
-      const room = gameState.rooms.get(roomName);
-      const player = room?.players?.find(p => 
-        typeof p === 'object' && p.username === username
-      );
-      
-      if (!player?.country) {
-        socket.emit('error', 'Jogador não encontrado');
-        return;
-      }
-
-      console.log('✅ Cancelling trade agreement:', agreementId);
-
-      // Cancelar todos os cards relacionados ao acordo comercial
-      const cancelledCount = global.cardService.cancelCardsByAgreement(roomName, agreementId);
-
-      if (cancelledCount > 0) {
-        console.log('✅ Trade agreement cancelled:', cancelledCount, 'cards cancelled');
-        
-        io.to(roomName).emit('cardsUpdated', {
-          roomName,
-          action: 'trade_agreement_cancelled',
-          agreementId,
-          timestamp: Date.now()
-        });
-        
-        io.to(roomName).emit('tradeAgreementCancelled', agreementId);
-      } else {
-        socket.emit('error', 'Acordo comercial não encontrado ou já cancelado');
-      }
-
-    } catch (error) {
-      console.error('❌ Error in cancelTradeAgreement:', error);
-      socket.emit('error', 'Erro interno');
-    }
-  });
-
   console.log('✅ Agreement Engine setup complete - All handlers registered');
 }
 

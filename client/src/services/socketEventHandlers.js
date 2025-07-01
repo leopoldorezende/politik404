@@ -30,6 +30,11 @@ import {
   resetTradeState,
   updateStats 
 } from '../modules/trade/tradeState';
+import {
+  setPlayerCards,
+  setPlayerPoints,
+  setPlayerRanking
+} from '../modules/cards/cardState';
 import { setIsJoiningRoom, setReconnectAttempts, getIsJoiningRoom } from './socketConnection';
 import StorageService from './storageService.js';
 import MessageService from '../ui/toast/messageService';
@@ -189,11 +194,11 @@ const unifiedAgreementHandlers = {
 };
 
 // =====================================================================
-// HANDLERS LEGADOS PARA COMPATIBILIDADE
+// HANDLERS UNIFICADOS PARA COMPATIBILIDADE
 // =====================================================================
 
 /**
- * Handlers específicos para acordos comerciais (compatibilidade)
+ * Handler unificado para atualização de acordos comerciais
  */
 const updateTradeAgreementsHandler = (data) => {
   store.dispatch(resetTradeState());
@@ -293,57 +298,11 @@ export const setupSocketEvents = (socket, socketApi) => {
   });
 
   // ===================================================================
-  // 🔄 EVENTOS LEGADOS PARA COMPATIBILIDADE
+  // 🔄 HANDLERS DE COMPATIBILIDADE UNIFICADOS
   // ===================================================================
 
-  // COMÉRCIO - Mantidos para compatibilidade retroativa
-  // socket.on('tradeProposalReceived', createProposalReceivedHandler('trade'));
-  socket.on('tradeProposalResponse', (response) => {
-    console.log('📬 Resposta de proposta comercial recebida:', response);
-    if (response.accepted) {
-      MessageService.showSuccess(
-        `${response.targetCountry} aceitou sua proposta comercial!`
-      );
-    } else {
-      MessageService.showWarning(
-        `${response.targetCountry} recusou sua proposta comercial.`
-      );
-    }
-  });
-  // socket.on('tradeAgreementCancelled', createAgreementCancelledHandler('trade', removeTradeAgreement));
+  // Handler unificado para atualização de acordos comerciais
   socket.on('updateTradeAgreements', updateTradeAgreementsHandler);
-
-  // ALIANÇA - Mantidos para compatibilidade retroativa
-  // socket.on('allianceProposalReceived', createProposalReceivedHandler('alliance'));
-  socket.on('allianceProposalResponse', (response) => {
-    console.log('📬 Resposta de proposta de aliança recebida:', response);
-    if (response.accepted) {
-      MessageService.showSuccess(
-        `${response.targetCountry} aceitou sua proposta de aliança militar!`
-      );
-    } else {
-      MessageService.showWarning(
-        `${response.targetCountry} recusou sua proposta de aliança militar.`
-      );
-    }
-  });
-  // socket.on('allianceAgreementCancelled', createAgreementCancelledHandler('alliance'));
-
-  // COOPERAÇÃO - Mantidos para compatibilidade retroativa
-  // socket.on('cooperationProposalReceived', createProposalReceivedHandler('cooperation'));
-  socket.on('cooperationProposalResponse', (response) => {
-    console.log('📬 Resposta de proposta de cooperação recebida:', response);
-    if (response.accepted) {
-      MessageService.showSuccess(
-        `${response.targetCountry} aceitou sua proposta de cooperação estratégica!`
-      );
-    } else {
-      MessageService.showWarning(
-        `${response.targetCountry} recusou sua proposta de cooperação estratégica.`
-      );
-    }
-  });
-  // socket.on('cooperationAgreementCancelled', createAgreementCancelledHandler('cooperation'));
 
   // ===================================================================
   // EVENTOS DE AUTENTICAÇÃO (MANTIDOS)
@@ -487,112 +446,105 @@ export const setupSocketEvents = (socket, socketApi) => {
   
   socket.on('countryAssigned', (data) => {
     console.log('🌍 País atribuído:', data);
-    
-    // O servidor pode enviar tanto { country: "India" } quanto só "India"
-    const country = data.country || data;
-    
-    store.dispatch(setMyCountry(country));
-    StorageService.set(StorageService.KEYS.MY_COUNTRY, country);
+    store.dispatch(setMyCountry(data.country));
+    StorageService.set(StorageService.KEYS.MY_COUNTRY, data.country);
+    MessageService.showSuccess(`Você foi designado para ${data.country}!`);
   });
-  
-  socket.on('countryAssignmentFailed', (error) => {
-    console.error('❌ Falha na atribuição do país:', error);
-    MessageService.showError(`Não foi possível atribuir o país: ${error.message || 'País indisponível'}`);
+
+  socket.on('countryRequestFailed', (error) => {
+    console.error('❌ Falha ao solicitar país:', error);
+    MessageService.showError(`Não foi possível solicitar o país: ${error.message || 'Erro desconhecido'}`);
   });
+
+  // ===================================================================
+  // EVENTOS ECONÔMICOS (MANTIDOS)
+  // ===================================================================
   
-  socket.on('countriesUpdated', (countries) => {
-    console.log('🌍 Países atualizados:', countries.length);
-    store.dispatch(setCountriesData(countries));
+  socket.on('economicDataUpdated', (data) => {
+    console.log('💰 Dados econômicos atualizados:', data);
+    store.dispatch(updateEconomicData(data));
   });
-  
-  socket.on('countryDataUpdated', (data) => {
-    console.log('📊 Dados do país atualizados:', data);
-    store.dispatch(updateCountryData(data));
+
+  socket.on('debtSummary', (data) => {
+    console.log('💳 Resumo de dívida recebido:', data);
+    store.dispatch(updateDebtSummary(data));
+  });
+
+  socket.on('economicCalculationError', (error) => {
+    console.error('❌ Erro no cálculo econômico:', error);
+    MessageService.showError(`Erro no cálculo econômico: ${error.message || 'Erro desconhecido'}`);
   });
 
   // ===================================================================
   // EVENTOS DE CHAT (MANTIDOS)
   // ===================================================================
   
-  socket.on('chatMessage', (data) => {
-    console.log('💬 Mensagem de chat:', data);
-    store.dispatch(addMessage(data));
+  socket.on('chatMessage', (message) => {
+    console.log('💬 Mensagem de chat recebida:', message);
+    store.dispatch(addChatMessage(message));
   });
-  
+
+  socket.on('privateMessage', (message) => {
+    console.log('🔒 Mensagem privada recebida:', message);
+    store.dispatch(addPrivateMessage(message));
+  });
+
   socket.on('privateHistory', (data) => {
-    console.log('📜 Histórico privado:', data);
-    store.dispatch(setChatHistory(data));
+    console.log('📜 Histórico privado recebido:', data);
+    store.dispatch(setPrivateHistory(data.messages));
   });
 
   // ===================================================================
-  // EVENTOS DE ECONOMIA (MANTIDOS)
+  // EVENTOS DE CARDS (MANTIDOS)
   // ===================================================================
   
-  socket.on('economicDataUpdated', (data) => {
-    console.log('💰 Dados econômicos atualizados:', data);
-    if (data.country) {
-      store.dispatch(updateCountryData({
-        country: data.country,
-        economicData: data
-      }));
-    }
+  socket.on('cardsUpdated', (data) => {
+    console.log('🃏 Cards atualizados:', data);
+    // A lógica de atualização de cards está nos componentes específicos
   });
-  
-  socket.on('debtSummary', (data) => {
-    console.log('📊 Resumo da dívida:', data);
-    // Implementar handler de dívida se necessário
+
+  socket.on('playerCardsResponse', (data) => {
+    console.log('🃏 Cards do jogador recebidos:', data);
+    store.dispatch(setPlayerCards(data.cards));
+  });
+
+  socket.on('playerPointsResponse', (data) => {
+    console.log('📊 Pontos do jogador recebidos:', data);
+    store.dispatch(setPlayerPoints(data));
+  });
+
+  socket.on('playerRankingResponse', (data) => {
+    console.log('🏆 Ranking recebido:', data);
+    store.dispatch(setPlayerRanking(data.ranking));
   });
 
   // ===================================================================
-  // EVENTOS DE ERRO GERAIS (MANTIDOS)
+  // EVENTOS DE ERRO (MANTIDOS)
   // ===================================================================
   
   socket.on('error', (error) => {
     console.error('❌ Erro do servidor:', error);
-    
-    const errorMessage = typeof error === 'string' ? error : 
-                        error.message || 'Erro desconhecido do servidor';
-    
-    MessageService.showError(errorMessage);
-  });
-  
-  socket.on('notification', (data) => {
-    console.log('🔔 Notificação:', data);
-    
-    const { type = 'info', message, persistent = false } = data;
-    
-    if (MessageService[type]) {
-      MessageService[type](message, { persistent });
-    } else {
-      MessageService.showInfo(message, { persistent });
-    }
+    MessageService.showError(`Erro do servidor: ${error.message || error}`);
   });
 
-  console.log('✅ Todos os event handlers configurados - Sistema Unificado Ativo');
-  console.log('🎯 Suporte a eventos unificados + compatibilidade legada');
-  
-  // Armazenar referência do socketApi no store para uso nos handlers
-  store.socketApi = socketApi;
+  socket.on('warning', (warning) => {
+    console.warn('⚠️ Aviso do servidor:', warning);
+    MessageService.showWarning(`Aviso: ${warning.message || warning}`);
+  });
+
+  console.log('✅ Socket events setup complete - UNIFIED SYSTEM');
 };
 
 // =====================================================================
-// UTILITÁRIOS PARA LIMPEZA
+// FUNÇÕES DE LIMPEZA E UTILITÁRIAS
 // =====================================================================
 
-/**
- * Limpar todos os timeouts e dados temporários
- */
 export const cleanupSocketEvents = () => {
-  Object.keys(debounceTimeouts).forEach(key => {
-    clearTimeout(debounceTimeouts[key]);
-    delete debounceTimeouts[key];
-  });
-  
-  isAuthenticated = false;
-  authMutex.queue = [];
-  authMutex.isExecuting = false;
-  
-  console.log('🧹 Limpeza de eventos socket concluída');
+  const socket = getSocketInstance();
+  if (socket) {
+    socket.removeAllListeners();
+    console.log('🧹 Socket events cleaned up');
+  }
 };
 
 /**
@@ -608,7 +560,7 @@ export const isUnifiedSystemActive = () => {
 export const getHandlersStatus = () => {
   return {
     unifiedHandlers: Object.keys(unifiedAgreementHandlers).length,
-    legacyCompatibility: true,
+    legacyCompatibility: false, // Removido código legado
     debounceTimeouts: Object.keys(debounceTimeouts).length,
     isAuthenticated,
     authMutexQueue: authMutex.queue.length

@@ -237,7 +237,7 @@ export const useTradeAgreements = (roomName) => {
     setLoading(true);
     const socket = socketApi.getSocketInstance();
     if (socket) {
-      socket.emit('getTradeAgreements');
+      socket.emit('getActiveAgreements');
     }
   }, [roomName]);
 
@@ -245,18 +245,12 @@ export const useTradeAgreements = (roomName) => {
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
 
-    const handleTradeAgreementsList = (data) => {
+    const handleActiveAgreements = (data) => {
       setAgreements(data.agreements || []);
       setLoading(false);
     };
 
-    const handleTradeAgreementUpdated = (data) => {
-      setAgreements(data.agreements || []);
-      setLoading(false);
-    };
-
-    socket.on('tradeAgreementsList', handleTradeAgreementsList);
-    socket.on('tradeAgreementUpdated', handleTradeAgreementUpdated);
+    socket.on('activeAgreements', handleActiveAgreements);
 
     // Buscar dados iniciais
     if (roomName) {
@@ -264,8 +258,7 @@ export const useTradeAgreements = (roomName) => {
     }
 
     return () => {
-      socket.off('tradeAgreementsList', handleTradeAgreementsList);
-      socket.off('tradeAgreementUpdated', handleTradeAgreementUpdated);
+      socket.off('activeAgreements', handleActiveAgreements);
     };
   }, [roomName, refresh]);
 

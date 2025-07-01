@@ -83,7 +83,11 @@ const MapView = ({ justClosedSidebar }) => {
   }, [justClosedSidebar]);
 
   const getOtherPlayersCountries = () => {
-    return players?.filter(player => {
+    if (!players || !Array.isArray(players)) {
+      return [];
+    }
+    
+    return players.filter(player => {
       if (typeof player === 'object') {
         // MUDAR: Não filtrar por isOnline, apenas por username
         return player.username !== sessionStorage.getItem('username');
@@ -94,11 +98,11 @@ const MapView = ({ justClosedSidebar }) => {
       return false;
     }).map(player => {
       if (typeof player === 'object') {
-        return player.country;
+        return player.country || '';
       }
       const match = player.match(/\((.*)\)/);
       return match ? match[1] : '';
-    }).filter(Boolean) || [];
+    }).filter(country => country && country.trim() !== '') || [];
   };
 
   useEffect(() => {
@@ -161,28 +165,67 @@ const MapView = ({ justClosedSidebar }) => {
     }
   }, [loaded, players, selectedCountry]);
 
+  useEffect(() => {
+    if (loaded && countriesData && map.current) {
+      // Aguardar um pouco para garantir que myCountry seja definido
+      const timer = setTimeout(() => {
+        console.log('Verificando dados para setupMapLayers:', {
+          loaded,
+          hasCountriesData: !!countriesData,
+          hasMap: !!map.current,
+          myCountry,
+          selectedCountry,
+          playersCount: players?.length || 0
+        });
+        
+        // Se não temos myCountry mas temos players, solicitar o país
+        if (!myCountry && players && players.length > 0) {
+          console.log('myCountry não definido, solicitando do servidor...');
+          const socket = window.socketApi?.getSocketInstance();
+          if (socket) {
+            socket.emit('getMyCountry');
+          }
+        }
+        
+        if (countriesData && Object.keys(countriesData).length > 0) {
+          setupMapLayers();
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loaded, countriesData, myCountry, players, selectedCountry]);
+
   const loadData = async () => {
     try {
+      console.log('Iniciando carregamento de dados...');
       const [countries, coordinates] = await Promise.all([
         loadCountriesData(),
         loadCountriesCoordinates(),
       ]);
 
+      console.log('Dados carregados:', {
+        countries: countries ? Object.keys(countries).length : 0,
+        coordinates: coordinates ? 'loaded' : 'not loaded'
+      });
+
       if (coordinates) dispatch(setCountriesCoordinates(coordinates));
-      if (countries && map.current) setupMapLayers();
+      if (countries && map.current) {
+        console.log('Configurando camadas do mapa...');
+        setupMapLayers();
+      }
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
     }
   };
 
-  useEffect(() => {
-    if (loaded && countriesData && map.current) {
-      setupMapLayers();
-    }
-  }, [loaded, countriesData, myCountry, players, selectedCountry]);
-
   const setupMapLayers = () => {
     const mapInstance = map.current;
+    if (!mapInstance) {
+      console.warn('Mapa não inicializado ainda');
+      return;
+    }
+    
     if (!mapInstance.getSource('countries')) {
       mapInstance.addSource('countries', {
         type: 'vector',
@@ -190,39 +233,68 @@ const MapView = ({ justClosedSidebar }) => {
       });
     }
     
+    // Verificar se temos dados necessários
+    const safeCountriesData = countriesData || {};
+    if (!safeCountriesData || Object.keys(safeCountriesData).length === 0) {
+      console.warn('Dados dos países não carregados ainda');
+      return;
+    }
+    
+    console.log('Debug - Dados disponíveis:', {
+      myCountry,
+      selectedCountry,
+      players: players?.length || 0,
+      countriesDataKeys: Object.keys(safeCountriesData).length
+    });
+    
     // Considerar jogadores offline como ainda "controlando" o país
     const otherPlayersCountries = getOtherPlayersCountries();
     console.log('Países de outros jogadores:', otherPlayersCountries);
 
     // Países no JSON mas sem jogadores controlando
-    const availableCountries = Object.keys(countriesData || {}).filter(country => 
+    const availableCountries = Object.keys(safeCountriesData).filter(country => 
       country !== myCountry && !otherPlayersCountries.includes(country)
     );
     console.log('Países disponíveis sem jogadores:', availableCountries);
+
+    // Verificações de segurança para evitar valores undefined
+    const safeMyCountry = (myCountry && typeof myCountry === 'string' && myCountry.trim() !== '') ? myCountry : null;
+    const safeSelectedCountry = (selectedCountry && typeof selectedCountry === 'string' && selectedCountry.trim() !== '') ? selectedCountry : null;
+    const safeOtherPlayersCountries = otherPlayersCountries || [];
+    const safeAvailableCountries = availableCountries || [];
+    const safeCountriesDataKeys = Object.keys(safeCountriesData);
+
+    console.log('Debug - Valores seguros:', {
+      safeMyCountry,
+      safeSelectedCountry,
+      safeOtherPlayersCountries,
+      safeAvailableCountries: safeAvailableCountries.length,
+      safeCountriesDataKeys: safeCountriesDataKeys.length
+    });
 
     // Expressão de cores
     const fillColorExpression = [
       'case',
       // Meu país e selecionado → amarelo mais claro (quase dourado)
       ['all',
-        ['==', ['get', 'name_en'], myCountry],
-        ['==', ['get', 'name_en'], selectedCountry]
+        ['==', ['get', 'name_en'], safeMyCountry],
+        ['==', ['get', 'name_en'], safeSelectedCountry]
       ], 'rgba(238, 195, 0, 0.9)',
 
       // Meu país (não selecionado) → amarelo padrão
-      ['==', ['get', 'name_en'], myCountry], 'rgba(255, 232, 116, 0.9)',
+      ['==', ['get', 'name_en'], safeMyCountry], 'rgba(255, 232, 116, 0.9)',
 
       // País selecionado em roxo (somente se não for meu país)
       ['all', 
-        ['==', ['get', 'name_en'], selectedCountry],
-        ['!=', ['get', 'name_en'], myCountry]
+        ['==', ['get', 'name_en'], safeSelectedCountry],
+        ['!=', ['get', 'name_en'], safeMyCountry]
       ], 'rgba(105, 65, 217, 0.9)', // 0, 220, 160  CIANO
       // Países de outros jogadores em laranja
-      ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(240, 120, 0, 0.2)',
+      ['in', ['get', 'name_en'], ['literal', safeOtherPlayersCountries]], 'rgba(240, 120, 0, 0.2)',
       // Países disponíveis em branco transparente
-      ['in', ['get', 'name_en'], ['literal', availableCountries]], 'rgba(255, 255, 255, 0.5)',
+      ['in', ['get', 'name_en'], ['literal', safeAvailableCountries]], 'rgba(255, 255, 255, 0.5)',
       // Países que não estão no jogo em cinza escuro transparente
-      ['!', ['in', ['get', 'name_en'], ['literal', Object.keys(countriesData || {})]]], 'rgba(90, 120, 120, .3)',
+      ['!', ['in', ['get', 'name_en'], ['literal', safeCountriesDataKeys]]], 'rgba(90, 120, 120, .3)',
       // Fallback para outros países
       'rgba(30, 50, 70, 0)'
     ];
@@ -230,18 +302,18 @@ const MapView = ({ justClosedSidebar }) => {
     const borderColorExpression = [
       'case',
       // Borda do meu país sempre em preto
-      ['==', ['get', 'name_en'], myCountry], 'rgba(0, 0, 0, 1)',
+      ['==', ['get', 'name_en'], safeMyCountry], 'rgba(0, 0, 0, 1)',
       // Borda do país selecionado em preto
       ['all', 
-        ['==', ['get', 'name_en'], selectedCountry],
-        ['!=', ['get', 'name_en'], myCountry]
+        ['==', ['get', 'name_en'], safeSelectedCountry],
+        ['!=', ['get', 'name_en'], safeMyCountry]
       ], 'rgba(0, 0, 0, 0.8)',
       // Borda dos países de outros jogadores em preto
-      ['in', ['get', 'name_en'], ['literal', otherPlayersCountries]], 'rgba(240, 120, 0, 1)',
+      ['in', ['get', 'name_en'], ['literal', safeOtherPlayersCountries]], 'rgba(240, 120, 0, 1)',
       // Borda dos países disponíveis em cinza
-      ['in', ['get', 'name_en'], ['literal', availableCountries]], 'rgba(90, 120, 120, 1)',
+      ['in', ['get', 'name_en'], ['literal', safeAvailableCountries]], 'rgba(90, 120, 120, 1)',
       // Outra condição para países disponíveis (parece redundante no código original)
-      ['in', ['get', 'name_en'], ['literal', availableCountries]], 'rgba(120, 120, 120, 0.8)',
+      ['in', ['get', 'name_en'], ['literal', safeAvailableCountries]], 'rgba(120, 120, 120, 0.8)',
       // Fallback para outras bordas
       '#ffffff'
     ];
@@ -300,9 +372,9 @@ const MapView = ({ justClosedSidebar }) => {
     }
 
     // Ocultar labels dos países que não existem no JSON
-    if (countriesData) {
+    if (safeCountriesData) {
       mapInstance.setFilter('country-label', [
-        'in', ['get', 'name_en'], ['literal', Object.keys(countriesData)]
+        'in', ['get', 'name_en'], ['literal', safeCountriesDataKeys]
       ]);
     }
   };

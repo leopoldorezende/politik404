@@ -139,14 +139,10 @@ export const useCards = (roomName, countryName) => {
       }
     };
     
-    const handleTradeAgreementCancelled = (data) => {
-      console.log('[CARDS] Trade agreement cancelled:', data);
-      if (autoRefresh) {
-        setTimeout(() => {
-          refreshPlayerCards();
-          refreshPlayerPoints();
-        }, 100);
-      }
+    const handleAgreementUpdated = (data) => {
+      console.log('[AGREEMENT] Agreement updated:', data);
+      // Recarregar pontos pois agreements geram cards
+      refreshPlayerPoints();
     };
     
     const handlePlayerRankingResponse = (data) => {
@@ -171,7 +167,7 @@ export const useCards = (roomName, countryName) => {
     socket.on('playerCardsResponse', handlePlayerCardsResponse);
     socket.on('playerPointsResponse', handlePlayerPointsResponse);
     socket.on('playerRankingResponse', handlePlayerRankingResponse);
-    socket.on('tradeAgreementCancelled', handleTradeAgreementCancelled);
+    socket.on('agreementCancelled', handleAgreementUpdated);
     socket.on('cardsUpdated', handleCardsUpdated); // ✅ ADICIONAR ESTA LINHA
     
     // Cleanup - CORREÇÃO AQUI: 
@@ -179,7 +175,7 @@ export const useCards = (roomName, countryName) => {
       socket.off('playerCardsResponse', handlePlayerCardsResponse);
       socket.off('playerPointsResponse', handlePlayerPointsResponse);
       socket.off('playerRankingResponse', handlePlayerRankingResponse);
-      socket.off('tradeAgreementCancelled', handleTradeAgreementCancelled);
+      socket.off('agreementCancelled', handleAgreementUpdated);
       socket.off('cardsUpdated', handleCardsUpdated); // ✅ CORRIGIR: era socket.on, agora é socket.off
     };
   }, [roomName, countryName, autoRefresh, refreshAll, refreshPlayerCards, refreshPlayerPoints, dispatch]);

@@ -853,13 +853,6 @@ removeRoom(roomName) {
   // ========================================================================
 
   /**
-   * Método legado para compatibilidade - delegado para cálculos
-   */
-  performEconomicCalculations(roomName, countryName) {
-    return this.performAdvancedEconomicCalculations(roomName, countryName);
-  }
-
-  /**
    * Método para obter indicadores formatados (compatibilidade com hooks)
    */
   getFormattedEconomicIndicators(roomName, countryName) {

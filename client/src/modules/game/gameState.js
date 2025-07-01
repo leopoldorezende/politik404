@@ -4,7 +4,7 @@ const initialState = {
   myCountry: null,
   players: [],
   onlinePlayers: [],
-  countriesData: null,
+  countriesData: {},
   countriesCoordinates: null,
   selectedCountry: null,
 };
@@ -82,7 +82,7 @@ export const gameState = createSlice({
       });
     },
     setCountriesData: (state, action) => {
-      state.countriesData = action.payload;
+      state.countriesData = action.payload || {};
     },
     updateCountryData: (state, action) => {
       const { countryCode, data } = action.payload;
