@@ -42,7 +42,7 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
   }, [isOpen, initialFilter]);
 
   // ========================================================================
-  // CORREÇÃO: ESCUTA DE EVENTOS SOCKET EM TEMPO REAL
+  // ✅ CORREÇÃO: ESCUTA DE EVENTOS SOCKET UNIFICADOS EM TEMPO REAL
   // ========================================================================
   useEffect(() => {
     // Só escutar eventos quando o popup estiver aberto
@@ -64,33 +64,16 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
         }, 100);
       }
     };
-
-    // Handler para atualizações de acordos comerciais
-    const handleTradeAgreementUpdated = (data) => {
-      console.log('[CARDS POPUP] Trade agreement updated:', data);
+    
+    // Handler unificado para cancelamento de acordos
+    const handleAgreementCancelled = (data) => {
+      console.log('[CARDS POPUP] Unified agreement cancelled event received:', data);
       
-      // Sempre atualizar quando trade agreements mudam
-      setTimeout(() => {
-        refreshAll();
-      }, 100);
-    };
-
-    // Handler para acordos comerciais cancelados
-    const handleTradeAgreementCancelled = (agreementId) => {
-      console.log('[CARDS POPUP] Trade agreement cancelled:', agreementId);
-      
-      setTimeout(() => {
-        refreshAll();
-      }, 100);
-    };
-
-    // Handler para alianças militares canceladas
-    const handleMilitaryAllianceCancelled = (data) => {
-      console.log('[CARDS POPUP] Military alliance cancelled:', data);
-      
-      setTimeout(() => {
-        refreshAll();
-      }, 100);
+      if (data.roomName === currentRoom.name) {
+        setTimeout(() => {
+          refreshAll();
+        }, 100);
+      }
     };
 
     // Handler genérico para qualquer mudança de acordo/card
@@ -102,87 +85,63 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
       }, 100);
     };
 
-    // Registrar todos os listeners relevantes
+    // Registrar apenas os listeners unificados relevantes
     socket.on('cardsUpdated', handleCardsUpdated);
-    socket.on('tradeAgreementUpdated', handleTradeAgreementUpdated);
-    socket.on('tradeAgreementCancelled', handleTradeAgreementCancelled);
-    socket.on('militaryAllianceCancelled', handleMilitaryAllianceCancelled);
-    
-    // Listeners adicionais para garantir que todas as mudanças sejam capturadas
-    socket.on('tradeProposalProcessed', handleAgreementChange);
-    socket.on('allianceProposalProcessed', handleAgreementChange);
+    socket.on('agreementCancelled', handleAgreementCancelled); // ✅ Listener unificado de cancelamento
+    socket.on('agreementProposalProcessed', handleAgreementChange);
 
     // Cleanup: remover listeners quando popup fechar ou componente desmontar
     return () => {
       console.log('[CARDS POPUP] Removendo listeners de tempo real');
       
       socket.off('cardsUpdated', handleCardsUpdated);
-      socket.off('tradeAgreementUpdated', handleTradeAgreementUpdated);
-      socket.off('tradeAgreementCancelled', handleTradeAgreementCancelled);
-      socket.off('militaryAllianceCancelled', handleMilitaryAllianceCancelled);
-      socket.off('tradeProposalProcessed', handleAgreementChange);
-      socket.off('allianceProposalProcessed', handleAgreementChange);
+      socket.off('agreementCancelled', handleAgreementCancelled);
+      socket.off('agreementProposalProcessed', handleAgreementChange);
     };
   }, [isOpen, currentRoom?.name, myCountry, refreshAll]);
 
+  // ========================================================================
+  // ✅ CORREÇÃO: UNIFICAR A LÓGICA DE CANCELAMENTO DE CARDS
+  // ========================================================================
   const handleRemoveCard = (card) => {
-    if (card.type === 'military_alliance') {
-      // Lógica especial para alianças militares
-      if (window.confirm(`Tem certeza que deseja cancelar a aliança militar com ${card.target}? Esta ação encerrará o acordo militar entre os países e você precisará aguardar 1 minuto antes de propor uma nova aliança.`)) {
-        const socket = socketApi.getSocketInstance();
-        if (socket) {
-          // Cancelar aliança militar via card ID
-          socket.emit('cancelMilitaryAlliance', card.id);
-          
-          // CORREÇÃO: Refresh imediato após cancelamento
-          setTimeout(() => {
-            refreshAll();
-          }, 200);
-        }
-      }
-    } else if (card.type === 'export' || card.type === 'import') {
-      // Lógica para acordos comerciais
-      if (window.confirm(`Tem certeza que deseja remover este card e cancelar o acordo comercial?`)) {
-        const socket = socketApi.getSocketInstance();
-        if (socket && card.sourceAgreementId) {
-          // Cancelar o acordo comercial que gerou este card
-          socket.emit('cancelTradeAgreement', card.sourceAgreementId);
-          
-          // CORREÇÃO: Refresh imediato após cancelamento
-          setTimeout(() => {
-            refreshAll();
-          }, 200);
-        }
-      }
-    } else {
-      // Outros tipos de cards
-      if (window.confirm(`Tem certeza que deseja remover este card?`)) {
-        const socket = socketApi.getSocketInstance();
-        if (socket) {
-          socket.emit('cancelCard', card.id);
-          
-          // CORREÇÃO: Refresh imediato após cancelamento
-          setTimeout(() => {
-            refreshAll();
-          }, 200);
-        }
+    if (!socketApi || !card.sourceAgreementId) {
+      console.error('Dados insuficientes para cancelar o card.');
+      MessageService.showError('Não foi possível cancelar o card. Falta o ID do acordo.');
+      return;
+    }
+
+    // Usar o ID do acordo como identificador
+    const agreementId = card.sourceAgreementId;
+    const agreementType = card.type;
+
+    if (window.confirm(`Tem certeza que deseja cancelar o acordo de ${agreementType}?`)) {
+      const socket = socketApi.getSocketInstance();
+      if (socket) {
+        // Emitir o evento de cancelamento unificado
+        console.log(`Emitindo evento de cancelamento unificado para o acordo ${agreementId} do tipo ${agreementType}`);
+        socket.emit('cancelAgreement', { agreementId, agreementType });
+
+        // Refresh imediato após o cancelamento
+        setTimeout(() => {
+          refreshAll();
+        }, 200);
       }
     }
   };
 
-  // Definir grupos de cards - REORGANIZADO conforme solicitado
+  // Definir grupos de cards - REORGANIZADO E UNIFICADO
   const cardGroups = {
     'acordos-comerciais': {
       label: 'Acordos Comerciais',
-      types: ['import', 'export']
+      types: ['trade-import', 'trade-export']
     },
     'acordos-internos': {
       label: 'Acordos Internos',
-      types: ['political_pact', 'business_partnership', 'media_control']
+      types: ['political-pact', 'business-partnership', 'media-control']
     },
     'acordos-defesa': {
       label: 'Acordos de Defesa',
-      types: ['strategic_cooperation', 'military_alliance']
+      types: ['strategic-cooperation', 'military-alliance']
     }
   };
   
@@ -220,16 +179,16 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
     };
   };
   
-  // Função para obter cor do card`
+  // Função para obter cor do card - UNIFICADA
   const getCardColor = (cardType) => {
     const colors = {
-      export: '#27ae60',
-      import: '#3498db',
-      political_pact: '#9b59b6',
-      business_partnership: '#f39c12',
-      media_control: '#e74c3c',
-      strategic_cooperation: '#16a085',
-      military_alliance: '#00bcd4' // ✅ CIANO conforme solicitado
+      'trade-export': '#27ae60',
+      'trade-import': '#3498db',
+      'political-pact': '#9b59b6',
+      'business-partnership': '#f39c12',
+      'media-control': '#e74c3c',
+      'strategic-cooperation': '#16a085',
+      'military-alliance': '#00bcd4'
     };
     
     return colors[cardType] || '#95a5a6';
@@ -349,12 +308,12 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
                           </div>
                           
                           <div className="card-actions">
-                            {(card.sourceAgreementId || card.type === 'military_alliance') && (
+                            {(card.sourceAgreementId || card.type === 'military-alliance') && (
                               <button 
                                 className="card-remove-btn"
                                 onClick={() => handleRemoveCard(card)}
                                 title={
-                                  card.type === 'military_alliance' 
+                                  card.type === 'military-alliance' 
                                     ? "Cancelar aliança militar" 
                                     : "Remover card e cancelar acordo"
                                 }

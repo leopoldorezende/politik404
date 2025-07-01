@@ -9,11 +9,11 @@ import redis from '../redisClient.js';
 export const CARD_TYPES = {
   EXPORT: { name: 'export', points: 2 },
   IMPORT: { name: 'import', points: 1 },
-  POLITICAL_PACT: { name: 'political_pact', points: 3 },
-  BUSINESS_PARTNERSHIP: { name: 'business_partnership', points: 3 },
-  MEDIA_CONTROL: { name: 'media_control', points: 3 },
-  STRATEGIC_COOPERATION: { name: 'strategic_cooperation', points: 4 },
-  MILITARY_ALLIANCE: { name: 'military_alliance', points: 5 }
+  POLITICAL_PACT: { name: 'political-pact', points: 3 },
+  BUSINESS_PARTNERSHIP: { name: 'business-partnership', points: 3 },
+  MEDIA_CONTROL: { name: 'media-control', points: 3 },
+  STRATEGIC_COOPERATION: { name: 'strategic-cooperation', points: 4 },
+  MILITARY_ALLIANCE: { name: 'military-alliance', points: 5 }
 };
 
 // Status dos cards

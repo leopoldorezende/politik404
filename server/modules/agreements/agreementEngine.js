@@ -217,24 +217,34 @@ export class AgreementEngine {
   async handleResponse(socket, gameState, io, response) {
     const { proposalId, accepted, agreementType } = response;
     
+    console.log('🔧 handleResponse called with:', { proposalId, accepted, agreementType });
+    
     // Normalizar tipo
     const normalizedType = mapLegacyType(agreementType || 'trade');
     const eventPrefix = this.getSocketEventPrefix(normalizedType);
     
+    console.log('✅ Normalized type:', normalizedType, 'Event prefix:', eventPrefix);
+    
     // Obter proposta armazenada
     const proposal = socket[`${eventPrefix}Proposal`];
+    console.log('🔍 Proposal found in current socket:', proposal);
+    
     if (!proposal) {
+      console.error('❌ Proposal not found in current socket');
       socket.emit('error', 'Proposta não encontrada');
       return false;
     }
 
     const config = getAgreementTypeConfig(normalizedType);
     if (!config) {
+      console.error('❌ Config not found for type:', normalizedType);
       socket.emit('error', 'Configuração de acordo não encontrada');
       return false;
     }
 
     if (accepted) {
+      console.log('✅ Proposal accepted, creating agreement...');
+      
       // Aceitar proposta - criar acordo
       const success = await this.createAgreement(
         getCurrentRoom(socket, gameState),
@@ -246,6 +256,8 @@ export class AgreementEngine {
       );
 
       if (success) {
+        console.log('✅ Agreement created successfully');
+        
         // Notificar remetente da proposta
         this.notifyProposalSender(gameState, io, proposal, normalizedType, true);
         
@@ -253,9 +265,12 @@ export class AgreementEngine {
         const processedResponse = messagesService.createProcessedResponse(eventPrefix, true);
         socket.emit(`${eventPrefix}ProposalProcessed`, processedResponse);
       } else {
+        console.error('❌ Failed to create agreement');
         socket.emit('error', 'Falha ao criar acordo');
       }
     } else {
+      console.log('❌ Proposal rejected');
+      
       // Rejeitar proposta
       this.notifyProposalSender(gameState, io, proposal, normalizedType, false);
       
@@ -365,7 +380,21 @@ export class AgreementEngine {
       return { valid: false, error: 'Validação não configurada para este tipo' };
     }
 
-    return config.validation(proposalData);
+    // Para acordos comerciais, usar o tipo original (import/export) na validação
+    // mas manter o tipo normalizado para outras operações
+    const validationData = { ...proposalData };
+    
+    if (agreementType.startsWith('trade-')) {
+      // Extrair o tipo original (import/export) do tipo normalizado
+      validationData.type = agreementType.replace('trade-', '');
+    } else {
+      validationData.type = agreementType;
+    }
+
+    console.log('🔧 validateAgreement - agreementType:', agreementType);
+    console.log('🔧 validateAgreement - validationData:', validationData);
+
+    return config.validation(validationData);
   }
 
   // =====================================================================
@@ -376,12 +405,37 @@ export class AgreementEngine {
    * Cria acordo usando a função específica do tipo
    */
   async createAgreement(roomName, userCountry, targetCountry, username, agreementType, proposalData) {
+    console.log('🔧 createAgreement called with:', { roomName, userCountry, targetCountry, username, agreementType, proposalData });
+    
     const config = getAgreementTypeConfig(agreementType);
-    if (!config || !config.creation) {
+    if (!config) {
+      console.error('❌ Config not found for agreement type:', agreementType);
+      return false;
+    }
+    
+    if (!config.creation) {
+      console.error('❌ Creation function not found for agreement type:', agreementType);
       return false;
     }
 
-    return config.creation(roomName, userCountry, targetCountry, username, proposalData);
+    console.log('✅ Config and creation function found');
+
+    // Normalizar o proposalData para compatibilidade com a criação
+    const normalizedProposalData = {
+      ...proposalData,
+      type: agreementType // Usar o tipo já normalizado
+    };
+
+    console.log('✅ Calling creation function with normalized data:', normalizedProposalData);
+    
+    try {
+      const result = config.creation(roomName, userCountry, targetCountry, username, normalizedProposalData);
+      console.log('✅ Creation function result:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error in creation function:', error);
+      return false;
+    }
   }
 
   // =====================================================================

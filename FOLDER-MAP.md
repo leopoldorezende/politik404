@@ -89,6 +89,7 @@
   │   │   │   ├── socketClient.js
   │   │   │   ├── socketConnection.js
   │   │   │   ├── socketEventHandlers.js
+  │   │   │   ├── socketEventHandlers_NEW.js
   │   │   │   └── storageService.js
   │   │   ├── store
   │   │   │   └── index.js
@@ -119,6 +120,7 @@
       ├── modules
       │   ├── agreements
       │   │   ├── agreementEngine.js
+      │   │   ├── agreementEngine_NEW.js
       │   │   └── agreementHandlers.js
       │   ├── ai
       │   │   └── aiCountryController.js

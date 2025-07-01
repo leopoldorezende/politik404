@@ -340,7 +340,7 @@ function setupAgreementHandlers(io, socket, gameState) {
       }
 
       // Verificar se é realmente uma aliança militar
-      if (card.type !== 'military_alliance') {
+      if (card.type !== 'military_alliance' && card.type !== 'military-alliance') {
         console.log('❌ Not a military alliance:', card.type);
         socket.emit('error', 'Este não é um card de aliança militar');
         return;
@@ -355,8 +355,13 @@ function setupAgreementHandlers(io, socket, gameState) {
 
       console.log('✅ Cancelling military alliance:', cardId, card.owner, '↔', card.target);
 
-      // Remover AMBOS os cards da aliança (bilateral)
+      // Remover AMBOS os cards da aliança (bilateral) - aceitar ambos os formatos
       const removedCount = global.cardService.removeAgreementCards(
+        roomName, 
+        'military-alliance', 
+        card.owner, 
+        card.target
+      ) || global.cardService.removeAgreementCards(
         roomName, 
         'military_alliance', 
         card.owner, 
@@ -422,14 +427,20 @@ function setupAgreementHandlers(io, socket, gameState) {
       }
 
       const card = global.cardService.getCardById(roomName, cardId);
-      if (!card || card.type !== 'strategic_cooperation' || card.owner !== player.country) {
+      if (!card || (card.type !== 'strategic_cooperation' && card.type !== 'strategic-cooperation') || card.owner !== player.country) {
         socket.emit('error', 'Cooperação estratégica não encontrada ou sem permissão');
         return;
       }
 
       console.log('✅ Cancelling strategic cooperation:', cardId, card.owner, '↔', card.target);
 
+      // Remover cards - aceitar ambos os formatos
       const removedCount = global.cardService.removeAgreementCards(
+        roomName, 
+        'strategic-cooperation', 
+        card.owner, 
+        card.target
+      ) || global.cardService.removeAgreementCards(
         roomName, 
         'strategic_cooperation', 
         card.owner, 

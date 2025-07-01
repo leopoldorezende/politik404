@@ -16,7 +16,8 @@ const AlliancePopup = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Hook para gerenciar cooldowns (15 segundos - mesmo intervalo do comércio)
-  const { isInCooldown, getRemainingTime, startCooldown } = useActionCooldown(60000);
+  // ✅ CORREÇÃO: Usar o nome unificado 'military-alliance'
+  const { isInCooldown, getRemainingTime, startCooldown } = useActionCooldown('military-alliance', 60000);
   
   // Configurar listeners de socket
   useEffect(() => {
@@ -50,9 +51,10 @@ const AlliancePopup = ({
    */
   const handleSendProposal = () => {
     // Verificar se está em cooldown (segurança)
-    if (isInCooldown('military_alliance')) {
+    // ✅ CORREÇÃO: Usar o nome unificado 'military-alliance'
+    if (isInCooldown('military-alliance')) {
       MessageService.showWarning(
-        `Aguarde ${getRemainingTime('military_alliance')} segundos antes de enviar uma nova proposta.`
+        `Aguarde ${getRemainingTime('military-alliance')} segundos antes de enviar uma nova proposta.`
       );
       return;
     }
@@ -63,8 +65,9 @@ const AlliancePopup = ({
     setIsSubmitting(true);
     
     // Enviar proposta via socket - ANTES de iniciar o cooldown
+    // ✅ CORREÇÃO: Corrigir o valor do "type" para o nome unificado
     socketApi.sendAllianceProposal({
-      type: 'military_alliance',
+      type: 'military-alliance',
       targetCountry: selectedCountry,
       originCountry: myCountry
     });
@@ -75,19 +78,22 @@ const AlliancePopup = ({
     );
     
     // Iniciar cooldown DEPOIS de enviar a proposta
+    // ✅ CORREÇÃO: Usar o nome unificado 'military-alliance'
     console.log(`Iniciando cooldown para aliança militar`);
-    startCooldown('military_alliance');
+    startCooldown('military-alliance');
     
     // Fechar popup após enviar a proposta e iniciar o cooldown
     onClose();
   };
   
   // Verificar se está em cooldown - verificação em cada renderização
-  const inCooldown = isInCooldown('military_alliance');
+  // ✅ CORREÇÃO: Usar o nome unificado 'military-alliance'
+  const inCooldown = isInCooldown('military-alliance');
   
   // Se estiver em cooldown, mostrar mensagem com cronômetro
   if (inCooldown) {
-    const remaining = getRemainingTime('military_alliance');
+    // ✅ CORREÇÃO: Usar o nome unificado 'military-alliance'
+    const remaining = getRemainingTime('military-alliance');
     
     console.log(`Exibindo mensagem de cooldown para aliança: ${remaining}s restantes`);
     

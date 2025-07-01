@@ -1,20 +1,20 @@
 import { createSlice, createSelector } from '@reduxjs/toolkit';
 
-// Tipos de cards e suas pontuações (sincronizado com backend)
+// Tipos de cards e suas pontuações (sincronizado com backend) - UNIFICADO
 export const CARD_TYPES = {
-  EXPORT: { name: 'export', points: 2, label: 'Exportação' },
-  IMPORT: { name: 'import', points: 1, label: 'Importação' },
-  POLITICAL_PACT: { name: 'political_pact', points: 3, label: 'Pacto Político' },
-  BUSINESS_PARTNERSHIP: { name: 'business_partnership', points: 3, label: 'Parceria Empresarial' },
-  MEDIA_CONTROL: { name: 'media_control', points: 3, label: 'Controle de Mídia' },
-  STRATEGIC_COOPERATION: { name: 'strategic_cooperation', points: 4, label: 'Cooperação Estratégica' },
-  MILITARY_ALLIANCE: { name: 'military_alliance', points: 5, label: 'Aliança Militar', color: '#00bcd4' }
+  EXPORT: { name: 'trade-export', points: 2, label: 'Exportação' },
+  IMPORT: { name: 'trade-import', points: 1, label: 'Importação' },
+  POLITICAL_PACT: { name: 'political-pact', points: 3, label: 'Pacto Político' },
+  BUSINESS_PARTNERSHIP: { name: 'business-partnership', points: 3, label: 'Parceria Empresarial' },
+  MEDIA_CONTROL: { name: 'media-control', points: 3, label: 'Controle de Mídia' },
+  STRATEGIC_COOPERATION: { name: 'strategic-cooperation', points: 4, label: 'Cooperação Estratégica' },
+  MILITARY_ALLIANCE: { name: 'military-alliance', points: 5, label: 'Aliança Militar', color: '#00bcd4' }
 };
 
 // Status dos cards
 export const CARD_STATUS = {
   ACTIVE: 'active',
-  COMPLETED: 'completed',
+  COMPLETED: 'active', // Mantido para compatibilidade
   CANCELLED: 'cancelled',
   TRANSFERRED: 'transferred'
 };
