@@ -126,6 +126,14 @@ export class AgreementEngine {
       originCountry: userCountry
     });
 
+    // Emitir evento unificado para clientes modernos
+    targetInfo.socket.emit('agreementProposalReceived', {
+      proposalId,
+      proposal: proposalData,
+      originCountry: userCountry,
+      agreementType
+    });
+
     // Confirmar envio para o remetente
     socket.emit(`${this.getSocketEventPrefix(agreementType)}ProposalSent`, {
       targetCountry: proposalData.targetCountry,

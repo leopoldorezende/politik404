@@ -111,63 +111,6 @@ function showNotificationWithCooldown(type, message, key = 'default') {
 // FACTORIES PARA HANDLERS UNIFICADOS
 // =====================================================================
 
-/**
- * Factory para criar handlers de propostas recebidas unificados
- */
-function createProposalReceivedHandler(agreementType) {
-  return (data) => {
-    console.log(`📨 Proposta ${agreementType} recebida:`, data);
-    
-  };
-}
-
-/**
- * Factory para criar handlers de resposta de propostas unificados
- */
-function createProposalResponseHandler(agreementType) {
-  return (response) => {
-    clearTimeout(debounceTimeouts[`${agreementType}Response`]);
-    debounceTimeouts[`${agreementType}Response`] = setTimeout(() => {
-      console.log(`📬 Resposta ${agreementType} recebida:`, response);
-      
-      const { accepted, targetCountry, message } = response;
-      const config = AGREEMENT_MESSAGE_CONFIGS[agreementType];
-      
-      // Priorizar mensagem do servidor
-      let displayMessage;
-      if (message) {
-        displayMessage = message;
-      } else {
-        // Fallback para mensagem local
-        displayMessage = accepted ? 
-          `${targetCountry} aceitou sua proposta de ${config.name}!` : 
-          `${targetCountry} recusou sua proposta de ${config.name}.`;
-      }
-      
-      const type = accepted ? 'success' : 'warning';
-      showNotificationWithCooldown(type, displayMessage);
-    }, CONSTANTS.DEBOUNCE_DELAY);
-  };
-}
-
-/**
- * Factory para criar handlers de cancelamento de acordos unificados
- */
-function createAgreementCancelledHandler(agreementType, storeAction = null) {
-  return (data) => {
-    console.log(`🗑️ Acordo ${agreementType} cancelado:`, data);
-    
-    // Atualizar store se necessário
-    if (storeAction && data.agreementId) {
-      store.dispatch(storeAction(data.agreementId));
-    }
-    
-    // Priorizar mensagem do servidor
-    const message = data.message || `Acordo de ${agreementType} cancelado.`;
-    MessageService.showInfo(message);
-  };
-}
-
 // =====================================================================
 // HANDLERS UNIFICADOS PRINCIPAIS
 // =====================================================================
@@ -179,35 +122,13 @@ const unifiedAgreementHandlers = {
   // Evento principal de proposta recebida
   'agreementProposalReceived': (data) => {
     console.log('📨 Proposta unificada recebida:', data);
-    const { agreementType } = data;
-    
-    // Rotear para handler específico baseado no tipo
-    if (agreementType?.startsWith('trade-') || agreementType === 'trade') {
-      createProposalReceivedHandler('trade')(data);
-    } else if (agreementType === 'military-alliance' || agreementType === 'alliance') {
-      createProposalReceivedHandler('alliance')(data);
-    } else if (agreementType === 'strategic-cooperation' || agreementType === 'cooperation') {
-      createProposalReceivedHandler('cooperation')(data);
-    } else {
-      createProposalReceivedHandler('internal')(data);
-    }
+    // A lógica real de exibição de popups está nos componentes (GamePage.jsx)
   },
 
   // Evento principal de resposta de proposta
   'agreementProposalResponse': (response) => {
     console.log('📬 Resposta unificada recebida:', response);
-    const { agreementType } = response;
-    
-    // Rotear para handler específico baseado no tipo
-    if (agreementType?.startsWith('trade-') || agreementType === 'trade') {
-      createProposalResponseHandler('trade')(response);
-    } else if (agreementType === 'military-alliance' || agreementType === 'alliance') {
-      createProposalResponseHandler('alliance')(response);
-    } else if (agreementType === 'strategic-cooperation' || agreementType === 'cooperation') {
-      createProposalResponseHandler('cooperation')(response);
-    } else {
-      createProposalResponseHandler('internal')(response);
-    }
+    // A lógica real de exibição de mensagens está nos componentes
   },
 
   // Evento principal de processamento de proposta
@@ -218,30 +139,15 @@ const unifiedAgreementHandlers = {
   // Evento principal de cancelamento
   'agreementCancelled': (data) => {
     console.log('🗑️ Cancelamento unificado:', data);
-    const { agreementType } = data;
-    
-    // Rotear para handler específico baseado no tipo
-    if (agreementType?.startsWith('trade-') || agreementType === 'trade') {
-      createAgreementCancelledHandler('trade', removeTradeAgreement)(data);
-    } else if (agreementType === 'military-alliance' || agreementType === 'alliance') {
-      createAgreementCancelledHandler('alliance')(data);
-    } else if (agreementType === 'strategic-cooperation' || agreementType === 'cooperation') {
-      createAgreementCancelledHandler('cooperation')(data);
-    } else {
-      createAgreementCancelledHandler('internal')(data);
-    }
+    // A lógica real de atualização de store e mensagens está nos componentes
   },
 
   // Eventos específicos para acordos internos
   'agreementCreated': (data) => {
     console.log('✅ Acordo interno criado:', data);
     const { type, message, points } = data;
-    
     MessageService.showSuccess(message || `Acordo ${type} criado com sucesso!`);
-    
-    // Atualizar pontuação se disponível
     if (points && store.getState().game?.myCountry) {
-      // Trigger para atualização de pontuação
       store.dispatch(updateStats());
     }
   },
@@ -249,12 +155,10 @@ const unifiedAgreementHandlers = {
   'agreementFailed': (data) => {
     console.log('❌ Acordo interno falhado:', data);
     const { type, message, probability } = data;
-    
     let displayMessage = message;
     if (!displayMessage && probability) {
       displayMessage = `Falha ao criar acordo ${type}. Probabilidade era ${probability}%. Tente novamente.`;
     }
-    
     MessageService.showWarning(displayMessage || `Falha ao criar acordo ${type}`);
   },
 
@@ -262,8 +166,6 @@ const unifiedAgreementHandlers = {
   'activeAgreements': (data) => {
     console.log('📋 Acordos ativos recebidos:', data);
     const { agreements, country } = data;
-    
-    // Atualizar store com acordos ativos
     store.dispatch(resetTradeState());
     if (Array.isArray(agreements)) {
       agreements.forEach(agreement => {
@@ -395,20 +297,20 @@ export const setupSocketEvents = (socket, socketApi) => {
   // ===================================================================
 
   // COMÉRCIO - Mantidos para compatibilidade retroativa
-  socket.on('tradeProposalReceived', createProposalReceivedHandler('trade'));
-  socket.on('tradeProposalResponse', createProposalResponseHandler('trade'))
-  socket.on('tradeAgreementCancelled', createAgreementCancelledHandler('trade', removeTradeAgreement));
+  // socket.on('tradeProposalReceived', createProposalReceivedHandler('trade'));
+  // socket.on('tradeProposalResponse', createProposalResponseHandler('trade'));
+  // socket.on('tradeAgreementCancelled', createAgreementCancelledHandler('trade', removeTradeAgreement));
   socket.on('updateTradeAgreements', updateTradeAgreementsHandler);
 
   // ALIANÇA - Mantidos para compatibilidade retroativa
-  socket.on('allianceProposalReceived', createProposalReceivedHandler('alliance'));
-  socket.on('allianceProposalResponse', createProposalResponseHandler('alliance'));
-  socket.on('allianceAgreementCancelled', createAgreementCancelledHandler('alliance'));
+  // socket.on('allianceProposalReceived', createProposalReceivedHandler('alliance'));
+  // socket.on('allianceProposalResponse', createProposalResponseHandler('alliance'));
+  // socket.on('allianceAgreementCancelled', createAgreementCancelledHandler('alliance'));
 
   // COOPERAÇÃO - Mantidos para compatibilidade retroativa
-  socket.on('cooperationProposalReceived', createProposalReceivedHandler('cooperation'));
-  socket.on('cooperationProposalResponse', createProposalResponseHandler('cooperation'));
-  socket.on('cooperationAgreementCancelled', createAgreementCancelledHandler('cooperation'));
+  // socket.on('cooperationProposalReceived', createProposalReceivedHandler('cooperation'));
+  // socket.on('cooperationProposalResponse', createProposalResponseHandler('cooperation'));
+  // socket.on('cooperationAgreementCancelled', createAgreementCancelledHandler('cooperation'));
 
   // ===================================================================
   // EVENTOS DE AUTENTICAÇÃO (MANTIDOS)

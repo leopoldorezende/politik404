@@ -159,60 +159,28 @@ const GamePage = () => {
     }
   }, [currentRoom, dispatch]);
   
-  // Listener para propostas de comércio - dependências vazias para estabilidade
+  // Listener para propostas de comércio e alianças via sistema unificado
   useEffect(() => {
     const socket = socketApi.getSocketInstance();
     if (!socket) return;
-    
-    const handleTradeProposalReceived = (proposal) => {
-      console.log('Trade proposal received:', proposal);
-      // Adicionar som de notificação, se disponível
-      if (window.Audio) {
-        try {
-          const notificationSound = new Audio('/notification.mp3');
-          notificationSound.play();
-        } catch (error) {
-          console.error('Failed to play notification sound:', error);
-        }
+
+    const handleAgreementProposalReceived = (data) => {
+      console.log('[DEBUG] agreementProposalReceived:', data, 'agreementType:', data.agreementType);
+      if (data.agreementType?.startsWith('trade-') || data.agreementType === 'trade') {
+        setTradeProposal(data);
       }
-  
-      setTradeProposal(proposal);
+      if (data.agreementType === 'military-alliance' || data.agreementType === 'alliance') {
+        setAllianceProposal(data);
+      }
+      // Adapte para outros tipos se necessário
     };
-    
-    socket.on('tradeProposalReceived', handleTradeProposalReceived);
-    
+
+    socket.on('agreementProposalReceived', handleAgreementProposalReceived);
     return () => {
-      socket.off('tradeProposalReceived', handleTradeProposalReceived);
+      socket.off('agreementProposalReceived', handleAgreementProposalReceived);
     };
   }, []);
   
-  useEffect(() => {
-    const socket = socketApi.getSocketInstance();
-    if (!socket) return;
-    
-    const handleAllianceProposalReceived = (proposal) => {
-      console.log('Alliance proposal received:', proposal);
-      // Adicionar som de notificação, se disponível
-      if (window.Audio) {
-        try {
-          const notificationSound = new Audio('/notification.mp3');
-          notificationSound.play();
-        } catch (error) {
-          console.error('Failed to play notification sound:', error);
-        }
-      }
-      
-      setAllianceProposal(proposal);
-    };
-    
-    socket.on('allianceProposalReceived', handleAllianceProposalReceived);
-    
-    return () => {
-      socket.off('allianceProposalReceived', handleAllianceProposalReceived);
-    };
-  }, []);
-
-
   // Função para fechar o popup de proposta comercial
   const handleCloseTradeProposal = () => {
     setTradeProposal(null);
