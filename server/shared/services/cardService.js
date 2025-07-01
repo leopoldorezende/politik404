@@ -9,6 +9,8 @@ import redis from '../redisClient.js';
 export const CARD_TYPES = {
   EXPORT: { name: 'export', points: 2 },
   IMPORT: { name: 'import', points: 1 },
+  TRADE_EXPORT: { name: 'trade-export', points: 2 },
+  TRADE_IMPORT: { name: 'trade-import', points: 1 },
   POLITICAL_PACT: { name: 'political-pact', points: 3 },
   BUSINESS_PARTNERSHIP: { name: 'business-partnership', points: 3 },
   MEDIA_CONTROL: { name: 'media-control', points: 3 },
@@ -114,7 +116,7 @@ class CardService {
 
     // Card para o país de origem
     const originCard = this.createCard(roomName, {
-      type: type, // 'export' ou 'import'
+      type: `trade-${type}`,
       owner: originCountry,
       target: country,
       value: value,
@@ -130,7 +132,7 @@ class CardService {
     // Card espelhado para o país alvo
     const mirrorType = type === 'export' ? 'import' : 'export';
     const targetCard = this.createCard(roomName, {
-      type: mirrorType,
+      type: `trade-${mirrorType}`,
       owner: country,
       target: originCountry,
       value: value,
