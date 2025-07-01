@@ -298,18 +298,51 @@ export const setupSocketEvents = (socket, socketApi) => {
 
   // COMÉRCIO - Mantidos para compatibilidade retroativa
   // socket.on('tradeProposalReceived', createProposalReceivedHandler('trade'));
-  // socket.on('tradeProposalResponse', createProposalResponseHandler('trade'));
+  socket.on('tradeProposalResponse', (response) => {
+    console.log('📬 Resposta de proposta comercial recebida:', response);
+    if (response.accepted) {
+      MessageService.showSuccess(
+        `${response.targetCountry} aceitou sua proposta comercial!`
+      );
+    } else {
+      MessageService.showWarning(
+        `${response.targetCountry} recusou sua proposta comercial.`
+      );
+    }
+  });
   // socket.on('tradeAgreementCancelled', createAgreementCancelledHandler('trade', removeTradeAgreement));
   socket.on('updateTradeAgreements', updateTradeAgreementsHandler);
 
   // ALIANÇA - Mantidos para compatibilidade retroativa
   // socket.on('allianceProposalReceived', createProposalReceivedHandler('alliance'));
-  // socket.on('allianceProposalResponse', createProposalResponseHandler('alliance'));
+  socket.on('allianceProposalResponse', (response) => {
+    console.log('📬 Resposta de proposta de aliança recebida:', response);
+    if (response.accepted) {
+      MessageService.showSuccess(
+        `${response.targetCountry} aceitou sua proposta de aliança militar!`
+      );
+    } else {
+      MessageService.showWarning(
+        `${response.targetCountry} recusou sua proposta de aliança militar.`
+      );
+    }
+  });
   // socket.on('allianceAgreementCancelled', createAgreementCancelledHandler('alliance'));
 
   // COOPERAÇÃO - Mantidos para compatibilidade retroativa
   // socket.on('cooperationProposalReceived', createProposalReceivedHandler('cooperation'));
-  // socket.on('cooperationProposalResponse', createProposalResponseHandler('cooperation'));
+  socket.on('cooperationProposalResponse', (response) => {
+    console.log('📬 Resposta de proposta de cooperação recebida:', response);
+    if (response.accepted) {
+      MessageService.showSuccess(
+        `${response.targetCountry} aceitou sua proposta de cooperação estratégica!`
+      );
+    } else {
+      MessageService.showWarning(
+        `${response.targetCountry} recusou sua proposta de cooperação estratégica.`
+      );
+    }
+  });
   // socket.on('cooperationAgreementCancelled', createAgreementCancelledHandler('cooperation'));
 
   // ===================================================================
