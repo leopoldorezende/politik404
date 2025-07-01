@@ -104,22 +104,22 @@ const CardsPopup = ({ isOpen, onClose, initialFilter = 'todos' }) => {
   // ✅ CORREÇÃO: UNIFICAR A LÓGICA DE CANCELAMENTO DE CARDS
   // ========================================================================
   const handleRemoveCard = (card) => {
-    if (!socketApi || !card.sourceAgreementId) {
+    if (!socketApi || !card.id) {
       console.error('Dados insuficientes para cancelar o card.');
-      MessageService.showError('Não foi possível cancelar o card. Falta o ID do acordo.');
+      MessageService.showError('Não foi possível cancelar o card. Falta o ID do card.');
       return;
     }
 
-    // Usar o ID do acordo como identificador
-    const agreementId = card.sourceAgreementId;
+    // Usar o ID do card como identificador
+    const cardId = card.id;
     const agreementType = card.type;
 
     if (window.confirm(`Tem certeza que deseja cancelar o acordo de ${agreementType}?`)) {
       const socket = socketApi.getSocketInstance();
       if (socket) {
         // Emitir o evento de cancelamento unificado
-        console.log(`Emitindo evento de cancelamento unificado para o acordo ${agreementId} do tipo ${agreementType}`);
-        socket.emit('cancelAgreement', { agreementId, agreementType });
+        console.log(`Emitindo evento de cancelamento unificado para o card ${cardId} do tipo ${agreementType}`);
+        socket.emit('cancelAgreement', { cardId, agreementType });
 
         // Refresh imediato após o cancelamento
         setTimeout(() => {

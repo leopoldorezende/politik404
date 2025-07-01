@@ -347,7 +347,6 @@ class CardService {
   removeAgreementCards(roomName, agreementType, country1, country2) {
     try {
       console.log(`[CARDS] Removing ${agreementType} cards between ${country1} and ${country2}`);
-      
       const roomCards = this.roomCards.get(roomName);
       if (!roomCards) {
         console.log(`[CARDS] Room not found: ${roomName}`);
@@ -355,16 +354,18 @@ class CardService {
       }
 
       let removedCount = 0;
-      
-      // Remover cards do acordo (filtragem reversa para evitar problemas de índice)
+
+      // Para acordos comerciais, remover ambos os tipos (trade-import e trade-export)
+      const isTrade = agreementType === 'trade-import' || agreementType === 'trade-export';
+      const typesToRemove = isTrade ? ['trade-import', 'trade-export'] : [agreementType];
+
       for (let i = roomCards.length - 1; i >= 0; i--) {
         const card = roomCards[i];
-        
-        // Verificar se é um card do tipo de acordo e envolve os dois países
-        if (card.type === agreementType && 
-            ((card.owner === country1 && card.target === country2) ||
-            (card.owner === country2 && card.target === country1))) {
-          
+        if (
+          typesToRemove.includes(card.type) &&
+          ((card.owner === country1 && card.target === country2) ||
+           (card.owner === country2 && card.target === country1))
+        ) {
           roomCards.splice(i, 1);
           removedCount++;
           console.log(`[CARDS] Removed card: ${card.id} (${card.type}) from ${card.owner} targeting ${card.target}`);

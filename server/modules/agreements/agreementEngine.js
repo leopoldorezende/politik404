@@ -314,13 +314,21 @@ export class AgreementEngine {
         return false;
       }
 
-      // Remover TODOS os cards relacionados ao acordo bilateral
-      const removedCount = global.cardService.removeAgreementCards(
-        roomName, 
-        cardInfo.type, 
-        cardInfo.owner, 
-        cardInfo.target
-      );
+      const config = getAgreementTypeConfig(agreementType);
+      let removedCount = 0;
+
+      if (config && config.bilateral && cardInfo.target) {
+        // Remover ambos os cards do acordo bilateral
+        removedCount = global.cardService.removeAgreementCards(
+          roomName,
+          cardInfo.type,
+          cardInfo.owner,
+          cardInfo.target
+        );
+      } else {
+        // Remover apenas o card individual
+        removedCount = global.cardService.removeCard(roomName, cardId) ? 1 : 0;
+      }
       
       if (removedCount === 0) {
         socket.emit('error', 'Falha ao remover acordo');
@@ -330,7 +338,6 @@ export class AgreementEngine {
       console.log(`[AGREEMENT] Removed ${removedCount} cards for ${cardInfo.type} agreement between ${cardInfo.owner} and ${cardInfo.target}`);
 
       // Notificar parceiro se acordo bilateral
-      const config = getAgreementTypeConfig(agreementType);
       if (config && config.bilateral && cardInfo.target) {
         this.notifyAgreementCancellation(gameState, io, userCountry, cardInfo.target, agreementType);
       }
